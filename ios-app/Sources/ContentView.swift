@@ -11,10 +11,10 @@ struct ContentView: View {
 
                 if !streamer.isStreaming {
                     modeSection
-                    if streamer.connectionMode == .wifi {
+                    if streamer.connectionMode == .dial {
                         connectionSection
                     } else {
-                        usbSection
+                        receiveSection
                     }
                     cameraSection
                 }
@@ -58,8 +58,8 @@ struct ContentView: View {
     }
 
     private var statusText: String {
-        if streamer.status == .connecting && streamer.connectionMode == .usb {
-            return "Waiting for OBS (USB cable)…"
+        if streamer.status == .connecting && streamer.connectionMode == .receive {
+            return "Waiting for OBS to connect…"
         }
         return streamer.status.label
     }
@@ -84,11 +84,32 @@ struct ContentView: View {
         }
     }
 
-    private var usbSection: some View {
-        Section("USB") {
-            Label {
-                Text("Connect this device to your computer with a cable, then set the OBS \"iOS Camera\" source's Connection to \"USB cable\". Requires iTunes on Windows.")
+    private var receiveSection: some View {
+        Section("How to connect") {
+            if let ip = NetworkInfo.wifiIPAddress() {
+                HStack {
+                    Image(systemName: "wifi")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("This phone's address")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(ip)
+                            .font(.title3.monospacedDigit().bold())
+                            .textSelection(.enabled)
+                    }
+                }
+                Text("In OBS, add an \"iOS Camera\" source and enter this address as the Phone IP.")
                     .font(.callout)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("No Wi-Fi address found — connect to Wi-Fi, or use a USB cable.")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+            }
+            Label {
+                Text("Or plug in a USB cable and set the OBS source's Connection to \"USB cable\" (needs iTunes on Windows). No Wi-Fi required.")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
             } icon: {
                 Image(systemName: "cable.connector")
             }

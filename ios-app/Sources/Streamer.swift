@@ -23,11 +23,14 @@ final class Streamer: ObservableObject {
     }
 
     enum ConnectionMode: String, CaseIterable, Identifiable {
-        case wifi
-        case usb
+        /// The app listens; OBS connects to the phone — over the LAN
+        /// (enter the phone's IP in OBS) or over the USB cable. Recommended.
+        case receive
+        /// Legacy: the app dials OBS's listener (IP of the computer).
+        case dial
 
         var id: String { rawValue }
-        var label: String { self == .wifi ? "Wi-Fi" : "USB" }
+        var label: String { self == .receive ? "OBS → iPhone" : "iPhone → OBS" }
     }
 
     // Settings (persisted to UserDefaults)
@@ -64,7 +67,7 @@ final class Streamer: ObservableObject {
     init() {
         let defaults = UserDefaults.standard
         connectionMode = ConnectionMode(
-            rawValue: defaults.string(forKey: "connectionMode") ?? "") ?? .wifi
+            rawValue: defaults.string(forKey: "connectionMode") ?? "") ?? .receive
         host = defaults.string(forKey: "host") ?? ""
         portText = defaults.string(forKey: "port") ?? "\(OBSCProtocol.defaultPort)"
         resolution = CameraManager.Resolution(
@@ -110,7 +113,7 @@ final class Streamer: ObservableObject {
 
         let trimmedHost = host.trimmingCharacters(in: .whitespaces)
         var dialPort: UInt16 = OBSCProtocol.defaultPort
-        if connectionMode == .wifi {
+        if connectionMode == .dial {
             guard !trimmedHost.isEmpty else {
                 status = .error("Enter the IP address of the computer running OBS")
                 return
@@ -151,9 +154,9 @@ final class Streamer: ObservableObject {
 
         camera.start()
         switch connectionMode {
-        case .wifi:
+        case .dial:
             client.start(.dial(host: trimmedHost, port: dialPort))
-        case .usb:
+        case .receive:
             client.start(.listen(port: OBSCProtocol.usbPort))
         }
     }
@@ -188,10 +191,10 @@ final class Streamer: ObservableObject {
             // Fresh connection: make sure OBS gets a decodable frame ASAP.
             encoder?.requestKeyframe()
         case .failed, .disconnected:
-            // In USB mode the client keeps its listener alive and reports
-            // .connecting while waiting for OBS to dial back; .failed there
-            // means the listener itself died — not recoverable by dialing.
-            if connectionMode == .usb {
+            // In receive mode the client keeps its listener alive and
+            // reports .connecting while waiting for OBS to dial back;
+            // .failed there means the listener itself died — fatal.
+            if connectionMode == .receive {
                 if case .failed(let message) = state {
                     status = .error(message)
                     stopKeepingError()

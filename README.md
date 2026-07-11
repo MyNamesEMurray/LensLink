@@ -23,20 +23,22 @@ Two components:
 
 1. **Build & install the plugin** — see [`obs-plugin/BUILDING.md`](obs-plugin/BUILDING.md).
 2. **Build & run the iOS app** — see [`ios-app/BUILDING.md`](ios-app/BUILDING.md).
-3. In OBS: *Sources → + → iOS Camera*. Leave the port at 9977.
-4. On the phone (same Wi-Fi): open OBSCam, tap your computer in the
-   discovered list (or type its IP), pick camera/resolution/frame rate, and
-   tap **Start streaming to OBS**.
+3. On the phone: open OBSCam, pick camera/resolution/frame rate, and tap
+   **Start** — the app shows the phone's IP address.
+4. In OBS: *Sources → + → iOS Camera*, enter that IP as the **Phone IP**
+   (or plug in a USB cable and pick Connection → **USB cable** — no Wi-Fi
+   needed). OBS connects to the phone within a couple of seconds.
 
 The video appears in the OBS source within a second or two. Disconnecting
 (or backgrounding the app) blanks the source.
 
 ## Features
 
-- **Wi-Fi or USB**: stream over the local network, or over the Lightning/USB-C
-  cable via Apple's device mux (usbmuxd; on Windows install iTunes). USB mode
-  needs no network at all and charges the phone while streaming. Select
-  "USB" in the app and "USB cable" in the OBS source's Connection setting.
+- **Wi-Fi or USB**: OBS connects to the phone — enter the IP the app shows
+  (DroidCam-style; no inbound firewall rules on the PC), or use the
+  Lightning/USB-C cable via Apple's device mux (usbmuxd; on Windows install
+  iTunes). USB needs no network at all and charges the phone while
+  streaming. A legacy phone→OBS mode with LAN discovery is also available.
 - 720p / 1080p at 30 or 60 fps, hardware-encoded (low battery/CPU cost)
 - Front or back camera, mirrored front-camera preview
 - Automatic OBS discovery on the LAN (UDP broadcast), with manual IP fallback
