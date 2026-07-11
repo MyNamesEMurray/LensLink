@@ -27,7 +27,11 @@ final class StreamClient {
     private static let maxInFlightFrames = 60
 
     func connect(host: String, port: UInt16) {
-        disconnect()
+        // Clean up any previous connection *silently* — announcing a state
+        // change here would make every (re)connect look like a fresh drop
+        // to the Streamer, which then schedules another reconnect: an
+        // endless 2-second connect/teardown loop.
+        teardown()
 
         guard let nwPort = NWEndpoint.Port(rawValue: port) else {
             state = .failed("Invalid port")
