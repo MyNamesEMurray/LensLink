@@ -61,6 +61,21 @@ A tiny length-prefixed packet protocol over one TCP connection (video is
 H.264 Annex B access units; timestamps in nanoseconds). Full spec in
 [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
 
+## Continuous integration
+
+Every push/PR runs [`.github/workflows/build.yml`](.github/workflows/build.yml):
+
+- **OBS plugin** — built on Ubuntu against libobs + FFmpeg with
+  `-Wall -Wextra -Werror`; the compiled `ios-camera-source.so` (plus its
+  `data/` folder) is uploaded as a downloadable artifact on each run.
+- **iOS app** — the Xcode project is generated with XcodeGen and compiled
+  for the iOS Simulator on a macOS runner. This validates the Swift code but
+  does not produce an installable app: iOS device builds must be signed, so
+  installing on your phone still goes through Xcode with your Apple ID (see
+  `ios-app/BUILDING.md`). To ship signed builds from CI later, add an Apple
+  signing certificate + provisioning profile as repo secrets and a
+  `fastlane`/`xcodebuild -exportArchive` step.
+
 ## Limitations & roadmap
 
 - Video only — microphone audio is a natural next step (`OBSC_PKT_AUDIO`).
