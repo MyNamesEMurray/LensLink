@@ -23,9 +23,17 @@
 
 #define S_PORT "port"
 #define S_MODE "mode"
+#define S_HOST "host"
 #define MODE_NETWORK "network"
+#define MODE_DIAL "dial"
 #define MODE_USB "usb"
 #define T_(s) obs_module_text(s)
+
+enum connection_mode {
+	CONN_LISTEN,   /* phone dials OBS (legacy) */
+	CONN_DIAL_NET, /* OBS dials the phone over the LAN (recommended) */
+	CONN_DIAL_USB, /* OBS dials the phone through usbmuxd */
+};
 
 #define RECV_CHUNK 65536
 
@@ -43,11 +51,21 @@ struct ios_camera_source {
 	volatile bool stop;
 
 	int port;
-	bool usb_mode;
+	enum connection_mode conn_mode;
+	char host[128];
 
 	pthread_mutex_t status_mutex;
 	struct dstr status;
 };
+
+static enum connection_mode parse_mode(const char *mode)
+{
+	if (strcmp(mode, MODE_DIAL) == 0)
+		return CONN_DIAL_NET;
+	if (strcmp(mode, MODE_USB) == 0)
+		return CONN_DIAL_USB;
+	return CONN_LISTEN;
+}
 
 /* ------------------------------------------------------------------ */
 
@@ -312,23 +330,92 @@ static bool client_read(struct ios_camera_source *s, struct client_state *c)
 	return true;
 }
 
-/*
- * USB mode: the app on the device listens; we dial it through usbmuxd.
- * Retry every couple of seconds until a device with the app appears.
- */
-static void usb_loop(struct ios_camera_source *s)
+/* TCP connect with a 3-second timeout; returns a non-blocking socket. */
+static socket_t tcp_dial(const char *host, uint16_t port)
 {
-	while (!s->stop) {
-		set_status(s, "%s", T_("Status.WaitingUSB"));
+	char port_str[16];
+	snprintf(port_str, sizeof(port_str), "%u", (unsigned)port);
 
-		socket_t sock = usbmux_connect_first(OBSC_USB_PORT);
+	struct addrinfo hints = {0};
+	struct addrinfo *res = NULL;
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	if (getaddrinfo(host, port_str, &hints, &res) != 0 || !res)
+		return OBSC_INVALID_SOCKET;
+
+	socket_t s = socket(res->ai_family, res->ai_socktype,
+			    res->ai_protocol);
+	if (s == OBSC_INVALID_SOCKET) {
+		freeaddrinfo(res);
+		return OBSC_INVALID_SOCKET;
+	}
+
+	net_set_nonblocking(s);
+	int ret = connect(s, res->ai_addr, (int)res->ai_addrlen);
+	freeaddrinfo(res);
+
+	if (ret != 0) {
+#ifdef _WIN32
+		if (WSAGetLastError() != WSAEWOULDBLOCK)
+			goto fail;
+#else
+		if (errno != EINPROGRESS)
+			goto fail;
+#endif
+		fd_set wfds;
+		FD_ZERO(&wfds);
+		FD_SET(s, &wfds);
+		struct timeval tv = {.tv_sec = 3, .tv_usec = 0};
+		if (select((int)s + 1, NULL, &wfds, NULL, &tv) != 1)
+			goto fail;
+
+		int err = 0;
+		socklen_t len = sizeof(err);
+		getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&err, &len);
+		if (err != 0)
+			goto fail;
+	}
+
+	int yes = 1;
+	setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char *)&yes,
+		   sizeof(yes));
+	return s;
+
+fail:
+	net_close(s);
+	return OBSC_INVALID_SOCKET;
+}
+
+/*
+ * Dial modes: the app on the device listens; we connect to it — over the
+ * LAN (host set in properties) or through usbmuxd. Retry every couple of
+ * seconds until the app is reachable.
+ */
+static void dial_loop(struct ios_camera_source *s)
+{
+	bool usb = s->conn_mode == CONN_DIAL_USB;
+
+	while (!s->stop) {
+		socket_t sock = OBSC_INVALID_SOCKET;
+
+		if (usb) {
+			set_status(s, "%s", T_("Status.WaitingUSB"));
+			sock = usbmux_connect_first(OBSC_USB_PORT);
+		} else if (!s->host[0]) {
+			set_status(s, "%s", T_("Status.NoHost"));
+		} else {
+			set_status(s, "%s %s", T_("Status.Dialing"), s->host);
+			sock = tcp_dial(s->host, OBSC_USB_PORT);
+		}
+
 		if (sock == OBSC_INVALID_SOCKET) {
 			for (int i = 0; i < 20 && !s->stop; i++)
 				os_sleep_ms(100);
 			continue;
 		}
 
-		blog(LOG_INFO, "[ios-camera] connected to device over USB");
+		blog(LOG_INFO, "[ios-camera] connected to device (%s)",
+		     usb ? "USB" : "network");
 		set_status(s, "%s", T_("Status.Connected"));
 
 		struct client_state client = {.sock = sock};
@@ -348,7 +435,7 @@ static void usb_loop(struct ios_camera_source *s)
 				break;
 		}
 
-		blog(LOG_INFO, "[ios-camera] USB connection ended");
+		blog(LOG_INFO, "[ios-camera] device connection ended");
 		client_disconnect(s, &client);
 	}
 }
@@ -441,10 +528,10 @@ static void *server_thread(void *data)
 
 	os_set_thread_name("ios-camera-server");
 
-	if (s->usb_mode)
-		usb_loop(s);
-	else
+	if (s->conn_mode == CONN_LISTEN)
 		network_loop(s);
+	else
+		dial_loop(s);
 
 	return NULL;
 }
@@ -481,12 +568,16 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 {
 	struct ios_camera_source *s = data;
 	int port = (int)obs_data_get_int(settings, S_PORT);
-	bool usb = strcmp(obs_data_get_string(settings, S_MODE), MODE_USB) == 0;
+	enum connection_mode mode =
+		parse_mode(obs_data_get_string(settings, S_MODE));
+	const char *host = obs_data_get_string(settings, S_HOST);
 
-	if (port != s->port || usb != s->usb_mode) {
+	if (port != s->port || mode != s->conn_mode ||
+	    strcmp(host, s->host) != 0) {
 		stop_thread(s);
 		s->port = port;
-		s->usb_mode = usb;
+		s->conn_mode = mode;
+		snprintf(s->host, sizeof(s->host), "%s", host);
 		start_thread(s);
 	}
 }
@@ -496,8 +587,9 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 	struct ios_camera_source *s = bzalloc(sizeof(*s));
 	s->source = source;
 	s->port = (int)obs_data_get_int(settings, S_PORT);
-	s->usb_mode =
-		strcmp(obs_data_get_string(settings, S_MODE), MODE_USB) == 0;
+	s->conn_mode = parse_mode(obs_data_get_string(settings, S_MODE));
+	snprintf(s->host, sizeof(s->host), "%s",
+		 obs_data_get_string(settings, S_HOST));
 
 	pthread_mutex_init(&s->status_mutex, NULL);
 	dstr_init(&s->status);
@@ -519,7 +611,22 @@ static void ios_camera_destroy(void *data)
 static void ios_camera_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, S_PORT, OBSC_DEFAULT_PORT);
-	obs_data_set_default_string(settings, S_MODE, MODE_NETWORK);
+	obs_data_set_default_string(settings, S_MODE, MODE_DIAL);
+	obs_data_set_default_string(settings, S_HOST, "");
+}
+
+static bool mode_modified(obs_properties_t *props, obs_property_t *property,
+			  obs_data_t *settings)
+{
+	UNUSED_PARAMETER(property);
+
+	enum connection_mode mode =
+		parse_mode(obs_data_get_string(settings, S_MODE));
+	obs_property_set_visible(obs_properties_get(props, S_HOST),
+				 mode == CONN_DIAL_NET);
+	obs_property_set_visible(obs_properties_get(props, S_PORT),
+				 mode == CONN_LISTEN);
+	return true;
 }
 
 static obs_properties_t *ios_camera_get_properties(void *data)
@@ -531,9 +638,12 @@ static obs_properties_t *ios_camera_get_properties(void *data)
 	obs_property_t *mode = obs_properties_add_list(
 		props, S_MODE, T_("Mode"), OBS_COMBO_TYPE_LIST,
 		OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(mode, T_("Mode.Network"), MODE_NETWORK);
+	obs_property_list_add_string(mode, T_("Mode.Dial"), MODE_DIAL);
 	obs_property_list_add_string(mode, T_("Mode.USB"), MODE_USB);
+	obs_property_list_add_string(mode, T_("Mode.Network"), MODE_NETWORK);
+	obs_property_set_modified_callback(mode, mode_modified);
 
+	obs_properties_add_text(props, S_HOST, T_("Host"), OBS_TEXT_DEFAULT);
 	obs_properties_add_int(props, S_PORT, T_("Port"), 1024, 65535, 1);
 
 	obs_property_t *status = obs_properties_add_text(
