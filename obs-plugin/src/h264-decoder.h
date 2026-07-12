@@ -4,9 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <libavcodec/avcodec.h>
+
 struct h264_decoder;
 
-struct h264_decoder *h264_decoder_create(void);
+/* codec_id: AV_CODEC_ID_H264 or AV_CODEC_ID_HEVC */
+struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id);
 void h264_decoder_destroy(struct h264_decoder *dec);
 
 /*

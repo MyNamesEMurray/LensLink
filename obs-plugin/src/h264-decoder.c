@@ -13,11 +13,12 @@ struct h264_decoder {
 	AVFrame *frame;
 };
 
-struct h264_decoder *h264_decoder_create(void)
+struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id)
 {
-	const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_H264);
+	const AVCodec *codec = avcodec_find_decoder(codec_id);
 	if (!codec) {
-		blog(LOG_ERROR, "[ios-camera] H.264 decoder not available");
+		blog(LOG_ERROR, "[ios-camera] decoder for codec %d unavailable",
+		     (int)codec_id);
 		return NULL;
 	}
 

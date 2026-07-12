@@ -39,7 +39,14 @@ The video appears in the OBS source within a second or two. Disconnecting
   Lightning/USB-C cable via Apple's device mux (usbmuxd; on Windows install
   iTunes). USB needs no network at all and charges the phone while
   streaming. A legacy phone→OBS mode with LAN discovery is also available.
-- 720p / 1080p at 30 or 60 fps, hardware-encoded (low battery/CPU cost)
+- **H.264 or HEVC**, hardware-encoded (HEVC ~40% smaller at the same
+  quality; automatic H.264 fallback on devices without HEVC encode)
+- **720p / 1080p / 4K at 30 or 60 fps** — the app reads the camera's real
+  format list (per front/back camera) and only offers combinations the
+  hardware supports
+- **Automatic lip sync**: pick any OBS audio source in the iOS Camera
+  properties and the plugin continuously sets its sync offset to the
+  measured camera latency
 - Front or back camera, mirrored front-camera preview
 - Automatic OBS discovery on the LAN (UDP broadcast), with manual IP fallback
 - Reconnect-friendly: keyframes every 2 s carry SPS/PPS, so OBS can join or

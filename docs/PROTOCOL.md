@@ -40,14 +40,17 @@ Payload: UTF-8 JSON, e.g.
 { "codec": "h264", "width": 1280, "height": 720, "fps": 30 }
 ```
 
-The plugin treats this as informational; the authoritative dimensions come
-from the H.264 bitstream (SPS).
+`codec` is `"h264"` or `"hevc"` and selects the plugin's decoder; a codec
+change mid-stream resets the decoder (the next keyframe re-initializes it).
+Dimensions/fps are informational; the authoritative values come from the
+bitstream parameter sets.
 
 ### 3 — VIDEO
-Payload: one H.264 **access unit in Annex B format** (start-code delimited
-NAL units). Keyframe packets must set the keyframe flag and must be
-self-contained: SPS and PPS NAL units are prepended before the IDR slice so a
-decoder can join mid-stream.
+Payload: one H.264 or HEVC **access unit in Annex B format** (start-code
+delimited NAL units), per the codec announced in VIDEO_CONFIG. Keyframe
+packets must set the keyframe flag and must be self-contained: parameter
+sets (SPS/PPS for H.264, VPS/SPS/PPS for HEVC) are prepended before the
+IDR/IRAP slice so a decoder can join mid-stream.
 
 `pts` is the capture presentation timestamp in nanoseconds. It only needs to
 be monotonic; OBS re-bases async timestamps itself.

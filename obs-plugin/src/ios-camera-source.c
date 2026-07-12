@@ -25,6 +25,8 @@
 #define S_MODE "mode"
 #define S_HOST "host"
 #define S_LOW_LATENCY "low_latency"
+#define S_AUDIO_SOURCE "audio_sync_source"
+#define S_AUDIO_SYNC "audio_sync_enabled"
 #define MODE_NETWORK "network"
 #define MODE_DIAL "dial"
 #define MODE_USB "usb"
@@ -54,6 +56,11 @@ struct ios_camera_source {
 	int port;
 	enum connection_mode conn_mode;
 	char host[128];
+
+	/* Guarded by status_mutex (shared with the status string). */
+	bool audio_sync;
+	char audio_source[256];
+	int64_t applied_audio_offset;
 
 	pthread_mutex_t status_mutex;
 	struct dstr status;
@@ -258,9 +265,48 @@ struct client_state {
 	socket_t sock;
 	struct recv_buf buf;
 	struct h264_decoder *decoder;
+	enum AVCodecID codec_id;
 	char name[128];
 	struct latency_tracker lat;
 };
+
+/*
+ * Lip sync: keep the chosen OBS audio source's sync offset equal to the
+ * measured camera latency, so audio is delayed to match the video.
+ * 5 ms hysteresis avoids constantly rewriting a stable value.
+ */
+static void apply_audio_sync(struct ios_camera_source *s, int64_t latency_ns)
+{
+	char name[256];
+
+	pthread_mutex_lock(&s->status_mutex);
+	bool enabled = s->audio_sync;
+	snprintf(name, sizeof(name), "%s", s->audio_source);
+	int64_t applied = s->applied_audio_offset;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	if (!enabled || !name[0])
+		return;
+
+	int64_t diff = latency_ns - applied;
+	if (diff < 0)
+		diff = -diff;
+	if (diff < 5000000)
+		return;
+
+	obs_source_t *audio = obs_get_source_by_name(name);
+	if (!audio)
+		return;
+	obs_source_set_sync_offset(audio, latency_ns);
+	obs_source_release(audio);
+
+	pthread_mutex_lock(&s->status_mutex);
+	s->applied_audio_offset = latency_ns;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	blog(LOG_INFO, "[ios-camera] '%s' sync offset -> %d ms", name,
+	     (int)(latency_ns / 1000000));
+}
 
 /* Once a second, ask the phone for a clock sample; every five, report. */
 static void latency_tick(struct ios_camera_source *s, struct client_state *c)
@@ -290,6 +336,8 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		     avg_ms, min_ms, max_ms, rtt_ms, (unsigned)t->count);
 		set_status(s, "%s %s — ~%u ms", T_("Status.Connected"),
 			   c->name[0] ? c->name : "iOS device", avg_ms);
+
+		apply_audio_sync(s, (int64_t)(t->sum_ns / t->count));
 
 		t->sum_ns = 0;
 		t->count = 0;
@@ -360,16 +408,37 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			   c->name[0] ? c->name : "iOS device");
 		break;
 	}
-	case OBSC_PKT_VIDEO_CONFIG:
+	case OBSC_PKT_VIDEO_CONFIG: {
 		blog(LOG_INFO, "[ios-camera] video config: %.*s",
 		     (int)hdr->payload_size, (const char *)payload);
+
+		char json[512] = {0};
+		size_t n = hdr->payload_size < sizeof(json) - 1
+				   ? hdr->payload_size
+				   : sizeof(json) - 1;
+		memcpy(json, payload, n);
+
+		char codec[32] = {0};
+		extract_json_string(json, "codec", codec, sizeof(codec));
+		enum AVCodecID id = strcmp(codec, "hevc") == 0
+					    ? AV_CODEC_ID_HEVC
+					    : AV_CODEC_ID_H264;
+		if (id != c->codec_id) {
+			h264_decoder_destroy(c->decoder);
+			c->decoder = NULL;
+			c->codec_id = id;
+		}
 		break;
+	}
 	case OBSC_PKT_VIDEO:
 		if (!c->decoder) {
 			/* Join on a keyframe so the decoder starts clean. */
 			if (!(hdr->flags & OBSC_FLAG_KEYFRAME))
 				break;
-			c->decoder = h264_decoder_create();
+			c->decoder = h264_decoder_create(
+				c->codec_id != AV_CODEC_ID_NONE
+					? c->codec_id
+					: AV_CODEC_ID_H264);
 			if (!c->decoder)
 				return false;
 		}
@@ -688,6 +757,30 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 	obs_source_set_async_unbuffered(
 		s->source, obs_data_get_bool(settings, S_LOW_LATENCY));
 
+	pthread_mutex_lock(&s->status_mutex);
+	bool was_syncing = s->audio_sync && s->audio_source[0];
+	int64_t applied = s->applied_audio_offset;
+	char old_source[256];
+	snprintf(old_source, sizeof(old_source), "%s", s->audio_source);
+
+	s->audio_sync = obs_data_get_bool(settings, S_AUDIO_SYNC);
+	snprintf(s->audio_source, sizeof(s->audio_source), "%s",
+		 obs_data_get_string(settings, S_AUDIO_SOURCE));
+	bool still_syncing = s->audio_sync &&
+			     strcmp(old_source, s->audio_source) == 0;
+	if (!still_syncing)
+		s->applied_audio_offset = 0;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	/* Turned off (or retargeted): undo the offset we applied. */
+	if (was_syncing && !still_syncing && applied != 0) {
+		obs_source_t *audio = obs_get_source_by_name(old_source);
+		if (audio) {
+			obs_source_set_sync_offset(audio, 0);
+			obs_source_release(audio);
+		}
+	}
+
 	if (port != s->port || mode != s->conn_mode ||
 	    strcmp(host, s->host) != 0) {
 		stop_thread(s);
@@ -732,6 +825,18 @@ static void ios_camera_get_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, S_MODE, MODE_DIAL);
 	obs_data_set_default_string(settings, S_HOST, "");
 	obs_data_set_default_bool(settings, S_LOW_LATENCY, true);
+	obs_data_set_default_bool(settings, S_AUDIO_SYNC, false);
+	obs_data_set_default_string(settings, S_AUDIO_SOURCE, "");
+}
+
+static bool add_audio_source(void *data, obs_source_t *source)
+{
+	obs_property_t *list = data;
+	if (obs_source_get_output_flags(source) & OBS_SOURCE_AUDIO)
+		obs_property_list_add_string(list,
+					     obs_source_get_name(source),
+					     obs_source_get_name(source));
+	return true;
 }
 
 static bool mode_modified(obs_properties_t *props, obs_property_t *property,
@@ -765,6 +870,13 @@ static obs_properties_t *ios_camera_get_properties(void *data)
 	obs_properties_add_text(props, S_HOST, T_("Host"), OBS_TEXT_DEFAULT);
 	obs_properties_add_int(props, S_PORT, T_("Port"), 1024, 65535, 1);
 	obs_properties_add_bool(props, S_LOW_LATENCY, T_("LowLatency"));
+
+	obs_property_t *audio_list = obs_properties_add_list(
+		props, S_AUDIO_SOURCE, T_("AudioSource"), OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(audio_list, T_("AudioSource.None"), "");
+	obs_enum_sources(add_audio_source, audio_list);
+	obs_properties_add_bool(props, S_AUDIO_SYNC, T_("AudioSync"));
 
 	obs_property_t *status = obs_properties_add_text(
 		props, "status_info", T_("Status"), OBS_TEXT_INFO);

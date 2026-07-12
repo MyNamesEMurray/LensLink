@@ -7,28 +7,27 @@ final class CameraManager: NSObject {
     enum Resolution: String, CaseIterable, Identifiable {
         case hd720 = "720p"
         case hd1080 = "1080p"
+        case uhd4k = "4K"
 
         var id: String { rawValue }
-
-        var preset: AVCaptureSession.Preset {
-            switch self {
-            case .hd720: return .hd1280x720
-            case .hd1080: return .hd1920x1080
-            }
-        }
 
         var size: (width: Int32, height: Int32) {
             switch self {
             case .hd720: return (1280, 720)
             case .hd1080: return (1920, 1080)
+            case .uhd4k: return (3840, 2160)
             }
         }
 
-        var defaultBitrate: Int {
+        func bitrate(for codec: VideoCodec) -> Int {
+            let h264: Int
             switch self {
-            case .hd720: return 4_000_000
-            case .hd1080: return 8_000_000
+            case .hd720: h264 = 4_000_000
+            case .hd1080: h264 = 8_000_000
+            case .uhd4k: h264 = 30_000_000
             }
+            // HEVC reaches comparable quality at roughly 60% of the bits.
+            return codec == .hevc ? h264 * 6 / 10 : h264
         }
     }
 
@@ -50,6 +49,35 @@ final class CameraManager: NSObject {
         }
     }
 
+    static func device(for position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        AVCaptureDevice.default(.builtInWideAngleCamera, for: .video,
+                                position: position)
+    }
+
+    private static func format(for device: AVCaptureDevice,
+                               resolution: Resolution,
+                               fps: Int32) -> AVCaptureDevice.Format? {
+        let target = resolution.size
+        // Prefer earlier (unbinned, video-range) formats; require exact
+        // dimensions and a frame-rate range covering the requested rate.
+        return device.formats.first { format in
+            let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            guard dims.width == target.width, dims.height == target.height else {
+                return false
+            }
+            return format.videoSupportedFrameRateRanges
+                .contains { $0.maxFrameRate >= Double(fps) }
+        }
+    }
+
+    /// Whether this camera can capture the resolution at the frame rate.
+    /// Drives the app's pickers so unsupported combos are never offered.
+    static func supports(resolution: Resolution, fps: Int32,
+                         position: AVCaptureDevice.Position) -> Bool {
+        guard let device = device(for: position) else { return false }
+        return format(for: device, resolution: resolution, fps: fps) != nil
+    }
+
     func configure(position: AVCaptureDevice.Position,
                    resolution: Resolution,
                    fps: Int32) throws {
@@ -59,13 +87,17 @@ final class CameraManager: NSObject {
         session.inputs.forEach(session.removeInput)
         session.outputs.forEach(session.removeOutput)
 
-        session.sessionPreset = resolution.preset
+        // Format is chosen manually below; presets can't express 4K60.
+        session.sessionPreset = .inputPriority
 
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera,
-                                                   for: .video,
-                                                   position: position) else {
+        guard let device = Self.device(for: position) else {
             throw NSError(domain: "CameraManager", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Camera not available"])
+        }
+        guard let format = Self.format(for: device, resolution: resolution, fps: fps) else {
+            throw NSError(domain: "CameraManager", code: 4,
+                          userInfo: [NSLocalizedDescriptionKey:
+                            "\(resolution.rawValue) at \(fps) fps is not supported by this camera"])
         }
 
         let input = try AVCaptureDeviceInput(device: device)
@@ -76,12 +108,10 @@ final class CameraManager: NSObject {
         session.addInput(input)
 
         try device.lockForConfiguration()
+        device.activeFormat = format
         let frameDuration = CMTime(value: 1, timescale: fps)
-        if device.activeFormat.videoSupportedFrameRateRanges
-            .contains(where: { $0.maxFrameRate >= Double(fps) }) {
-            device.activeVideoMinFrameDuration = frameDuration
-            device.activeVideoMaxFrameDuration = frameDuration
-        }
+        device.activeVideoMinFrameDuration = frameDuration
+        device.activeVideoMaxFrameDuration = frameDuration
         device.unlockForConfiguration()
 
         let output = AVCaptureVideoDataOutput()

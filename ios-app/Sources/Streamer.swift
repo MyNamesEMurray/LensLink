@@ -50,7 +50,13 @@ final class Streamer: ObservableObject {
         didSet { UserDefaults.standard.set(fps, forKey: "fps") }
     }
     @Published var useFrontCamera: Bool {
-        didSet { UserDefaults.standard.set(useFrontCamera, forKey: "useFrontCamera") }
+        didSet {
+            UserDefaults.standard.set(useFrontCamera, forKey: "useFrontCamera")
+            clampCaptureSettings()
+        }
+    }
+    @Published var codec: VideoCodec {
+        didSet { UserDefaults.standard.set(codec.rawValue, forKey: "videoCodec") }
     }
 
     // State
@@ -59,8 +65,36 @@ final class Streamer: ObservableObject {
     @Published var discoveredServers: [DiscoveryClient.Server] = []
     @Published var cameraPermissionDenied = false
 
+    var cameraPosition: AVCaptureDevice.Position {
+        useFrontCamera ? .front : .back
+    }
+
+    /// Keeps resolution/fps within what the selected camera supports.
+    func clampCaptureSettings() {
+        let supported = { (r: CameraManager.Resolution, f: Int) in
+            CameraManager.supports(resolution: r, fps: Int32(f),
+                                   position: self.cameraPosition)
+        }
+        if supported(resolution, fps) { return }
+        if supported(resolution, 30) {
+            fps = 30
+            return
+        }
+        for fallback in [CameraManager.Resolution.hd1080, .hd720] {
+            if supported(fallback, fps) {
+                resolution = fallback
+                return
+            }
+            if supported(fallback, 30) {
+                resolution = fallback
+                fps = 30
+                return
+            }
+        }
+    }
+
     let camera = CameraManager()
-    private var encoder: H264Encoder?
+    private var encoder: VideoEncoder?
     private let client = StreamClient()
     private let discovery = DiscoveryClient()
 
@@ -75,6 +109,8 @@ final class Streamer: ObservableObject {
         let storedFps = defaults.integer(forKey: "fps")
         fps = storedFps > 0 ? storedFps : 30
         useFrontCamera = defaults.bool(forKey: "useFrontCamera")
+        codec = VideoCodec(rawValue: defaults.string(forKey: "videoCodec") ?? "")
+            ?? (VideoEncoder.isSupported(.hevc) ? .hevc : .h264)
 
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
@@ -125,12 +161,17 @@ final class Streamer: ObservableObject {
             dialPort = port
         }
 
+        // Fall back to H.264 automatically if this device can't encode HEVC.
+        let activeCodec = (codec == .hevc && !VideoEncoder.isSupported(.hevc))
+            ? VideoCodec.h264 : codec
+
         let size = resolution.size
-        let encoder = H264Encoder(width: size.width, height: size.height,
-                                  fps: Int32(fps),
-                                  bitrate: resolution.defaultBitrate)
+        let encoder = VideoEncoder(codec: activeCodec,
+                                   width: size.width, height: size.height,
+                                   fps: Int32(fps),
+                                   bitrate: resolution.bitrate(for: activeCodec))
         do {
-            try camera.configure(position: useFrontCamera ? .front : .back,
+            try camera.configure(position: cameraPosition,
                                  resolution: resolution,
                                  fps: Int32(fps))
             try encoder.start()
@@ -186,7 +227,8 @@ final class Streamer: ObservableObject {
             reconnectPending = false
             status = .streaming
             let size = resolution.size
-            client.sendVideoConfig(width: size.width, height: size.height,
+            client.sendVideoConfig(codec: encoder?.codec ?? codec,
+                                   width: size.width, height: size.height,
                                    fps: Int32(fps))
             // Fresh connection: make sure OBS gets a decodable frame ASAP.
             encoder?.requestKeyframe()
