@@ -21,6 +21,9 @@ final class StreamClient {
     var onStateChange: ((State) -> Void)?
     /// Remote camera-control command (JSON) received from the plugin.
     var onControl: ((Data) -> Void)?
+    /// A video frame was dropped: the reference chain is broken and the
+    /// encoder should produce a fresh keyframe ASAP.
+    var onFrameDropped: (() -> Void)?
 
     private(set) var state: State = .disconnected {
         didSet { onStateChange?(state) }
@@ -72,6 +75,7 @@ final class StreamClient {
         connection = nil
         queue.async { [weak self] in
             self?.inFlightFrames = 0
+            self?.waitingForKeyframe = false
         }
     }
 
@@ -346,11 +350,23 @@ final class StreamClient {
         }
     }
 
+    /// After a drop, every following frame references a frame the decoder
+    /// never received — decoding them produces grey "error concealment"
+    /// smear. Skip them until a fresh keyframe restarts the chain.
+    private var waitingForKeyframe = false
+
     func sendVideoFrame(_ frame: VideoEncoder.EncodedFrame) {
         queue.async { [weak self] in
             guard let self, self.connection != nil else { return }
+            if frame.isKeyframe {
+                self.waitingForKeyframe = false
+            } else if self.waitingForKeyframe {
+                return
+            }
             if self.inFlightFrames >= Self.maxInFlightFrames && !frame.isKeyframe {
                 self.droppedFrames += 1
+                self.waitingForKeyframe = true
+                self.onFrameDropped?()
                 return
             }
             self.inFlightFrames += 1

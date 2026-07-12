@@ -225,6 +225,11 @@ final class Streamer: ObservableObject {
                 self?.handleRemoteControl(json)
             }
         }
+        client.onFrameDropped = { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.encoder?.requestKeyframe()
+            }
+        }
     }
 
     // MARK: - Remote control (from the OBS plugin / web panel)
