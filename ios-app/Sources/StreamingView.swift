@@ -156,9 +156,9 @@ struct StreamingView: View {
                         if editing { touched() }
                     }
                 } else {
-                    Text("Tap to focus")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
+                    // AF mode: tap the preview to focus (a gesture, per
+                    // UI_DESIGN.md §6.2). No inline label — it crowded the
+                    // row and collapsed to one letter per line.
                     Spacer()
                 }
 
