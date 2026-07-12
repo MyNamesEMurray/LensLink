@@ -110,6 +110,13 @@ final class VideoEncoder {
         self.session = session
     }
 
+    /// Adjusts the target bitrate mid-stream (adaptive bitrate).
+    func setBitrate(_ bitsPerSecond: Int) {
+        guard let session else { return }
+        VTSessionSetProperty(session, key: kVTCompressionPropertyKey_AverageBitRate,
+                             value: NSNumber(value: bitsPerSecond))
+    }
+
     func stop() {
         guard let session else { return }
         VTCompressionSessionCompleteFrames(session, untilPresentationTimeStamp: .invalid)

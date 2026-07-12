@@ -73,6 +73,21 @@ The plugin computes, NTP-style, with t3 = its clock at receipt:
 clock, error ≤ rtt/2). Per-frame capture→decode latency is then
 `now - (frame_pts - offset)`, logged and shown in the source status.
 
+### 7 — CONTROL (plugin → app)
+Camera remote control. Payload: UTF-8 JSON, one command per packet:
+
+```json
+{ "cmd": "zoom", "value": 2.0 }
+{ "cmd": "exposure_bias", "value": -0.5 }
+{ "cmd": "focus", "mode": "auto" }
+{ "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
+{ "cmd": "torch", "on": true }
+{ "cmd": "flip" }
+```
+
+Unknown commands are ignored, so new ones can be added compatibly. The
+plugin's embedded web panel (http://localhost:9980) generates these.
+
 ## USB transport
 
 The packet protocol is identical over USB; only the transport roles flip.

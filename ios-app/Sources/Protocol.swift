@@ -22,6 +22,8 @@ enum OBSCProtocol {
         /// we echo that in the RESP payload with our clock in pts.
         case timesyncReq = 5
         case timesyncResp = 6
+        /// Camera remote control, plugin → app (JSON payload).
+        case control = 7
     }
 
     struct Flags: OptionSet {
