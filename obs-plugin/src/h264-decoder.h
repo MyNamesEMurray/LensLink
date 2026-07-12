@@ -8,8 +8,16 @@
 
 struct h264_decoder;
 
-/* codec_id: AV_CODEC_ID_H264 or AV_CODEC_ID_HEVC */
-struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id);
+/*
+ * codec_id: AV_CODEC_ID_H264 or AV_CODEC_ID_HEVC.
+ * allow_hw: try GPU decoding (D3D11VA/VideoToolbox/VAAPI), silently
+ * falling back to software when unavailable.
+ */
+struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id,
+					 bool allow_hw);
+
+/* Whether this instance actually decodes on the GPU. */
+bool h264_decoder_is_hw(const struct h264_decoder *dec);
 void h264_decoder_destroy(struct h264_decoder *dec);
 
 /*

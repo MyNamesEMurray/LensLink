@@ -101,9 +101,11 @@ difference is the real end-to-end number.
 
 Low-latency defaults: the source renders the newest frame immediately
 ("Low latency mode" checkbox, on by default — turn it off if you prefer
-smoother pacing over minimum delay), the H.264 decoder runs single-threaded
-low-delay, the encoder prioritizes speed with no frame reordering, and the
-app drops rather than queues frames when the link stalls. USB mode
+smoother pacing over minimum delay), decoding runs on the GPU when
+available (D3D11VA on Windows, VideoToolbox on macOS, VAAPI on Linux;
+automatic software fallback, toggleable via "Hardware decoding"), the
+encoder prioritizes speed with no frame reordering, and the app drops
+rather than queues frames when the link stalls. USB mode
 typically shaves a few more milliseconds over Wi-Fi and is immune to
 Wi-Fi jitter.
 
