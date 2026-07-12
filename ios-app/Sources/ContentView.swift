@@ -4,21 +4,25 @@ struct ContentView: View {
     @EnvironmentObject private var streamer: Streamer
 
     var body: some View {
+        if streamer.isStreaming {
+            StreamingView()
+        } else {
+            settingsForm
+        }
+    }
+
+    private var settingsForm: some View {
         NavigationView {
             Form {
-                previewSection
                 statusSection
-
-                if !streamer.isStreaming {
-                    modeSection
-                    if streamer.connectionMode == .dial {
-                        connectionSection
-                    } else {
-                        receiveSection
-                    }
-                    cameraSection
+                modeSection
+                if streamer.connectionMode == .dial {
+                    connectionSection
+                } else {
+                    receiveSection
                 }
-
+                cameraSection
+                optionsSection
                 actionSection
             }
             .navigationTitle("OBSCam")
@@ -27,21 +31,11 @@ struct ContentView: View {
         .navigationViewStyle(.stack)
     }
 
-    private var previewSection: some View {
+    private var optionsSection: some View {
         Section {
-            CameraPreviewView(session: streamer.camera.session)
-                .aspectRatio(16 / 9, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .background(Color.black)
-                .cornerRadius(8)
-                .listRowInsets(EdgeInsets())
-                .overlay {
-                    if !streamer.isStreaming {
-                        Text("Preview starts with streaming")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
+            Toggle("Dim screen while streaming", isOn: $streamer.dimWhileStreaming)
+        } footer: {
+            Text("Saves battery: the screen dims after 10 seconds of streaming; tap to wake it.")
         }
     }
 
@@ -205,20 +199,11 @@ struct ContentView: View {
 
     private var actionSection: some View {
         Section {
-            if streamer.isStreaming {
-                Button(role: .destructive) {
-                    streamer.stop()
-                } label: {
-                    Label("Stop", systemImage: "stop.fill")
-                        .frame(maxWidth: .infinity)
-                }
-            } else {
-                Button {
-                    Task { await streamer.start() }
-                } label: {
-                    Label("Start streaming to OBS", systemImage: "video.fill")
-                        .frame(maxWidth: .infinity)
-                }
+            Button {
+                Task { await streamer.start() }
+            } label: {
+                Label("Start streaming to OBS", systemImage: "video.fill")
+                    .frame(maxWidth: .infinity)
             }
 
             if streamer.cameraPermissionDenied {

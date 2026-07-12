@@ -49,7 +49,9 @@ add_library(${PROJECT_NAME} MODULE
   src/ios-camera-source.c
   src/h264-decoder.c
   src/usbmux.c
+  src/web-control.c
   src/protocol.h
+  src/web-control.h
   src/net-compat.h
   src/h264-decoder.h
   src/usbmux.h

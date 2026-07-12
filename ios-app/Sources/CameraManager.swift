@@ -34,6 +34,9 @@ final class CameraManager: NSObject {
     let session = AVCaptureSession()
     var onSampleBuffer: ((CMSampleBuffer) -> Void)?
 
+    /// The device currently feeding the session; camera controls act on it.
+    private(set) var activeDevice: AVCaptureDevice?
+
     private let sessionQueue = DispatchQueue(label: "obscam.session")
     private let videoQueue = DispatchQueue(label: "obscam.video")
     private var videoOutput: AVCaptureVideoDataOutput?
@@ -113,6 +116,7 @@ final class CameraManager: NSObject {
         device.activeVideoMinFrameDuration = frameDuration
         device.activeVideoMaxFrameDuration = frameDuration
         device.unlockForConfiguration()
+        activeDevice = device
 
         let output = AVCaptureVideoDataOutput()
         output.videoSettings = [
@@ -141,6 +145,94 @@ final class CameraManager: NSObject {
             if position == .front, connection.isVideoMirroringSupported {
                 connection.isVideoMirrored = true
             }
+        }
+    }
+
+    // MARK: - Live camera controls
+
+    /// Runs `block` with the active device locked for configuration.
+    private func withLockedDevice(_ block: (AVCaptureDevice) -> Void) {
+        guard let device = activeDevice,
+              (try? device.lockForConfiguration()) != nil else { return }
+        block(device)
+        device.unlockForConfiguration()
+    }
+
+    var maxZoomFactor: CGFloat {
+        guard let device = activeDevice else { return 1 }
+        // Beyond ~10x the digital zoom is mush; keep the slider useful.
+        return min(device.activeFormat.videoMaxZoomFactor, 10)
+    }
+
+    func setZoom(_ factor: CGFloat) {
+        withLockedDevice { device in
+            let clamped = max(device.minAvailableVideoZoomFactor,
+                              min(factor, maxZoomFactor))
+            device.videoZoomFactor = clamped
+        }
+    }
+
+    var exposureBiasRange: ClosedRange<Float> {
+        guard let device = activeDevice else { return -2...2 }
+        return max(device.minExposureTargetBias, -3)
+            ...min(device.maxExposureTargetBias, 3)
+    }
+
+    func setExposureBias(_ bias: Float) {
+        withLockedDevice { device in
+            let clamped = max(device.minExposureTargetBias,
+                              min(bias, device.maxExposureTargetBias))
+            device.setExposureTargetBias(clamped)
+        }
+    }
+
+    func setContinuousAutoFocus() {
+        withLockedDevice { device in
+            if device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusMode = .continuousAutoFocus
+            }
+            if device.isExposureModeSupported(.continuousAutoExposure) {
+                device.exposureMode = .continuousAutoExposure
+            }
+        }
+    }
+
+    /// Locks focus, optionally at a specific lens position (0 = closest,
+    /// 1 = infinity). Without a position, freezes focus where it is.
+    func lockFocus(lensPosition: Float?) {
+        withLockedDevice { device in
+            if let lensPosition,
+               device.isLockingFocusWithCustomLensPositionSupported {
+                device.setFocusModeLocked(
+                    lensPosition: max(0, min(lensPosition, 1)))
+            } else if device.isFocusModeSupported(.locked) {
+                device.focusMode = .locked
+            }
+        }
+    }
+
+    /// One-shot focus + exposure at a point of interest (0…1 device coords).
+    func focusAndExpose(at devicePoint: CGPoint) {
+        withLockedDevice { device in
+            if device.isFocusPointOfInterestSupported,
+               device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusPointOfInterest = devicePoint
+                device.focusMode = .continuousAutoFocus
+            }
+            if device.isExposurePointOfInterestSupported,
+               device.isExposureModeSupported(.continuousAutoExposure) {
+                device.exposurePointOfInterest = devicePoint
+                device.exposureMode = .continuousAutoExposure
+            }
+        }
+    }
+
+    var hasTorch: Bool { activeDevice?.hasTorch ?? false }
+
+    func setTorch(_ on: Bool) {
+        withLockedDevice { device in
+            guard device.hasTorch else { return }
+            device.torchMode = on ? .on : .off
         }
     }
 

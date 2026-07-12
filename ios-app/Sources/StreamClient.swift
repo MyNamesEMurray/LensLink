@@ -19,6 +19,8 @@ final class StreamClient {
     }
 
     var onStateChange: ((State) -> Void)?
+    /// Remote camera-control command (JSON) received from the plugin.
+    var onControl: ((Data) -> Void)?
 
     private(set) var state: State = .disconnected {
         didSet { onStateChange?(state) }
@@ -216,10 +218,18 @@ final class StreamClient {
 
             let total = OBSCProtocol.headerSize + Int(payloadSize)
             guard receiveBuffer.count >= total else { return }
+            let payload = receiveBuffer.subdata(
+                in: receiveBuffer.startIndex + OBSCProtocol.headerSize
+                    ..< receiveBuffer.startIndex + total)
             receiveBuffer.removeFirst(total)
 
-            if type == OBSCProtocol.PacketType.timesyncReq.rawValue {
+            switch type {
+            case OBSCProtocol.PacketType.timesyncReq.rawValue:
                 respondToTimesync(pluginClock: pts)
+            case OBSCProtocol.PacketType.control.rawValue:
+                onControl?(payload)
+            default:
+                break
             }
         }
     }
@@ -297,10 +307,23 @@ final class StreamClient {
     /// Called from the encoder's output thread; hops to the network queue
     /// so the in-flight counter stays consistent. If the network can't keep
     /// up, non-keyframes are dropped rather than queued without bound.
+    /// Frames dropped due to backpressure since the last check — the
+    /// congestion signal for adaptive bitrate.
+    private var droppedFrames = 0
+
+    func takeDroppedFrameCount() -> Int {
+        queue.sync {
+            let count = droppedFrames
+            droppedFrames = 0
+            return count
+        }
+    }
+
     func sendVideoFrame(_ frame: VideoEncoder.EncodedFrame) {
         queue.async { [weak self] in
             guard let self, self.connection != nil else { return }
             if self.inFlightFrames >= Self.maxInFlightFrames && !frame.isKeyframe {
+                self.droppedFrames += 1
                 return
             }
             self.inFlightFrames += 1

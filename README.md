@@ -46,7 +46,16 @@ The video appears in the OBS source within a second or two. Disconnecting
   hardware supports
 - **Automatic lip sync**: pick any OBS audio source in the iOS Camera
   properties and the plugin continuously sets its sync offset to the
-  measured camera latency
+  measured camera latency (minus a configurable audio-device latency)
+- **Adaptive bitrate**: when the link congests, the app backs the encoder
+  off within a second and recovers gradually — no more latency spirals on
+  weak Wi-Fi
+- **Full-screen streaming UI** with pinch zoom, tap-to-focus, exposure
+  bias, focus lock (AF/manual lens position), torch, camera flip, and
+  battery-saving auto-dim
+- **Remote camera control from the PC**: the plugin serves a control panel
+  at http://localhost:9980 (zoom / exposure / focus / torch / flip) that
+  drives the phone over the stream connection
 - Front or back camera, mirrored front-camera preview
 - Automatic OBS discovery on the LAN (UDP broadcast), with manual IP fallback
 - Reconnect-friendly: keyframes every 2 s carry SPS/PPS, so OBS can join or

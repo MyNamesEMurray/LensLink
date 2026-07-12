@@ -33,6 +33,9 @@ enum obsc_packet_type {
 	 * clock in pts. */
 	OBSC_PKT_TIMESYNC_REQ = 5,
 	OBSC_PKT_TIMESYNC_RESP = 6,
+	/* Camera remote control, plugin → app. UTF-8 JSON payload, e.g.
+	 * {"cmd":"zoom","value":2.0} — see docs/PROTOCOL.md. */
+	OBSC_PKT_CONTROL = 7,
 };
 
 #define OBSC_FLAG_KEYFRAME 0x0001

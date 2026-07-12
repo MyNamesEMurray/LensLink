@@ -58,6 +58,46 @@ final class Streamer: ObservableObject {
     @Published var codec: VideoCodec {
         didSet { UserDefaults.standard.set(codec.rawValue, forKey: "videoCodec") }
     }
+    @Published var dimWhileStreaming: Bool {
+        didSet { UserDefaults.standard.set(dimWhileStreaming, forKey: "dimWhileStreaming") }
+    }
+
+    // Live camera controls (also driven remotely via CONTROL packets)
+    @Published var zoom: CGFloat = 1 {
+        didSet { camera.setZoom(zoom) }
+    }
+    @Published var exposureBias: Float = 0 {
+        didSet { camera.setExposureBias(exposureBias) }
+    }
+    enum FocusSetting: Equatable {
+        case auto
+        case locked
+    }
+    @Published var focusSetting: FocusSetting = .auto {
+        didSet { applyFocus() }
+    }
+    @Published var lensPosition: Float = 0.5 {
+        didSet { if focusSetting == .locked { applyFocus() } }
+    }
+    @Published var torchOn: Bool = false {
+        didSet { camera.setTorch(torchOn) }
+    }
+
+    private func applyFocus() {
+        switch focusSetting {
+        case .auto:
+            camera.setContinuousAutoFocus()
+        case .locked:
+            camera.lockFocus(lensPosition: lensPosition)
+        }
+    }
+
+    private func resetCameraControls() {
+        zoom = 1
+        exposureBias = 0
+        focusSetting = .auto
+        torchOn = false
+    }
 
     // State
     @Published private(set) var status: Status = .idle
@@ -111,6 +151,7 @@ final class Streamer: ObservableObject {
         useFrontCamera = defaults.bool(forKey: "useFrontCamera")
         codec = VideoCodec(rawValue: defaults.string(forKey: "videoCodec") ?? "")
             ?? (VideoEncoder.isSupported(.hevc) ? .hevc : .h264)
+        dimWhileStreaming = defaults.object(forKey: "dimWhileStreaming") as? Bool ?? true
 
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
@@ -122,6 +163,60 @@ final class Streamer: ObservableObject {
                 self?.discoveredServers = servers
             }
         }
+        client.onControl = { [weak self] json in
+            Task { @MainActor [weak self] in
+                self?.handleRemoteControl(json)
+            }
+        }
+    }
+
+    // MARK: - Remote control (from the OBS plugin / web panel)
+
+    private func handleRemoteControl(_ json: Data) {
+        guard isStreaming,
+              let object = try? JSONSerialization.jsonObject(with: json),
+              let command = object as? [String: Any],
+              let cmd = command["cmd"] as? String else { return }
+
+        switch cmd {
+        case "zoom":
+            if let value = command["value"] as? Double {
+                zoom = CGFloat(value)
+            }
+        case "exposure_bias":
+            if let value = command["value"] as? Double {
+                exposureBias = Float(value)
+            }
+        case "focus":
+            if let position = command["lensPosition"] as? Double {
+                lensPosition = Float(position)
+            }
+            focusSetting = (command["mode"] as? String) == "locked" ? .locked : .auto
+        case "torch":
+            if let on = command["on"] as? Bool {
+                torchOn = on
+            }
+        case "flip":
+            flipCamera()
+        default:
+            break
+        }
+    }
+
+    /// Switches front/back mid-stream if the other camera supports the
+    /// current resolution/fps; reconfigures capture without touching the
+    /// encoder or connection.
+    func flipCamera() {
+        let newPosition: AVCaptureDevice.Position =
+            useFrontCamera ? .back : .front
+        guard CameraManager.supports(resolution: resolution, fps: Int32(fps),
+                                     position: newPosition) else { return }
+        useFrontCamera.toggle()
+        guard isStreaming else { return }
+        try? camera.configure(position: cameraPosition,
+                              resolution: resolution, fps: Int32(fps))
+        resetCameraControls()
+        encoder?.requestKeyframe()
     }
 
     // MARK: - Discovery
@@ -194,11 +289,48 @@ final class Streamer: ObservableObject {
         UIApplication.shared.isIdleTimerDisabled = true
 
         camera.start()
+        resetCameraControls()
+        startAdaptiveBitrate(target: resolution.bitrate(for: activeCodec))
         switch connectionMode {
         case .dial:
             client.start(.dial(host: trimmedHost, port: dialPort))
         case .receive:
             client.start(.listen(port: OBSCProtocol.usbPort))
+        }
+    }
+
+    /// Adaptive bitrate: back off quickly when the link drops frames,
+    /// recover slowly (+10%/10s of clean streaming) up to the target.
+    private var adaptiveTask: Task<Void, Never>?
+
+    private func startAdaptiveBitrate(target: Int) {
+        adaptiveTask?.cancel()
+        adaptiveTask = Task { [weak self] in
+            var current = target
+            var stableSeconds = 0
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard let self, self.isStreaming else { break }
+
+                let dropped = self.client.takeDroppedFrameCount()
+                if dropped > 0 {
+                    stableSeconds = 0
+                    let reduced = max(1_000_000, current * 3 / 4)
+                    if reduced < current {
+                        current = reduced
+                        self.encoder?.setBitrate(current)
+                        print("Adaptive bitrate: link congested "
+                              + "(\(dropped) dropped) -> \(current / 1000) kbps")
+                    }
+                } else if current < target {
+                    stableSeconds += 1
+                    if stableSeconds >= 10 {
+                        stableSeconds = 0
+                        current = min(target, current * 11 / 10)
+                        self.encoder?.setBitrate(current)
+                    }
+                }
+            }
         }
     }
 
@@ -208,6 +340,11 @@ final class Streamer: ObservableObject {
         status = .idle
         UIApplication.shared.isIdleTimerDisabled = false
 
+        adaptiveTask?.cancel()
+        adaptiveTask = nil
+        if torchOn {
+            torchOn = false
+        }
         client.disconnect()
         camera.stop()
         camera.onSampleBuffer = nil
