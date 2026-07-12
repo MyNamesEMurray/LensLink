@@ -177,46 +177,21 @@ static bool find_int_after(const char *xml, const char *name, long *out)
 	return true;
 }
 
-/* Value of the last "<key>DeviceID</key><integer>" occurring before `limit`
- * (a byte offset into xml). In a device entry the top-level DeviceID
- * precedes the Properties block, so this pairs a ConnectionType with its
- * device. */
-static bool find_device_id_before(const char *xml, size_t limit, long *out)
-{
-	const char *pat = "<key>DeviceID</key>";
-	size_t plen = strlen(pat);
-	const char *best = NULL;
-	const char *p = xml;
-	while ((p = strstr(p, pat)) != NULL) {
-		if ((size_t)(p - xml) >= limit)
-			break;
-		best = p;
-		p += plen;
-	}
-	if (!best)
-		return false;
-	const char *i = strstr(best + plen, "<integer>");
-	if (!i)
-		return false;
-	*out = strtol(i + strlen("<integer>"), NULL, 10);
-	return true;
-}
-
-/* Copies the string value of the first "<key>KEY</key><string>...".
- * following `from`. */
-static bool find_string_after(const char *from, const char *key, char *out,
-			      size_t out_size)
+/* Copies the string value of "<key>KEY</key><string>VALUE</string>" if it
+ * occurs within reply[start, end). Returns false if not found in range. */
+static bool region_string(const char *reply, size_t start, size_t end,
+			  const char *key, char *out, size_t out_size)
 {
 	char pattern[64];
 	snprintf(pattern, sizeof(pattern), "<key>%s</key><string>", key);
-	const char *p = strstr(from, pattern);
-	if (!p)
+	const char *p = strstr(reply + start, pattern);
+	if (!p || (size_t)(p - reply) >= end)
 		return false;
 	p += strlen(pattern);
-	const char *end = strchr(p, '<');
-	if (!end)
+	const char *e = strchr(p, '<');
+	if (!e)
 		return false;
-	size_t n = (size_t)(end - p);
+	size_t n = (size_t)(e - p);
 	if (n >= out_size)
 		n = out_size - 1;
 	memcpy(out, p, n);
@@ -224,6 +199,15 @@ static bool find_string_after(const char *from, const char *key, char *out,
 	return true;
 }
 
+/*
+ * Enumerates attached devices. Robustness matters more than precision here:
+ * a stream that fails to enumerate is worse than occasionally listing a
+ * Wi-Fi-sync entry. So we enumerate by DeviceID (always present), bound
+ * each device's fields by where the id value changes (order-independent
+ * inside the Properties dict), read SerialNumber/ConnectionType best-effort
+ * within that range, and only *exclude* an entry we can positively identify
+ * as a Network connection.
+ */
 int usbmux_list_devices(struct usbmux_device *out, int max)
 {
 	socket_t s = usbmuxd_open();
@@ -239,35 +223,61 @@ int usbmux_list_devices(struct usbmux_device *out, int max)
 	if (!reply)
 		return 0;
 
-	int count = 0;
-	const char *pat = "<key>ConnectionType</key><string>";
-	const char *p = reply;
-	while (count < max && (p = strstr(p, pat)) != NULL) {
-		const char *val = p + strlen(pat);
-		bool is_usb = strncmp(val, "USB", 3) == 0;
+	size_t reply_len = strlen(reply);
+	const char *idkey = "<key>DeviceID</key>";
+	size_t idlen = strlen(idkey);
+
+	/* Collect DeviceID occurrences (value + position). Each device has
+	 * two — top-level and inside Properties — with the same value. */
+	long vals[64];
+	size_t poss[64];
+	int m = 0;
+	for (const char *p = reply; m < 64 && (p = strstr(p, idkey));) {
+		const char *iv = strstr(p + idlen, "<integer>");
 		size_t pos = (size_t)(p - reply);
-		p = val;
-		if (!is_usb)
+		p += idlen;
+		if (!iv)
+			continue;
+		vals[m] = strtol(iv + strlen("<integer>"), NULL, 10);
+		poss[m] = pos;
+		m++;
+	}
+
+	int count = 0;
+	for (int i = 0; i < m && count < max; i++) {
+		long id = vals[i];
+		if (id < 0)
+			continue;
+		/* Skip repeat occurrences of the same device. */
+		bool seen = false;
+		for (int j = 0; j < i; j++)
+			if (vals[j] == id) {
+				seen = true;
+				break;
+			}
+		if (seen)
 			continue;
 
-		long id = -1;
-		if (!find_device_id_before(reply, pos, &id) || id < 0)
-			continue;
+		/* This device's fields live before the next *different*
+		 * DeviceID value. */
+		size_t start = poss[i];
+		size_t end = reply_len;
+		for (int k = i + 1; k < m; k++)
+			if (vals[k] != id) {
+				end = poss[k];
+				break;
+			}
 
-		char udid[64] = {0};
-		/* SerialNumber lives in the same Properties dict, after
-		 * ConnectionType. */
-		find_string_after(val, "SerialNumber", udid, sizeof(udid));
-
-		bool dup = false;
-		for (int i = 0; i < count; i++)
-			if (out[i].id == id)
-				dup = true;
-		if (dup)
-			continue;
+		char conn[32] = {0};
+		region_string(reply, start, end, "ConnectionType", conn,
+			      sizeof(conn));
+		if (strncmp(conn, "Network", 7) == 0)
+			continue; /* Wi-Fi sync entry */
 
 		out[count].id = id;
-		snprintf(out[count].udid, sizeof(out[count].udid), "%s", udid);
+		out[count].udid[0] = 0;
+		region_string(reply, start, end, "SerialNumber",
+			      out[count].udid, sizeof(out[count].udid));
 		count++;
 	}
 

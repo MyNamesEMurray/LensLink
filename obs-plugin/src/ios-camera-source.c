@@ -968,6 +968,18 @@ static void sleep_ms_interruptible(struct ios_camera_source *s, int total_ms)
 		os_sleep_ms(100);
 }
 
+/* Claim key for a USB device: its stable UDID when known, otherwise a
+ * fallback on the (ephemeral) device id so a device that doesn't report a
+ * UDID is still usable in auto mode. */
+static void usb_device_key(char *out, size_t size,
+			   const struct usbmux_device *d)
+{
+	if (d->udid[0])
+		snprintf(out, size, "usb:%s", d->udid);
+	else
+		snprintf(out, size, "usbid:%ld", d->id);
+}
+
 static void dial_loop(struct ios_camera_source *s)
 {
 	bool usb = s->conn_mode == CONN_DIAL_USB;
@@ -986,48 +998,47 @@ static void dial_loop(struct ios_camera_source *s)
 		if (usb) {
 			struct usbmux_device devs[16];
 			int n = usbmux_list_devices(devs, 16);
-
-			/* Identity is the stable UDID (claimed_key is
-			 * "usb:<udid>"); the ephemeral id is looked up fresh
-			 * each time, so replug/reboot reconnects the same
-			 * phone. */
 			const char *pinned = s->usb_device;
 
-			/* Drop our claim if that phone is no longer attached. */
+			/* Find our claimed device in the current list (its
+			 * ephemeral id may have changed on replug); drop the
+			 * claim if the phone is gone. */
+			int chosen = -1;
 			if (claimed) {
-				bool present = false;
-				for (int i = 0; i < n; i++)
-					if (strcmp(devs[i].udid,
-						   claimed_key + 4) == 0)
-						present = true;
-				if (!present) {
+				for (int i = 0; i < n; i++) {
+					char k[80];
+					usb_device_key(k, sizeof(k), &devs[i]);
+					if (strcmp(k, claimed_key) == 0) {
+						chosen = i;
+						break;
+					}
+				}
+				if (chosen < 0) {
 					device_release(s);
 					claimed = false;
 					claimed_key[0] = 0;
 				}
 			}
-			/* Claim: the pinned phone if set, else the first
+			/* Claim the pinned phone if set, else the first
 			 * attached phone no other source owns. */
 			if (!claimed) {
 				for (int i = 0; i < n; i++) {
-					if (!devs[i].udid[0])
-						continue;
 					if (pinned[0] &&
 					    strcmp(pinned, devs[i].udid) != 0)
 						continue;
 					char k[80];
-					snprintf(k, sizeof(k), "usb:%s",
-						 devs[i].udid);
+					usb_device_key(k, sizeof(k), &devs[i]);
 					if (device_claim(k, s)) {
 						claimed = true;
 						snprintf(claimed_key,
 							 sizeof(claimed_key),
 							 "%s", k);
+						chosen = i;
 						break;
 					}
 				}
 			}
-			if (!claimed) {
+			if (!claimed || chosen < 0) {
 				const char *why =
 					pinned[0] ? T_("Status.WaitingPinned")
 					: n > 0	  ? T_("Status.DeviceBusy")
@@ -1036,15 +1047,7 @@ static void dial_loop(struct ios_camera_source *s)
 				sleep_ms_interruptible(s, 1000);
 				continue;
 			}
-			/* Resolve current id for our claimed UDID. */
-			usb_id = -1;
-			for (int i = 0; i < n; i++)
-				if (strcmp(devs[i].udid, claimed_key + 4) == 0)
-					usb_id = devs[i].id;
-			if (usb_id < 0) {
-				sleep_ms_interruptible(s, 1000);
-				continue;
-			}
+			usb_id = devs[chosen].id;
 			set_status(s, "%s", T_("Status.WaitingUSB"));
 			sock = usbmux_connect_device(usb_id, OBSC_USB_PORT);
 		} else if (!s->host[0]) {
