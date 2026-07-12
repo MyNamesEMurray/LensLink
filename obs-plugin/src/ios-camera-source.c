@@ -28,6 +28,7 @@
 #define S_MODE "mode"
 #define S_HOST "host"
 #define S_LOW_LATENCY "low_latency"
+#define S_HW_DECODE "hw_decode"
 #define S_AUDIO_SOURCE "audio_sync_source"
 #define S_AUDIO_SYNC "audio_sync_enabled"
 #define S_AUDIO_LATENCY "audio_device_latency_ms"
@@ -61,6 +62,7 @@ struct ios_camera_source {
 	int port;
 	enum connection_mode conn_mode;
 	char host[128];
+	volatile bool hw_decode;
 
 	/* Guarded by status_mutex (shared with the status string). */
 	bool audio_sync;
@@ -321,6 +323,7 @@ struct client_state {
 	socket_t sock;
 	struct recv_buf buf;
 	struct h264_decoder *decoder;
+	bool hw_failed; /* GPU decode failed once: stay on software */
 	enum AVCodecID codec_id;
 	char name[128];
 	struct latency_tracker lat;
@@ -551,14 +554,24 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			c->decoder = h264_decoder_create(
 				c->codec_id != AV_CODEC_ID_NONE
 					? c->codec_id
-					: AV_CODEC_ID_H264);
+					: AV_CODEC_ID_H264,
+				s->hw_decode && !c->hw_failed);
 			if (!c->decoder)
 				return false;
 		}
 		if (!h264_decoder_decode(c->decoder, s->source, payload,
 					 hdr->payload_size, hdr->pts_ns)) {
-			blog(LOG_WARNING,
-			     "[ios-camera] decoder error, resetting");
+			if (h264_decoder_is_hw(c->decoder)) {
+				/* GPU path misbehaved: recreate in software
+				 * for the rest of this connection. */
+				blog(LOG_WARNING,
+				     "[ios-camera] hardware decode error, "
+				     "switching to software");
+				c->hw_failed = true;
+			} else {
+				blog(LOG_WARNING,
+				     "[ios-camera] decoder error, resetting");
+			}
 			h264_decoder_destroy(c->decoder);
 			c->decoder = NULL;
 			break;
@@ -882,6 +895,7 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 	 * instead of letting OBS smooth timestamps with a frame queue. */
 	obs_source_set_async_unbuffered(
 		s->source, obs_data_get_bool(settings, S_LOW_LATENCY));
+	s->hw_decode = obs_data_get_bool(settings, S_HW_DECODE);
 
 	pthread_mutex_lock(&s->status_mutex);
 	bool was_syncing = s->audio_sync && s->audio_source[0];
@@ -937,6 +951,7 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 		 obs_data_get_string(settings, S_HOST));
 	obs_source_set_async_unbuffered(
 		source, obs_data_get_bool(settings, S_LOW_LATENCY));
+	s->hw_decode = obs_data_get_bool(settings, S_HW_DECODE);
 	s->audio_sync = obs_data_get_bool(settings, S_AUDIO_SYNC);
 	s->audio_device_latency_ms =
 		(int)obs_data_get_int(settings, S_AUDIO_LATENCY);
@@ -971,6 +986,7 @@ static void ios_camera_get_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, S_MODE, MODE_DIAL);
 	obs_data_set_default_string(settings, S_HOST, "");
 	obs_data_set_default_bool(settings, S_LOW_LATENCY, true);
+	obs_data_set_default_bool(settings, S_HW_DECODE, true);
 	obs_data_set_default_bool(settings, S_AUDIO_SYNC, false);
 	obs_data_set_default_string(settings, S_AUDIO_SOURCE, "");
 	obs_data_set_default_int(settings, S_AUDIO_LATENCY, 0);
@@ -1018,6 +1034,7 @@ static obs_properties_t *ios_camera_get_properties(void *data)
 	obs_properties_add_text(props, S_HOST, T_("Host"), OBS_TEXT_DEFAULT);
 	obs_properties_add_int(props, S_PORT, T_("Port"), 1024, 65535, 1);
 	obs_properties_add_bool(props, S_LOW_LATENCY, T_("LowLatency"));
+	obs_properties_add_bool(props, S_HW_DECODE, T_("HwDecode"));
 
 	obs_property_t *audio_list = obs_properties_add_list(
 		props, S_AUDIO_SOURCE, T_("AudioSource"), OBS_COMBO_TYPE_LIST,
