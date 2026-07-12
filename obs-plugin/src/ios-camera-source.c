@@ -1,5 +1,5 @@
 /*
- * "iOS Camera" async video source.
+ * "LensLink Camera" async video source.
  *
  * A background thread connects to the companion app on the device — over
  * the LAN (phone IP entered in properties) or through usbmuxd (USB cable)
@@ -39,7 +39,7 @@
 
 /* Built-in OBS "Video Delay (Async)" filter. */
 #define ASYNC_DELAY_FILTER_ID "async_delay_filter"
-#define ASYNC_DELAY_FILTER_NAME "iOS Camera auto lip-sync delay"
+#define ASYNC_DELAY_FILTER_NAME "LensLink auto lip-sync delay"
 #define MODE_DIAL "dial"
 #define MODE_USB "usb"
 #define T_(s) obs_module_text(s)
@@ -403,13 +403,13 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 
 	if (!ok) {
 		blog(LOG_INFO,
-		     "[ios-camera] auto lip-sync: no reading (need the app's "
+		     "[lenslink] auto lip-sync: no reading (need the app's "
 		     "'Auto lip-sync reference' on, plus speech/sound)");
 		return;
 	}
 	if (conf < CAL_MIN_CONFIDENCE) {
 		blog(LOG_INFO,
-		     "[ios-camera] auto lip-sync: mic ~%d ms but low "
+		     "[lenslink] auto lip-sync: mic ~%d ms but low "
 		     "confidence %.2f — ignoring (keep talking / raise mic "
 		     "level)",
 		     (int)(mic_delay / CAL_NS_MS), conf);
@@ -426,7 +426,7 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 
 	if (s->cal_count < 3) {
 		blog(LOG_INFO,
-		     "[ios-camera] auto lip-sync: mic ~%d ms (conf %.2f), "
+		     "[lenslink] auto lip-sync: mic ~%d ms (conf %.2f), "
 		     "collecting %d/3…",
 		     (int)(mic_delay / CAL_NS_MS), conf, s->cal_count);
 		return;
@@ -440,7 +440,7 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 
 	if (spread > 40 * CAL_NS_MS) {
 		blog(LOG_INFO,
-		     "[ios-camera] auto lip-sync: readings unstable "
+		     "[lenslink] auto lip-sync: readings unstable "
 		     "(spread %d ms) — holding",
 		     (int)(spread / CAL_NS_MS));
 		return;
@@ -476,14 +476,14 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 
 	if (mic_slower && video_delay) {
 		blog(LOG_INFO,
-		     "[ios-camera] auto lip-sync: mic %d ms > video %d ms -> "
+		     "[lenslink] auto lip-sync: mic %d ms > video %d ms -> "
 		     "delaying video by %d ms (conf %.2f)",
 		     (int)(median / CAL_NS_MS),
 		     (int)(video_latency_ns / CAL_NS_MS), video_delay_ms,
 		     conf);
 	} else if (mic_slower) {
 		blog(LOG_WARNING,
-		     "[ios-camera] auto lip-sync: mic latency %d ms exceeds "
+		     "[lenslink] auto lip-sync: mic latency %d ms exceeds "
 		     "video %d ms — audio can't be delayed to match. Enable "
 		     "'Auto video delay' to delay the video ~%d ms, or use a "
 		     "lower-latency mic.",
@@ -491,7 +491,7 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 		     (int)(video_latency_ns / CAL_NS_MS), video_delay_ms);
 	} else {
 		blog(LOG_INFO,
-		     "[ios-camera] auto lip-sync: mic %d ms, video %d ms -> "
+		     "[lenslink] auto lip-sync: mic %d ms, video %d ms -> "
 		     "'%s' offset %d ms (conf %.2f)",
 		     (int)(median / CAL_NS_MS),
 		     (int)(video_latency_ns / CAL_NS_MS), name,
@@ -541,7 +541,7 @@ static void apply_audio_sync(struct ios_camera_source *s, int64_t latency_ns)
 	s->applied_audio_offset = latency_ns;
 	pthread_mutex_unlock(&s->status_mutex);
 
-	blog(LOG_INFO, "[ios-camera] '%s' sync offset -> %d ms", name,
+	blog(LOG_INFO, "[lenslink] '%s' sync offset -> %d ms", name,
 	     (int)(latency_ns / 1000000));
 }
 
@@ -607,7 +607,7 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		unsigned rtt_ms = (unsigned)(t->offset_rtt / 1000000);
 
 		blog(LOG_INFO,
-		     "[ios-camera] capture->decode latency: avg %u ms "
+		     "[lenslink] capture->decode latency: avg %u ms "
 		     "(min %u / max %u), link rtt %u ms, %u frames",
 		     avg_ms, min_ms, max_ms, rtt_ms, (unsigned)t->count);
 		set_status(s, "%s %s — ~%u ms", T_("Status.Connected"),
@@ -700,14 +700,14 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				   : sizeof(json) - 1;
 		memcpy(json, payload, n);
 		extract_json_string(json, "name", c->name, sizeof(c->name));
-		blog(LOG_INFO, "[ios-camera] client connected: %s",
+		blog(LOG_INFO, "[lenslink] client connected: %s",
 		     c->name[0] ? c->name : "(unnamed)");
 		set_status(s, "%s %s", T_("Status.Connected"),
 			   c->name[0] ? c->name : "iOS device");
 		break;
 	}
 	case OBSC_PKT_VIDEO_CONFIG: {
-		blog(LOG_INFO, "[ios-camera] video config: %.*s",
+		blog(LOG_INFO, "[lenslink] video config: %.*s",
 		     (int)hdr->payload_size, (const char *)payload);
 
 		char json[512] = {0};
@@ -747,12 +747,12 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				/* GPU path misbehaved: recreate in software
 				 * for the rest of this connection. */
 				blog(LOG_WARNING,
-				     "[ios-camera] hardware decode error, "
+				     "[lenslink] hardware decode error, "
 				     "switching to software");
 				c->hw_failed = true;
 			} else {
 				blog(LOG_WARNING,
-				     "[ios-camera] decoder error, resetting");
+				     "[lenslink] decoder error, resetting");
 			}
 			h264_decoder_destroy(c->decoder);
 			c->decoder = NULL;
@@ -802,7 +802,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		break;
 	}
 	default:
-		blog(LOG_WARNING, "[ios-camera] unknown packet type %d",
+		blog(LOG_WARNING, "[lenslink] unknown packet type %d",
 		     hdr->type);
 		break;
 	}
@@ -814,11 +814,11 @@ static bool client_read(struct ios_camera_source *s, struct client_state *c)
 	uint8_t chunk[RECV_CHUNK];
 	int n = (int)recv(c->sock, (char *)chunk, sizeof(chunk), 0);
 	if (n == 0) {
-		blog(LOG_INFO, "[ios-camera] connection closed by device");
+		blog(LOG_INFO, "[lenslink] connection closed by device");
 		return false;
 	}
 	if (n < 0) {
-		blog(LOG_INFO, "[ios-camera] recv error %d", net_last_error());
+		blog(LOG_INFO, "[lenslink] recv error %d", net_last_error());
 		return false;
 	}
 
@@ -828,7 +828,7 @@ static bool client_read(struct ios_camera_source *s, struct client_state *c)
 		struct obsc_header hdr;
 		if (!obsc_parse_header(c->buf.data, &hdr)) {
 			blog(LOG_WARNING,
-			     "[ios-camera] bad packet header, dropping client");
+			     "[lenslink] bad packet header, dropping client");
 			return false;
 		}
 
@@ -903,7 +903,7 @@ fail:
 }
 
 /*
- * Device-claim registry. All iOS Camera sources live in one process, so a
+ * Device-claim registry. All LensLink Camera sources live in one process, so a
  * shared table lets exactly one source own a given device target (a host
  * IP, or "usb"). A second source aimed at the same device is refused
  * instead of fighting over the single connection the phone can serve —
@@ -1077,7 +1077,7 @@ static void dial_loop(struct ios_camera_source *s)
 			continue;
 		}
 
-		blog(LOG_INFO, "[ios-camera] connected to device (%s)",
+		blog(LOG_INFO, "[lenslink] connected to device (%s)",
 		     usb ? "USB" : "network");
 		set_status(s, "%s", T_("Status.Connected"));
 
@@ -1100,7 +1100,7 @@ static void dial_loop(struct ios_camera_source *s)
 				break;
 		}
 
-		blog(LOG_INFO, "[ios-camera] device connection ended");
+		blog(LOG_INFO, "[lenslink] device connection ended");
 		client_disconnect(s, &client);
 	}
 
@@ -1138,7 +1138,7 @@ static void start_thread(struct ios_camera_source *s)
 	if (pthread_create(&s->thread, NULL, server_thread, s) == 0)
 		s->thread_active = true;
 	else
-		blog(LOG_ERROR, "[ios-camera] failed to start server thread");
+		blog(LOG_ERROR, "[lenslink] failed to start server thread");
 }
 
 static const char *ios_camera_get_name(void *unused)

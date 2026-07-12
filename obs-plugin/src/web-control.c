@@ -22,7 +22,7 @@
 static const char control_page[] =
 	"<!doctype html><html><head><meta charset='utf-8'>"
 	"<meta name='viewport' content='width=device-width,initial-scale=1'>"
-	"<title>iOS Camera Control</title><style>"
+	"<title>LensLink Control</title><style>"
 	":root{--accent:#3D7BFF;--live:#30D158;--amber:#FF9F0A;--red:#FF453A;"
 	"--grey:#8E8E93;--bg:#0E0F13;--glass:rgba(28,30,38,0.72);"
 	"--hair:rgba(255,255,255,0.08);--txt:#fff;--txt2:rgba(235,235,245,0.6)}"
@@ -57,7 +57,7 @@ static const char control_page[] =
 	"select{flex:1;background:rgba(255,255,255,.12);color:var(--txt);border:0;"
 	"border-radius:12px;padding:0 12px;height:44px;font-size:14px}"
 	"</style></head><body>"
-	"<header><h1>iOS Camera</h1>"
+	"<header><h1>LensLink</h1>"
 	"<div class='pill'><span class='dot' id='dot'></span>"
 	"<span id='status'>connecting&hellip;</span></div></header>"
 	"<div class='panel'>"
@@ -89,7 +89,7 @@ static const char control_page[] =
 	"style='display:none'>"
 	"<span class='hint' id='fhint'>Tap the phone to focus</span></div>"
 	"<div class='chips'>"
-	"<button class='chip' id='torch' title='Flashlight'>"
+	"<button class='chip' id='flashlight' title='Flashlight'>"
 	"<svg class='ic' viewBox='0 0 24 24' fill='currentColor'>"
 	"<path d='M13 2 L4 14 h6 l-1 8 9-12 h-6 z'/></svg></button>"
 	"<select id='lenssel'></select>"
@@ -105,7 +105,7 @@ static const char control_page[] =
 	"const $=id=>document.getElementById(id);"
 	"const dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
 	"expEl=$('exposure'),evEl=$('ev'),afEl=$('af'),mfEl=$('mf'),lensEl=$('lens'),"
-	"fhintEl=$('fhint'),torchEl=$('torch'),flipEl=$('flip'),lensselEl=$('lenssel');"
+	"fhintEl=$('fhint'),flashlightEl=$('flashlight'),flipEl=$('flip'),lensselEl=$('lenssel');"
 	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93'};"
 	"let lastTouch=0;const touch=()=>lastTouch=Date.now();"
 	"const send=o=>{touch();"
@@ -125,9 +125,9 @@ static const char control_page[] =
 	"send({cmd:'focus',mode:'locked',lensPosition:+lensEl.value})};"
 	"lensEl.oninput=deb(()=>send({cmd:'focus',mode:'locked',"
 	"lensPosition:+lensEl.value}),60);"
-	"let ton=false;"
-	"function torchUI(on){ton=on;torchEl.className=on?'chip on':'chip'}"
-	"torchEl.onclick=()=>{touch();torchUI(!ton);send({cmd:'torch',on:ton})};"
+	"let fon=false;"
+	"function flashlightUI(on){fon=on;flashlightEl.className=on?'chip on':'chip'}"
+	"flashlightEl.onclick=()=>{touch();flashlightUI(!fon);send({cmd:'flashlight',on:fon})};"
 	"flipEl.onclick=()=>send({cmd:'flip'});"
 	"lensselEl.onchange=()=>send({cmd:'selectLens',label:lensselEl.value});"
 	"function statusColor(t){t=(t||'').toLowerCase();"
@@ -148,7 +148,7 @@ static const char control_page[] =
 	"evEl.textContent=(+st.exposureBias).toFixed(1)}"
 	"const locked=st.focusMode==='locked';focusUI(locked);"
 	"if(locked&&typeof st.lensPosition==='number')lensEl.value=st.lensPosition;"
-	"torchUI(!!st.torch);torchEl.style.display=st.hasTorch===false?'none':'';"
+	"flashlightUI(!!st.flashlight);flashlightEl.style.display=st.hasFlashlight===false?'none':'';"
 	"if(Array.isArray(st.lenses)){"
 	"const want=st.lenses.join('|');"
 	"if(lensselEl.dataset.opts!==want){lensselEl.dataset.opts=want;"
@@ -376,8 +376,8 @@ struct web_control *web_control_start(struct ios_camera_source *source,
 	if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) != 0 ||
 	    listen(listener, 4) != 0) {
 		blog(LOG_WARNING,
-		     "[ios-camera] web control: port %u unavailable "
-		     "(another iOS Camera source running?)",
+		     "[lenslink] web control: port %u unavailable "
+		     "(another LensLink Camera source running?)",
 		     (unsigned)port);
 		net_close(listener);
 		return NULL;
@@ -397,7 +397,7 @@ struct web_control *web_control_start(struct ios_camera_source *source,
 	}
 
 	blog(LOG_INFO,
-	     "[ios-camera] web control panel at http://localhost:%u/",
+	     "[lenslink] web control panel at http://localhost:%u/",
 	     (unsigned)port);
 	return wc;
 }

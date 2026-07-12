@@ -1,6 +1,6 @@
 /*
  * Tiny embedded HTTP server providing a browser control panel for the
- * connected iOS camera (zoom / exposure / focus / torch), DroidCam-style.
+ * connected iOS camera (zoom / exposure / focus / flashlight), DroidCam-style.
  * Serves on 127.0.0.1 only; control commands are queued onto the source
  * and forwarded to the device over the stream connection.
  */

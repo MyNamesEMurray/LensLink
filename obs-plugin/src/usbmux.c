@@ -25,7 +25,7 @@ static const char list_devices_xml[] =
 	PLIST_PROLOGUE
 	"<plist version=\"1.0\"><dict>"
 	"<key>MessageType</key><string>ListDevices</string>"
-	"<key>ProgName</key><string>obs-ios-camera</string>"
+	"<key>ProgName</key><string>lenslink</string>"
 	"<key>ClientVersionString</key><string>1.0</string>"
 	"</dict></plist>";
 
@@ -35,7 +35,7 @@ static const char connect_xml_fmt[] =
 	"<key>MessageType</key><string>Connect</string>"
 	"<key>DeviceID</key><integer>%ld</integer>"
 	"<key>PortNumber</key><integer>%u</integer>"
-	"<key>ProgName</key><string>obs-ios-camera</string>"
+	"<key>ProgName</key><string>lenslink</string>"
 	"<key>ClientVersionString</key><string>1.0</string>"
 	"</dict></plist>";
 

@@ -1,11 +1,11 @@
-# OBS iOS Camera
+# LensLink
 
 Use your iPhone or iPad as a high-quality camera **directly inside OBS
 Studio** — over Wi-Fi or a USB cable. No virtual-camera drivers, no RTMP
 server, no monthly subscription.
 
-It comes in two parts: an **OBS plugin** (adds an "iOS Camera" source) and
-the **OBSCam iPhone/iPad app**. You install both, then OBS connects to your
+It comes in two parts: an **OBS plugin** (adds an "LensLink Camera" source) and
+the **LensLink iPhone/iPad app**. You install both, then OBS connects to your
 phone.
 
 ## What you need
@@ -22,15 +22,15 @@ phone.
 **1. The OBS plugin.** Download the build for your system from the
 [Releases](../../releases) page:
 
-- **Windows** — unzip `ios-camera-source-windows-x64.zip` into
+- **Windows** — unzip `lenslink-windows-x64.zip` into
   `C:\Program Files\obs-studio\` (merge the `obs-plugins` and `data`
   folders), then restart OBS.
-- **Linux** — extract `ios-camera-source-linux-x86_64.tar.gz` into
+- **Linux** — extract `lenslink-linux-x86_64.tar.gz` into
   `~/.config/obs-studio/plugins/`.
 - **macOS / building yourself** — see
   [`obs-plugin/BUILDING.md`](obs-plugin/BUILDING.md).
 
-**2. The OBSCam app.** Download `OBSCam-unsigned.ipa` from
+**2. The LensLink app.** Download `LensLink-unsigned.ipa` from
 [Releases](../../releases) and install it with
 [Sideloadly](https://sideloadly.io) using a free Apple ID (the app then
 needs re-signing about once a week — a limitation of free Apple accounts).
@@ -38,9 +38,9 @@ Or build it yourself with Xcode: [`ios-app/BUILDING.md`](ios-app/BUILDING.md).
 
 ## Connect
 
-1. On the phone, open **OBSCam**, choose your camera/resolution/frame rate,
+1. On the phone, open **LensLink**, choose your camera/resolution/frame rate,
    and tap **Start**. The app shows the phone's IP address.
-2. In OBS, add a source: **Sources → + → iOS Camera**.
+2. In OBS, add a source: **Sources → + → LensLink Camera**.
 3. Point it at your phone:
    - **Wi-Fi** — enter the IP the app shows as the **Phone IP**. (Phone and
      computer must be on the same network.)
@@ -59,7 +59,7 @@ blanks the source.
   your specific camera supports.
 - **Pick any lens** — Main, Ultra Wide, Telephoto, or Front — switchable
   live while you stream.
-- **Multiple cameras.** Add one "iOS Camera" source per phone. On USB you
+- **Multiple cameras.** Add one "LensLink Camera" source per phone. On USB you
   can pin a source to a specific device so the same phone always maps to
   the same source.
 - **Live camera controls**, both on the phone (full-screen view with pinch
@@ -79,7 +79,7 @@ blanks the source.
 Streamers usually use their own microphone, not the phone's. The plugin can
 line that mic up with the video automatically:
 
-1. In the iOS Camera source properties, pick your microphone under
+1. In the LensLink Camera source properties, pick your microphone under
    **Lip-sync audio source** and enable **Auto-calibrate**.
 2. In the app, turn on **Auto lip-sync reference**.
 

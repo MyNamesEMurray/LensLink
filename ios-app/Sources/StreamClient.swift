@@ -264,7 +264,7 @@ final class StreamClient {
     private func sendHello() {
         let hello: [String: Any] = [
             "name": UIDevice.current.name,
-            "app": "OBSCam",
+            "app": "LensLink",
             "protocol": Int(OBSCProtocol.version),
         ]
         guard let payload = try? JSONSerialization.data(withJSONObject: hello) else { return }

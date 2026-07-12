@@ -1,9 +1,9 @@
-# OBSCam — UI Design System
+# LensLink — UI Design System
 
 This document defines the visual and interaction language shared by the two
 user-facing surfaces of the project:
 
-1. **The iOS app (OBSCam)** — runs on the phone; two screens: **Setup**
+1. **The iOS app (LensLink)** — runs on the phone; two screens: **Setup**
    (before streaming) and **Live** (full-screen while streaming).
 2. **The plugin's web control panel** — served on the PC at
    `http://localhost:9980`; a remote control surface for the operator at
@@ -86,7 +86,7 @@ Native system font (SF on Apple, `system-ui` on web).
 
 | Role            | Size / weight            | Notes |
 |-----------------|--------------------------|-------|
-| Screen title    | 20 semibold              | "OBSCam", panel headings |
+| Screen title    | 20 semibold              | "LensLink", panel headings |
 | Body            | 15–17 regular            | Descriptions, list rows |
 | Label / caption | 13 regular               | Secondary text, field labels |
 | Numeric readout | 13–15 **monospaced digits** | Zoom `2.0×`, exposure `+0.3`, latency `57 ms` — monospaced so values don't jitter while dragging |
@@ -116,7 +116,7 @@ surfaces.
 | Zoom        | `minus.magnifyingglass` / `plus.magnifyingglass` | Slider 1×…max, readout `N.N×` |
 | Exposure    | `sun.min` / `sun.max`                     | Slider −range…+range, readout `±N.N` |
 | Focus       | segmented **AF / Lock**                   | When Lock: a lens-position slider (0=near, 1=far) |
-| Flashlight  | `bolt.fill` (toggle; hidden if no torch)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** |
+| Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** |
 | Lens        | `camera.aperture` menu                     | Menu of the device's real lenses; check on the active one |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
@@ -159,7 +159,7 @@ Full-screen black; camera preview `resizeAspect`; content over it:
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):
 
-1. **Header:** "iOS Camera" title + status pill (dot + text) mapped from the
+1. **Header:** "LensLink Camera" title + status pill (dot + text) mapped from the
    plugin's status/latency line to the shared palette.
 2. **Controls** in the *same order as the app's Live panel*: Zoom row,
    Exposure row, Focus (AF/Lock + lens slider), then a chip row of

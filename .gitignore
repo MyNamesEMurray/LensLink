@@ -3,7 +3,7 @@ obs-plugin/build*/
 
 # Xcode / XcodeGen
 ios-app/*.xcodeproj
-ios-app/OBSCam.xcodeproj
+ios-app/LensLink.xcodeproj
 xcuserdata/
 DerivedData/
 *.xcworkspace

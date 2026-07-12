@@ -46,7 +46,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
 	/* Driver refused the hw format for this stream; take the first
 	 * (software) format the decoder offers instead. */
 	blog(LOG_WARNING,
-	     "[ios-camera] hardware pixel format unavailable, "
+	     "[lenslink] hardware pixel format unavailable, "
 	     "decoding in software");
 	dec->is_hw = false;
 	return formats[0];
@@ -84,7 +84,7 @@ static bool try_init_hw(struct h264_decoder *dec, const AVCodec *codec)
 		dec->ctx->opaque = dec;
 		dec->ctx->get_format = get_hw_format;
 
-		blog(LOG_INFO, "[ios-camera] hardware decoding via %s",
+		blog(LOG_INFO, "[lenslink] hardware decoding via %s",
 		     av_hwdevice_get_type_name(type));
 		return true;
 	}
@@ -96,7 +96,7 @@ struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id, bool allow_hw)
 {
 	const AVCodec *codec = avcodec_find_decoder(codec_id);
 	if (!codec) {
-		blog(LOG_ERROR, "[ios-camera] decoder for codec %d unavailable",
+		blog(LOG_ERROR, "[lenslink] decoder for codec %d unavailable",
 		     (int)codec_id);
 		return NULL;
 	}
@@ -119,11 +119,11 @@ struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id, bool allow_hw)
 
 	if (allow_hw && !try_init_hw(dec, codec))
 		blog(LOG_INFO,
-		     "[ios-camera] no hardware decoder available, "
+		     "[lenslink] no hardware decoder available, "
 		     "using software");
 
 	if (avcodec_open2(dec->ctx, codec, NULL) < 0) {
-		blog(LOG_ERROR, "[ios-camera] failed to open decoder");
+		blog(LOG_ERROR, "[lenslink] failed to open decoder");
 		goto fail;
 	}
 
@@ -209,7 +209,7 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 
 	int ret = avcodec_send_packet(dec->ctx, dec->pkt);
 	if (ret < 0 && ret != AVERROR(EAGAIN)) {
-		blog(LOG_WARNING, "[ios-camera] avcodec_send_packet: %d", ret);
+		blog(LOG_WARNING, "[lenslink] avcodec_send_packet: %d", ret);
 		return ret != AVERROR_INVALIDDATA ? false : true;
 	}
 
@@ -219,7 +219,7 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			break;
 		if (ret < 0) {
 			blog(LOG_WARNING,
-			     "[ios-camera] avcodec_receive_frame: %d", ret);
+			     "[lenslink] avcodec_receive_frame: %d", ret);
 			return false;
 		}
 
@@ -232,7 +232,7 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			if (av_hwframe_transfer_data(dec->sw_frame, dec->frame,
 						     0) < 0) {
 				blog(LOG_WARNING,
-				     "[ios-camera] GPU frame download failed");
+				     "[lenslink] GPU frame download failed");
 				av_frame_unref(dec->frame);
 				return false;
 			}
@@ -243,7 +243,7 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 		struct obs_source_frame out = {0};
 		if (!avframe_to_obs(out_frame, &out)) {
 			blog(LOG_WARNING,
-			     "[ios-camera] unsupported pixel format %d",
+			     "[lenslink] unsupported pixel format %d",
 			     out_frame->format);
 			av_frame_unref(dec->frame);
 			continue;

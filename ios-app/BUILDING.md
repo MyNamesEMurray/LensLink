@@ -1,4 +1,4 @@
-# Building the iOS app (OBSCam)
+# Building the iOS app (LensLink)
 
 Requirements: macOS with Xcode 14.2 or newer, an iPhone/iPad running iOS
 15+, and a free or paid Apple Developer account for on-device signing.
@@ -24,12 +24,12 @@ so no `.xcodeproj` is checked in:
 brew install xcodegen
 cd ios-app
 xcodegen generate
-open OBSCam.xcodeproj
+open LensLink.xcodeproj
 ```
 
 In Xcode:
 
-1. Select the **OBSCam** target → *Signing & Capabilities* → pick your team
+1. Select the **LensLink** target → *Signing & Capabilities* → pick your team
    (or set `DEVELOPMENT_TEAM` in `project.yml` before generating).
 2. Optionally change the bundle identifier prefix in `project.yml`
    (`com.example` by default).

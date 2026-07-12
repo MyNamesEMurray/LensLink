@@ -37,15 +37,15 @@ jobs:
 
       - name: Package (extract into ~/.config/obs-studio/plugins)
         run: |
-          mkdir -p stage/ios-camera-source/bin/64bit stage/ios-camera-source/data
-          cp obs-plugin/build/ios-camera-source.so stage/ios-camera-source/bin/64bit/
-          cp -r obs-plugin/data/* stage/ios-camera-source/data/
-          tar czf ios-camera-source-linux-x86_64.tar.gz -C stage ios-camera-source
+          mkdir -p stage/lenslink/bin/64bit stage/lenslink/data
+          cp obs-plugin/build/lenslink.so stage/lenslink/bin/64bit/
+          cp -r obs-plugin/data/* stage/lenslink/data/
+          tar czf lenslink-linux-x86_64.tar.gz -C stage lenslink
 
       - uses: actions/upload-artifact@v4
         with:
           name: release-linux
-          path: ios-camera-source-linux-x86_64.tar.gz
+          path: lenslink-linux-x86_64.tar.gz
 
   plugin-windows:
     name: OBS plugin (Windows)
@@ -99,15 +99,15 @@ jobs:
       - name: Package (extract into C:\Program Files\obs-studio)
         run: |
           New-Item -ItemType Directory -Force -Path stage\obs-plugins\64bit | Out-Null
-          New-Item -ItemType Directory -Force -Path stage\data\obs-plugins\ios-camera-source | Out-Null
-          Copy-Item plugin-build\Release\ios-camera-source.dll stage\obs-plugins\64bit\
-          Copy-Item -Recurse obs-plugin\data\* stage\data\obs-plugins\ios-camera-source\
-          Compress-Archive -Path stage\* -DestinationPath ios-camera-source-windows-x64.zip
+          New-Item -ItemType Directory -Force -Path stage\data\obs-plugins\lenslink | Out-Null
+          Copy-Item plugin-build\Release\lenslink.dll stage\obs-plugins\64bit\
+          Copy-Item -Recurse obs-plugin\data\* stage\data\obs-plugins\lenslink\
+          Compress-Archive -Path stage\* -DestinationPath lenslink-windows-x64.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: release-windows
-          path: ios-camera-source-windows-x64.zip
+          path: lenslink-windows-x64.zip
 
   ios-app:
     name: iOS app (unsigned IPA)
@@ -126,21 +126,21 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild build \
-            -project OBSCam.xcodeproj \
-            -scheme OBSCam \
+            -project LensLink.xcodeproj \
+            -scheme LensLink \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO
           mkdir -p Payload
-          cp -R DerivedData/Build/Products/Release-iphoneos/OBSCam.app Payload/
-          zip -ry OBSCam-unsigned.ipa Payload
+          cp -R DerivedData/Build/Products/Release-iphoneos/LensLink.app Payload/
+          zip -ry LensLink-unsigned.ipa Payload
         working-directory: ios-app
 
       - uses: actions/upload-artifact@v4
         with:
           name: release-ipa
-          path: ios-app/OBSCam-unsigned.ipa
+          path: ios-app/LensLink-unsigned.ipa
 
   publish:
     name: Publish release
@@ -158,21 +158,21 @@ jobs:
           tag_name: ${{ inputs.tag_name || github.ref_name }}
           generate_release_notes: true
           files: |
-            dist/ios-camera-source-windows-x64.zip
-            dist/ios-camera-source-linux-x86_64.tar.gz
-            dist/OBSCam-unsigned.ipa
+            dist/lenslink-windows-x64.zip
+            dist/lenslink-linux-x86_64.tar.gz
+            dist/LensLink-unsigned.ipa
           body: |
             ## Installing
 
-            **Windows (OBS plugin):** download `ios-camera-source-windows-x64.zip`
+            **Windows (OBS plugin):** download `lenslink-windows-x64.zip`
             and extract it into `C:\Program Files\obs-studio\` (merge the
             `obs-plugins` and `data` folders), then restart OBS. Built against
             OBS Studio 32.x.
 
-            **Linux (OBS plugin):** download `ios-camera-source-linux-x86_64.tar.gz`
+            **Linux (OBS plugin):** download `lenslink-linux-x86_64.tar.gz`
             and extract it into `~/.config/obs-studio/plugins/`.
 
-            **iOS app:** download `OBSCam-unsigned.ipa` and sideload it with
+            **iOS app:** download `LensLink-unsigned.ipa` and sideload it with
             [Sideloadly](https://sideloadly.io) (Windows/macOS, free Apple ID;
             re-sign every 7 days) — Apple signing rules prevent distributing
             an installable app directly.

@@ -21,7 +21,7 @@ struct ContentView: View {
                 lipSyncSection
                 actionSection
             }
-            .navigationTitle("OBSCam")
+            .navigationTitle("LensLink")
         }
         .navigationViewStyle(.stack)
         .tint(Theme.accent)
@@ -69,7 +69,7 @@ struct ContentView: View {
                             .textSelection(.enabled)
                     }
                 }
-                Text("In OBS, add an \"iOS Camera\" source and enter this address as the Phone IP.")
+                Text("In OBS, add a \"LensLink Camera\" source and enter this address as the Phone IP.")
                     .font(.callout)
                     .foregroundColor(.secondary)
             } else {

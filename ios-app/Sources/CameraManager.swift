@@ -280,9 +280,9 @@ final class CameraManager: NSObject {
         }
     }
 
-    var hasTorch: Bool { activeDevice?.hasTorch ?? false }
+    var hasFlashlight: Bool { activeDevice?.hasTorch ?? false }
 
-    func setTorch(_ on: Bool) {
+    func setFlashlight(_ on: Bool) {
         withLockedDevice { device in
             guard device.hasTorch else { return }
             device.torchMode = on ? .on : .off

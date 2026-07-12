@@ -1,8 +1,8 @@
 # XcodeGen project definition — run `xcodegen generate` in this directory
-# to produce OBSCam.xcodeproj. See BUILDING.md.
-name: OBSCam
+# to produce LensLink.xcodeproj. See BUILDING.md.
+name: LensLink
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.exaltedpixels
   deploymentTarget:
     iOS: "15.0"
   createIntermediateGroups: true
@@ -12,7 +12,7 @@ options:
   xcodeVersion: "14.2"
 
 targets:
-  OBSCam:
+  LensLink:
     type: application
     platform: iOS
     sources:
@@ -20,19 +20,19 @@ targets:
     info:
       path: Sources/Info.plist
       properties:
-        CFBundleDisplayName: OBSCam
+        CFBundleDisplayName: LensLink
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSCameraUsageDescription: >-
-          OBSCam streams your camera to OBS on your computer.
+          LensLink streams your camera to OBS on your computer.
         NSLocalNetworkUsageDescription: >-
-          OBSCam connects to OBS Studio on your local network to send the
+          LensLink connects to OBS Studio on your local network to send the
           camera feed.
         NSMicrophoneUsageDescription: >-
-          OBSCam can send your microphone to OBS as a timing reference to
+          LensLink can send your microphone to OBS as a timing reference to
           automatically sync your real microphone to the video.
     settings:
       base:

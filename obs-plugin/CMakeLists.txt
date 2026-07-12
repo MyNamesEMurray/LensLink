@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16...3.30)
 
-project(ios-camera-source VERSION 0.1.0 LANGUAGES C)
+project(lenslink VERSION 0.1.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct OBSCamApp: App {
+struct LensLinkApp: App {
     @StateObject private var streamer = Streamer()
     @Environment(\.scenePhase) private var scenePhase
 

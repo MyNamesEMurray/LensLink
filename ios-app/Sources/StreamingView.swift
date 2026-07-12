@@ -162,12 +162,12 @@ struct StreamingView: View {
                     Spacer()
                 }
 
-                if streamer.camera.hasTorch {
-                    ControlButton(systemImage: streamer.torchOn
+                if streamer.camera.hasFlashlight {
+                    ControlButton(systemImage: streamer.flashlightOn
                                     ? "bolt.fill" : "bolt.slash",
-                                  active: streamer.torchOn) {
+                                  active: streamer.flashlightOn) {
                         touched()
-                        streamer.torchOn.toggle()
+                        streamer.flashlightOn.toggle()
                     }
                 }
 

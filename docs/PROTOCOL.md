@@ -1,4 +1,4 @@
-# OBS iOS Camera — Wire Protocol (version 1)
+# LensLink — Wire Protocol (version 1)
 
 The iOS app **listens** on TCP port **9979** on the device; the OBS plugin
 **dials** it — over the LAN (the phone's IP, shown in the app) or through
@@ -31,7 +31,7 @@ Sent once by the client right after the TCP connection is established.
 Payload: UTF-8 JSON, e.g.
 
 ```json
-{ "name": "Emma's iPhone", "app": "OBSCam", "protocol": 1 }
+{ "name": "Emma's iPhone", "app": "LensLink", "protocol": 1 }
 ```
 
 ### 2 — VIDEO_CONFIG
@@ -83,7 +83,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "exposure_bias", "value": -0.5 }
 { "cmd": "focus", "mode": "auto" }
 { "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
-{ "cmd": "torch", "on": true }
+{ "cmd": "flashlight", "on": true }
 { "cmd": "flip" }
 ```
 
@@ -97,7 +97,7 @@ changes and once on connect. Payload: UTF-8 JSON, e.g.
 ```json
 { "zoom": 2.5, "maxZoom": 10, "exposureBias": -0.5,
   "focusMode": "locked", "lensPosition": 0.4,
-  "torch": true, "hasTorch": true, "camera": "back" }
+  "flashlight": true, "hasFlashlight": true, "camera": "back" }
 ```
 
 The plugin caches the latest snapshot and serves it at `/api/state` so

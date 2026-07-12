@@ -68,6 +68,6 @@ Copy `build\Release\ios-camera-source.dll` to
 
 ## Verifying
 
-Start OBS → *Sources* → **+** → **iOS Camera**. The properties dialog shows
+Start OBS → *Sources* → **+** → **LensLink Camera**. The properties dialog shows
 the connection settings and status. No inbound firewall rules are needed —
 the plugin makes outbound connections to the phone.

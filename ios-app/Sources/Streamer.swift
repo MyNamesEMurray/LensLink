@@ -102,9 +102,9 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
-    @Published var torchOn: Bool = false {
+    @Published var flashlightOn: Bool = false {
         didSet {
-            camera.setTorch(torchOn)
+            camera.setFlashlight(flashlightOn)
             scheduleStateSend()
         }
     }
@@ -131,8 +131,8 @@ final class Streamer: ObservableObject {
             "exposureBias": Double(exposureBias),
             "focusMode": focusSetting == .locked ? "locked" : "auto",
             "lensPosition": Double(lensPosition),
-            "torch": torchOn,
-            "hasTorch": camera.hasTorch,
+            "flashlight": flashlightOn,
+            "hasFlashlight": camera.hasFlashlight,
             "camera": selectedLens.position == .front ? "front" : "back",
             "lens": selectedLens.label,
             "lenses": availableLenses.map { $0.label },
@@ -152,7 +152,7 @@ final class Streamer: ObservableObject {
         zoom = 1
         exposureBias = 0
         focusSetting = .auto
-        torchOn = false
+        flashlightOn = false
     }
 
     // State
@@ -244,9 +244,9 @@ final class Streamer: ObservableObject {
                 lensPosition = Float(position)
             }
             focusSetting = (command["mode"] as? String) == "locked" ? .locked : .auto
-        case "torch":
+        case "flashlight":
             if let on = command["on"] as? Bool {
-                torchOn = on
+                flashlightOn = on
             }
         case "flip":
             flipCamera()
@@ -391,8 +391,8 @@ final class Streamer: ObservableObject {
 
         adaptiveTask?.cancel()
         adaptiveTask = nil
-        if torchOn {
-            torchOn = false
+        if flashlightOn {
+            flashlightOn = false
         }
         client.disconnect()
         camera.stop()
