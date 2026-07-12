@@ -137,6 +137,14 @@ Manual releases still work too — push any `v*` tag:
 git tag v0.3.0 && git push origin v0.3.0
 ```
 
+PRs auto-merge once all required checks pass
+([`automerge.yml`](.github/workflows/automerge.yml)). This requires two
+one-time repository settings: **Allow auto-merge** (Settings → General)
+and a branch protection rule on `main` with the three Build checks marked
+required. Adding a fine-grained PAT as the `AUTOMERGE_TOKEN` secret makes
+the merge count as you, so the auto-release pipeline fires (merges by the
+default Actions token don't trigger downstream workflows).
+
 ## Continuous integration
 
 Every push/PR runs [`.github/workflows/build.yml`](.github/workflows/build.yml):
