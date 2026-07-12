@@ -283,9 +283,9 @@ final class StreamClient {
         send(OBSCProtocol.packet(type: .hello, payload: payload))
     }
 
-    func sendVideoConfig(width: Int32, height: Int32, fps: Int32) {
+    func sendVideoConfig(codec: VideoCodec, width: Int32, height: Int32, fps: Int32) {
         let config: [String: Any] = [
-            "codec": "h264",
+            "codec": codec.rawValue,
             "width": Int(width),
             "height": Int(height),
             "fps": Int(fps),
@@ -297,7 +297,7 @@ final class StreamClient {
     /// Called from the encoder's output thread; hops to the network queue
     /// so the in-flight counter stays consistent. If the network can't keep
     /// up, non-keyframes are dropped rather than queued without bound.
-    func sendVideoFrame(_ frame: H264Encoder.EncodedFrame) {
+    func sendVideoFrame(_ frame: VideoEncoder.EncodedFrame) {
         queue.async { [weak self] in
             guard let self, self.connection != nil else { return }
             if self.inFlightFrames >= Self.maxInFlightFrames && !frame.isKeyframe {

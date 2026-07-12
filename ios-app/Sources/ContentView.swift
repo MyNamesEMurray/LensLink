@@ -158,19 +158,47 @@ struct ContentView: View {
         }
     }
 
+    /// Only resolutions this camera actually supports (at any frame rate).
+    private var availableResolutions: [CameraManager.Resolution] {
+        CameraManager.Resolution.allCases.filter {
+            CameraManager.supports(resolution: $0, fps: 30,
+                                   position: streamer.cameraPosition)
+        }
+    }
+
+    /// Only frame rates this camera supports at the chosen resolution.
+    private var availableFrameRates: [Int] {
+        [30, 60].filter {
+            CameraManager.supports(resolution: streamer.resolution,
+                                   fps: Int32($0),
+                                   position: streamer.cameraPosition)
+        }
+    }
+
     private var cameraSection: some View {
         Section("Camera") {
             Toggle("Front camera", isOn: $streamer.useFrontCamera)
 
             Picker("Resolution", selection: $streamer.resolution) {
-                ForEach(CameraManager.Resolution.allCases) { resolution in
+                ForEach(availableResolutions) { resolution in
                     Text(resolution.rawValue).tag(resolution)
                 }
             }
+            .onChange(of: streamer.resolution) { _ in
+                streamer.clampCaptureSettings()
+            }
 
             Picker("Frame rate", selection: $streamer.fps) {
-                Text("30 fps").tag(30)
-                Text("60 fps").tag(60)
+                ForEach(availableFrameRates, id: \.self) { fps in
+                    Text("\(fps) fps").tag(fps)
+                }
+            }
+
+            Picker("Codec", selection: $streamer.codec) {
+                Text(VideoCodec.h264.label).tag(VideoCodec.h264)
+                if VideoEncoder.isSupported(.hevc) {
+                    Text(VideoCodec.hevc.label).tag(VideoCodec.hevc)
+                }
             }
         }
     }
