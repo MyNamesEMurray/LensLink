@@ -147,9 +147,11 @@ Full-screen black; camera preview `resizeAspect`; content over it:
 - **Top bar:** status pill (dot + word, left) · Dim button · Stop button
   (red). Glass chips.
 - **Bottom panel** (`glassPanel`, radius 16): zoom row, exposure row, then a
-  control row of Focus segmented + (lens-position slider or "Tap to focus"
-  hint) + Flashlight + Lens menu + Flip.
-- **Gestures:** pinch anywhere = zoom; tap = focus/expose at point.
+  control row of Focus segmented + (lens-position slider when **Lock**, else
+  a flexible spacer) + Flashlight + Lens menu + Flip.
+- **Gestures:** pinch anywhere = zoom; tap = focus/expose at point. In
+  **AF** the focus row carries no inline label — tap-to-focus is a gesture,
+  not on-screen text (a label there crowded the row and wrapped badly).
 - **Dim overlay:** after 10 s idle (if enabled) the screen goes near-black
   with a small "Streaming — tap to wake" hint and lowered brightness; any
   tap restores.

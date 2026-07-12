@@ -151,13 +151,14 @@ Manual releases still work too — push any `v*` tag:
 git tag v0.3.0 && git push origin v0.3.0
 ```
 
-PRs auto-merge once all required checks pass
-([`automerge.yml`](.github/workflows/automerge.yml)). This requires two
-one-time repository settings: **Allow auto-merge** (Settings → General)
-and a branch protection rule on `main` with the three Build checks marked
-required. Adding a fine-grained PAT as the `AUTOMERGE_TOKEN` secret makes
-the merge count as you, so the auto-release pipeline fires (merges by the
-default Actions token don't trigger downstream workflows).
+PRs auto-merge **only after the Build workflow passes**
+([`merge-on-green.yml`](.github/workflows/merge-on-green.yml)): the build
+runs on the PR, and when it succeeds the workflow merges that PR. This
+gates the merge on a green build without needing branch-protection
+"required checks" (which merge immediately when unset). Draft PRs are held
+(open as a draft to prevent auto-merge). Add a fine-grained PAT as the
+`AUTOMERGE_TOKEN` secret so the merge triggers the release pipeline (a
+merge by the default Actions token doesn't fire downstream workflows).
 
 ## Continuous integration
 
