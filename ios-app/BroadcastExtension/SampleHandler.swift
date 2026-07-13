@@ -108,9 +108,10 @@ class SampleHandler: RPBroadcastSampleHandler {
     // MARK: - System audio
 
     private func handleAudio(_ sampleBuffer: CMSampleBuffer) {
-        guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer),
-              let sourceFormat = AVAudioFormat(cmAudioFormatDescription: formatDescription)
+        guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)
         else { return }
+        // Non-failable initializer — returns AVAudioFormat, not an optional.
+        let sourceFormat = AVAudioFormat(cmAudioFormatDescription: formatDescription)
 
         if audioConverter == nil || audioSourceFormat != sourceFormat {
             audioConverter = AVAudioConverter(from: sourceFormat, to: targetAudioFormat)
