@@ -30,25 +30,60 @@ class SampleHandler: RPBroadcastSampleHandler {
 
     // MARK: - Broadcast lifecycle
 
+    /// Extensions have no UI, so failures here are invisible unless we end
+    /// the broadcast with a descriptive error (iOS shows it as an alert).
+    private var everConnected = false
+    private var watchdog: Task<Void, Never>?
+
+    private func fail(_ message: String) {
+        finishBroadcastWithError(NSError(
+            domain: "LensLink", code: 1,
+            userInfo: [NSLocalizedDescriptionKey: message]))
+    }
+
     override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
         client.sourceKind = .screen
         client.onStateChange = { [weak self] state in
-            guard let self, state == .connected else { return }
-            // Fresh connection: re-send config (dimensions are known once
-            // the first frame arrives) and force a keyframe so OBS joins
-            // immediately.
-            if self.configuredWidth > 0 {
-                self.client.sendVideoConfig(codec: .h264,
-                                            width: self.configuredWidth,
-                                            height: self.configuredHeight,
-                                            fps: self.fps)
+            guard let self else { return }
+            switch state {
+            case .connected:
+                self.everConnected = true
+                self.watchdog?.cancel()
+                // Fresh connection: re-send config (dimensions are known
+                // once the first frame arrives) and force a keyframe so
+                // OBS joins immediately.
+                if self.configuredWidth > 0 {
+                    self.client.sendVideoConfig(codec: .h264,
+                                                width: self.configuredWidth,
+                                                height: self.configuredHeight,
+                                                fps: self.fps)
+                }
+                self.encoder?.requestKeyframe()
+            case .failed(let message):
+                // Most likely: port 9979 already taken because the LensLink
+                // app's camera stream is running. One stream per device.
+                self.fail("Could not open the streaming port (\(message)). "
+                    + "If the LensLink camera is streaming, stop it first — "
+                    + "a device can send the camera or the screen, not both.")
+            default:
+                break
             }
-            self.encoder?.requestKeyframe()
         }
         client.start(port: OBSCProtocol.usbPort)
+
+        // OBS never dialing in used to fail silently; surface it instead.
+        watchdog = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 60_000_000_000)
+            guard let self, !Task.isCancelled, !self.everConnected else { return }
+            self.fail("OBS did not connect within 60 seconds. Check that "
+                + "the LensLink Camera source is set to this phone (USB "
+                + "cable, or this phone's Wi-Fi IP), that OBS is running, "
+                + "and that the camera stream isn't already connected.")
+        }
     }
 
     override func broadcastFinished() {
+        watchdog?.cancel()
         encoder?.stop()
         encoder = nil
         client.disconnect()
