@@ -105,9 +105,21 @@ struct ios_camera_source {
 	 * Guarded by status_mutex. */
 	char device_state[1024];
 
+	/* The current connection is a screen mirror (no camera controls).
+	 * Guarded by status_mutex; lets the web panel hide dead controls. */
+	bool is_screen;
+
 	pthread_mutex_t status_mutex;
 	struct dstr status;
 };
+
+bool ios_camera_is_screen(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	bool v = s->is_screen;
+	pthread_mutex_unlock(&s->status_mutex);
+	return v;
+}
 
 static enum connection_mode parse_mode(const char *mode)
 {
@@ -747,6 +759,7 @@ static void client_disconnect(struct ios_camera_source *s,
 
 	pthread_mutex_lock(&s->status_mutex);
 	s->device_state[0] = 0;
+	s->is_screen = false;
 	pthread_mutex_unlock(&s->status_mutex);
 	set_status(s, "%s", T_("Status.Disconnected"));
 }
@@ -793,6 +806,9 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		char kind[16] = {0};
 		extract_json_string(json, "kind", kind, sizeof(kind));
 		c->is_screen = strcmp(kind, "screen") == 0;
+		pthread_mutex_lock(&s->status_mutex);
+		s->is_screen = c->is_screen;
+		pthread_mutex_unlock(&s->status_mutex);
 		blog(LOG_INFO, "[lenslink] client connected: %s (%s)",
 		     c->name[0] ? c->name : "(unnamed)",
 		     c->is_screen ? "screen" : "camera");
