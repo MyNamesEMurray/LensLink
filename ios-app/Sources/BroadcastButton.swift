@@ -11,7 +11,7 @@ struct BroadcastButton: UIViewRepresentable {
     /// id makes the picker fall back to listing every broadcast provider
     /// on the phone instead of pre-selecting ours.
     static var extensionBundleID: String {
-        (Bundle.main.bundleIdentifier ?? "com.exaltedpixels.LensLink")
+        (Bundle.main.bundleIdentifier ?? "com.exaltedpixels.LensLinkCamera")
             + ".broadcast"
     }
 

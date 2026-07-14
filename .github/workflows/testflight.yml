@@ -11,7 +11,7 @@ name: TestFlight
 #   APP_STORE_CONNECT_ISSUER_ID    - the Issuer ID (Users and Access → Integrations)
 #   APP_STORE_CONNECT_KEY_P8       - the full contents of the .p8 file
 #   APPLE_TEAM_ID                  - your 10-character Developer Team ID
-# and create the app record (bundle id com.exaltedpixels.LensLink) in
+# and create the app record (bundle id com.exaltedpixels.LensLinkCamera) in
 # App Store Connect once.
 
 on:
