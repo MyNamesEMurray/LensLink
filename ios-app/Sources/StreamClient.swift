@@ -99,9 +99,24 @@ final class StreamClient {
         return params
     }
 
+    // Diagnostics (queue-confined): what the listener actually did — the
+    // broadcast extension has no UI or reachable logs on Windows setups,
+    // so failure alerts embed this snapshot.
+    private var listenerStateDescription = "not started"
+    private var acceptedConnections = 0
+
+    /// One-line health snapshot, safe to call from any thread.
+    func debugStatus() -> String {
+        queue.sync {
+            "listener=\(listenerStateDescription), "
+                + "accepted=\(acceptedConnections), state=\(state)"
+        }
+    }
+
     private func listen(on port: UInt16) {
         guard let nwPort = NWEndpoint.Port(rawValue: port),
               let listener = try? NWListener(using: Self.tcpParameters(), on: nwPort) else {
+            listenerStateDescription = "init failed"
             state = .failed("Could not open USB listener")
             return
         }
@@ -110,7 +125,12 @@ final class StreamClient {
         state = .connecting
 
         listener.newConnectionHandler = { [weak self, weak listener] newConnection in
-            guard let self, let listener, self.listener === listener else {
+            guard let self else {
+                newConnection.cancel()
+                return
+            }
+            self.acceptedConnections += 1
+            guard let listener, self.listener === listener else {
                 newConnection.cancel()
                 return
             }
@@ -120,6 +140,7 @@ final class StreamClient {
         }
         listener.stateUpdateHandler = { [weak self, weak listener] newState in
             guard let self, let listener, self.listener === listener else { return }
+            self.listenerStateDescription = "\(newState)"
             if case .failed(let error) = newState {
                 self.state = .failed(error.localizedDescription)
                 self.teardownListener()

@@ -71,14 +71,17 @@ class SampleHandler: RPBroadcastSampleHandler {
         }
         client.start(port: OBSCProtocol.usbPort)
 
-        // OBS never dialing in used to fail silently; surface it instead.
+        // OBS never dialing in used to fail silently; surface it instead,
+        // with the listener's actual state so the alert pinpoints which
+        // layer broke (listener never ready / no connections arrived /
+        // handshake failed).
         watchdog = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 60_000_000_000)
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
             guard let self, !Task.isCancelled, !self.everConnected else { return }
-            self.fail("OBS did not connect within 60 seconds. Check that "
-                + "the LensLink Camera source is set to this phone (USB "
-                + "cable, or this phone's Wi-Fi IP), that OBS is running, "
-                + "and that the camera stream isn't already connected.")
+            self.fail("OBS did not connect within 30 seconds "
+                + "[\(self.client.debugStatus())]. Check the LensLink "
+                + "Camera source points at this phone (USB, or this "
+                + "phone's Wi-Fi IP) and the camera stream isn't running.")
         }
     }
 
