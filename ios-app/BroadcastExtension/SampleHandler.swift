@@ -1,6 +1,7 @@
 import ReplayKit
 import CoreMedia
 import AVFoundation
+import os
 
 /// ReplayKit broadcast-upload extension: captures the whole screen (video +
 /// system audio) and streams it to the OBS plugin over the same wire
@@ -18,6 +19,49 @@ class SampleHandler: RPBroadcastSampleHandler {
     private var configuredWidth: Int32 = 0
     private var configuredHeight: Int32 = 0
     private let fps: Int32 = 60
+
+    /// Screen mirroring uses H.264 by default. HEVC compresses screen/UI
+    /// content ~40% smaller at the same quality, so the wire bitrate drops
+    /// — flip this to `true` to A/B whether HEVC improves reliability. The
+    /// device must support HEVC hardware encoding (A10 / iPhone 7+); we
+    /// fall back to H.264 otherwise, and the plugin decodes whichever codec
+    /// the video config announces.
+    private static let preferHEVC = false
+    // static let → initialized exactly once, thread-safely (read from the
+    // capture thread and the network queue).
+    private static let codec: VideoCodec =
+        (preferHEVC && VideoEncoder.isSupported(.hevc)) ? .hevc : .h264
+
+    private let log = Logger(subsystem: "com.exaltedpixels.LensLinkCamera.broadcast",
+                             category: "diag")
+
+    /// Pipeline counters, surfaced every few seconds to the OBS log (via the
+    /// plugin) and os_log. Guarded by `countersLock`: `processSampleBuffer`
+    /// and the encoder callback touch them from different threads while the
+    /// heartbeat task reads them.
+    private struct Counters {
+        var videoSamples = 0
+        var encoderBuilds = 0
+        var encodedFrames = 0
+        var encodedKeyframes = 0
+        var encoderErrors = 0
+        var audioSamples = 0
+        var dims = ""
+        var codecName = ""
+        /// Set when the plugin asks for a keyframe (e.g. after it swaps to
+        /// software decoding); consumed on the capture thread, which owns
+        /// the encoder. Guarded by the same lock so we never touch the
+        /// encoder from the network queue.
+        var pendingKeyframe = false
+    }
+    private let countersLock = NSLock()
+    private var counters = Counters()
+    private func withCounters<T>(_ body: (inout Counters) -> T) -> T {
+        countersLock.lock()
+        defer { countersLock.unlock() }
+        return body(&counters)
+    }
+    private var diagTask: Task<Void, Never>?
 
     /// Canonical output: 48 kHz stereo signed-16-bit interleaved PCM.
     private let targetAudioFormat = AVAudioFormat(
@@ -43,6 +87,9 @@ class SampleHandler: RPBroadcastSampleHandler {
 
     override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
         client.sourceKind = .screen
+        client.onControl = { [weak self] data in
+            self?.handleControl(data)
+        }
         client.onStateChange = { [weak self] state in
             guard let self else { return }
             switch state {
@@ -53,7 +100,7 @@ class SampleHandler: RPBroadcastSampleHandler {
                 // once the first frame arrives) and force a keyframe so
                 // OBS joins immediately.
                 if self.configuredWidth > 0 {
-                    self.client.sendVideoConfig(codec: .h264,
+                    self.client.sendVideoConfig(codec: Self.codec,
                                                 width: self.configuredWidth,
                                                 height: self.configuredHeight,
                                                 fps: self.fps)
@@ -70,6 +117,8 @@ class SampleHandler: RPBroadcastSampleHandler {
             }
         }
         client.start(port: OBSCProtocol.usbPort)
+        log.info("broadcast started, codec=\(Self.codec.rawValue, privacy: .public)")
+        startDiagnostics()
 
         // OBS never dialing in used to fail silently; surface it instead,
         // with the listener's actual state so the alert pinpoints which
@@ -87,9 +136,46 @@ class SampleHandler: RPBroadcastSampleHandler {
 
     override func broadcastFinished() {
         watchdog?.cancel()
+        diagTask?.cancel()
         encoder?.stop()
         encoder = nil
         client.disconnect()
+    }
+
+    /// Emits a pipeline heartbeat every 3 s: how many screen samples came in,
+    /// how many frames we encoded and sent, plus the network snapshot. Goes
+    /// to the OBS log (through the plugin) and os_log, so a stuck stream
+    /// shows exactly which stage stopped moving. The plugin logs its own
+    /// matching line, so both ends line up in one place.
+    private func startDiagnostics() {
+        diagTask?.cancel()
+        diagTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                guard let self, !Task.isCancelled else { return }
+                let c = self.withCounters { $0 }
+                let line = "vid samp=\(c.videoSamples) enc=\(c.encodedFrames) "
+                    + "kf=\(c.encodedKeyframes) builds=\(c.encoderBuilds) "
+                    + "encErr=\(c.encoderErrors) "
+                    + "\(c.codecName)\(c.dims.isEmpty ? "" : " " + c.dims) "
+                    + "aud=\(c.audioSamples) | " + self.client.diagnosticsSnapshot()
+                self.client.sendDiag(line)
+                self.log.info("\(line, privacy: .public)")
+            }
+        }
+    }
+
+    /// Control messages from the plugin. The only one the screen extension
+    /// acts on is a keyframe request (the plugin sends it after switching to
+    /// software decoding so the picture comes back right away).
+    private func handleControl(_ data: Data) {
+        guard let obj = try? JSONSerialization.jsonObject(with: data)
+                as? [String: Any],
+              let cmd = obj["cmd"] as? String else { return }
+        if cmd == "keyframe" {
+            withCounters { $0.pendingKeyframe = true }
+            log.info("keyframe requested by plugin")
+        }
     }
 
     override func processSampleBuffer(_ sampleBuffer: CMSampleBuffer,
@@ -112,26 +198,50 @@ class SampleHandler: RPBroadcastSampleHandler {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let width = Int32(CVPixelBufferGetWidth(pixelBuffer))
         let height = Int32(CVPixelBufferGetHeight(pixelBuffer))
+        withCounters { $0.videoSamples += 1 }
 
         // (Re)build the encoder on first frame and whenever the screen
         // rotates (dimensions swap). The encoder has fixed dimensions.
         if encoder == nil || width != configuredWidth || height != configuredHeight {
             encoder?.stop()
-            let enc = VideoEncoder(codec: .h264, width: width, height: height,
+            let enc = VideoEncoder(codec: Self.codec, width: width, height: height,
                                    fps: fps, bitrate: bitrate(width, height))
             enc.onEncodedFrame = { [weak self] frame in
-                self?.client.sendVideoFrame(frame)
+                guard let self else { return }
+                self.withCounters {
+                    $0.encodedFrames += 1
+                    if frame.isKeyframe { $0.encodedKeyframes += 1 }
+                }
+                self.client.sendVideoFrame(frame)
             }
             do {
                 try enc.start()
             } catch {
+                withCounters { $0.encoderErrors += 1 }
+                log.error("encoder start failed at \(width)x\(height): \(error.localizedDescription, privacy: .public)")
                 return
             }
             encoder = enc
             configuredWidth = width
             configuredHeight = height
-            client.sendVideoConfig(codec: .h264, width: width, height: height,
+            let br = bitrate(width, height)
+            withCounters {
+                $0.encoderBuilds += 1
+                $0.dims = "\(width)x\(height)"
+                $0.codecName = Self.codec.rawValue
+            }
+            log.info("encoder built \(width)x\(height) \(Self.codec.rawValue, privacy: .public) @ \(br / 1_000_000) Mbps")
+            client.sendVideoConfig(codec: Self.codec, width: width, height: height,
                                    fps: fps)
+        }
+        // Honour a pending keyframe request here, on the capture thread that
+        // owns the encoder (never from the network queue).
+        let forceKeyframe = withCounters { (c: inout Counters) -> Bool in
+            defer { c.pendingKeyframe = false }
+            return c.pendingKeyframe
+        }
+        if forceKeyframe {
+            encoder?.requestKeyframe()
         }
         encoder?.encode(sampleBuffer)
     }
@@ -146,6 +256,7 @@ class SampleHandler: RPBroadcastSampleHandler {
     // MARK: - System audio
 
     private func handleAudio(_ sampleBuffer: CMSampleBuffer) {
+        withCounters { $0.audioSamples += 1 }
         guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)
         else { return }
         // Non-failable initializer — returns AVAudioFormat, not an optional.

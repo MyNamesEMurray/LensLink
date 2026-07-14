@@ -133,6 +133,14 @@ keeps A/V aligned. The plugin outputs it via `obs_source_output_audio`.
 Microphone audio is intentionally omitted (a streamer mics themselves in
 OBS; the phone mic would double it).
 
+### 11 — DIAG (app/extension → plugin)
+Optional diagnostics. Payload: a short UTF-8 text line summarising the
+sender's internal counters (screen samples in, frames encoded/sent, bytes,
+connection state). The plugin echoes it into the OBS log (prefixed
+`[lenslink][phone]`) when the source's **Verbose diagnostics** option is on,
+so both ends of the pipeline appear together — the broadcast extension has
+no console of its own. Purely informational; a receiver may ignore it.
+
 ## USB transport
 
 The packet protocol is identical over USB. The plugin reaches the app's

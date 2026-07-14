@@ -105,12 +105,39 @@ final class StreamClient {
     private var listenerStateDescription = "not started"
     private var acceptedConnections = 0
 
+    // Cumulative send-side counters for the screen-mirror diagnostics
+    // heartbeat (distinct from the adaptive-bitrate counters below, which
+    // reset every sample). Queue-confined.
+    private var diagVideoSent = 0
+    private var diagVideoDropped = 0
+    private var diagKeyframesSent = 0
+    private var diagVideoBytes = 0
+    private var diagAudioChunks = 0
+
     /// One-line health snapshot, safe to call from any thread.
     func debugStatus() -> String {
         queue.sync {
             "listener=\(listenerStateDescription), "
                 + "accepted=\(acceptedConnections), state=\(state)"
         }
+    }
+
+    /// One-line send-path snapshot for the diagnostics heartbeat. The
+    /// broadcast extension forwards this to the plugin, which logs it, so
+    /// the phone's view of the stream shows up in the OBS log too.
+    func diagnosticsSnapshot() -> String {
+        queue.sync {
+            "net sent=\(diagVideoSent) kf=\(diagKeyframesSent) "
+                + "drop=\(diagVideoDropped) \(diagVideoBytes / 1024)KiB "
+                + "aud=\(diagAudioChunks) inflight=\(inFlightFrames) "
+                + "acc=\(acceptedConnections) \(state)"
+        }
+    }
+
+    /// Sends a short diagnostics line to the plugin (logged to the OBS log).
+    func sendDiag(_ text: String) {
+        guard let payload = text.data(using: .utf8) else { return }
+        send(OBSCProtocol.packet(type: .diag, payload: payload))
     }
 
     private func listen(on port: UInt16) {
@@ -337,6 +364,9 @@ final class StreamClient {
     /// Sends a chunk of screen-mirror system audio (48 kHz stereo S16LE
     /// interleaved), to be played by the plugin as the source's audio.
     func sendScreenAudio(_ pcm: Data, ptsNanoseconds: UInt64) {
+        queue.async { [weak self] in
+            self?.diagAudioChunks += 1
+        }
         send(OBSCProtocol.packet(type: .screenAudio,
                                  ptsNanoseconds: ptsNanoseconds,
                                  payload: pcm))
@@ -398,6 +428,7 @@ final class StreamClient {
             // would be enqueued into the dead connection without limit.
             if self.inFlightFrames >= Self.maxInFlightFrames {
                 self.droppedFrames += 1
+                self.diagVideoDropped += 1
                 self.waitingForKeyframe = true
                 return
             }
@@ -407,10 +438,16 @@ final class StreamClient {
                 // Broken reference chain: skip this frame, and — now that
                 // there's room to actually send one — ask the encoder for
                 // the keyframe that restarts the stream.
+                self.diagVideoDropped += 1
                 self.onFrameDropped?()
                 return
             }
             self.inFlightFrames += 1
+            self.diagVideoSent += 1
+            self.diagVideoBytes += frame.data.count
+            if frame.isKeyframe {
+                self.diagKeyframesSent += 1
+            }
             let flags: OBSCProtocol.Flags = frame.isKeyframe ? [.keyframe] : []
             self.sendOnQueue(OBSCProtocol.packet(type: .video,
                                                  flags: flags,

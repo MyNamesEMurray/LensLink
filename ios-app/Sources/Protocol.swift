@@ -37,6 +37,11 @@ enum OBSCProtocol {
         /// interleaved PCM meant to be played (not a lip-sync reference).
         /// pts = capture time of the first sample (same clock as video).
         case screenAudio = 10
+        /// Diagnostics, app/extension → plugin: a short UTF-8 text line of
+        /// the sender's counters. The plugin logs it to the OBS log so both
+        /// ends of the pipeline appear together (the broadcast extension has
+        /// no console of its own).
+        case diag = 11
     }
 
     /// What a connection is streaming, sent in the HELLO / video config.
