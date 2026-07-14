@@ -25,19 +25,18 @@ struct ContentView: View {
 
     // The form is three parallel modules — Connect, Camera, Screen mirror —
     // each saying which OBS source it talks to and ending in the same
-    // full-width action button, plus small Options/About tails.
+    // full-width action button, plus small Options/About tails. The banner
+    // is the title (no NavigationView: nothing is ever pushed, and the
+    // wordmark replaces the large-title text).
     private var settingsForm: some View {
-        NavigationView {
-            Form {
-                connectSection
-                cameraSection
-                screenMirrorSection
-                optionsSection
-                aboutSection
-            }
-            .navigationTitle("LensLink")
+        Form {
+            bannerHeader
+            connectSection
+            cameraSection
+            screenMirrorSection
+            optionsSection
+            aboutSection
         }
-        .navigationViewStyle(.stack)
         .tint(Theme.accent)
         .onAppear {
             wifiIP = NetworkInfo.wifiIPAddress()
@@ -63,6 +62,24 @@ struct ContentView: View {
             CameraManager.supports(resolution: streamer.resolution,
                                    fps: Int32($0),
                                    lens: streamer.selectedLens)
+        }
+    }
+
+    // MARK: - Banner
+
+    /// The wordmark as the screen's title. Light/dark variants switch
+    /// automatically via the asset catalog's luminosity appearances.
+    private var bannerHeader: some View {
+        Section {
+            Image("Banner")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 48)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("LensLink")
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .padding(.top, Theme.Space.s)
         }
     }
 
