@@ -20,13 +20,13 @@ class SampleHandler: RPBroadcastSampleHandler {
     private var configuredHeight: Int32 = 0
     private let fps: Int32 = 60
 
-    /// Screen mirroring uses H.264 by default. HEVC compresses screen/UI
-    /// content ~40% smaller at the same quality, so the wire bitrate drops
-    /// — flip this to `true` to A/B whether HEVC improves reliability. The
-    /// device must support HEVC hardware encoding (A10 / iPhone 7+); we
-    /// fall back to H.264 otherwise, and the plugin decodes whichever codec
-    /// the video config announces.
-    private static let preferHEVC = false
+    /// HEVC by default: it compresses screen/UI content ~40% smaller than
+    /// H.264 at the same quality, cutting the wire bitrate. Devices without
+    /// HEVC hardware encoding (pre-A10, i.e. older than iPhone 7) fall back
+    /// to H.264 automatically, the plugin decodes whichever codec the video
+    /// config announces, and its no-output watchdog handles GPU decoders
+    /// that dislike the stream. Flip to `false` to A/B against H.264.
+    private static let preferHEVC = true
     // static let → initialized exactly once, thread-safely (read from the
     // capture thread and the network queue).
     private static let codec: VideoCodec =
