@@ -31,6 +31,7 @@ struct ContentView: View {
                 streamSection
                 cameraSection
                 optionsSection
+                aboutSection
             }
             .navigationTitle("LensLink")
         }
@@ -231,4 +232,24 @@ struct ContentView: View {
             Text("Dim: the screen dims after 10 seconds of streaming; tap to wake. Lip-sync: sends the phone mic to OBS purely as a timing reference so the plugin can auto-align your real microphone — it is never streamed or heard.")
         }
     }
+
+    /// The OBS plugin, docs, and issue tracker all live on GitHub —
+    /// TestFlight testers otherwise have no pointer to them. The version
+    /// line gives bug reports a build to cite.
+    private var aboutSection: some View {
+        Section {
+            Link(destination: URL(string: "https://github.com/MyNamesEMurray/LensLink")!) {
+                Label("LensLink on GitHub", systemImage: "link")
+            }
+        } footer: {
+            Text("OBS plugin downloads, guides, and bug reports. \(Self.versionLine)")
+        }
+    }
+
+    private static let versionLine: String = {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        return "LensLink v\(version) (\(build))"
+    }()
 }
