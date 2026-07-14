@@ -5,8 +5,15 @@ import ReplayKit
 /// so the user can start screen mirroring from inside the app instead of
 /// digging through Control Center.
 struct BroadcastButton: UIViewRepresentable {
-    /// Must match the extension's bundle id in project.yml.
-    static let extensionBundleID = "com.exaltedpixels.LensLink.broadcast"
+    /// The extension's bundle id is the app's + ".broadcast" (project.yml).
+    /// Derived at runtime, NOT hardcoded: sideloading tools (Sideloadly,
+    /// AltStore) re-sign with a remapped bundle id, and a stale hardcoded
+    /// id makes the picker fall back to listing every broadcast provider
+    /// on the phone instead of pre-selecting ours.
+    static var extensionBundleID: String {
+        (Bundle.main.bundleIdentifier ?? "com.exaltedpixels.LensLink")
+            + ".broadcast"
+    }
 
     func makeUIView(context: Context) -> RPSystemBroadcastPickerView {
         let picker = RPSystemBroadcastPickerView(
