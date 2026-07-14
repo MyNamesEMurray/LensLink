@@ -31,8 +31,12 @@ targets:
         # builds are testable immediately instead of "Missing Compliance".
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
+        # All four orientations: App Store validation requires the full set
+        # for iPad multitasking (or UIRequiresFullScreen, which we'd rather
+        # not force).
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSCameraUsageDescription: >-
