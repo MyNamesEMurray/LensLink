@@ -81,18 +81,18 @@ black is an OBS-side transform/scale problem, not the stream.
 
 ## HEVC toggle
 
-Screen content compresses much better in HEVC, so switching can lower the
-wire bitrate ~40% and reduce backpressure drops. It's a one-line switch in
+Screen mirroring encodes in HEVC by default — screen content compresses
+~40% better than H.264 at the same quality. Devices without HEVC hardware
+encoding (pre-A10, i.e. older than iPhone 7) fall back to H.264
+automatically, and the plugin decodes whichever codec the config
+announces. To A/B against H.264, it's a one-line switch in
 `ios-app/BroadcastExtension/SampleHandler.swift`:
 
 ```swift
-private static let preferHEVC = false   // set true to test HEVC
+private static let preferHEVC = true   // set false to test H.264
 ```
 
-Requires an A10 device (iPhone 7+) for hardware HEVC encoding; it falls
-back to H.264 automatically otherwise. The plugin decodes whichever codec
-the config announces, so no plugin change is needed. The heartbeat's
-`codec` field confirms which one is live.
+The heartbeat's `codec` field confirms which one is live.
 
 ## Collecting a report
 

@@ -18,8 +18,6 @@ phone.
 - An **iPhone or iPad on iOS/iPadOS 15 or later**.
 - For **USB**: iTunes installed on Windows (it provides Apple's device
   driver); nothing extra on macOS.
-- To install the app: a Mac with Xcode, **or** a Windows/Mac sideloading
-  tool such as [Sideloadly](https://sideloadly.io) and a free Apple ID.
 
 ## Install
 
@@ -30,16 +28,23 @@ phone.
   OBS Studio folder automatically; restart OBS afterwards. (Prefer manual?
   Unzip `lenslink-windows-x64.zip` into `C:\Program Files\obs-studio\`,
   merging the `obs-plugins` and `data` folders.)
+- **macOS** — open `LensLink-installer-macos-universal.pkg` (right-click →
+  Open the first time; the package isn't notarized). Restart OBS.
 - **Linux** — extract `lenslink-linux-x86_64.tar.gz` into
   `~/.config/obs-studio/plugins/`.
-- **macOS / building yourself** — see
-  [`obs-plugin/BUILDING.md`](obs-plugin/BUILDING.md).
+- Or build it yourself: [`obs-plugin/BUILDING.md`](obs-plugin/BUILDING.md).
 
-**2. The LensLink app.** Download `LensLink-unsigned.ipa` from
-[Releases](../../releases) and install it with
-[Sideloadly](https://sideloadly.io) using a free Apple ID (the app then
-needs re-signing about once a week — a limitation of free Apple accounts).
-Or build it yourself with Xcode: [`ios-app/BUILDING.md`](ios-app/BUILDING.md).
+**2. The LensLink app** — pick whichever suits you:
+
+- **TestFlight (recommended):** join the beta at
+  **[TESTFLIGHT-PUBLIC-LINK]** and install from the TestFlight app. Updates
+  arrive automatically; no computer or re-signing needed.
+- **Sideloading:** download `LensLink-unsigned.ipa` from
+  [Releases](../../releases) and install it with
+  [Sideloadly](https://sideloadly.io) and a free Apple ID (free accounts
+  expire the app weekly — re-sign to refresh).
+- **Build it yourself** with Xcode:
+  [`ios-app/BUILDING.md`](ios-app/BUILDING.md).
 
 ## Connect
 
@@ -72,10 +77,11 @@ blanks the source.
   zoom, tap-to-focus, exposure, focus lock, flashlight, camera flip) and
   **from your computer** via a browser panel at
   `http://localhost:9980` (zoom / exposure / focus / flashlight / flip).
-- **Screen mirroring.** Instead of the camera, mirror your whole iPhone/iPad
-  screen into the same OBS source, with the app's audio — great for mobile
-  games or app demos. Tap **Mirror screen to OBS** in the app (works over
-  Wi-Fi or USB). Your microphone isn't sent — mic yourself in OBS as usual.
+- **Screen mirroring.** Mirror your whole iPhone/iPad screen — with the
+  app's audio — into a dedicated **LensLink Screen** source; great for
+  mobile games or app demos. Works over Wi-Fi or USB, encoded in HEVC for
+  bandwidth-friendly quality. Your microphone isn't sent — mic yourself in
+  OBS as usual.
 - **Automatic lip sync.** The plugin measures the camera's latency and can
   automatically line up a separate microphone with the video — no guessing
   at delay values. (See "Lip sync" below.)
@@ -157,12 +163,15 @@ camera expose faster).
   `obs-plugins\64bit\ios-camera-source.dll` and
   `data\obs-plugins\ios-camera-source\` from your OBS folder, then restart
   OBS. The installer now removes it automatically.
-- **The app stops working after a week:** free Apple IDs expire sideloaded
-  apps every 7 days. Re-install it with Sideloadly to refresh; your
-  settings are kept.
-- **Two sources, same phone:** one phone can feed one source. A second
-  source aimed at the same device will say it's already in use — point it
-  at a different phone or remove it.
+- **The app stops working after a week (sideloaded only):** free Apple IDs
+  expire sideloaded apps every 7 days. Re-install it with Sideloadly to
+  refresh (settings are kept) — or switch to the TestFlight build, which
+  doesn't have this problem.
+- **Two sources, same phone:** one phone can feed one source at a time. A
+  second source aimed at the same device will say it's already in use.
+  Exception: with **Disconnect when this source isn't shown anywhere**
+  enabled, a hidden source releases the phone — so a Camera source in one
+  scene and a Screen source in another can share it.
 - **Wi-Fi latency spikes when zoomed in:** heavy digital zoom is harder to
   compress; use the Telephoto lens for clean magnification, or switch to
   USB.

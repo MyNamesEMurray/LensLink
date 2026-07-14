@@ -322,10 +322,11 @@ jobs:
             **Linux (OBS plugin):** download `lenslink-linux-x86_64.tar.gz`
             and extract it into `~/.config/obs-studio/plugins/`.
 
-            **iOS app:** download `LensLink-unsigned.ipa` and sideload it with
-            [Sideloadly](https://sideloadly.io) (Windows/macOS, free Apple ID;
-            re-sign every 7 days) — Apple signing rules prevent distributing
-            an installable app directly.
+            **iOS app:** easiest is the TestFlight beta —
+            [TESTFLIGHT-PUBLIC-LINK] — which updates automatically.
+            Alternatively, download `LensLink-unsigned.ipa` and sideload it
+            with [Sideloadly](https://sideloadly.io) (Windows/macOS, free
+            Apple ID; re-sign every 7 days).
 
             USB mode requires iTunes on Windows (for the Apple Mobile Device
             Service).
