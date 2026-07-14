@@ -215,8 +215,10 @@ jobs:
           codesign --force --sign - --deep stage/lenslink.plugin
           ditto -c -k --keepParent stage/lenslink.plugin lenslink-macos-universal.zip
 
-      # One-click alternative to the zip: a .pkg that installs into the
-      # system-wide OBS plugin folder and shows up in pkgutil for removal.
+      # One-click alternative to the zip: pkgbuild makes the component,
+      # productbuild wraps it in a distribution that installs to the
+      # *user's* OBS plugin folder (see installer/macos/distribution.xml
+      # for why that path is mandatory on Apple Silicon).
       - name: Build installer
         run: |
           version="${{ inputs.tag_name || github.ref_name }}"
@@ -227,6 +229,10 @@ jobs:
             --identifier com.lenslink.obs-plugin \
             --version "$version" \
             --install-location "/Library/Application Support/obs-studio/plugins" \
+            --component-plist installer/macos/component.plist \
+            lenslink-component.pkg
+          sed "s/@VERSION@/$version/" installer/macos/distribution.xml > distribution.xml
+          productbuild --distribution distribution.xml --package-path . \
             LensLink-installer-macos-universal.pkg
 
       - uses: actions/upload-artifact@v4
@@ -302,7 +308,10 @@ jobs:
 
             **macOS (OBS plugin):** download and open
             `LensLink-installer-macos-universal.pkg` (right-click → Open the
-            first time — the package is not notarized). Then restart OBS.
+            first time — the package is not notarized). It installs into
+            your user OBS plugin folder
+            (`~/Library/Application Support/obs-studio/plugins/`).
+            Then restart OBS.
             Prefer doing it by hand? Extract `lenslink-macos-universal.zip`
             into `~/Library/Application Support/obs-studio/plugins/` and
             clear the quarantine flag:

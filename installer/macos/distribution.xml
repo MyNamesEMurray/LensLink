@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- productbuild distribution. enable_currentUserHome makes the component's
+     install-location resolve relative to the user's home folder, so the
+     plugin lands in ~/Library/Application Support/obs-studio/plugins — the
+     only external plugin path Apple Silicon OBS scans (the system-wide
+     /Library path is legacy and Intel-only). Same pattern as the official
+     obsproject/obs-plugintemplate installer. @VERSION@ is substituted by
+     the packaging step in the CI workflows. -->
+<installer-gui-script minSpecVersion="1.0">
+    <options rootVolumeOnly="true" hostArchitectures="arm64,x86_64" customize="never" allow-external-scripts="no" />
+    <domains enable_currentUserHome="true" enable_anywhere="false" enable_localSystem="false" />
+    <title>LensLink OBS Plugin</title>
+    <choices-outline>
+        <line choice="obs-plugin" />
+    </choices-outline>
+    <choice id="obs-plugin" title="LensLink" description="">
+        <pkg-ref id="com.lenslink.obs-plugin" />
+    </choice>
+    <pkg-ref id="com.lenslink.obs-plugin" version="@VERSION@">#lenslink-component.pkg</pkg-ref>
+</installer-gui-script>

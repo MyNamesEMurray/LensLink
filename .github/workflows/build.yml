@@ -233,6 +233,9 @@ jobs:
           cp -R obs-plugin/data/ stage/lenslink.plugin/Contents/Resources/
           codesign --force --sign - --deep stage/lenslink.plugin
 
+      # Two stages: pkgbuild makes the component, productbuild wraps it in
+      # a distribution that installs to the *user's* home (see
+      # installer/macos/distribution.xml for why that path is mandatory).
       - name: Build installer
         run: |
           mkdir -p pkgroot
@@ -241,6 +244,10 @@ jobs:
             --identifier com.lenslink.obs-plugin \
             --version 0.0.0 \
             --install-location "/Library/Application Support/obs-studio/plugins" \
+            --component-plist installer/macos/component.plist \
+            lenslink-component.pkg
+          sed "s/@VERSION@/0.0.0/" installer/macos/distribution.xml > distribution.xml
+          productbuild --distribution distribution.xml --package-path . \
             LensLink-installer-macos-universal.pkg
 
       - name: Upload plugin artifact
