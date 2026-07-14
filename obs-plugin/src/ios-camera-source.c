@@ -38,6 +38,7 @@
 #define S_AUTO_VIDEO_DELAY "audio_auto_video_delay"
 #define S_WEB_CONTROL "web_control"
 #define S_DIAGNOSTICS "diagnostics"
+#define S_DEACTIVATE_HIDDEN "deactivate_when_hidden"
 
 /* Built-in OBS "Video Delay (Async)" filter. */
 #define ASYNC_DELAY_FILTER_ID "async_delay_filter"
@@ -71,6 +72,14 @@ struct ios_camera_source {
 	char usb_device[64]; /* pinned UDID for USB mode; "" = auto-assign */
 	volatile bool hw_decode;
 	volatile bool diagnostics; /* verbose pipeline logging to the OBS log */
+
+	/* "Deactivate when hidden": when enabled and the source isn't shown
+	 * on any display (program, preview, or projector), the dial loop
+	 * disconnects and releases the device claim — the phone stops
+	 * encoding (battery) and becomes usable by another LensLink source.
+	 * `showing` is maintained by the show/hide callbacks. */
+	volatile bool deactivate_hidden;
+	volatile bool showing;
 
 	/* Which registered source type this instance is: "LensLink Screen"
 	 * (true) or "LensLink Camera" (false). Set once at create from the
@@ -1386,6 +1395,21 @@ static void dial_loop(struct ios_camera_source *s)
 		socket_t sock = OBSC_INVALID_SOCKET;
 		long usb_id = -1;
 
+		/* Paused while hidden: stay disconnected and unclaimed so the
+		 * phone idles (and another source may take it). Cheap poll —
+		 * show/hide land on OBS threads, so the loop just watches the
+		 * flags rather than being signalled. */
+		if (s->deactivate_hidden && !s->showing) {
+			if (claimed) {
+				device_release(s);
+				claimed = false;
+				claimed_key[0] = 0;
+			}
+			set_status(s, "%s", T_("Status.Paused"));
+			sleep_ms_interruptible(s, 300);
+			continue;
+		}
+
 		if (usb) {
 			struct usbmux_device devs[16];
 			int n = usbmux_list_devices(devs, 16);
@@ -1478,6 +1502,8 @@ static void dial_loop(struct ios_camera_source *s)
 		struct client_state client = {.sock = sock};
 
 		while (!s->stop) {
+			if (s->deactivate_hidden && !s->showing)
+				break; /* hidden: drop the live connection */
 			int events = NET_WAIT_READ;
 			if (client.out.len > 0)
 				events |= NET_WAIT_WRITE;
@@ -1545,6 +1571,21 @@ static void start_thread(struct ios_camera_source *s)
 		blog(LOG_ERROR, "[lenslink] failed to start server thread");
 }
 
+/* Visibility tracking for "deactivate when hidden": OBS calls these when
+ * the source starts/stops being shown on any display. The dial-loop thread
+ * polls the flag, so these just record state — no joins, no blocking. */
+static void ios_camera_show(void *data)
+{
+	struct ios_camera_source *s = data;
+	s->showing = true;
+}
+
+static void ios_camera_hide(void *data)
+{
+	struct ios_camera_source *s = data;
+	s->showing = false;
+}
+
 static const char *ios_camera_get_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -1570,6 +1611,8 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 		s->source, obs_data_get_bool(settings, S_LOW_LATENCY));
 	s->hw_decode = obs_data_get_bool(settings, S_HW_DECODE);
 	s->diagnostics = obs_data_get_bool(settings, S_DIAGNOSTICS);
+	s->deactivate_hidden =
+		obs_data_get_bool(settings, S_DEACTIVATE_HIDDEN);
 
 	pthread_mutex_lock(&s->status_mutex);
 	bool was_syncing = s->audio_sync && s->audio_source[0];
@@ -1672,6 +1715,8 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 		source, obs_data_get_bool(settings, S_LOW_LATENCY));
 	s->hw_decode = obs_data_get_bool(settings, S_HW_DECODE);
 	s->diagnostics = obs_data_get_bool(settings, S_DIAGNOSTICS);
+	s->deactivate_hidden =
+		obs_data_get_bool(settings, S_DEACTIVATE_HIDDEN);
 	s->audio_sync = obs_data_get_bool(settings, S_AUDIO_SYNC);
 	s->audio_device_latency_ms =
 		(int)obs_data_get_int(settings, S_AUDIO_LATENCY);
@@ -1738,6 +1783,7 @@ static void ios_camera_get_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, S_AUTO_VIDEO_DELAY, false);
 	obs_data_set_default_bool(settings, S_WEB_CONTROL, true);
 	obs_data_set_default_bool(settings, S_DIAGNOSTICS, true);
+	obs_data_set_default_bool(settings, S_DEACTIVATE_HIDDEN, false);
 }
 
 static bool add_audio_source(void *data, obs_source_t *source)
@@ -1820,6 +1866,10 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 	obs_properties_add_bool(props, S_LOW_LATENCY, T_("LowLatency"));
 	obs_properties_add_bool(props, S_HW_DECODE, T_("HwDecode"));
 
+	obs_property_t *deact = obs_properties_add_bool(
+		props, S_DEACTIVATE_HIDDEN, T_("DeactivateHidden"));
+	obs_property_set_long_description(deact, T_("DeactivateHidden.Desc"));
+
 	if (!screen) {
 		obs_property_t *audio_list = obs_properties_add_list(
 			props, S_AUDIO_SOURCE, T_("AudioSource"),
@@ -1892,6 +1942,8 @@ struct obs_source_info ios_camera_source_info = {
 	.update = ios_camera_update,
 	.get_defaults = ios_camera_get_defaults,
 	.get_properties = ios_camera_get_properties,
+	.show = ios_camera_show,
+	.hide = ios_camera_hide,
 	.icon_type = OBS_ICON_TYPE_CAMERA,
 };
 
@@ -1906,5 +1958,7 @@ struct obs_source_info lenslink_screen_source_info = {
 	.update = ios_camera_update,
 	.get_defaults = ios_camera_get_defaults,
 	.get_properties = lenslink_screen_get_properties,
+	.show = ios_camera_show,
+	.hide = ios_camera_hide,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

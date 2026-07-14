@@ -82,7 +82,9 @@ blanks the source.
 - **Smooth on weak Wi-Fi.** If the connection congests, the app lowers
   quality briefly and recovers, instead of piling up latency.
 - **Battery saver.** While streaming, the phone screen dims after a few
-  seconds; tap to wake it.
+  seconds; tap to wake it. Optionally, enable **Disconnect when this source
+  isn't shown anywhere** in the source properties and the phone stops
+  streaming entirely whenever the source is hidden, reconnecting when shown.
 
 ## Screen mirroring
 
