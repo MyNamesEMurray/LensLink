@@ -1209,7 +1209,10 @@ static void dial_loop(struct ios_camera_source *s)
 				continue;
 			}
 			usb_id = devs[chosen].id;
-			set_status(s, "%s", T_("Status.WaitingUSB"));
+			/* Distinct from WaitingUSB: the phone IS here, we're
+			 * waiting for something on it to listen (camera app
+			 * started, or a screen broadcast running). */
+			set_status(s, "%s", T_("Status.USBFound"));
 			sock = usbmux_connect_device(usb_id, OBSC_USB_PORT);
 		} else if (!s->host[0]) {
 			set_status(s, "%s", T_("Status.NoHost"));
