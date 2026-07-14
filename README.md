@@ -114,6 +114,13 @@ camera expose faster).
 - **USB device not found (Windows):** make sure iTunes is installed — it
   provides the driver the plugin needs — and tap **Trust** on the phone
   when prompted.
+- **Source shows as "iOS Camera" / updates don't seem to apply:** an old
+  pre-1.0 copy of the plugin (`ios-camera-source.dll`) is still installed
+  and wins over the current one (the OBS log shows *"Source
+  'ios_camera_source' already exists"*). Delete
+  `obs-plugins\64bit\ios-camera-source.dll` and
+  `data\obs-plugins\ios-camera-source\` from your OBS folder, then restart
+  OBS. The installer now removes it automatically.
 - **The app stops working after a week:** free Apple IDs expire sideloaded
   apps every 7 days. Re-install it with Sideloadly to refresh; your
   settings are kept.

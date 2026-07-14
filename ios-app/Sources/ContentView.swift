@@ -76,6 +76,8 @@ struct ContentView: View {
         }
     }
 
+    @State private var probeResult: String?
+
     /// Screen mirroring is a separate path (a broadcast extension), not the
     /// camera pipeline — so it lives in its own section with the system
     /// broadcast picker.
@@ -90,6 +92,26 @@ struct ContentView: View {
                     Text("Streams your whole screen + app audio. Point the same OBS source at this phone.")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                }
+            }
+            // Diagnostic: verifies the broadcast extension's listener is
+            // reachable on-device, independent of OBS/USB. Run it while a
+            // broadcast is active.
+            Button {
+                probeResult = "Checking…"
+                BroadcastProbe.run { ok in
+                    probeResult = ok
+                        ? "✓ Broadcast link is up — OBS should be able to connect"
+                        : "✗ No listener — is a screen broadcast running? If yes, the extension isn't working"
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Check broadcast link")
+                    if let probeResult {
+                        Text(probeResult)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         }
