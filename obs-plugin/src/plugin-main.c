@@ -7,11 +7,13 @@ OBS_MODULE_USE_DEFAULT_LOCALE("lenslink", "en-US")
 
 MODULE_EXPORT const char *obs_module_description(void)
 {
-	return "LensLink — use an iPhone or iPad camera as a video source over "
-	       "Wi-Fi or USB (LensLink companion app required)";
+	return "LensLink — use an iPhone or iPad camera, or mirror its "
+	       "screen, as a video source over Wi-Fi or USB (LensLink "
+	       "companion app required)";
 }
 
 extern struct obs_source_info ios_camera_source_info;
+extern struct obs_source_info lenslink_screen_source_info;
 
 bool obs_module_load(void)
 {
@@ -21,6 +23,7 @@ bool obs_module_load(void)
 	}
 
 	obs_register_source(&ios_camera_source_info);
+	obs_register_source(&lenslink_screen_source_info);
 	blog(LOG_INFO, "[lenslink] plugin loaded");
 	return true;
 }

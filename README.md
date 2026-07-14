@@ -7,7 +7,8 @@ Use your iPhone or iPad as a high-quality camera **directly inside OBS
 Studio** — over Wi-Fi or a USB cable. No virtual-camera drivers, no RTMP
 server, no monthly subscription.
 
-It comes in two parts: an **OBS plugin** (adds an "LensLink Camera" source) and
+It comes in two parts: an **OBS plugin** (adds "LensLink Camera" and
+"LensLink Screen" sources) and
 the **LensLink iPhone/iPad app**. You install both, then OBS connects to your
 phone.
 
@@ -44,7 +45,8 @@ Or build it yourself with Xcode: [`ios-app/BUILDING.md`](ios-app/BUILDING.md).
 
 1. On the phone, open **LensLink**, choose your camera/resolution/frame rate,
    and tap **Start**. The app shows the phone's IP address.
-2. In OBS, add a source: **Sources → + → LensLink Camera**.
+2. In OBS, add a source: **Sources → + → LensLink Camera** (or **LensLink
+   Screen** to mirror the phone's screen instead — see below).
 3. Point it at your phone:
    - **Wi-Fi** — enter the IP the app shows as the **Phone IP**. (Phone and
      computer must be on the same network.)
@@ -80,14 +82,22 @@ blanks the source.
 - **Smooth on weak Wi-Fi.** If the connection congests, the app lowers
   quality briefly and recovers, instead of piling up latency.
 - **Battery saver.** While streaming, the phone screen dims after a few
-  seconds; tap to wake it.
+  seconds; tap to wake it. Optionally, enable **Disconnect when this source
+  isn't shown anywhere** in the source properties and the phone stops
+  streaming entirely whenever the source is hidden, reconnecting when shown.
 
 ## Screen mirroring
 
-Tap **Mirror screen to OBS** in the app to send your whole iPhone/iPad
-screen (plus the app's audio) into the same OBS source. It uses iOS's
-built-in screen broadcast, so it works from any app — pick **LensLink
-Screen** in the broadcast picker and tap **Start Broadcast**.
+Add a **LensLink Screen** source in OBS, then tap **Mirror screen to OBS**
+in the app to send your whole iPhone/iPad screen (plus the app's audio). It
+uses iOS's built-in screen broadcast, so it works from any app — pick
+**LensLink Screen** in the broadcast picker and tap **Start Broadcast**.
+
+Note: DRM-protected audio (Apple Music, Spotify, Netflix) is muted by iOS
+during any screen broadcast — that's an iOS rule, not a LensLink limit.
+Game/app/browser audio comes through fine. To *hear* the audio on the
+computer (not just record/stream it), set the source's **Audio Monitoring →
+Monitor and Output** in OBS's Advanced Audio Properties.
 
 **Locking the source size.** A screen mirror reports whatever resolution
 iOS is broadcasting, and that can differ between apps and orientations, so
@@ -102,9 +112,11 @@ each incoming size to fit your box instead of resizing the layout.
        width="420">
 </p>
 
-The browser control panel at `http://localhost:9980` hides the camera
-controls automatically while a screen mirror is connected — none of them
-(zoom, focus, flashlight) apply to a screen.
+The LensLink Screen source has no camera controls (and no browser panel) —
+its properties are just the connection, decoding, and diagnostics. Each
+source type accepts only its own stream: a LensLink Screen source rejects a
+camera stream (and vice versa), with the Status field in the source's
+properties explaining what to switch.
 
 ## Lip sync
 
