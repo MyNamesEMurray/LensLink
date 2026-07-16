@@ -119,6 +119,10 @@ struct ios_camera_source {
 	int audio_device_latency_ms;
 	bool auto_calibrate;
 	bool auto_video_delay; /* delay video when the mic is the slower one */
+	/* set_video_delay mirrored a delay onto the source's sync offset:
+	 * clear the offset only when we set it, never a user's manual value
+	 * (set_video_delay(0) runs on every settings update). */
+	bool sync_offset_owned;
 	int64_t last_video_latency_ns; /* avg capture->decode, for the offset */
 
 	/* Auto lip-sync cross-correlator. `lipsync` is fed by the network
@@ -657,10 +661,20 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 	 * (the phone mic) bypasses the filter chain and would end up leading
 	 * the delayed video by exactly delay_ms. Mirror the delay onto the
 	 * source's sync offset (audio-only, a no-op while the source carries
-	 * no audio) so the pair moves together. Auto-calibration owns this
-	 * field, same contract as the external mic's sync offset. */
-	obs_source_set_sync_offset(
-		s->source, delay_ms > 0 ? (int64_t)delay_ms * 1000000 : 0);
+	 * no audio) so the pair moves together. In practice the mic can't be
+	 * source audio while calibration runs (one mic, one role), but a
+	 * calibration-applied delay outlives the reference role, so the
+	 * mirror still matters. Clear ONLY an offset we set: this runs with
+	 * 0 on every settings update, and it must not wipe a sync offset the
+	 * user typed into Advanced Audio Properties. */
+	if (delay_ms > 0) {
+		obs_source_set_sync_offset(s->source,
+					   (int64_t)delay_ms * 1000000);
+		s->sync_offset_owned = true;
+	} else if (s->sync_offset_owned) {
+		obs_source_set_sync_offset(s->source, 0);
+		s->sync_offset_owned = false;
+	}
 
 	if (delay_ms <= 0) {
 		if (existing) {
