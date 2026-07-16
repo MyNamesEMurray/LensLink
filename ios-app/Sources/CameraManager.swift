@@ -299,12 +299,15 @@ final class CameraManager: NSObject {
         }
     }
 
-    func setContinuousAutoFocus() {
+    /// `resetExposure` is false while manual exposure is active, so
+    /// switching focus modes doesn't silently discard the ISO/shutter lock.
+    func setContinuousAutoFocus(resetExposure: Bool = true) {
         withLockedDevice { device in
             if device.isFocusModeSupported(.continuousAutoFocus) {
                 device.focusMode = .continuousAutoFocus
             }
-            if device.isExposureModeSupported(.continuousAutoExposure) {
+            if resetExposure,
+               device.isExposureModeSupported(.continuousAutoExposure) {
                 device.exposureMode = .continuousAutoExposure
             }
         }
@@ -325,16 +328,102 @@ final class CameraManager: NSObject {
     }
 
     /// One-shot focus + exposure at a point of interest (0…1 device coords).
-    func focusAndExpose(at devicePoint: CGPoint) {
+    /// `includeExposure` is false while manual exposure is active, so a
+    /// focus tap doesn't discard the ISO/shutter lock.
+    func focusAndExpose(at devicePoint: CGPoint, includeExposure: Bool = true) {
         withLockedDevice { device in
             if device.isFocusPointOfInterestSupported,
                device.isFocusModeSupported(.continuousAutoFocus) {
                 device.focusPointOfInterest = devicePoint
                 device.focusMode = .continuousAutoFocus
             }
-            if device.isExposurePointOfInterestSupported,
+            if includeExposure,
+               device.isExposurePointOfInterestSupported,
                device.isExposureModeSupported(.continuousAutoExposure) {
                 device.exposurePointOfInterest = devicePoint
+                device.exposureMode = .continuousAutoExposure
+            }
+        }
+    }
+
+    // MARK: - White balance / manual exposure
+
+    /// Whether the active camera supports locking white balance to custom
+    /// gains (the temperature slider). Front cameras on some devices don't.
+    var supportsWhiteBalanceLock: Bool {
+        activeDevice?.isLockingWhiteBalanceWithCustomDeviceGainsSupported ?? false
+    }
+
+    func setAutoWhiteBalance() {
+        withLockedDevice { device in
+            if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                device.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+        }
+    }
+
+    /// Locks white balance at a colour temperature (Kelvin, neutral tint).
+    func lockWhiteBalance(temperature: Float) {
+        withLockedDevice { device in
+            guard device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
+            else { return }
+            let values = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(
+                temperature: temperature, tint: 0)
+            var gains = device.deviceWhiteBalanceGains(for: values)
+            // The conversion can produce gains outside the legal range at
+            // extreme temperatures; setting those throws an exception.
+            let maxGain = device.maxWhiteBalanceGain
+            gains.redGain = max(1, min(gains.redGain, maxGain))
+            gains.greenGain = max(1, min(gains.greenGain, maxGain))
+            gains.blueGain = max(1, min(gains.blueGain, maxGain))
+            device.setWhiteBalanceModeLocked(with: gains)
+        }
+    }
+
+    var supportsManualExposure: Bool {
+        activeDevice?.isExposureModeSupported(.custom) ?? false
+    }
+
+    /// ISO limits of the active format (manual exposure).
+    var isoRange: ClosedRange<Float> {
+        guard let device = activeDevice else { return 100...800 }
+        let format = device.activeFormat
+        return format.minISO...max(format.maxISO, format.minISO + 1)
+    }
+
+    var minShutterSeconds: Double {
+        guard let device = activeDevice else { return 1.0 / 8000 }
+        return device.activeFormat.minExposureDuration.seconds
+    }
+
+    /// Longest usable shutter: bounded by the format and by the frame
+    /// interval (a shutter longer than a frame would drop the frame rate).
+    func maxShutterSeconds(fps: Int32) -> Double {
+        guard let device = activeDevice else { return 1.0 / 30 }
+        return min(device.activeFormat.maxExposureDuration.seconds,
+                   1.0 / Double(fps))
+    }
+
+    /// Manual exposure: fixed ISO and shutter. Values are clamped to the
+    /// active format's limits.
+    func setManualExposure(iso: Float, shutterSeconds: Double) {
+        withLockedDevice { device in
+            guard device.isExposureModeSupported(.custom) else { return }
+            let format = device.activeFormat
+            let clampedISO = max(format.minISO, min(iso, format.maxISO))
+            let seconds = max(format.minExposureDuration.seconds,
+                              min(shutterSeconds,
+                                  format.maxExposureDuration.seconds))
+            device.setExposureModeCustom(
+                duration: CMTime(seconds: seconds,
+                                 preferredTimescale: 1_000_000),
+                iso: clampedISO)
+        }
+    }
+
+    func setAutoExposure() {
+        withLockedDevice { device in
+            if device.isExposureModeSupported(.continuousAutoExposure) {
                 device.exposureMode = .continuousAutoExposure
             }
         }

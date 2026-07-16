@@ -97,6 +97,10 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
 { "cmd": "flashlight", "on": true }
 { "cmd": "flip" }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "exposure", "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
+{ "cmd": "exposure", "mode": "auto" }
 { "cmd": "start_stream" }
 { "cmd": "stop_stream" }
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
@@ -138,6 +142,13 @@ changes and once on connect. Payload: UTF-8 JSON, e.g.
 The plugin caches the latest snapshot and serves it at `/api/state` so
 remote UIs mirror the app (and vice versa) regardless of where a change
 was made.
+
+The snapshot also carries white-balance and manual-exposure state
+(`whiteBalanceMode`/`whiteBalanceTemperature`, `exposureMode`/`iso`/
+`shutterSeconds` with their ranges, plus `supportsWhiteBalanceLock` and
+`supportsManualExposure` so UIs hide what the camera lacks) and the
+capture format (`resolution`/`fps`/`codec` with `resolutions`/
+`frameRates`/`codecs` capability lists for `set_format` pickers).
 
 ### 9 — AUDIO (app → plugin)
 Reference audio for lip-sync auto-calibration. Payload: raw **16 kHz mono
