@@ -22,6 +22,11 @@ struct StreamingView: View {
                 session: streamer.camera.session,
                 sessionQueue: streamer.camera.sessionQueue,
                 videoGravity: .resizeAspect,
+                // Battery saver: while the dim overlay hides everything,
+                // stop rendering preview frames too (the stream to OBS is
+                // untouched). The last frame freezes underneath, invisible
+                // behind the overlay.
+                previewEnabled: !dimmed,
                 onTapAtDevicePoint: { point in
                     touched()
                     streamer.camera.focusAndExpose(at: point)

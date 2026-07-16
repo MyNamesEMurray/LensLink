@@ -13,6 +13,12 @@ struct CameraPreviewView: UIViewRepresentable {
     /// serializes them after any start/stop instead of blocking main.
     let sessionQueue: DispatchQueue
     var videoGravity: AVLayerVideoGravity = .resizeAspect
+    /// While false, the preview layer's connection is disabled so frames
+    /// stop being rendered to it. Used by the dim overlay: without this,
+    /// the GPU keeps compositing a full-rate preview under a near-black
+    /// cover for as long as the phone sits dimmed — pure wasted power.
+    /// Capture (and the outgoing stream) is unaffected.
+    var previewEnabled: Bool = true
     var onTapAtDevicePoint: ((CGPoint) -> Void)?
     var onPinchZoom: ((_ phase: PinchPhase, _ scale: CGFloat) -> Void)?
 
@@ -90,6 +96,18 @@ struct CameraPreviewView: UIViewRepresentable {
     func updateUIView(_ uiView: PreviewView, context: Context) {
         context.coordinator.parent = self
         uiView.previewLayer.videoGravity = videoGravity
+
+        // Off-main like attach/detach: the connection exists only after the
+        // queued attach above has run, and toggling it shouldn't contend
+        // with a start/stop holding the session lock.
+        let layer = uiView.previewLayer
+        let enabled = previewEnabled
+        sessionQueue.async {
+            if let connection = layer.connection,
+               connection.isEnabled != enabled {
+                connection.isEnabled = enabled
+            }
+        }
     }
 
     static func dismantleUIView(_ uiView: PreviewView, coordinator: Coordinator) {

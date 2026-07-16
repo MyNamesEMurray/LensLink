@@ -307,8 +307,30 @@ final class StreamClient {
 
     private func sendOnQueue(_ data: Data, isVideoFrame: Bool) {
         guard let connection else { return }
+        connection.send(content: data,
+                        completion: sendCompletion(for: connection,
+                                                   isVideoFrame: isVideoFrame))
+    }
+
+    /// Queue-confined. Video frames are the bulk of the bandwidth; sending
+    /// header and payload as two batched writes spares every frame a full
+    /// memcpy into a combined buffer (packet() would copy the whole payload
+    /// again just to gain a 20-byte prefix) — and the matching allocation.
+    private func sendVideoOnQueue(header: Data, payload: Data) {
+        guard let connection else { return }
+        let completion = sendCompletion(for: connection, isVideoFrame: true)
+        connection.batch {
+            // The header rides with the payload; errors and accounting are
+            // handled once, on the payload's completion.
+            connection.send(content: header, completion: .idempotent)
+            connection.send(content: payload, completion: completion)
+        }
+    }
+
+    private func sendCompletion(for connection: NWConnection,
+                                isVideoFrame: Bool) -> NWConnection.SendCompletion {
         let enqueuedAt = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
-        connection.send(content: data, completion: .contentProcessed { [weak self, weak connection] error in
+        return .contentProcessed { [weak self, weak connection] error in
             guard let self else { return }
             // Ignore results from connections we've already abandoned, and
             // our own cancellations — reacting to those poisons the next
@@ -330,7 +352,7 @@ final class StreamClient {
             if let error, !Self.isCancellation(error) {
                 self.connectionEnded(failure: error.localizedDescription)
             }
-        })
+        }
     }
 
     /// What this connection streams — "camera" (the app) or "screen" (the
@@ -471,11 +493,11 @@ final class StreamClient {
                 self.diagKeyframesSent += 1
             }
             let flags: OBSCProtocol.Flags = frame.isKeyframe ? [.keyframe] : []
-            self.sendOnQueue(OBSCProtocol.packet(type: .video,
-                                                 flags: flags,
-                                                 ptsNanoseconds: frame.ptsNanoseconds,
-                                                 payload: frame.data),
-                             isVideoFrame: true)
+            let header = OBSCProtocol.header(type: .video,
+                                             flags: flags,
+                                             ptsNanoseconds: frame.ptsNanoseconds,
+                                             payloadSize: frame.data.count)
+            self.sendVideoOnQueue(header: header, payload: frame.data)
         }
     }
 
