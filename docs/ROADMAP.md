@@ -61,16 +61,15 @@ you do.*
 Ranked by how much they'd matter to a typical streamer, weighed against
 effort. These extend features that already exist.
 
-### 1. Optional pairing & encryption — close the trusted-LAN caveat
-The README honestly says the stream is unencrypted and intended for
-trusted networks, and remote start raises the stakes (any LAN peer could
-send `start_stream`). A one-time pairing (PIN shown in the app, entered
-in OBS) yielding a stored token, carried in the plugin's first packet
-and required for CONTROL — plus optional TLS via `NWProtocolTLS` with a
-pinned self-signed cert — would make the app safe on shared networks
-(dorms, offices, event venues). Designed as opt-in ("Require pairing"
-toggle) to keep the zero-config home path frictionless. *Medium effort;
-the right thing to ship before promoting remote start heavily.*
+### 1. Wire encryption (TLS)
+PIN pairing + token auth shipped (see docs/PROTOCOL.md "Pairing"), which
+closes the access-control half of the trusted-LAN caveat. The remaining
+half is confidentiality: the stream is still plaintext on the LAN. TLS
+via `NWProtocolTLS` with a pinned self-signed cert is straightforward on
+the app side; the cost is the plugin side, which today has no crypto
+dependency — adopting one (likely mbedTLS) uniformly across Windows,
+macOS, and Linux is the bulk of the work. *Large effort; only worth it
+if users actually stream on hostile networks.*
 
 ## How to use this document
 

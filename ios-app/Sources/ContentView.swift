@@ -102,6 +102,17 @@ struct ContentView: View {
                         .textSelection(.enabled)
                 }
             }
+            if let pin = streamer.pairingPIN {
+                // A computer is asking to pair: surface the PIN loudly.
+                HStack(spacing: Theme.Space.m) {
+                    Label("Pairing PIN", systemImage: "lock.shield")
+                        .font(.callout)
+                    Spacer()
+                    Text(pin)
+                        .font(.title3.monospacedDigit().bold())
+                        .foregroundColor(Theme.accent)
+                }
+            }
             DisclosureGroup("How to connect", isExpanded: $showConnectionHelp) {
                 Label {
                     Text("Install the LensLink plugin in OBS Studio (see the GitHub link below), then add the source you want — camera or screen — from **Sources → +**.")
@@ -259,6 +270,14 @@ struct ContentView: View {
         // header must be a closure too.
         Section {
             Toggle("Remote start from OBS", isOn: $streamer.remoteStartEnabled)
+            Toggle("Require pairing", isOn: $streamer.requirePairing)
+            if streamer.requirePairing && streamer.pairedComputerCount > 0 {
+                Button(role: .destructive) {
+                    streamer.forgetPairings()
+                } label: {
+                    Text("Forget paired computers (\(streamer.pairedComputerCount))")
+                }
+            }
             Toggle("Match phone orientation", isOn: $streamer.followOrientation)
             Toggle("Dim screen while streaming", isOn: $streamer.dimWhileStreaming)
             Toggle("Send phone mic to OBS", isOn: $streamer.sendMicAudio)
@@ -266,7 +285,7 @@ struct ContentView: View {
         } header: {
             Text("Options")
         } footer: {
-            Text("Remote start: while LensLink is open, OBS can start the camera for you — automatically when its source connects, or from the source's \"Start camera on the phone\" button. Siri works too: \"Start streaming with LensLink.\" Orientation: rotates the stream to match how the phone is held — portrait streams portrait (the OBS source resizes; pin it with a Fit bounding box). Dim: the screen dims after 10 seconds of streaming; tap to wake. Phone mic: streams this phone's microphone as the camera source's audio in OBS — a wireless mic. Lip-sync: sends the phone mic purely as a timing reference so the plugin can auto-align your real microphone — never streamed or heard. The mic toggles are either/or: one mic, one role.")
+            Text("Remote start: while LensLink is open, OBS can start the camera for you — automatically when its source connects, or from the source's \"Start camera on the phone\" button. Siri works too: \"Start streaming with LensLink.\" Pairing: computers must enter a one-time PIN (shown here) before they can watch or control this camera — recommended on shared networks. Orientation: rotates the stream to match how the phone is held — portrait streams portrait (the OBS source resizes; pin it with a Fit bounding box). Dim: the screen dims after 10 seconds of streaming; tap to wake. Phone mic: streams this phone's microphone as the camera source's audio in OBS — a wireless mic. Lip-sync: sends the phone mic purely as a timing reference so the plugin can auto-align your real microphone — never streamed or heard. The mic toggles are either/or: one mic, one role.")
         }
     }
 

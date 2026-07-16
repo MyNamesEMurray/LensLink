@@ -44,6 +44,8 @@
 #define S_DIAGNOSTICS "diagnostics"
 #define S_DEACTIVATE_HIDDEN "deactivate_when_hidden"
 #define S_AUTO_START "auto_start"
+#define S_AUTH_TOKEN "auth_token" /* stored pairing token (no UI) */
+#define S_PAIR_PIN "pair_pin"
 
 /* Built-in OBS "Video Delay (Async)" filter. */
 #define ASYNC_DELAY_FILTER_ID "async_delay_filter"
@@ -150,6 +152,12 @@ struct ios_camera_source {
 	 * Guarded by status_mutex; lets the web panel offer a Start button. */
 	bool standby;
 
+	/* Pairing (docs/PROTOCOL.md "Pairing"): the token this source holds
+	 * for the phone, and a user-entered PIN pending exchange. Guarded by
+	 * status_mutex (written by update(), read by the dial thread). */
+	char auth_token[80];
+	char pair_pin[24];
+
 	pthread_mutex_t status_mutex;
 	struct dstr status;
 };
@@ -168,6 +176,20 @@ bool ios_camera_is_standby(struct ios_camera_source *s)
 	bool v = s->standby;
 	pthread_mutex_unlock(&s->status_mutex);
 	return v;
+}
+
+/* PINs travel inside JSON we build with snprintf; restrict them to
+ * alphanumerics so user input can't break the framing. */
+static void sanitize_pin(char *dst, size_t size, const char *src)
+{
+	size_t o = 0;
+	for (; *src && o + 1 < size; src++) {
+		char ch = *src;
+		if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') ||
+		    (ch >= 'A' && ch <= 'Z'))
+			dst[o++] = ch;
+	}
+	dst[o] = 0;
 }
 
 static enum connection_mode parse_mode(const char *mode)
@@ -355,6 +377,8 @@ struct client_state {
 	bool hw_failed; /* GPU decode failed once: stay on software */
 	bool is_screen; /* screen mirror (plays system audio) vs camera */
 	bool standby;   /* app is idle, waiting for a start_stream command */
+	bool auth_required; /* app demands pairing before anything flows */
+	bool auth_ok;       /* the app accepted our token / pairing */
 	uint64_t next_decoder_attempt; /* cooldown after create failure */
 	enum AVCodecID codec_id;
 	char name[128];
@@ -951,6 +975,74 @@ static bool extract_json_bool(const char *json, const char *key)
 	return strncmp(p, "true", 4) == 0;
 }
 
+/* The connection is fully open (no auth, or auth just succeeded): apply
+ * the standby/auto-start policy, or plain connected status. */
+static void hello_ready(struct ios_camera_source *s, struct client_state *c)
+{
+	if (c->standby) {
+		/* Remote start: the app is open but idle. Kick the camera
+		 * off ourselves if enabled and armed (armed = the app just
+		 * became reachable, not "the user just pressed Stop");
+		 * otherwise say how to start it. */
+		if (s->auto_start && s->auto_start_armed) {
+			s->auto_start_armed = false;
+			blog(LOG_INFO,
+			     "[lenslink] app is idle — starting the camera "
+			     "remotely");
+			send_control_cmd(c, "{\"cmd\":\"start_stream\"}");
+			set_status(s, "%s", T_("Status.StartingCamera"));
+		} else {
+			set_status(s, "%s", T_("Status.Standby"));
+		}
+	} else {
+		set_status(s, "%s %s", T_("Status.Connected"),
+			   c->name[0] ? c->name : "iOS device");
+	}
+}
+
+/* The app requires pairing: authenticate with the stored token, else try
+ * the user-entered PIN, else ask the app to show a PIN and tell the user
+ * where to type it. Resolution arrives as a STATE with auth:"ok"/"denied". */
+static void send_auth(struct ios_camera_source *s, struct client_state *c)
+{
+	char token[80], pin[24];
+	pthread_mutex_lock(&s->status_mutex);
+	snprintf(token, sizeof(token), "%s", s->auth_token);
+	snprintf(pin, sizeof(pin), "%s", s->pair_pin);
+	pthread_mutex_unlock(&s->status_mutex);
+
+	char json[128];
+	if (token[0]) {
+		snprintf(json, sizeof(json),
+			 "{\"cmd\":\"auth\",\"token\":\"%.79s\"}", token);
+		send_control_cmd(c, json);
+	} else if (pin[0]) {
+		snprintf(json, sizeof(json),
+			 "{\"cmd\":\"pair\",\"pin\":\"%.23s\"}", pin);
+		send_control_cmd(c, json);
+	} else {
+		send_control_cmd(c, "{\"cmd\":\"pair_request\"}");
+		set_status(s, "%s", T_("Status.PairRequired"));
+	}
+}
+
+/* A pairing just completed: keep the token with the source's settings so
+ * it survives OBS restarts, and clear the used PIN. */
+static void save_pairing_token(struct ios_camera_source *s,
+			       const char *token)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	snprintf(s->auth_token, sizeof(s->auth_token), "%s", token);
+	s->pair_pin[0] = 0;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	obs_data_t *settings = obs_source_get_settings(s->source);
+	obs_data_set_string(settings, S_AUTH_TOKEN, token);
+	obs_data_set_string(settings, S_PAIR_PIN, "");
+	obs_source_update(s->source, settings);
+	obs_data_release(settings);
+}
+
 static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			  const struct obsc_header *hdr,
 			  const uint8_t *payload)
@@ -989,27 +1081,16 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			     s->is_screen_source ? "screen" : "camera");
 			return false;
 		}
-		if (c->standby) {
-			/* Remote start: the app is open but idle. Kick the
-			 * camera off ourselves if enabled and armed (armed =
-			 * the app just became reachable, not "the user just
-			 * pressed Stop"); otherwise say how to start it. */
-			if (s->auto_start && s->auto_start_armed) {
-				s->auto_start_armed = false;
-				blog(LOG_INFO,
-				     "[lenslink] app is idle — starting the "
-				     "camera remotely");
-				send_control_cmd(c,
-						 "{\"cmd\":\"start_stream\"}");
-				set_status(s, "%s",
-					   T_("Status.StartingCamera"));
-			} else {
-				set_status(s, "%s", T_("Status.Standby"));
-			}
+		char auth[16] = {0};
+		extract_json_string(json, "auth", auth, sizeof(auth));
+		c->auth_required = strcmp(auth, "required") == 0;
+		if (c->auth_required) {
+			/* Nothing flows until the app accepts our token or
+			 * a PIN pairing completes (STATE with auth:"ok"). */
+			send_auth(s, c);
 			break;
 		}
-		set_status(s, "%s %s", T_("Status.Connected"),
-			   c->name[0] ? c->name : "iOS device");
+		hello_ready(s, c);
 		break;
 	}
 	case OBSC_PKT_VIDEO_CONFIG: {
@@ -1176,12 +1257,38 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 	case OBSC_PKT_PING:
 		break;
 	case OBSC_PKT_STATE: {
-		pthread_mutex_lock(&s->status_mutex);
-		size_t n = hdr->payload_size < sizeof(s->device_state) - 1
+		char json[1024] = {0};
+		size_t n = hdr->payload_size < sizeof(json) - 1
 				   ? hdr->payload_size
-				   : sizeof(s->device_state) - 1;
-		memcpy(s->device_state, payload, n);
-		s->device_state[n] = 0;
+				   : sizeof(json) - 1;
+		memcpy(json, payload, n);
+
+		/* Auth results ride the STATE channel. They are consumed
+		 * here and NOT stored as device state — /api/state must
+		 * never serve a pairing token to the browser. */
+		char auth[16] = {0};
+		extract_json_string(json, "auth", auth, sizeof(auth));
+		if (auth[0]) {
+			if (strcmp(auth, "ok") == 0 && !c->auth_ok) {
+				c->auth_ok = true;
+				char token[80] = {0};
+				extract_json_string(json, "pairedToken",
+						    token, sizeof(token));
+				if (token[0])
+					save_pairing_token(s, token);
+				blog(LOG_INFO,
+				     "[lenslink] phone accepted "
+				     "authentication");
+				hello_ready(s, c);
+			} else if (strcmp(auth, "denied") == 0) {
+				set_status(s, "%s", T_("Status.AuthDenied"));
+			}
+			break;
+		}
+
+		pthread_mutex_lock(&s->status_mutex);
+		snprintf(s->device_state, sizeof(s->device_state), "%s",
+			 json);
 		pthread_mutex_unlock(&s->status_mutex);
 		break;
 	}
@@ -1729,6 +1836,25 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 	s->auto_start = !s->is_screen_source &&
 			obs_data_get_bool(settings, S_AUTO_START);
 
+	/* Pairing: snapshot token/PIN for the dial thread. A newly entered
+	 * PIN is also sent immediately over a live connection (it rides the
+	 * regular control queue). */
+	char clean_pin[24];
+	sanitize_pin(clean_pin, sizeof(clean_pin),
+		     obs_data_get_string(settings, S_PAIR_PIN));
+	pthread_mutex_lock(&s->status_mutex);
+	bool pin_changed = strcmp(clean_pin, s->pair_pin) != 0;
+	snprintf(s->auth_token, sizeof(s->auth_token), "%s",
+		 obs_data_get_string(settings, S_AUTH_TOKEN));
+	snprintf(s->pair_pin, sizeof(s->pair_pin), "%s", clean_pin);
+	pthread_mutex_unlock(&s->status_mutex);
+	if (pin_changed && clean_pin[0]) {
+		char json[64];
+		snprintf(json, sizeof(json),
+			 "{\"cmd\":\"pair\",\"pin\":\"%s\"}", clean_pin);
+		ios_camera_enqueue_control(s, json, strlen(json));
+	}
+
 	pthread_mutex_lock(&s->status_mutex);
 	bool was_syncing = s->audio_sync && s->audio_source[0];
 	int64_t applied = s->applied_audio_offset;
@@ -1837,6 +1963,10 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 	/* Armed at creation: an app already open and idle when this source
 	 * appears should start streaming right away. */
 	s->auto_start_armed = true;
+	snprintf(s->auth_token, sizeof(s->auth_token), "%s",
+		 obs_data_get_string(settings, S_AUTH_TOKEN));
+	sanitize_pin(s->pair_pin, sizeof(s->pair_pin),
+		     obs_data_get_string(settings, S_PAIR_PIN));
 	s->audio_sync = obs_data_get_bool(settings, S_AUDIO_SYNC);
 	s->audio_device_latency_ms =
 		(int)obs_data_get_int(settings, S_AUDIO_LATENCY);
@@ -1978,6 +2108,25 @@ static bool start_camera_clicked(obs_properties_t *props,
 	return false;
 }
 
+/* Drops the stored pairing token (and any pending PIN); the phone side
+ * has its own "Forget paired computers" for the other half. */
+static bool forget_pairing_clicked(obs_properties_t *props,
+				   obs_property_t *property, void *data)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+	struct ios_camera_source *s = data;
+
+	if (!s)
+		return false;
+	obs_data_t *settings = obs_source_get_settings(s->source);
+	obs_data_set_string(settings, S_AUTH_TOKEN, "");
+	obs_data_set_string(settings, S_PAIR_PIN, "");
+	obs_source_update(s->source, settings);
+	obs_data_release(settings);
+	return false;
+}
+
 /* Property sheets for the two source types share the connection and decode
  * settings; only the camera type gets the lip-sync group and the web panel
  * (neither applies to a screen mirror). */
@@ -2030,6 +2179,14 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 		obs_properties_add_button(props, "start_camera",
 					  T_("StartCamera"),
 					  start_camera_clicked);
+
+		/* Pairing (only meaningful when the app has "Require
+		 * pairing" on — the status line says when to use these). */
+		obs_properties_add_text(props, S_PAIR_PIN, T_("PairPin"),
+					OBS_TEXT_DEFAULT);
+		obs_properties_add_button(props, "forget_pairing",
+					  T_("ForgetPairing"),
+					  forget_pairing_clicked);
 
 		obs_property_t *audio_list = obs_properties_add_list(
 			props, S_AUDIO_SOURCE, T_("AudioSource"),

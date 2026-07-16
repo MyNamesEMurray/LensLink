@@ -189,6 +189,30 @@ connection state). The plugin echoes it into the OBS log (prefixed
 so both ends of the pipeline appear together — the broadcast extension has
 no console of its own. Purely informational; a receiver may ignore it.
 
+## Pairing
+
+Optional, app-side ("Require pairing", off by default). When on, the
+app's HELLO carries `"auth": "required"`, and the app sends **no video,
+audio, or state** — and honours no control commands — until the
+connection authenticates. Three CONTROL commands (plugin → app) exist
+for it:
+
+```json
+{ "cmd": "auth", "token": "…" }      // present a stored pairing token
+{ "cmd": "pair_request" }            // ask the app to display a PIN
+{ "cmd": "pair", "pin": "123456" }   // redeem the user-entered PIN
+```
+
+The app answers on the STATE channel with `{ "auth": "ok" }` (plus a
+fresh `"pairedToken"` after a successful `pair`, which the plugin
+persists in the source settings and presents on future connects) or
+`{ "auth": "denied" }`. Auth-result STATEs are consumed by the plugin
+and never stored/served via `/api/state`. A pairing attempt dies with
+its connection; timesync and pings flow regardless (they leak nothing).
+
+Tokens gate access, not confidentiality: the stream itself is still
+plaintext on the LAN. Wire encryption remains a roadmap item.
+
 ## Discovery (Bonjour)
 
 Whenever the app's listener is up (streaming, standby, or a screen

@@ -224,8 +224,12 @@ camera expose faster).
 - **Wi-Fi latency spikes when zoomed in:** heavy digital zoom is harder to
   compress; use the Telephoto lens for clean magnification, or switch to
   USB.
-- The stream is unencrypted on your local network — intended for trusted
-  home/studio networks.
+- On a shared network (office, dorm, venue), turn on **Require pairing**
+  in the app: computers must enter a one-time PIN (shown on the phone)
+  before they can watch or control the camera. OBS remembers the pairing;
+  both sides have a "forget" option. Note the stream itself is still
+  unencrypted on your local network — pairing controls access, not
+  eavesdropping.
 
 ## Contributing
 

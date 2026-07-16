@@ -52,6 +52,18 @@ struct StreamingView: View {
 
             VStack {
                 statusBar
+                if let pin = streamer.pairingPIN {
+                    // A computer is pairing while we stream; the PIN must
+                    // be visible here too.
+                    HStack {
+                        Text("Pairing PIN: \(pin)")
+                            .font(.callout.monospacedDigit().bold())
+                            .glassPill()
+                        Spacer()
+                    }
+                    .padding(.top, Theme.Space.s)
+                    .foregroundColor(Theme.textPrimary)
+                }
                 if showHealth, let health = streamer.health {
                     healthPill(health)
                 }

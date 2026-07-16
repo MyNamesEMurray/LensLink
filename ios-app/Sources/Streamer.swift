@@ -159,6 +159,91 @@ final class Streamer: ObservableObject {
             }
         }
     }
+    // MARK: - Pairing
+
+    /// Require computers to pair (one-time PIN) before they can watch or
+    /// control this camera. Off by default: the historical trusted-LAN
+    /// behavior stays zero-config.
+    @Published var requirePairing: Bool {
+        didSet {
+            UserDefaults.standard.set(requirePairing, forKey: "requirePairing")
+            client.setAuthRequired(requirePairing)
+        }
+    }
+    /// PIN currently shown for a pairing attempt (nil = none in progress).
+    @Published private(set) var pairingPIN: String?
+    @Published private(set) var pairedComputerCount: Int
+
+    private var pairedTokens: [String] {
+        didSet {
+            UserDefaults.standard.set(pairedTokens, forKey: "pairedTokens")
+            pairedComputerCount = pairedTokens.count
+        }
+    }
+
+    func forgetPairings() {
+        pairedTokens = []
+    }
+
+    /// Marks the current connection authenticated, hands the plugin its
+    /// (new) token, and — since sends were held — re-runs the on-connect
+    /// sends so video/state start flowing immediately.
+    private func authenticateConnection(newToken: String? = nil) {
+        client.markConnectionAuthenticated()
+        var result: [String: Any] = ["auth": "ok"]
+        if let newToken {
+            result["pairedToken"] = newToken
+        }
+        client.sendAuthResult(result)
+        if isStreaming, lastClientState == .connected {
+            handleClientState(.connected)
+        }
+    }
+
+    /// Handles the pairing/auth control commands; returns true when the
+    /// command was one of them (fully handled here).
+    private func handleAuthCommand(_ cmd: String,
+                                   _ command: [String: Any]) -> Bool {
+        switch cmd {
+        case "auth":
+            guard requirePairing else { return true }
+            if let token = command["token"] as? String,
+               pairedTokens.contains(token) {
+                authenticateConnection()
+            } else {
+                client.sendAuthResult(["auth": "denied"])
+            }
+            return true
+        case "pair_request":
+            guard requirePairing else { return true }
+            // Show (or keep showing) a PIN. User-visible by design: a
+            // surprise PIN appearing is the signal that something on the
+            // network wants access.
+            if pairingPIN == nil {
+                pairingPIN = String(format: "%06d",
+                                    Int.random(in: 0...999_999))
+            }
+            return true
+        case "pair":
+            guard requirePairing else { return true }
+            if let pin = command["pin"] as? String,
+               let expected = pairingPIN, pin == expected {
+                let token = (0..<4).map { _ in
+                    String(format: "%08x",
+                           UInt32.random(in: .min ... .max))
+                }.joined()
+                pairedTokens.append(token)
+                pairingPIN = nil
+                authenticateConnection(newToken: token)
+            } else {
+                client.sendAuthResult(["auth": "denied"])
+            }
+            return true
+        default:
+            return false
+        }
+    }
+
     /// Rotate the stream to match how the phone is held. Off by default:
     /// a mounted phone shouldn't resize its OBS source because it was
     /// nudged, and rotation restarts the encoder.
@@ -495,6 +580,11 @@ final class Streamer: ObservableObject {
             && !defaults.bool(forKey: "sendAudioReference")
         remoteStartEnabled = defaults.object(forKey: "remoteStartEnabled") as? Bool ?? true
         followOrientation = defaults.bool(forKey: "followOrientation")
+        requirePairing = defaults.bool(forKey: "requirePairing")
+        let tokens = defaults.stringArray(forKey: "pairedTokens") ?? []
+        pairedTokens = tokens
+        pairedComputerCount = tokens.count
+        client.setAuthRequired(defaults.bool(forKey: "requirePairing"))
 
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
@@ -610,6 +700,16 @@ final class Streamer: ObservableObject {
         guard let object = try? JSONSerialization.jsonObject(with: json),
               let command = object as? [String: Any],
               let cmd = command["cmd"] as? String else { return }
+
+        // Pairing/auth first — the only commands an unauthenticated
+        // connection may issue. Everything below is gated when pairing
+        // is required.
+        if handleAuthCommand(cmd, command) {
+            return
+        }
+        if requirePairing && !client.isConnectionAuthenticated() {
+            return
+        }
 
         // Stream lifecycle commands work regardless of streaming state,
         // but only when the user has remote start enabled.
@@ -928,6 +1028,10 @@ final class Streamer: ObservableObject {
 
     private func handleClientState(_ state: StreamClient.State) {
         lastClientState = state
+        // A pairing attempt dies with its connection.
+        if state != .connected, pairingPIN != nil {
+            pairingPIN = nil
+        }
         guard isStreaming else {
             handleStandbyClientState(state)
             return

@@ -67,6 +67,7 @@ final class StreamClient {
 
     /// Queue-confined.
     private func teardownConnection() {
+        connectionAuthenticated = false
         pingTimer?.cancel()
         pingTimer = nil
         connection?.cancel()
@@ -304,7 +305,7 @@ final class StreamClient {
         sendOnQueue(OBSCProtocol.packet(type: .timesyncResp,
                                         ptsNanoseconds: now,
                                         payload: payload),
-                    isVideoFrame: false)
+                    isVideoFrame: false, bypassAuth: true)
     }
 
     // MARK: - Sending
@@ -318,17 +319,20 @@ final class StreamClient {
         return false
     }
 
-    private func send(_ data: Data, isVideoFrame: Bool = false) {
+    private func send(_ data: Data, isVideoFrame: Bool = false,
+                      bypassAuth: Bool = false) {
         // All connection access and counter updates happen on `queue`;
         // callers may be on the main thread or the encoder thread.
         queue.async { [weak self] in
             guard let self else { return }
-            self.sendOnQueue(data, isVideoFrame: isVideoFrame)
+            self.sendOnQueue(data, isVideoFrame: isVideoFrame,
+                             bypassAuth: bypassAuth)
         }
     }
 
-    private func sendOnQueue(_ data: Data, isVideoFrame: Bool) {
-        guard let connection else { return }
+    private func sendOnQueue(_ data: Data, isVideoFrame: Bool,
+                             bypassAuth: Bool = false) {
+        guard let connection, bypassAuth || authOK() else { return }
         connection.send(content: data,
                         completion: sendCompletion(for: connection,
                                                    isVideoFrame: isVideoFrame))
@@ -339,7 +343,7 @@ final class StreamClient {
     /// memcpy into a combined buffer (packet() would copy the whole payload
     /// again just to gain a 20-byte prefix) — and the matching allocation.
     private func sendVideoOnQueue(header: Data, payload: Data) {
-        guard let connection else { return }
+        guard let connection, authOK() else { return }
         let completion = sendCompletion(for: connection, isVideoFrame: true)
         connection.batch {
             // The header rides with the payload; errors and accounting are
@@ -382,6 +386,41 @@ final class StreamClient {
     /// plugin can label the source and skip camera-only behaviour.
     var sourceKind: OBSCProtocol.SourceKind = .camera
 
+    /// Pairing (docs/PROTOCOL.md "Pairing"): when required, HELLO carries
+    /// auth:"required" and outbound media/state is held until the Streamer
+    /// verifies the plugin's token or completes a PIN pairing. Both flags
+    /// queue-confined; `connectionAuthenticated` is per connection.
+    private var authRequired = false
+    private var connectionAuthenticated = false
+
+    func setAuthRequired(_ on: Bool) {
+        queue.async { [weak self] in self?.authRequired = on }
+    }
+
+    /// The Streamer verified a paired token (or completed pairing) for
+    /// the current connection.
+    func markConnectionAuthenticated() {
+        queue.async { [weak self] in self?.connectionAuthenticated = true }
+    }
+
+    /// True when sends may flow: auth off, or this connection verified.
+    func isConnectionAuthenticated() -> Bool {
+        queue.sync { !authRequired || connectionAuthenticated }
+    }
+
+    /// Queue-confined check used by the send paths.
+    private func authOK() -> Bool {
+        !authRequired || connectionAuthenticated
+    }
+
+    /// Sends an auth result STATE (auth:"ok"/"denied", optionally a fresh
+    /// pairedToken) — the one state packet that must bypass the auth gate.
+    func sendAuthResult(_ result: [String: Any]) {
+        guard let payload = try? JSONSerialization.data(withJSONObject: result) else { return }
+        send(OBSCProtocol.packet(type: .state, payload: payload),
+             bypassAuth: true)
+    }
+
     /// Standby (remote start): the app is reachable but the camera isn't
     /// running yet. Advertised in the HELLO so the plugin can offer (or
     /// auto-send) a "start_stream" control command. Queue-confined.
@@ -411,8 +450,12 @@ final class StreamClient {
         if standbyMode {
             hello["standby"] = true
         }
+        if authRequired {
+            hello["auth"] = "required"
+        }
         guard let payload = try? JSONSerialization.data(withJSONObject: hello) else { return }
-        send(OBSCProtocol.packet(type: .hello, payload: payload))
+        send(OBSCProtocol.packet(type: .hello, payload: payload),
+             bypassAuth: true)
     }
 
     func sendVideoConfig(codec: VideoCodec, width: Int32, height: Int32, fps: Int32) {
@@ -527,7 +570,8 @@ final class StreamClient {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now() + 2, repeating: 2)
         timer.setEventHandler { [weak self] in
-            self?.send(OBSCProtocol.packet(type: .ping, payload: Data()))
+            self?.send(OBSCProtocol.packet(type: .ping, payload: Data()),
+                       bypassAuth: true)
         }
         timer.resume()
         pingTimer = timer
