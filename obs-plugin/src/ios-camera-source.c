@@ -408,6 +408,7 @@ struct client_state {
 	uint64_t last_diag_ns;   /* last heartbeat emission */
 	uint64_t first_frame_ns; /* 0 until the first decoded frame */
 	bool no_output_warned;   /* one-shot "keyframe but nothing decoded" */
+	bool sps_logged;         /* one-shot SPS profile/level log */
 	bool wrong_kind; /* stream kind doesn't match this source type */
 };
 
@@ -986,6 +987,33 @@ static bool extract_json_bool(const char *json, const char *key)
 	return strncmp(p, "true", 4) == 0;
 }
 
+/* Logs the H.264 stream's SPS profile/level once per decode stream — the
+ * first thing to know when a GPU driver won't decode a stream software
+ * handles fine (drivers gate on the advertised caps, not the content). */
+static void log_h264_sps(const uint8_t *data, size_t size)
+{
+	for (size_t i = 0; i + 4 < size; i++) {
+		if (data[i] != 0 || data[i + 1] != 0)
+			continue;
+		size_t nal;
+		if (data[i + 2] == 1)
+			nal = i + 3;
+		else if (data[i + 2] == 0 && data[i + 3] == 1)
+			nal = i + 4;
+		else
+			continue;
+		if (nal + 3 >= size)
+			return;
+		if ((data[nal] & 0x1F) != 7) /* SPS */
+			continue;
+		blog(LOG_INFO,
+		     "[lenslink] H.264 SPS: profile_idc=%u "
+		     "constraint_flags=0x%02x level_idc=%u",
+		     data[nal + 1], data[nal + 2], data[nal + 3]);
+		return;
+	}
+}
+
 static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			  const struct obsc_header *hdr,
 			  const uint8_t *payload)
@@ -1107,6 +1135,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			c->decode_errors = 0;
 			c->first_frame_ns = 0;
 			c->no_output_warned = false;
+			c->sps_logged = false;
 			c->hw_retry = 0;
 			c->packets_at_decoder = c->video_packets;
 			c->next_decoder_attempt = 0;
@@ -1121,6 +1150,12 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		bool keyframe = (hdr->flags & OBSC_FLAG_KEYFRAME) != 0;
 		if (keyframe)
 			c->keyframes_seen++;
+
+		if (keyframe && !c->sps_logged &&
+		    c->codec_id == AV_CODEC_ID_H264) {
+			c->sps_logged = true;
+			log_h264_sps(payload, hdr->payload_size);
+		}
 
 		if (!c->decoder) {
 			/* Join on a keyframe so the decoder starts clean. */
