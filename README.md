@@ -4,6 +4,7 @@
 </picture>
 
 [![Latest release](https://img.shields.io/github/v/release/MyNamesEMurray/LensLink)](../../releases/latest)
+[![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](LICENSE)
 
 Use your iPhone or iPad as a high-quality camera **directly inside OBS
 Studio** — over Wi-Fi or a USB cable. No virtual-camera drivers, no RTMP
@@ -273,7 +274,13 @@ camera expose faster).
 
 ## Contributing
 
-Architecture, the wire protocol, and the build/release setup are documented
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md). Architecture, the wire
+protocol, and the build/release setup are documented
 in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md). Planned improvements and
 recommended future work live in [`docs/ROADMAP.md`](docs/ROADMAP.md);
 performance ground rules in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+
+## License
+
+LensLink is free software, licensed under the
+[GNU GPL version 2 or later](LICENSE) — the same license as OBS Studio.

@@ -28,6 +28,8 @@ surfaces follow).
   you tried, or that the change is doc/build-only.
 - Changes to the wire protocol must update `docs/PROTOCOL.md` and stay
   compatible with the version negotiation described there.
+- By contributing you agree your work is licensed under the project's
+  license, [GPL-2.0-or-later](LICENSE).
 
 ## Releases
 
