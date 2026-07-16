@@ -56,6 +56,17 @@ static const char control_page[] =
 	".chip.on{background:var(--accent)}.chip .ic{color:var(--txt);width:20px;height:20px}"
 	"select{flex:1;background:rgba(255,255,255,.12);color:var(--txt);border:0;"
 	"border-radius:12px;padding:0 12px;height:44px;font-size:14px}"
+	".primary{width:100%;height:44px;border:0;border-radius:12px;"
+	"background:var(--accent);color:#fff;font-size:15px;font-weight:600;"
+	"cursor:pointer}"
+	/* Stop is the one destructive control (docs/UI_DESIGN.md §1). */
+	".primary.danger{background:var(--red)}"
+	/* Two-button action rows; the auto-start toggle reads like a chip:
+	 * grey when off, accent when on. */
+	".btnrow{display:flex;gap:10px;margin-top:14px}"
+	".btnrow:first-child{margin-top:0}"
+	".primary.toggle{background:rgba(255,255,255,.12)}"
+	".primary.toggle.on{background:var(--accent)}"
 	"</style></head><body>"
 	"<header><h1>LensLink</h1>"
 	"<div class='pill'><span class='dot' id='dot'></span>"
@@ -63,7 +74,19 @@ static const char control_page[] =
 	/* Shown instead of the controls for a screen-mirror source. */
 	"<div class='panel' id='screennote' style='display:none'>"
 	"Screen mirroring &mdash; camera controls don&rsquo;t apply.</div>"
-	"<div class='panel' id='panel'>"
+	/* Remote start: the app is open but idle; one tap starts the camera. */
+	"<div class='panel' id='startpanel' style='display:none'>"
+	"<div class='btnrow'>"
+	"<button class='primary' id='startbtn'>Start camera</button>"
+	"<button class='primary toggle' id='asbtn1' "
+	"title='Start the camera automatically whenever the app is ready'>"
+	"Auto-start</button></div>"
+	"<div class='hint' style='margin-top:12px'>The LensLink app is open "
+	"and ready &mdash; the camera hasn&rsquo;t been started yet.</div></div>"
+	/* Hidden until the first poll confirms a live camera connection —
+	 * a default-visible panel flashed dead sliders and a Stop button
+	 * before any state was known. */
+	"<div class='panel' id='panel' style='display:none'>"
 	"<div class='row'>"
 	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/>"
@@ -101,7 +124,15 @@ static const char control_page[] =
 	"stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
 	"<path d='M15 4 h5 v5'/><path d='M20 9 A8 8 0 0 0 6 6'/>"
 	"<path d='M9 20 H4 v-5'/><path d='M4 15 A8 8 0 0 0 18 18'/></svg></button>"
-	"</div></div>"
+	"</div>"
+	/* Remote stop: mirrors the app's red Stop. The phone drops back to
+	 * standby, so this panel swaps to the Start button afterwards. */
+	"<div class='btnrow'>"
+	"<button class='primary danger' id='stopbtn'>Stop camera</button>"
+	"<button class='primary toggle' id='asbtn2' "
+	"title='Start the camera automatically whenever the app is ready'>"
+	"Auto-start</button></div>"
+	"</div>"
 	"<script>"
 	/* NB: elements are looked up explicitly — a bare `status` would
 	 * resolve to window.status, not the element. */
@@ -109,7 +140,9 @@ static const char control_page[] =
 	"const dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
 	"expEl=$('exposure'),evEl=$('ev'),afEl=$('af'),mfEl=$('mf'),lensEl=$('lens'),"
 	"fhintEl=$('fhint'),flashlightEl=$('flashlight'),flipEl=$('flip'),lensselEl=$('lenssel'),"
-	"panelEl=$('panel'),screennoteEl=$('screennote');"
+	"panelEl=$('panel'),screennoteEl=$('screennote'),"
+	"startpanelEl=$('startpanel'),startbtnEl=$('startbtn'),"
+	"stopbtnEl=$('stopbtn'),asbtn1El=$('asbtn1'),asbtn2El=$('asbtn2');"
 	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93'};"
 	"let lastTouch=0;const touch=()=>lastTouch=Date.now();"
 	"const send=o=>{touch();"
@@ -134,7 +167,20 @@ static const char control_page[] =
 	"flashlightEl.onclick=()=>{touch();flashlightUI(!fon);send({cmd:'flashlight',on:fon})};"
 	"flipEl.onclick=()=>send({cmd:'flip'});"
 	"lensselEl.onchange=()=>send({cmd:'selectLens',label:lensselEl.value});"
+	"startbtnEl.onclick=()=>send({cmd:'start_stream'});"
+	"stopbtnEl.onclick=()=>send({cmd:'stop_stream'});"
+	/* Auto-start toggle: writes the source's own auto-start property
+	 * (the checkbox in the source properties), not a phone control. */
+	"let autoStart=false;"
+	"function asUI(on){autoStart=on;const c=on?'primary toggle on':'primary toggle';"
+	"asbtn1El.className=c;asbtn2El.className=c}"
+	"const toggleAS=()=>{touch();asUI(!autoStart);"
+	"fetch('/api/autostart',{method:'POST',body:JSON.stringify({on:autoStart})})};"
+	"asbtn1El.onclick=toggleAS;asbtn2El.onclick=toggleAS;"
 	"function statusColor(t){t=(t||'').toLowerCase();"
+	/* Standby/starting are amber (ready, not live) — test before the
+	 * generic 'connected' match, which their wording also contains. */
+	"if(t.includes('idle')||t.includes('starting'))return COL.amber;"
 	"if(t.includes('connected'))return COL.live;"
 	"if(t.includes('disconnect')||t.includes('could not')||t.includes('error'))return COL.red;"
 	"if(t.includes('wait')||t.includes('trying')||t.includes('dial'))return COL.amber;"
@@ -142,10 +188,15 @@ static const char control_page[] =
 	"async function poll(){try{"
 	"const s=await(await fetch('/api/status')).json();"
 	"statusEl.textContent=s.status||'idle';dotEl.style.background=statusColor(s.status);"
-	/* Screen mirror has no camera controls: show the note instead. */
-	"panelEl.style.display=s.screen?'none':'';"
+	/* Live controls only when a camera stream is actually connected;
+	 * standby gets the Start panel; screen mirror gets the note; not
+	 * connected shows just the status pill. */
+	"panelEl.style.display=(s.connected&&!s.screen&&!s.standby)?'':'none';"
 	"screennoteEl.style.display=s.screen?'':'none';"
-	"if(s.screen)return;"
+	"startpanelEl.style.display=(s.standby&&!s.screen)?'':'none';"
+	"if(typeof s.autoStart==='boolean'&&Date.now()-lastTouch>2000)"
+	"asUI(s.autoStart);"
+	"if(s.screen||s.standby||!s.connected)return;"
 	"const st=await(await fetch('/api/state')).json();"
 	/* Don't fight the operator's hand: only mirror app state when the panel
 	 * hasn't been touched for a couple of seconds. */
@@ -333,11 +384,48 @@ static void handle_client(struct web_control *wc, socket_t client)
 		ios_camera_copy_status(wc->source, status, sizeof(status));
 		json_escape(status, escaped, sizeof(escaped));
 
-		char json[600];
-		snprintf(json, sizeof(json), "{\"status\":\"%s\",\"screen\":%s}",
+		char json[768];
+		snprintf(json, sizeof(json),
+			 "{\"status\":\"%s\",\"screen\":%s,\"standby\":%s,"
+			 "\"connected\":%s,\"autoStart\":%s}",
 			 escaped,
-			 ios_camera_is_screen(wc->source) ? "true" : "false");
+			 ios_camera_is_screen(wc->source) ? "true" : "false",
+			 ios_camera_is_standby(wc->source) ? "true" : "false",
+			 ios_camera_is_connected(wc->source) ? "true" : "false",
+			 ios_camera_auto_start(wc->source) ? "true" : "false");
 		respond(client, "200 OK", "application/json", json);
+		return;
+	}
+
+	if (strncmp(request, "POST /api/autostart", 19) == 0) {
+		/* Body: {"on":true|false}. Toggles the source's auto-start
+		 * property (same value the properties checkbox edits). */
+		const char *cl = find_header(request, "Content-Length");
+		size_t content_length = cl ? (size_t)strtoul(cl, NULL, 10) : 0;
+		if (content_length == 0 || content_length > MAX_CONTROL_BODY) {
+			respond(client, "400 Bad Request", "text/plain",
+				"bad length");
+			return;
+		}
+		size_t body_offset = (size_t)(body - request);
+		while (have - body_offset < content_length &&
+		       have < MAX_REQUEST) {
+			int n = (int)recv(client, request + have,
+					  (int)(MAX_REQUEST - have), 0);
+			if (n <= 0)
+				return;
+			have += (size_t)n;
+			request[have] = 0;
+		}
+		if (have - body_offset < content_length) {
+			respond(client, "400 Bad Request", "text/plain",
+				"truncated body");
+			return;
+		}
+		ios_camera_set_auto_start(
+			wc->source,
+			strstr(request + body_offset, "true") != NULL);
+		respond(client, "204 No Content", "text/plain", NULL);
 		return;
 	}
 

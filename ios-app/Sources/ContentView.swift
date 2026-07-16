@@ -211,10 +211,15 @@ struct ContentView: View {
                 // while a broadcast is active.
                 Button {
                     probeResult = "Checking…"
-                    BroadcastProbe.run { ok in
-                        probeResult = ok
-                            ? "✓ Broadcast link is up — OBS should be able to connect"
-                            : "✗ No listener — is a screen broadcast running? If yes, the extension isn't working"
+                    BroadcastProbe.run { result in
+                        switch result {
+                        case .screenListener:
+                            probeResult = "✓ Broadcast link is up — OBS should be able to connect"
+                        case .appListener:
+                            probeResult = "✗ Only the app's own listener answered — start a screen broadcast, then run this again"
+                        case .none:
+                            probeResult = "✗ No listener — is a screen broadcast running? If yes, the extension isn't working"
+                        }
                     }
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
@@ -253,12 +258,13 @@ struct ContentView: View {
         // Section has no (title-string + footer-closure) initializer; the
         // header must be a closure too.
         Section {
+            Toggle("Remote start from OBS", isOn: $streamer.remoteStartEnabled)
             Toggle("Dim screen while streaming", isOn: $streamer.dimWhileStreaming)
             Toggle("Auto lip-sync reference", isOn: $streamer.sendAudioReference)
         } header: {
             Text("Options")
         } footer: {
-            Text("Dim: the screen dims after 10 seconds of streaming; tap to wake. Lip-sync: sends the phone mic to OBS purely as a timing reference so the plugin can auto-align your real microphone — it is never streamed or heard.")
+            Text("Remote start: while LensLink is open, OBS can start the camera for you — automatically when its source connects, or from the source's \"Start camera on the phone\" button. Siri works too: \"Start streaming with LensLink.\" Dim: the screen dims after 10 seconds of streaming; tap to wake. Lip-sync: sends the phone mic to OBS purely as a timing reference so the plugin can auto-align your real microphone — it is never streamed or heard.")
         }
     }
 

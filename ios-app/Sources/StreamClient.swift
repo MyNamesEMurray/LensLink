@@ -338,13 +338,35 @@ final class StreamClient {
     /// plugin can label the source and skip camera-only behaviour.
     var sourceKind: OBSCProtocol.SourceKind = .camera
 
+    /// Standby (remote start): the app is reachable but the camera isn't
+    /// running yet. Advertised in the HELLO so the plugin can offer (or
+    /// auto-send) a "start_stream" control command. Queue-confined.
+    private var standbyMode = false
+
+    func setStandby(_ on: Bool) {
+        queue.async { [weak self] in
+            guard let self, self.standbyMode != on else { return }
+            self.standbyMode = on
+            // Already connected (e.g. OBS just started the stream over the
+            // standby connection): re-announce so the plugin flips its
+            // standby state immediately instead of waiting for the video
+            // config.
+            if self.state == .connected {
+                self.sendHello()
+            }
+        }
+    }
+
     private func sendHello() {
-        let hello: [String: Any] = [
+        var hello: [String: Any] = [
             "name": UIDevice.current.name,
             "app": "LensLink",
             "protocol": Int(OBSCProtocol.version),
             "kind": sourceKind.rawValue,
         ]
+        if standbyMode {
+            hello["standby"] = true
+        }
         guard let payload = try? JSONSerialization.data(withJSONObject: hello) else { return }
         send(OBSCProtocol.packet(type: .hello, payload: payload))
     }

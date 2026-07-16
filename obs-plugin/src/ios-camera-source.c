@@ -39,6 +39,7 @@
 #define S_WEB_CONTROL "web_control"
 #define S_DIAGNOSTICS "diagnostics"
 #define S_DEACTIVATE_HIDDEN "deactivate_when_hidden"
+#define S_AUTO_START "auto_start"
 
 /* Built-in OBS "Video Delay (Async)" filter. */
 #define ASYNC_DELAY_FILTER_ID "async_delay_filter"
@@ -80,6 +81,19 @@ struct ios_camera_source {
 	 * `showing` is maintained by the show/hide callbacks. */
 	volatile bool deactivate_hidden;
 	volatile bool showing;
+
+	/* Remote start: when the app connects in standby (open but idle,
+	 * "Remote start from OBS" enabled), send it a start_stream command
+	 * automatically. `auto_start_armed` implements once-per-appearance:
+	 * it's set when the source is created, after the phone has been
+	 * unreachable for a couple of attempts (app closed/backgrounded), or
+	 * when we stop the camera ourselves on hide — and consumed by the
+	 * auto-start. So a manual stop on the phone doesn't bounce straight
+	 * back into streaming. armed/dial_failures are touched only by the
+	 * dial-loop thread. */
+	volatile bool auto_start;
+	bool auto_start_armed;
+	int dial_failures;
 
 	/* Which registered source type this instance is: "LensLink Screen"
 	 * (true) or "LensLink Camera" (false). Set once at create from the
@@ -128,6 +142,15 @@ struct ios_camera_source {
 	 * Guarded by status_mutex; lets the web panel hide dead controls. */
 	bool is_screen;
 
+	/* The connected app is idle in standby, waiting for start_stream.
+	 * Guarded by status_mutex; lets the web panel offer a Start button. */
+	bool standby;
+
+	/* A device connection is live (HELLO received). Guarded by
+	 * status_mutex; lets the web panel show live controls only when
+	 * there is actually something to control. */
+	bool stat_connected;
+
 	pthread_mutex_t status_mutex;
 	struct dstr status;
 };
@@ -138,6 +161,39 @@ bool ios_camera_is_screen(struct ios_camera_source *s)
 	bool v = s->is_screen;
 	pthread_mutex_unlock(&s->status_mutex);
 	return v;
+}
+
+bool ios_camera_is_standby(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	bool v = s->standby;
+	pthread_mutex_unlock(&s->status_mutex);
+	return v;
+}
+
+bool ios_camera_is_connected(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	bool v = s->stat_connected;
+	pthread_mutex_unlock(&s->status_mutex);
+	return v;
+}
+
+bool ios_camera_auto_start(struct ios_camera_source *s)
+{
+	return s->auto_start;
+}
+
+/* Web-panel toggle for the auto-start property: persist it through the
+ * source's settings so the properties checkbox and the panel stay one
+ * value. obs_source_update is safe from the web thread; our update()
+ * only restarts the dial thread when connection settings change. */
+void ios_camera_set_auto_start(struct ios_camera_source *s, bool on)
+{
+	obs_data_t *settings = obs_source_get_settings(s->source);
+	obs_data_set_bool(settings, S_AUTO_START, on);
+	obs_source_update(s->source, settings);
+	obs_data_release(settings);
 }
 
 static enum connection_mode parse_mode(const char *mode)
@@ -324,6 +380,7 @@ struct client_state {
 	struct h264_decoder *decoder;
 	bool hw_failed; /* GPU decode failed once: stay on software */
 	bool is_screen; /* screen mirror (plays system audio) vs camera */
+	bool standby;   /* app is idle, waiting for a start_stream command */
 	uint64_t next_decoder_attempt; /* cooldown after create failure */
 	enum AVCodecID codec_id;
 	char name[128];
@@ -695,20 +752,24 @@ static void apply_audio_sync(struct ios_camera_source *s, int64_t latency_ns)
 	     (int)(latency_ns / 1000000));
 }
 
-/* Forward queued remote-control commands to the device. */
-/* Asks the device to emit a fresh keyframe immediately. Best-effort control
- * message (same JSON channel as camera controls); the screen extension
- * honours it, the camera app ignores unknown commands. Used to avoid a
- * multi-second black gap after swapping the decoder to software — the
- * software decoder can only (re)start on a keyframe. */
+/* Sends a control command (JSON) to the device. Best-effort; receivers
+ * ignore commands they don't understand, so new ones stay compatible. */
+static void send_control_cmd(struct client_state *c, const char *json)
+{
+	size_t len = strlen(json);
+	uint8_t hdr[OBSC_HEADER_SIZE];
+	obsc_build_header(hdr, OBSC_PKT_CONTROL, 0, 0, (uint32_t)len);
+	client_send(c, hdr, OBSC_HEADER_SIZE);
+	client_send(c, json, len);
+}
+
+/* Asks the device to emit a fresh keyframe immediately. The screen
+ * extension honours it, the camera app ignores unknown commands. Used to
+ * avoid a multi-second black gap after swapping the decoder to software —
+ * the software decoder can only (re)start on a keyframe. */
 static void request_keyframe(struct client_state *c)
 {
-	static const char json[] = "{\"cmd\":\"keyframe\"}";
-	size_t len = sizeof(json) - 1;
-	uint8_t packet[OBSC_HEADER_SIZE + sizeof(json) - 1];
-	obsc_build_header(packet, OBSC_PKT_CONTROL, 0, 0, (uint32_t)len);
-	memcpy(packet + OBSC_HEADER_SIZE, json, len);
-	client_send(c, packet, sizeof(packet));
+	send_control_cmd(c, "{\"cmd\":\"keyframe\"}");
 }
 
 static void control_tick(struct ios_camera_source *s, struct client_state *c)
@@ -857,6 +918,8 @@ static void client_disconnect(struct ios_camera_source *s,
 	pthread_mutex_lock(&s->status_mutex);
 	s->device_state[0] = 0;
 	s->is_screen = false;
+	s->standby = false;
+	s->stat_connected = false;
 	pthread_mutex_unlock(&s->status_mutex);
 
 	/* A kind-mismatch rejection needs its actionable status to survive
@@ -896,6 +959,25 @@ static void extract_json_string(const char *json, const char *key, char *out,
 	out[i] = 0;
 }
 
+/* True only for a bare-boolean "key": true (same best-effort spirit as
+ * extract_json_string). Absent key or any other value reads as false. */
+static bool extract_json_bool(const char *json, const char *key)
+{
+	char pattern[64];
+	snprintf(pattern, sizeof(pattern), "\"%s\"", key);
+
+	const char *p = strstr(json, pattern);
+	if (!p)
+		return false;
+	p = strchr(p + strlen(pattern), ':');
+	if (!p)
+		return false;
+	p++;
+	while (*p == ' ' || *p == '\t')
+		p++;
+	return strncmp(p, "true", 4) == 0;
+}
+
 static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			  const struct obsc_header *hdr,
 			  const uint8_t *payload)
@@ -911,13 +993,17 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		char kind[16] = {0};
 		extract_json_string(json, "kind", kind, sizeof(kind));
 		c->is_screen = strcmp(kind, "screen") == 0;
+		c->standby = !c->is_screen && extract_json_bool(json, "standby");
 		c->connected_ns = os_gettime_ns();
 		pthread_mutex_lock(&s->status_mutex);
 		s->is_screen = c->is_screen;
+		s->standby = c->standby;
+		s->stat_connected = true;
 		pthread_mutex_unlock(&s->status_mutex);
-		blog(LOG_INFO, "[lenslink] client connected: %s (%s)",
+		blog(LOG_INFO, "[lenslink] client connected: %s (%s%s)",
 		     c->name[0] ? c->name : "(unnamed)",
-		     c->is_screen ? "screen" : "camera");
+		     c->is_screen ? "screen" : "camera",
+		     c->standby ? ", standby" : "");
 		/* The phone picks what it streams, not this source; each source
 		 * type accepts only its own kind. Rejecting here (rather than
 		 * displaying with a warning) keeps a Screen source from ever
@@ -930,6 +1016,25 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			     c->is_screen ? "screen" : "camera",
 			     s->is_screen_source ? "screen" : "camera");
 			return false;
+		}
+		if (c->standby) {
+			/* Remote start: the app is open but idle. Kick the
+			 * camera off ourselves if enabled and armed (armed =
+			 * the app just became reachable, not "the user just
+			 * pressed Stop"); otherwise say how to start it. */
+			if (s->auto_start && s->auto_start_armed) {
+				s->auto_start_armed = false;
+				blog(LOG_INFO,
+				     "[lenslink] app is idle — starting the "
+				     "camera remotely");
+				send_control_cmd(c,
+						 "{\"cmd\":\"start_stream\"}");
+				set_status(s, "%s",
+					   T_("Status.StartingCamera"));
+			} else {
+				set_status(s, "%s", T_("Status.Standby"));
+			}
+			break;
 		}
 		set_status(s, "%s %s", T_("Status.Connected"),
 			   c->name[0] ? c->name : "iOS device");
@@ -956,6 +1061,18 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		extract_json_string(json, "kind", kind, sizeof(kind));
 		if (kind[0])
 			c->is_screen = strcmp(kind, "screen") == 0;
+
+		/* Video config means the stream is (re)starting — a standby
+		 * connection has left standby. (A remote start also re-sends
+		 * HELLO, but don't rely on it.) */
+		if (c->standby) {
+			c->standby = false;
+			pthread_mutex_lock(&s->status_mutex);
+			s->standby = false;
+			pthread_mutex_unlock(&s->status_mutex);
+			set_status(s, "%s %s", T_("Status.Connected"),
+				   c->name[0] ? c->name : "iOS device");
+		}
 		enum AVCodecID id = strcmp(codec, "hevc") == 0
 					    ? AV_CODEC_ID_HEVC
 					    : AV_CODEC_ID_H264;
@@ -1459,6 +1576,10 @@ static void dial_loop(struct ios_camera_source *s)
 					: n > 0	  ? T_("Status.DeviceBusy")
 						  : T_("Status.WaitingUSB");
 				set_status(s, "%s", why);
+				/* Phone not reachable: re-arm auto-start so
+				 * it fires when the app comes (back) up. */
+				if (++s->dial_failures >= 2)
+					s->auto_start_armed = true;
 				sleep_ms_interruptible(s, 1000);
 				continue;
 			}
@@ -1491,10 +1612,18 @@ static void dial_loop(struct ios_camera_source *s)
 		}
 
 		if (sock == OBSC_INVALID_SOCKET) {
+			/* Unreachable — the app is closed, backgrounded, or
+			 * not yet listening. Re-arm auto-start so the camera
+			 * starts the moment the app becomes reachable again
+			 * (two consecutive failures, not one, so a blip
+			 * right after a manual stop can't retrigger it). */
+			if (++s->dial_failures >= 2)
+				s->auto_start_armed = true;
 			sleep_ms_interruptible(s, 2000);
 			continue;
 		}
 
+		s->dial_failures = 0;
 		blog(LOG_INFO, "[lenslink] connected to device (%s)",
 		     usb ? "USB" : "network");
 		set_status(s, "%s", T_("Status.Connected"));
@@ -1502,8 +1631,23 @@ static void dial_loop(struct ios_camera_source *s)
 		struct client_state client = {.sock = sock};
 
 		while (!s->stop) {
-			if (s->deactivate_hidden && !s->showing)
-				break; /* hidden: drop the live connection */
+			if (s->deactivate_hidden && !s->showing) {
+				/* Hidden: drop the live connection. With
+				 * remote start in play, also stop the camera
+				 * itself (best effort) and re-arm so showing
+				 * the source starts it again — the phone
+				 * truly idles instead of encoding into a
+				 * dead link. */
+				if (s->auto_start && !s->is_screen_source &&
+				    !client.standby) {
+					send_control_cmd(
+						&client,
+						"{\"cmd\":\"stop_stream\"}");
+					client_flush(&client);
+					s->auto_start_armed = true;
+				}
+				break;
+			}
 			int events = NET_WAIT_READ;
 			if (client.out.len > 0)
 				events |= NET_WAIT_WRITE;
@@ -1613,6 +1757,8 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 	s->diagnostics = obs_data_get_bool(settings, S_DIAGNOSTICS);
 	s->deactivate_hidden =
 		obs_data_get_bool(settings, S_DEACTIVATE_HIDDEN);
+	s->auto_start = !s->is_screen_source &&
+			obs_data_get_bool(settings, S_AUTO_START);
 
 	pthread_mutex_lock(&s->status_mutex);
 	bool was_syncing = s->audio_sync && s->audio_source[0];
@@ -1717,6 +1863,11 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 	s->diagnostics = obs_data_get_bool(settings, S_DIAGNOSTICS);
 	s->deactivate_hidden =
 		obs_data_get_bool(settings, S_DEACTIVATE_HIDDEN);
+	s->auto_start = !s->is_screen_source &&
+			obs_data_get_bool(settings, S_AUTO_START);
+	/* Armed at creation: an app already open and idle when this source
+	 * appears should start streaming right away. */
+	s->auto_start_armed = true;
 	s->audio_sync = obs_data_get_bool(settings, S_AUDIO_SYNC);
 	s->audio_device_latency_ms =
 		(int)obs_data_get_int(settings, S_AUDIO_LATENCY);
@@ -1784,6 +1935,7 @@ static void ios_camera_get_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, S_WEB_CONTROL, true);
 	obs_data_set_default_bool(settings, S_DIAGNOSTICS, true);
 	obs_data_set_default_bool(settings, S_DEACTIVATE_HIDDEN, false);
+	obs_data_set_default_bool(settings, S_AUTO_START, true);
 }
 
 static bool add_audio_source(void *data, obs_source_t *source)
@@ -1841,6 +1993,35 @@ static void fill_usb_devices(obs_property_t *list, const char *current)
 	}
 }
 
+/* Remote start/stop: queue the command for the connected app. Queued like
+ * any web-panel control, so it rides the existing control channel and is
+ * a no-op when nothing is connected. */
+static bool start_camera_clicked(obs_properties_t *props,
+				 obs_property_t *property, void *data)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+	struct ios_camera_source *s = data;
+	static const char json[] = "{\"cmd\":\"start_stream\"}";
+
+	if (s)
+		ios_camera_enqueue_control(s, json, sizeof(json) - 1);
+	return false;
+}
+
+static bool stop_camera_clicked(obs_properties_t *props,
+				obs_property_t *property, void *data)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+	struct ios_camera_source *s = data;
+	static const char json[] = "{\"cmd\":\"stop_stream\"}";
+
+	if (s)
+		ios_camera_enqueue_control(s, json, sizeof(json) - 1);
+	return false;
+}
+
 /* Property sheets for the two source types share the connection and decode
  * settings; only the camera type gets the lip-sync group and the web panel
  * (neither applies to a screen mirror). */
@@ -1871,6 +2052,19 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 	obs_property_set_long_description(deact, T_("DeactivateHidden.Desc"));
 
 	if (!screen) {
+		/* Remote start: only cameras — iOS forbids starting a screen
+		 * broadcast without a tap on the phone. */
+		obs_property_t *auto_start = obs_properties_add_bool(
+			props, S_AUTO_START, T_("AutoStart"));
+		obs_property_set_long_description(auto_start,
+						  T_("AutoStart.Desc"));
+		obs_properties_add_button(props, "start_camera",
+					  T_("StartCamera"),
+					  start_camera_clicked);
+		obs_properties_add_button(props, "stop_camera",
+					  T_("StopCamera"),
+					  stop_camera_clicked);
+
 		obs_property_t *audio_list = obs_properties_add_list(
 			props, S_AUDIO_SOURCE, T_("AudioSource"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);

@@ -49,9 +49,17 @@ colours so it also looks native on the phone.
 | State        | Token         | Hex       | Label            |
 |--------------|---------------|-----------|------------------|
 | Idle         | `idleGrey`    | `#8E8E93` | "Not connected"  |
+| Standby      | `connectAmber`| `#FF9F0A` | "OBS connected — ready" |
 | Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
 | Error        | `errorRed`    | `#FF453A` | *(the message)*  |
+
+Standby is the remote-start state: the app is idle but OBS is connected
+and can start the camera. It shares the amber of Connecting — both mean
+"linked, not yet live". On the web panel the standby state replaces the
+(dead) camera controls with a single accent **Start camera** button;
+while live, the panel ends in a red **Stop camera** button (Stop stays
+the one destructive control, mirroring the app's red Stop chip).
 
 The status **word and colour are defined once** (`Streamer.Status.displayName`
 / `.tint` in the app) and reused by every view; the web panel maps the
@@ -135,7 +143,7 @@ Grouped form, top to bottom:
    note that a USB cable also works.
 3. **Camera** — Lens, Resolution, Frame rate, Codec pickers (each filtered
    to what the selected lens supports).
-4. **Options** — Dim-screen toggle.
+4. **Options** — Remote-start and Dim-screen toggles.
 5. **Lip sync** — Auto lip-sync reference toggle + explanation.
 6. **Action** — a single filled **accent** "Start streaming to OBS" button;
    a contextual "Open Settings" button appears only if a permission was

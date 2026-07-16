@@ -78,6 +78,11 @@ class SampleHandler: RPBroadcastSampleHandler {
     /// the broadcast with a descriptive error (iOS shows it as an alert).
     private var everConnected = false
     private var watchdog: Task<Void, Never>?
+    /// Port-bind retries: the app frees port 9979 when a broadcast begins
+    /// (its remote-start standby listener shares it), but that release can
+    /// race this extension's bind. Touched only on the main queue.
+    private var listenRetries = 0
+    private var finished = false
 
     private func fail(_ message: String) {
         finishBroadcastWithError(NSError(
@@ -109,9 +114,23 @@ class SampleHandler: RPBroadcastSampleHandler {
             case .failed(let message):
                 // Most likely: port 9979 already taken because the LensLink
                 // app's camera stream is running. One stream per device.
-                self.fail("Could not open the streaming port (\(message)). "
-                    + "If the LensLink camera is streaming, stop it first — "
-                    + "a device can send the camera or the screen, not both.")
+                // The app's idle standby listener also holds the port but
+                // frees it as the broadcast starts — retry briefly so that
+                // hand-off can complete before declaring failure.
+                DispatchQueue.main.async {
+                    guard !self.finished else { return }
+                    if !self.everConnected && self.listenRetries < 4 {
+                        self.listenRetries += 1
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                            guard let self, !self.finished else { return }
+                            self.client.start(port: OBSCProtocol.usbPort)
+                        }
+                        return
+                    }
+                    self.fail("Could not open the streaming port (\(message)). "
+                        + "If the LensLink camera is streaming, stop it first — "
+                        + "a device can send the camera or the screen, not both.")
+                }
             default:
                 break
             }
@@ -136,6 +155,7 @@ class SampleHandler: RPBroadcastSampleHandler {
     }
 
     override func broadcastFinished() {
+        DispatchQueue.main.async { self.finished = true }
         watchdog?.cancel()
         diagTask?.cancel()
         encoder?.stop()
