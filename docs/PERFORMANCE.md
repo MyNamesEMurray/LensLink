@@ -120,3 +120,34 @@ claim in this repo should cite.
 
 Any future performance PR should quote at least one of these numbers
 before/after.
+
+## Measured results: standard vs GPU pipeline
+
+Field measurements from the benchmark above — 12 configurations
+(720p/1080p/4K × 30/60 fps × H.264/HEVC), ~25 s of live video each, same
+PC (Ryzen 7 7800X3D, NVIDIA, D3D11) and same iPhone over Wi-Fi. Pixel
+copies read **0.00 MB/s on every GPU-pipeline run**: the zero-copy path
+engaged in all 12 configurations.
+
+| Config | Cost/frame, mean (ms) | Pixel copies (MB/s) | OBS CPU (%) |
+|---|---|---|---|
+| 720p 30 H.264 | 1.14 → 0.09 (−92%) | 82 → 0 | 1.7 → 1.4 |
+| 720p 30 HEVC | 0.81 → 0.09 (−89%) | 83 → 0 | 2.3 → 1.5 |
+| 720p 60 H.264 | 1.09 → 0.10 (−91%) | 166 → 0 | 2.1 → 1.4 |
+| 720p 60 HEVC | 0.81 → 0.09 (−89%) | 163 → 0 | 2.2 → 1.4 |
+| 1080p 30 H.264 | 2.13 → 0.11 (−95%) | 187 → 0 | 1.7 → 1.6 |
+| 1080p 30 HEVC | 1.48 → 0.10 (−93%) | 183 → 0 | 2.3 → 1.4 |
+| 1080p 60 H.264 | 2.11 → 0.10 (−95%) | 370 → 0 | 2.3 → 1.6 |
+| 1080p 60 HEVC | 1.42 → 0.09 (−93%) | 373 → 0 | 2.6 → 1.4 |
+| 4K 30 H.264 | 7.71 → 0.10 (−99%) | 734 → 0 | 3.3 → 1.5 |
+| 4K 30 HEVC | 4.96 → 0.14 (−97%) | 721 → 0 | 2.9 → 1.5 |
+| 4K 60 H.264 | 7.54 → 0.10 (−99%) | 1221 → 0 | 4.1 → 1.8 |
+| 4K 60 HEVC | 4.75 → 0.10 (−98%) | 1439 → 0 | 4.1 → 1.6 |
+
+Reading: per-frame video-path cost drops 89–99% (the copy work simply
+disappears), and the win scales with resolution — at 4K60 HEVC the
+standard pipeline was pushing ~1.4 GB/s of decoded video through system
+memory that the GPU pipeline eliminates outright, roughly halving OBS
+process CPU. Capture→decode latency and decoded fps are measured before
+the pipelines diverge and showed no systematic difference — those are
+set by the network and the phone's encoder, not by the render path.
