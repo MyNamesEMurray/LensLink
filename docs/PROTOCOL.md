@@ -165,15 +165,21 @@ directly with no manual entry. Low-confidence windows (silence) hold the
 last value.
 
 ### 10 — SCREEN_AUDIO (app → plugin)
-System (app) audio for **screen mirroring**, meant to be **played** as the
-source's audio — unlike type 9, this is not a lip-sync reference. Sent only
-by the broadcast extension (`kind: "screen"`). Payload: raw **48 kHz stereo
-signed-16-bit little-endian interleaved PCM**; `pts` = capture time of the
-first sample, in the same clock domain as the screen video frames, so OBS
-keeps A/V aligned. The plugin outputs it via `obs_source_output_audio`.
+**Playable audio**, output as the source's audio in OBS via
+`obs_source_output_audio` — unlike type 9, this is not a lip-sync
+reference. Payload: raw **48 kHz stereo signed-16-bit little-endian
+interleaved PCM**; `pts` = capture time of the first sample, in the same
+clock domain as the video frames, so OBS keeps A/V aligned.
 
-Microphone audio is intentionally omitted (a streamer mics themselves in
-OBS; the phone mic would double it).
+Two senders use it:
+
+- the **broadcast extension** (`kind: "screen"`): the mirrored screen's
+  system audio. Microphone audio is intentionally omitted there (a
+  streamer mics themselves in OBS; the phone mic would double it).
+- the **camera app** (`kind: "camera"`), only while its **Send phone mic
+  to OBS** option is on: the phone microphone as the camera source's
+  audio — the phone as a wireless mic. Mutually exclusive with the
+  type-9 lip-sync reference (one mic, one role).
 
 ### 11 — DIAG (app/extension → plugin)
 Optional diagnostics. Payload: a short UTF-8 text line summarising the

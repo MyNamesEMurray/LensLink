@@ -1,14 +1,24 @@
 import Foundation
 import AVFoundation
 
-/// Captures phone-mic audio as a low-rate mono PCM **reference** stream.
+/// Captures phone-mic audio, in one of two roles:
 ///
-/// This is not the streamer's audio — it is never played out. The plugin
-/// cross-correlates it against the real microphone in OBS to measure that
-/// mic's true latency and auto-calibrate lip sync. See docs/PROTOCOL.md.
+/// - `.lipSyncReference` (16 kHz mono): never played out — the plugin
+///   cross-correlates it against the real microphone in OBS to measure
+///   that mic's true latency and auto-calibrate lip sync.
+/// - `.playback` (48 kHz stereo, the screen-audio wire format): the mic
+///   *is* the source's audio in OBS — the phone as a wireless microphone.
+///
+/// See docs/PROTOCOL.md packet types 9 and 10.
 final class AudioReference {
-    /// Delivers a chunk of 16 kHz mono S16LE PCM plus the capture time of
-    /// its first sample, in the same clock domain as video frame pts.
+    enum Purpose {
+        case lipSyncReference
+        case playback
+    }
+
+    /// Delivers a chunk of S16LE PCM (format per `Purpose`) plus the
+    /// capture time of its first sample, in the same clock domain as
+    /// video frame pts.
     var onPCM: ((_ pcm: Data, _ ptsNanoseconds: UInt64) -> Void)?
 
     private let engine = AVAudioEngine()
@@ -17,12 +27,24 @@ final class AudioReference {
     private var timebase = mach_timebase_info_data_t()
     private var observer: NSObjectProtocol?
 
-    init() {
-        targetFormat = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
-            sampleRate: Double(OBSCProtocol.audioSampleRate),
-            channels: AVAudioChannelCount(OBSCProtocol.audioChannels),
-            interleaved: true)!
+    init(purpose: Purpose = .lipSyncReference) {
+        switch purpose {
+        case .lipSyncReference:
+            targetFormat = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: Double(OBSCProtocol.audioSampleRate),
+                channels: AVAudioChannelCount(OBSCProtocol.audioChannels),
+                interleaved: true)!
+        case .playback:
+            // Same wire format as screen-mirror audio, so the plugin's
+            // existing playback path handles it unchanged. The converter
+            // upmixes the mono mic to both channels.
+            targetFormat = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: Double(OBSCProtocol.screenAudioSampleRate),
+                channels: AVAudioChannelCount(OBSCProtocol.screenAudioChannels),
+                interleaved: true)!
+        }
         mach_timebase_info(&timebase)
     }
 
@@ -127,7 +149,11 @@ final class AudioReference {
         guard error == nil, out.frameLength > 0,
               let channel = out.int16ChannelData else { return }
 
-        let data = Data(bytes: channel[0], count: Int(out.frameLength) * 2)
+        // Interleaved target: channel[0] holds all channels' samples.
+        let bytes = Int(out.frameLength)
+            * Int(targetFormat.channelCount)
+            * MemoryLayout<Int16>.size
+        let data = Data(bytes: channel[0], count: bytes)
         onPCM(data, ptsNs)
     }
 }

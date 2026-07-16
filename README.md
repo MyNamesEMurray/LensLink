@@ -89,6 +89,10 @@ blanks the source.
   mobile games or app demos. Works over Wi-Fi or USB, encoded in HEVC for
   bandwidth-friendly quality. Your microphone isn't sent — mic yourself in
   OBS as usual.
+- **Phone mic audio (optional).** Turn on **Send phone mic to OBS** and the
+  camera source carries the phone's microphone as its audio — the phone
+  doubles as a wireless mic. (Off by default; most streamers use their own
+  mic and lip-sync it instead.)
 - **Automatic lip sync.** The plugin measures the camera's latency and can
   automatically line up a separate microphone with the video — no guessing
   at delay values. (See "Lip sync" below.)

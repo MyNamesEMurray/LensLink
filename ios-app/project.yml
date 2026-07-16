@@ -45,7 +45,8 @@ targets:
           LensLink connects to OBS Studio on your local network to send the
           camera feed.
         NSMicrophoneUsageDescription: >-
-          LensLink can send your microphone to OBS as a timing reference to
+          LensLink can send your microphone to OBS — as the camera's audio
+          if you enable it, or purely as a timing reference to
           automatically sync your real microphone to the video.
         # lenslink://start / lenslink://stop — remote start via Shortcuts
         # automations (and anything else that can open a URL).

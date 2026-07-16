@@ -131,8 +131,24 @@ final class Streamer: ObservableObject {
     }
     /// Send phone-mic audio as a lip-sync calibration reference (never
     /// played out — the plugin correlates it against your real mic).
+    /// Mutually exclusive with `sendMicAudio` — one mic, one role.
     @Published var sendAudioReference: Bool {
-        didSet { UserDefaults.standard.set(sendAudioReference, forKey: "sendAudioReference") }
+        didSet {
+            UserDefaults.standard.set(sendAudioReference, forKey: "sendAudioReference")
+            if sendAudioReference && sendMicAudio {
+                sendMicAudio = false
+            }
+        }
+    }
+    /// Send phone-mic audio as the OBS source's *playable* audio — the
+    /// phone as a wireless microphone.
+    @Published var sendMicAudio: Bool {
+        didSet {
+            UserDefaults.standard.set(sendMicAudio, forKey: "sendMicAudio")
+            if sendMicAudio && sendAudioReference {
+                sendAudioReference = false
+            }
+        }
     }
     /// Remote start: while the app is open and idle, keep listening so OBS
     /// can start (and stop) the camera from the computer — the plugin's
@@ -409,6 +425,9 @@ final class Streamer: ObservableObject {
             ?? (VideoEncoder.isSupported(.hevc) ? .hevc : .h264)
         dimWhileStreaming = defaults.object(forKey: "dimWhileStreaming") as? Bool ?? true
         sendAudioReference = defaults.bool(forKey: "sendAudioReference")
+        // didSet doesn't run during init; enforce the exclusivity here.
+        sendMicAudio = defaults.bool(forKey: "sendMicAudio")
+            && !defaults.bool(forKey: "sendAudioReference")
         remoteStartEnabled = defaults.object(forKey: "remoteStartEnabled") as? Bool ?? true
 
         client.onStateChange = { [weak self] state in
@@ -711,25 +730,34 @@ final class Streamer: ObservableObject {
         }
 
         if sendAudioReference {
-            await startAudioReference()
+            await startMicCapture(purpose: .lipSyncReference)
+        } else if sendMicAudio {
+            await startMicCapture(purpose: .playback)
         }
     }
 
-    /// Captures phone-mic reference audio for lip-sync calibration.
-    private func startAudioReference() async {
+    /// Captures the phone mic — as the lip-sync calibration reference
+    /// (packet type 9, never heard) or as the source's playable audio
+    /// (packet type 10, same wire format as screen-mirror audio).
+    private func startMicCapture(purpose: AudioReference.Purpose) async {
         guard await AudioReference.requestPermission() else {
             micPermissionDenied = true
             return
         }
-        let reference = AudioReference()
-        reference.onPCM = { [weak self] pcm, pts in
-            self?.client.sendAudio(pcm, ptsNanoseconds: pts)
+        let capture = AudioReference(purpose: purpose)
+        capture.onPCM = { [weak self] pcm, pts in
+            switch purpose {
+            case .lipSyncReference:
+                self?.client.sendAudio(pcm, ptsNanoseconds: pts)
+            case .playback:
+                self?.client.sendScreenAudio(pcm, ptsNanoseconds: pts)
+            }
         }
         do {
-            try reference.start()
-            audioReference = reference
+            try capture.start()
+            audioReference = capture
         } catch {
-            print("Audio reference failed: \(error.localizedDescription)")
+            print("Mic capture failed: \(error.localizedDescription)")
         }
     }
 

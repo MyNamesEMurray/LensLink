@@ -1211,12 +1211,9 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		break;
 	}
 	case OBSC_PKT_SCREEN_AUDIO: {
-		/* Only the screen source type plays audio (the camera type
-		 * doesn't even advertise OBS_SOURCE_AUDIO). Screen streams are
-		 * rejected on camera sources at HELLO, but don't rely on the
-		 * sender handshaking first. */
-		if (!s->is_screen_source)
-			break;
+		/* Playable audio: screen-mirror system audio, or — when the
+		 * app's "Send phone mic to OBS" option is on — the phone mic
+		 * on a camera connection. Same wire format either way. */
 		/* 48 kHz stereo S16LE interleaved, played as the source's
 		 * audio. pts is in the same clock as the video frames, so
 		 * OBS keeps A/V aligned for this async source. */
@@ -2076,12 +2073,12 @@ static obs_properties_t *lenslink_screen_get_properties(void *data)
 struct obs_source_info ios_camera_source_info = {
 	.id = "ios_camera_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	/* No AUDIO flag: the camera path never plays audio (the phone mic is
-	 * only a lip-sync reference), and screen streams — the one thing that
-	 * did play audio here pre-split — are now rejected on this type. This
-	 * keeps camera sources out of the mixer instead of showing a dead
-	 * meter. */
-	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_DO_NOT_DUPLICATE,
+	/* AUDIO flag: the camera plays audio when the app's "Send phone mic
+	 * to OBS" option is on (packet type 10, same as screen audio). The
+	 * mixer meter is idle for users who leave that off — the standard
+	 * trade for any camera source that *can* carry audio. */
+	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+			OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name = ios_camera_get_name,
 	.create = ios_camera_create,
 	.destroy = ios_camera_destroy,
