@@ -82,18 +82,7 @@ pinned self-signed cert — would make the app safe on shared networks
 toggle) to keep the zero-config home path frictionless. *Medium effort;
 the right thing to ship before promoting remote start heavily.*
 
-### 3. Phone mic as a real OBS audio source
-Today the phone mic is only a lip-sync *reference* (never heard). Many
-users — the issue tracker's DroidCam converts especially — expect the
-phone to be usable as a wireless mic. The plumbing exists: the screen
-path already plays PCM through `obs_source_output_audio` (packet type
-10) with A/V-aligned timestamps; extend the camera source with an
-"audio from phone" mode (app toggle + plugin playing type-10 audio on
-camera connections, echo-cancelled settings left to OBS). Mutually
-exclusive with the lip-sync reference in the UI so the two roles stay
-clear. *Medium effort, high demand.*
-
-### 4. Orientation metadata
+### 3. Orientation metadata
 A rotated phone streams sideways video today; streamers work around it
 with OBS transforms. Capturing device orientation and either rotating
 the buffer at the encoder or signaling it in VIDEO_CONFIG (plugin

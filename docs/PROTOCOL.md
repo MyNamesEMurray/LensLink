@@ -104,6 +104,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "start_stream" }
 { "cmd": "stop_stream" }
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "mic", "id": "builtin:2" }
 ```
 
 `set_format` switches the capture format mid-stream; any subset of its
@@ -113,6 +114,13 @@ active lens (the STATE snapshot advertises the valid choices in
 `fps` / `codec`) and ignores unsupported requests. A format change flows
 through the normal live-reconfigure path: new VIDEO_CONFIG, fresh
 keyframe, decoder reset on a codec change.
+
+`mic` selects which microphone feeds the phone-mic capture, hot-switchable
+mid-stream. Ids come from the STATE snapshot's `mics` list: `"auto"`
+(system routing), `"builtin:<dataSourceID>"` (a physical phone mic —
+Bottom/Front/Back), or `"port:<uid>"` (an external input). The app
+validates the id against the live list and ignores stale ones (e.g. a
+Bluetooth mic that just disconnected).
 
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
@@ -150,6 +158,12 @@ The snapshot also carries white-balance and manual-exposure state
 capture format (`resolution`/`fps`/`codec` with `resolutions`/
 `frameRates`/`codecs` capability lists for `set_format` pickers).
 
+While the phone mic streams as the source's audio (packet type 10), the
+snapshot additionally carries `micEnabled: true`, the selected `mic` id,
+and the selectable `mics` list (`[{ "id", "name" }, …]`) for the `mic`
+command's pickers. Absent otherwise, so remote UIs key their mic row off
+`micEnabled`.
+
 ### 9 — AUDIO (app → plugin)
 Reference audio for lip-sync auto-calibration. Payload: raw **16 kHz mono
 signed-16-bit little-endian PCM**; `pts` = capture time of the first
@@ -165,15 +179,21 @@ directly with no manual entry. Low-confidence windows (silence) hold the
 last value.
 
 ### 10 — SCREEN_AUDIO (app → plugin)
-System (app) audio for **screen mirroring**, meant to be **played** as the
-source's audio — unlike type 9, this is not a lip-sync reference. Sent only
-by the broadcast extension (`kind: "screen"`). Payload: raw **48 kHz stereo
-signed-16-bit little-endian interleaved PCM**; `pts` = capture time of the
-first sample, in the same clock domain as the screen video frames, so OBS
-keeps A/V aligned. The plugin outputs it via `obs_source_output_audio`.
+**Playable audio**, output as the source's audio in OBS via
+`obs_source_output_audio` — unlike type 9, this is not a lip-sync
+reference. Payload: raw **48 kHz stereo signed-16-bit little-endian
+interleaved PCM**; `pts` = capture time of the first sample, in the same
+clock domain as the video frames, so OBS keeps A/V aligned.
 
-Microphone audio is intentionally omitted (a streamer mics themselves in
-OBS; the phone mic would double it).
+Two senders use it:
+
+- the **broadcast extension** (`kind: "screen"`): the mirrored screen's
+  system audio. Microphone audio is intentionally omitted there (a
+  streamer mics themselves in OBS; the phone mic would double it).
+- the **camera app** (`kind: "camera"`), only while its **Send phone mic
+  to OBS** option is on: the phone microphone as the camera source's
+  audio — the phone as a wireless mic. Mutually exclusive with the
+  type-9 lip-sync reference (one mic, one role).
 
 ### 11 — DIAG (app/extension → plugin)
 Optional diagnostics. Payload: a short UTF-8 text line summarising the

@@ -1,14 +1,97 @@
 import Foundation
 import AVFoundation
 
-/// Captures phone-mic audio as a low-rate mono PCM **reference** stream.
+/// Captures phone-mic audio, in one of two roles:
 ///
-/// This is not the streamer's audio — it is never played out. The plugin
-/// cross-correlates it against the real microphone in OBS to measure that
-/// mic's true latency and auto-calibrate lip sync. See docs/PROTOCOL.md.
+/// - `.lipSyncReference` (16 kHz mono): never played out — the plugin
+///   cross-correlates it against the real microphone in OBS to measure
+///   that mic's true latency and auto-calibrate lip sync.
+/// - `.playback` (48 kHz stereo, the screen-audio wire format): the mic
+///   *is* the source's audio in OBS — the phone as a wireless microphone.
+///
+/// See docs/PROTOCOL.md packet types 9 and 10.
 final class AudioReference {
-    /// Delivers a chunk of 16 kHz mono S16LE PCM plus the capture time of
-    /// its first sample, in the same clock domain as video frame pts.
+    enum Purpose {
+        case lipSyncReference
+        case playback
+    }
+
+    /// A selectable microphone. `id` is stable across STATE snapshots so
+    /// remote UIs can round-trip it: "auto" (system routing, the default),
+    /// "builtin:<dataSourceID>" for one of the phone's physical mics
+    /// (Bottom/Front/Back), or "port:<uid>" for an external input
+    /// (headset, USB, Bluetooth).
+    struct MicOption: Identifiable, Equatable {
+        let id: String
+        let name: String
+    }
+
+    /// The session's selectable inputs, flattened: "Auto" first, the
+    /// built-in mic's data sources as individual options, then every
+    /// external port. (Requires a record-capable session category, so the
+    /// list is meaningful only while mic capture is configured.)
+    static func availableMics() -> [MicOption] {
+        // "iOS default" and not just "Auto": the system's default input
+        // is the Bottom mic no matter which camera is active (iOS never
+        // ties the mic to the camera) — the label heads off "why is the
+        // front camera using the bottom mic?"
+        var mics = [MicOption(id: "auto", name: "Auto (iOS default)")]
+        for port in AVAudioSession.sharedInstance().availableInputs ?? [] {
+            if port.portType == .builtInMic {
+                for source in port.dataSources ?? [] {
+                    mics.append(MicOption(
+                        id: "builtin:\(source.dataSourceID)",
+                        name: source.dataSourceName))
+                }
+            } else {
+                mics.append(MicOption(id: "port:\(port.uid)",
+                                      name: port.portName))
+            }
+        }
+        return mics
+    }
+
+    /// Applies a mic choice (an id from `availableMics()`) to the shared
+    /// session. Safe mid-capture: the resulting route change fires the
+    /// engine's configuration-change notification and the tap re-installs
+    /// on the new input (~100 ms audio gap, video untouched). Unknown ids
+    /// (a Bluetooth mic that just left) are ignored.
+    static func select(micID: String) {
+        let session = AVAudioSession.sharedInstance()
+        let inputs = session.availableInputs ?? []
+        do {
+            if micID == "auto" {
+                if let builtin = inputs.first(where: { $0.portType == .builtInMic }) {
+                    try builtin.setPreferredDataSource(nil)
+                }
+                try session.setPreferredInput(nil)
+            } else if micID.hasPrefix("builtin:") {
+                let sourceID = String(micID.dropFirst("builtin:".count))
+                guard let builtin = inputs.first(where: { $0.portType == .builtInMic })
+                else { return }
+                if let source = builtin.dataSources?
+                    .first(where: { "\($0.dataSourceID)" == sourceID }) {
+                    try builtin.setPreferredDataSource(source)
+                }
+                try session.setPreferredInput(builtin)
+            } else if micID.hasPrefix("port:") {
+                let uid = String(micID.dropFirst("port:".count))
+                guard let port = inputs.first(where: { $0.uid == uid })
+                else { return }
+                try session.setPreferredInput(port)
+            }
+        } catch {
+            print("Mic selection failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Mic to prefer whenever capture (re)starts; live changes go through
+    /// `select(micID:)` and land here so restarts keep the choice.
+    var preferredMicID = "auto"
+
+    /// Delivers a chunk of S16LE PCM (format per `Purpose`) plus the
+    /// capture time of its first sample, in the same clock domain as
+    /// video frame pts.
     var onPCM: ((_ pcm: Data, _ ptsNanoseconds: UInt64) -> Void)?
 
     private let engine = AVAudioEngine()
@@ -17,12 +100,24 @@ final class AudioReference {
     private var timebase = mach_timebase_info_data_t()
     private var observer: NSObjectProtocol?
 
-    init() {
-        targetFormat = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
-            sampleRate: Double(OBSCProtocol.audioSampleRate),
-            channels: AVAudioChannelCount(OBSCProtocol.audioChannels),
-            interleaved: true)!
+    init(purpose: Purpose = .lipSyncReference) {
+        switch purpose {
+        case .lipSyncReference:
+            targetFormat = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: Double(OBSCProtocol.audioSampleRate),
+                channels: AVAudioChannelCount(OBSCProtocol.audioChannels),
+                interleaved: true)!
+        case .playback:
+            // Same wire format as screen-mirror audio, so the plugin's
+            // existing playback path handles it unchanged. The converter
+            // upmixes the mono mic to both channels.
+            targetFormat = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: Double(OBSCProtocol.screenAudioSampleRate),
+                channels: AVAudioChannelCount(OBSCProtocol.screenAudioChannels),
+                interleaved: true)!
+        }
         mach_timebase_info(&timebase)
     }
 
@@ -49,6 +144,7 @@ final class AudioReference {
                                 options: [.mixWithOthers, .allowBluetooth,
                                           .defaultToSpeaker])
         try session.setActive(true)
+        Self.select(micID: preferredMicID)
 
         let input = engine.inputNode
         let inputFormat = input.inputFormat(forBus: 0)
@@ -127,7 +223,11 @@ final class AudioReference {
         guard error == nil, out.frameLength > 0,
               let channel = out.int16ChannelData else { return }
 
-        let data = Data(bytes: channel[0], count: Int(out.frameLength) * 2)
+        // Interleaved target: channel[0] holds all channels' samples.
+        let bytes = Int(out.frameLength)
+            * Int(targetFormat.channelCount)
+            * MemoryLayout<Int16>.size
+        let data = Data(bytes: channel[0], count: bytes)
         onPCM(data, ptsNs)
     }
 }
