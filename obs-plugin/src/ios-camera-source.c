@@ -24,6 +24,7 @@
 #include "web-control.h"
 #include "lipsync.h"
 #include "mdns.h"
+#include "health.h"
 
 /* Bonjour service the app advertises while its listener is up. */
 #define LENSLINK_MDNS_SERVICE "_lenslink._tcp.local"
@@ -144,6 +145,14 @@ struct ios_camera_source {
 	 * Guarded by status_mutex. */
 	char device_state[1024];
 
+	/* Health mirrors for the frontend UI (the live counters belong to
+	 * the dial thread's client_state; these are 1 Hz copies). Guarded
+	 * by status_mutex. */
+	bool stat_connected;
+	uint64_t stat_frames;
+	uint64_t stat_bytes;
+	char stat_device[64];
+
 	/* The current connection is a screen mirror (no camera controls).
 	 * Guarded by status_mutex; lets the web panel hide dead controls. */
 	bool is_screen;
@@ -176,6 +185,66 @@ bool ios_camera_is_standby(struct ios_camera_source *s)
 	bool v = s->standby;
 	pthread_mutex_unlock(&s->status_mutex);
 	return v;
+}
+
+/* ------------------------------------------------------------------ */
+/* Health registry: which sources exist, for the frontend UI. Sources
+ * register at create and unregister first thing at destroy, so a snapshot
+ * can never touch a freeing source (enum holds the same mutex). */
+
+#define MAX_HEALTH_SOURCES 16
+static pthread_mutex_t g_health_mutex = PTHREAD_MUTEX_INITIALIZER;
+static struct ios_camera_source *g_health_sources[MAX_HEALTH_SOURCES];
+
+static void health_register(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES; i++) {
+		if (!g_health_sources[i]) {
+			g_health_sources[i] = s;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+}
+
+static void health_unregister(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES; i++) {
+		if (g_health_sources[i] == s)
+			g_health_sources[i] = NULL;
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+}
+
+size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
+{
+	size_t n = 0;
+
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES && n < max; i++) {
+		struct ios_camera_source *s = g_health_sources[i];
+		if (!s)
+			continue;
+		struct lenslink_health *h = &out[n++];
+		const char *name = obs_source_get_name(s->source);
+		snprintf(h->source_name, sizeof(h->source_name), "%s",
+			 name ? name : "");
+		h->is_screen = s->is_screen_source;
+		pthread_mutex_lock(&s->status_mutex);
+		h->connected = s->stat_connected;
+		h->standby = s->standby;
+		h->frames = s->stat_frames;
+		h->bytes = s->stat_bytes;
+		h->latency_ms = (int)(s->last_video_latency_ns / 1000000);
+		snprintf(h->device, sizeof(h->device), "%s", s->stat_device);
+		snprintf(h->status, sizeof(h->status), "%s",
+			 s->status.array ? s->status.array : "");
+		pthread_mutex_unlock(&s->status_mutex);
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+	return n;
 }
 
 /* PINs travel inside JSON we build with snprintf; restrict them to
@@ -396,6 +465,7 @@ struct client_state {
 	uint64_t audio_frames;
 	int audio_peak; /* loudest |sample| since the last heartbeat */
 	uint64_t last_diag_ns;   /* last heartbeat emission */
+	uint64_t last_stats_ns;  /* last health-mirror update */
 	uint64_t first_frame_ns; /* 0 until the first decoded frame */
 	bool no_output_warned;   /* one-shot "keyframe but nothing decoded" */
 	bool wrong_kind; /* stream kind doesn't match this source type */
@@ -896,6 +966,23 @@ static void diag_tick(struct ios_camera_source *s, struct client_state *c)
 	c->audio_peak = 0;
 }
 
+/* Mirrors the dial thread's live counters into the source (~1 Hz) for
+ * the frontend UI's health readouts. */
+static void stats_tick(struct ios_camera_source *s, struct client_state *c)
+{
+	uint64_t now = os_gettime_ns();
+	if (now - c->last_stats_ns < 1000000000ULL)
+		return;
+	c->last_stats_ns = now;
+
+	pthread_mutex_lock(&s->status_mutex);
+	s->stat_connected = true;
+	s->stat_frames = c->frames_output;
+	s->stat_bytes = c->video_bytes;
+	snprintf(s->stat_device, sizeof(s->stat_device), "%s", c->name);
+	pthread_mutex_unlock(&s->status_mutex);
+}
+
 static void client_disconnect(struct ios_camera_source *s,
 			      struct client_state *c)
 {
@@ -917,6 +1004,8 @@ static void client_disconnect(struct ios_camera_source *s,
 	s->device_state[0] = 0;
 	s->is_screen = false;
 	s->standby = false;
+	s->stat_connected = false;
+	s->stat_device[0] = 0;
 	pthread_mutex_unlock(&s->status_mutex);
 
 	/* A kind-mismatch rejection needs its actionable status to survive
@@ -1735,6 +1824,7 @@ static void dial_loop(struct ios_camera_source *s)
 			latency_tick(s, &client);
 			control_tick(s, &client);
 			diag_tick(s, &client);
+			stats_tick(s, &client);
 			if (client.out.failed)
 				break;
 			if ((ret & NET_WAIT_READ) &&
@@ -1986,12 +2076,16 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 	}
 
 	start_thread(s);
+	health_register(s);
 	return s;
 }
 
 static void ios_camera_destroy(void *data)
 {
 	struct ios_camera_source *s = data;
+
+	/* First: the frontend UI must not snapshot a freeing source. */
+	health_unregister(s);
 
 	web_control_stop(s->web);
 	unhook_audio(s);
