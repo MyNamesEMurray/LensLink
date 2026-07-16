@@ -124,6 +124,8 @@ surfaces.
 | Zoom        | `minus.magnifyingglass` / `plus.magnifyingglass` | Slider 1×…max, readout `N.N×` |
 | Exposure    | `sun.min` / `sun.max`                     | Slider −range…+range, readout `±N.N` |
 | Focus       | segmented **AF / Lock**                   | When Lock: a lens-position slider (0=near, 1=far) |
+| Exposure mode | segmented **AE / Manual**               | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. Hidden if unsupported |
+| White balance | segmented **AWB / Lock**                | When Lock: a colour-temperature slider (2500–8000 K, readout `5600K`). Hidden if unsupported |
 | Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** |
 | Lens        | `camera.aperture` menu                     | Menu of the device's real lenses; check on the active one |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back |
@@ -156,7 +158,9 @@ Full-screen black; camera preview `resizeAspect`; content over it:
 - **Top bar:** status pill (dot + word, left) · Stats button · Dim button ·
   Stop button (red). Glass chips. With Stats on, a health pill (fps ·
   Mb/s · dropped) sits under the bar, leading-aligned.
-- **Bottom panel** (`glassPanel`, radius 16): zoom row, exposure row, then a
+- **Bottom panel** (`glassPanel`, radius 16): zoom row, exposure rows
+  (AE/Manual segmented sharing the bias-slider row; ISO + Shutter rows in
+  Manual), white-balance row (AWB/Lock + temperature slider), then a
   control row of Focus segmented + (lens-position slider when **Lock**, else
   a flexible spacer) + Flashlight + Lens menu + Flip.
 - **Gestures:** pinch anywhere = zoom; tap = focus/expose at point. In

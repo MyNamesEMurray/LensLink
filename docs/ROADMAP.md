@@ -93,17 +93,7 @@ camera connections, echo-cancelled settings left to OBS). Mutually
 exclusive with the lip-sync reference in the UI so the two roles stay
 clear. *Medium effort, high demand.*
 
-### 4. Manual white balance, ISO & shutter
-The live-control set (zoom/exposure-bias/focus/flashlight/lens/flip)
-stops short of what a "camera for OBS" wants under studio lighting:
-locked white balance (auto-lock + temperature slider), and manual
-ISO/shutter for flicker-free exposure. All are straightforward
-`AVCaptureDevice` APIs, ride the existing CONTROL/STATE JSON (unknown
-commands are already ignored by old apps, so it's compatible), and the
-web panel mirrors them like every other control. *Low-medium effort,
-natural extension of an existing surface.*
-
-### 5. Orientation metadata
+### 4. Orientation metadata
 A rotated phone streams sideways video today; streamers work around it
 with OBS transforms. Capturing device orientation and either rotating
 the buffer at the encoder or signaling it in VIDEO_CONFIG (plugin

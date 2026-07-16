@@ -180,6 +180,70 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
+    enum WhiteBalanceSetting: Equatable {
+        case auto
+        case locked
+    }
+    @Published var whiteBalanceSetting: WhiteBalanceSetting = .auto {
+        didSet {
+            applyWhiteBalance()
+            scheduleStateSend()
+        }
+    }
+    /// Colour temperature (Kelvin) used while white balance is locked.
+    @Published var whiteBalanceTemperature: Float = 5000 {
+        didSet {
+            if whiteBalanceSetting == .locked { applyWhiteBalance() }
+            scheduleStateSend()
+        }
+    }
+    enum ExposureSetting: Equatable {
+        case auto
+        case manual
+    }
+    @Published var exposureSetting: ExposureSetting = .auto {
+        didSet {
+            applyExposure()
+            scheduleStateSend()
+        }
+    }
+    @Published var iso: Float = 200 {
+        didSet {
+            if exposureSetting == .manual { applyExposure() }
+            scheduleStateSend()
+        }
+    }
+    @Published var shutterSeconds: Double = 1.0 / 60 {
+        didSet {
+            if exposureSetting == .manual { applyExposure() }
+            scheduleStateSend()
+        }
+    }
+
+    private func applyWhiteBalance() {
+        switch whiteBalanceSetting {
+        case .auto:
+            camera.setAutoWhiteBalance()
+        case .locked:
+            camera.lockWhiteBalance(temperature: whiteBalanceTemperature)
+        }
+    }
+
+    private func applyExposure() {
+        switch exposureSetting {
+        case .auto:
+            camera.setAutoExposure()
+        case .manual:
+            camera.setManualExposure(iso: iso, shutterSeconds: shutterSeconds)
+        }
+    }
+
+    /// Tap-to-focus from the Live screen. Routed through here (not straight
+    /// to the camera) so a focus tap keeps a manual ISO/shutter lock intact.
+    func focusAndExpose(at devicePoint: CGPoint) {
+        camera.focusAndExpose(at: devicePoint,
+                              includeExposure: exposureSetting == .auto)
+    }
 
     /// Debounced push of the control state to the plugin (for its web UI).
     private var stateSendPending = false
@@ -209,6 +273,19 @@ final class Streamer: ObservableObject {
             "camera": selectedLens.position == .front ? "front" : "back",
             "lens": selectedLens.label,
             "lenses": availableLenses.map { $0.label },
+            // White balance / manual exposure (docs/PROTOCOL.md §8); the
+            // supports* flags let remote UIs hide what this camera lacks.
+            "whiteBalanceMode": whiteBalanceSetting == .locked ? "locked" : "auto",
+            "whiteBalanceTemperature": Double(whiteBalanceTemperature),
+            "supportsWhiteBalanceLock": camera.supportsWhiteBalanceLock,
+            "exposureMode": exposureSetting == .manual ? "manual" : "auto",
+            "iso": Double(iso),
+            "minISO": Double(camera.isoRange.lowerBound),
+            "maxISO": Double(camera.isoRange.upperBound),
+            "shutterSeconds": shutterSeconds,
+            "minShutterSeconds": camera.minShutterSeconds,
+            "maxShutterSeconds": camera.maxShutterSeconds(fps: Int32(fps)),
+            "supportsManualExposure": camera.supportsManualExposure,
             // Format state + what this lens supports, so remote UIs can
             // offer set_format pickers with only valid choices.
             "resolution": resolution.rawValue,
@@ -247,7 +324,8 @@ final class Streamer: ObservableObject {
     private func applyFocus() {
         switch focusSetting {
         case .auto:
-            camera.setContinuousAutoFocus()
+            camera.setContinuousAutoFocus(
+                resetExposure: exposureSetting == .auto)
         case .locked:
             camera.lockFocus(lensPosition: lensPosition)
         }
@@ -258,6 +336,13 @@ final class Streamer: ObservableObject {
         exposureBias = 0
         focusSetting = .auto
         flashlightOn = false
+        whiteBalanceSetting = .auto
+        exposureSetting = .auto
+        // Manual values reset to mid-range defaults for the new device
+        // (the sliders clamp to the active format's real limits).
+        whiteBalanceTemperature = 5000
+        iso = 200
+        shutterSeconds = 1.0 / Double(max(fps, 30))
     }
 
     // State
@@ -477,6 +562,23 @@ final class Streamer: ObservableObject {
             }
         case "flip":
             flipCamera()
+        case "white_balance":
+            if let value = (command["temperature"] as? NSNumber)?.floatValue {
+                whiteBalanceTemperature = min(max(value, 2500), 8000)
+            }
+            whiteBalanceSetting =
+                (command["mode"] as? String) == "locked" ? .locked : .auto
+        case "exposure":
+            if let value = (command["iso"] as? NSNumber)?.floatValue {
+                let range = camera.isoRange
+                iso = min(max(value, range.lowerBound), range.upperBound)
+            }
+            if let value = (command["shutterSeconds"] as? NSNumber)?.doubleValue {
+                shutterSeconds = min(max(value, camera.minShutterSeconds),
+                                     camera.maxShutterSeconds(fps: Int32(fps)))
+            }
+            exposureSetting =
+                (command["mode"] as? String) == "manual" ? .manual : .auto
         case "set_format":
             applyRemoteFormat(command)
         case "selectLens":

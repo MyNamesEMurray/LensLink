@@ -32,7 +32,8 @@ struct StreamingView: View {
                 previewEnabled: !dimmed,
                 onTapAtDevicePoint: { point in
                     touched()
-                    streamer.camera.focusAndExpose(at: point)
+                    // Via the streamer so a tap keeps manual exposure locked.
+                    streamer.focusAndExpose(at: point)
                 },
                 onPinchZoom: { phase, scale in
                     touched()
@@ -174,11 +175,9 @@ struct StreamingView: View {
                       range: 1...max(streamer.camera.maxZoomFactor, 1.1),
                       readout: String(format: "%.1f×", streamer.zoom))
 
-            sliderRow(minIcon: "sun.min",
-                      maxIcon: "sun.max",
-                      value: floatBinding($streamer.exposureBias),
-                      range: exposureRange,
-                      readout: String(format: "%+.1f", streamer.exposureBias))
+            exposureRows
+
+            whiteBalanceRow
 
             HStack(spacing: Theme.Space.m) {
                 Picker("Focus", selection: $streamer.focusSetting) {
@@ -242,6 +241,126 @@ struct StreamingView: View {
         .tint(Theme.accent)
         .glassPanel()
         .foregroundColor(Theme.textPrimary)
+    }
+
+    /// Exposure: the classic bias slider in AE, or ISO + shutter rows in
+    /// Manual (only offered when the camera supports custom exposure). The
+    /// AE/Manual segmented control shares the row with the bias slider.
+    @ViewBuilder
+    private var exposureRows: some View {
+        if streamer.camera.supportsManualExposure {
+            HStack(spacing: Theme.Space.m) {
+                Picker("Exposure", selection: $streamer.exposureSetting) {
+                    Text("AE").tag(Streamer.ExposureSetting.auto)
+                    Text("Manual").tag(Streamer.ExposureSetting.manual)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 130)
+                .onChange(of: streamer.exposureSetting) { _ in touched() }
+
+                if streamer.exposureSetting == .auto {
+                    Slider(value: floatBinding($streamer.exposureBias),
+                           in: exposureRange) { editing in
+                        if editing { touched() }
+                    }
+                    Text(String(format: "%+.1f", streamer.exposureBias))
+                        .font(.caption.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
+                } else {
+                    Spacer()
+                }
+            }
+            if streamer.exposureSetting == .manual {
+                sliderRow(minIcon: "dial.min",
+                          maxIcon: "dial.max",
+                          value: floatBinding($streamer.iso),
+                          range: isoRange,
+                          readout: "\(Int(streamer.iso))")
+                HStack(spacing: Theme.Space.m) {
+                    Image(systemName: "tortoise")
+                    // Log scale: shutter steps are multiplicative (1/60 →
+                    // 1/125 → 1/250…); a linear slider crams everything
+                    // usable into its first pixels.
+                    Slider(value: shutterBinding, in: 0...1) { editing in
+                        if editing { touched() }
+                    }
+                    Image(systemName: "hare")
+                    Text(shutterReadout)
+                        .font(.caption.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
+                }
+            }
+        } else {
+            sliderRow(minIcon: "sun.min",
+                      maxIcon: "sun.max",
+                      value: floatBinding($streamer.exposureBias),
+                      range: exposureRange,
+                      readout: String(format: "%+.1f", streamer.exposureBias))
+        }
+    }
+
+    /// White balance: AWB / Lock segmented + a colour-temperature slider
+    /// while locked. Hidden entirely on cameras without WB gain locking.
+    @ViewBuilder
+    private var whiteBalanceRow: some View {
+        if streamer.camera.supportsWhiteBalanceLock {
+            HStack(spacing: Theme.Space.m) {
+                Picker("White balance", selection: $streamer.whiteBalanceSetting) {
+                    Text("AWB").tag(Streamer.WhiteBalanceSetting.auto)
+                    Text("Lock").tag(Streamer.WhiteBalanceSetting.locked)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 130)
+                .onChange(of: streamer.whiteBalanceSetting) { _ in touched() }
+
+                if streamer.whiteBalanceSetting == .locked {
+                    Slider(value: floatBinding($streamer.whiteBalanceTemperature),
+                           in: 2500...8000) { editing in
+                        if editing { touched() }
+                    }
+                    Text("\(Int(streamer.whiteBalanceTemperature))K")
+                        .font(.caption.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
+                } else {
+                    Spacer()
+                }
+            }
+        }
+    }
+
+    private var isoRange: ClosedRange<CGFloat> {
+        // One line: a leading "..." on a continuation line parses as a
+        // separate prefix-range statement, not as this range.
+        let range = streamer.camera.isoRange
+        let upper = CGFloat(max(range.upperBound, range.lowerBound + 1))
+        return CGFloat(range.lowerBound)...upper
+    }
+
+    /// Maps shutterSeconds onto a 0…1 log-scale slider position, with
+    /// left = long/slow (more light) and right = short/fast.
+    private var shutterBinding: Binding<Double> {
+        let minSeconds = max(streamer.camera.minShutterSeconds, 1.0 / 8000)
+        let maxSeconds = max(
+            streamer.camera.maxShutterSeconds(fps: Int32(streamer.fps)),
+            minSeconds * 2)
+        let logMin = log(minSeconds)
+        let logMax = log(maxSeconds)
+        return Binding(
+            get: {
+                let seconds = min(max(streamer.shutterSeconds, minSeconds),
+                                  maxSeconds)
+                return 1 - (log(seconds) - logMin) / (logMax - logMin)
+            },
+            set: { position in
+                streamer.shutterSeconds =
+                    exp(logMax - position * (logMax - logMin))
+            })
+    }
+
+    private var shutterReadout: String {
+        let seconds = streamer.shutterSeconds
+        guard seconds < 1 else { return String(format: "%.0fs", seconds) }
+        return "1/\(Int((1 / seconds).rounded()))"
     }
 
     /// Shared zoom/exposure slider row: leading icon · slider · trailing
