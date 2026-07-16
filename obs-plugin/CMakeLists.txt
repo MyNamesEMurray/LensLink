@@ -71,6 +71,12 @@ if(WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32)
 endif()
 
+if(APPLE)
+  # GPU pipeline: gpu-frame.c reads the decoder's CVPixelBuffers
+  # (CVPixelBufferGetIOSurface & co) to bind their IOSurfaces as textures.
+  target_link_libraries(${PROJECT_NAME} PRIVATE "-framework CoreVideo")
+endif()
+
 # --- frontend UI (status bar + dock; optional) -------------------------------
 # Qt6 plus the obs-frontend-api HEADER are enough: the API's five symbols
 # are resolved at runtime from the OBS process (frontend-ui.cpp), so no
