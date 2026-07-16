@@ -195,6 +195,9 @@ struct ios_camera_source {
 	gs_texture_t *cpu_tex[3];
 	uint32_t cpu_tex_w, cpu_tex_h;
 	int cpu_tex_fmt; /* AVPixelFormat the fallback textures match */
+	AVFrame *xfer;   /* scratch for hw->sw transfer on map failure */
+	int render_path; /* 0 unknown, 1 zero-copy, 2 cpu fallback (logged
+			  * on transition so a black source is explicable) */
 
 	/* Port the running web server bound (0 = not running); lets a
 	 * settings change restart it on the new port. */
@@ -2719,21 +2722,59 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 		if (gpu_frame_supported(fresh))
 			s->gpu_mapped =
 				gpu_frame_map(s->gpu, fresh, &s->gpu_map);
-		if (!s->gpu_mapped && !upload_sw_frame(s, fresh, &s->gpu_map)) {
-			/* Neither mappable nor uploadable: drop it, or later
-			 * renders would redraw a stale mapping against this
-			 * frame's dimensions. */
-			av_frame_free(&s->current_frame);
-			return;
+
+		size_t copied = 0;
+		if (!s->gpu_mapped) {
+			/* Fallback must ALWAYS produce video. A hardware
+			 * frame that couldn't be mapped has no CPU pixels to
+			 * upload — download it first (exactly the standard
+			 * pipeline's work, counted as such below). */
+			const AVFrame *up = fresh;
+			if (fresh->hw_frames_ctx) {
+				if (!s->xfer)
+					s->xfer = av_frame_alloc();
+				if (s->xfer) {
+					av_frame_unref(s->xfer);
+					if (av_hwframe_transfer_data(
+						    s->xfer, fresh, 0) == 0) {
+						av_frame_copy_props(s->xfer,
+								    fresh);
+						up = s->xfer;
+					}
+				}
+			}
+			if (!upload_sw_frame(s, up, &s->gpu_map)) {
+				if (s->render_path != 3) {
+					s->render_path = 3;
+					blog(LOG_WARNING,
+					     "[lenslink] gpu pipeline: frame "
+					     "(format %d) neither mappable "
+					     "nor uploadable — source stays "
+					     "blank",
+					     up->format);
+				}
+				av_frame_free(&s->current_frame);
+				return;
+			}
+			copied = (size_t)s->gpu_map.width *
+				 s->gpu_map.height * 3 / 2;
+			if (up != fresh)
+				copied *= 2; /* download + upload */
 		}
+
+		int path = s->gpu_mapped ? 1 : 2;
+		if (path != s->render_path) {
+			s->render_path = path;
+			blog(LOG_INFO,
+			     "[lenslink] gpu pipeline: rendering via %s",
+			     s->gpu_mapped ? "zero-copy textures"
+					   : "CPU upload fallback");
+		}
+
 		/* Benchmark: this pipeline's per-frame cost is the texture
-		 * map (or, on fallback, the CPU upload). Bytes cross system
-		 * memory only on the fallback path. */
-		lenslink_bench_frame(os_gettime_ns() - bench_start,
-				     s->gpu_mapped ? 0
-						   : (size_t)s->gpu_map.width *
-							     s->gpu_map.height *
-							     3 / 2,
+		 * map (or, on fallback, the download+upload). Bytes cross
+		 * system memory only on the fallback path. */
+		lenslink_bench_frame(os_gettime_ns() - bench_start, copied,
 				     (int)s->gpu_map.width,
 				     (int)s->gpu_map.height);
 	}
@@ -2794,6 +2835,8 @@ static void gpu_pipeline_free(struct ios_camera_source *s)
 		av_frame_free(&s->pending_frame);
 	if (s->current_frame)
 		av_frame_free(&s->current_frame);
+	if (s->xfer)
+		av_frame_free(&s->xfer);
 }
 
 /* Called from plugin-main.c at module load, BEFORE registration, when

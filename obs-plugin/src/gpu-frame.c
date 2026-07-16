@@ -24,6 +24,7 @@ struct gpu_frame_ctx {
 	gs_texture_t *tex[2];
 	AVFrame *drm; /* the PRIME mapping keeps the dmabuf fds alive */
 	bool warned;
+	bool announced;
 };
 
 struct gpu_frame_ctx *gpu_frame_ctx_create(void)
@@ -135,6 +136,12 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 	ctx->tex[1] = uv;
 	ctx->drm = drm;
 
+	if (!ctx->announced) {
+		ctx->announced = true;
+		blog(LOG_INFO, "[lenslink] gpu pipeline: zero-copy active "
+			       "(VAAPI dmabuf -> EGL)");
+	}
+
 	out->tex[0] = y;
 	out->tex[1] = uv;
 	out->rgba = false;
@@ -168,6 +175,7 @@ void gpu_frame_unlock(struct gpu_frame_ctx *ctx)
 struct gpu_frame_ctx {
 	gs_texture_t *tex;
 	bool warned;
+	bool announced;
 };
 
 struct gpu_frame_ctx *gpu_frame_ctx_create(void)
@@ -236,6 +244,12 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 		}
 	}
 
+	if (!ctx->announced) {
+		ctx->announced = true;
+		blog(LOG_INFO, "[lenslink] gpu pipeline: zero-copy active "
+			       "(VideoToolbox IOSurface)");
+	}
+
 	out->tex[0] = ctx->tex;
 	out->tex[1] = NULL;
 	out->rgba = true;
@@ -278,6 +292,7 @@ struct gpu_frame_ctx {
 
 	bool acquired; /* OBS-side keyed mutex held between map/unmap */
 	bool warned;
+	bool announced;
 };
 
 struct gpu_frame_ctx *gpu_frame_ctx_create(void)
@@ -350,6 +365,12 @@ static bool win_ensure_textures(struct gpu_frame_ctx *ctx, uint32_t w,
 	}
 	ctx->shared_handle = gs_texture_get_shared_handle(ctx->tex_y);
 	if (ctx->shared_handle == GS_INVALID_HANDLE) {
+		if (!ctx->warned) {
+			ctx->warned = true;
+			blog(LOG_WARNING,
+			     "[lenslink] gpu pipeline: shared NV12 texture "
+			     "has no shared handle — using the CPU path");
+		}
 		win_release(ctx);
 		return false;
 	}
@@ -374,6 +395,13 @@ static bool win_ensure_textures(struct gpu_frame_ctx *ctx, uint32_t w,
 					    &IID_IDXGIKeyedMutex,
 					    (void **)&ctx->ff_mutex);
 	if (FAILED(hr)) {
+		if (!ctx->warned) {
+			ctx->warned = true;
+			blog(LOG_WARNING,
+			     "[lenslink] gpu pipeline: shared texture has no "
+			     "keyed mutex (0x%lx) — using the CPU path",
+			     (unsigned long)hr);
+		}
 		win_release(ctx);
 		return false;
 	}
@@ -405,16 +433,35 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 	/* Copy the decoder's array slice into the shared texture on the
 	 * FFmpeg device. The hwctx lock serializes us against the decoder
 	 * worker, which uses the same immediate context. */
-	if (IDXGIKeyedMutex_AcquireSync(ctx->ff_mutex, 0, 33) != S_OK)
+	if (IDXGIKeyedMutex_AcquireSync(ctx->ff_mutex, 0, 33) != S_OK) {
+		if (!ctx->warned) {
+			ctx->warned = true;
+			blog(LOG_WARNING,
+			     "[lenslink] gpu pipeline: keyed-mutex acquire "
+			     "timed out on the decode device — using the CPU "
+			     "path");
+		}
 		return false;
+	}
 	d3d->lock(d3d->lock_ctx);
 	D3D11_BOX box = {0, 0, 0, (UINT)frame->width, (UINT)frame->height,
 			 1};
 	ID3D11DeviceContext_CopySubresourceRegion(
 		d3d->device_context, (ID3D11Resource *)ctx->ff_shared, 0, 0,
 		0, 0, (ID3D11Resource *)decoded, slice, &box);
+	/* Flush BEFORE releasing the mutex: the copy sits in this device's
+	 * command buffer until submitted, and the keyed-mutex release does
+	 * not submit it. Without this, OBS acquires the mutex and draws a
+	 * texture the copy hasn't reached — a silently black source. */
+	ID3D11DeviceContext_Flush(d3d->device_context);
 	d3d->unlock(d3d->lock_ctx);
 	IDXGIKeyedMutex_ReleaseSync(ctx->ff_mutex, 0);
+
+	if (!ctx->announced) {
+		ctx->announced = true;
+		blog(LOG_INFO, "[lenslink] gpu pipeline: zero-copy active "
+			       "(D3D11 shared NV12)");
+	}
 
 	out->tex[0] = ctx->tex_y;
 	out->tex[1] = ctx->tex_uv;
