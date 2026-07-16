@@ -2092,9 +2092,9 @@ static void fill_usb_devices(obs_property_t *list, const char *current)
 	}
 }
 
-/* Remote start: queue a start_stream command for the connected (standby)
- * app. Queued like any web-panel control, so it rides the existing
- * control channel and is a no-op when nothing is connected. */
+/* Remote start/stop: queue the command for the connected app. Queued like
+ * any web-panel control, so it rides the existing control channel and is
+ * a no-op when nothing is connected. */
 static bool start_camera_clicked(obs_properties_t *props,
 				 obs_property_t *property, void *data)
 {
@@ -2102,6 +2102,19 @@ static bool start_camera_clicked(obs_properties_t *props,
 	UNUSED_PARAMETER(property);
 	struct ios_camera_source *s = data;
 	static const char json[] = "{\"cmd\":\"start_stream\"}";
+
+	if (s)
+		ios_camera_enqueue_control(s, json, sizeof(json) - 1);
+	return false;
+}
+
+static bool stop_camera_clicked(obs_properties_t *props,
+				obs_property_t *property, void *data)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+	struct ios_camera_source *s = data;
+	static const char json[] = "{\"cmd\":\"stop_stream\"}";
 
 	if (s)
 		ios_camera_enqueue_control(s, json, sizeof(json) - 1);
@@ -2179,6 +2192,9 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 		obs_properties_add_button(props, "start_camera",
 					  T_("StartCamera"),
 					  start_camera_clicked);
+		obs_properties_add_button(props, "stop_camera",
+					  T_("StopCamera"),
+					  stop_camera_clicked);
 
 		/* Pairing (only meaningful when the app has "Require
 		 * pairing" on — the status line says when to use these). */
