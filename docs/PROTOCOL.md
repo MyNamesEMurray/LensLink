@@ -38,6 +38,14 @@ Payload: UTF-8 JSON, e.g.
 extension); it lets the plugin label the source and, for `screen`, expect
 system audio (packet type 10) instead of camera controls. Absent = camera.
 
+An optional `"standby": true` means the app is reachable but the camera
+isn't running yet (the app is open and idle with its **Remote start from
+OBS** option on). No video follows until the plugin sends a
+`start_stream` control command (type 7). The app re-sends HELLO (without
+`standby`) when the stream starts; the plugin also treats VIDEO_CONFIG as
+leaving standby, so either signal suffices. Absent = a live stream
+follows as usual.
+
 ### 2 — VIDEO_CONFIG
 Sent after HELLO and again whenever the capture format changes.
 Payload: UTF-8 JSON, e.g.
@@ -89,10 +97,24 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
 { "cmd": "flashlight", "on": true }
 { "cmd": "flip" }
+{ "cmd": "start_stream" }
+{ "cmd": "stop_stream" }
 ```
 
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
+
+`start_stream` / `stop_stream` are the **remote start** commands: they
+start/stop the camera itself (not just the connection) and are honoured
+only while the app's **Remote start from OBS** option is on. The plugin
+sends `start_stream` when the user clicks **Start camera on the phone**
+(source properties or web panel), or automatically on receiving a standby
+HELLO when its **auto-start** option is enabled — but only if the app was
+previously unreachable (just opened/foregrounded), so stopping the stream
+on the phone doesn't bounce straight back into streaming. With
+**Disconnect when this source isn't shown anywhere** plus auto-start, the
+plugin sends `stop_stream` before dropping the connection on hide and
+`start_stream` again on show.
 
 ### 8 — STATE (app → plugin)
 Camera-state snapshot, sent (debounced ~200 ms) whenever a control value

@@ -26,31 +26,77 @@ enum BroadcastProbe {
             + appexes.map { $0.lastPathComponent }.joined(separator: ", ")
     }
 
-    static func run(completion: @escaping (Bool) -> Void) {
+    /// Who answered on the port. The app's remote-start standby listener
+    /// shares port 9979 with the extension, so "something accepted" isn't
+    /// proof the extension is up — the HELLO's `kind` field says which
+    /// listener this really is.
+    enum Result {
+        case screenListener /* the broadcast extension — healthy */
+        case appListener    /* the app's own (standby) listener */
+        case none           /* nothing listening */
+    }
+
+    static func run(completion: @escaping (Result) -> Void) {
         guard let port = NWEndpoint.Port(rawValue: OBSCProtocol.usbPort) else {
-            completion(false)
+            completion(.none)
             return
         }
         let connection = NWConnection(host: "127.0.0.1", port: port, using: .tcp)
         let queue = DispatchQueue(label: "lenslink.probe")
         var finished = false
-        func finish(_ ok: Bool) {
+        var received = Data()
+        func finish(_ result: Result) {
             guard !finished else { return }
             finished = true
             connection.cancel()
-            DispatchQueue.main.async { completion(ok) }
+            DispatchQueue.main.async { completion(result) }
+        }
+        // Reads until the HELLO packet (header + JSON payload) is complete,
+        // then reports which peer sent it.
+        func readHello() {
+            connection.receive(minimumIncompleteLength: 1,
+                               maximumLength: 4096) { content, _, isComplete, error in
+                if let content {
+                    received.append(content)
+                }
+                let headerSize = OBSCProtocol.headerSize
+                if received.count >= headerSize {
+                    let header = [UInt8](received.prefix(headerSize))
+                    let payloadSize = header[16..<20].reduce(UInt32(0)) { $0 << 8 | UInt32($1) }
+                    guard Array(header[0..<4]) == OBSCProtocol.magic,
+                          header[5] == OBSCProtocol.PacketType.hello.rawValue,
+                          payloadSize < 4096 else {
+                        finish(.none)
+                        return
+                    }
+                    if received.count >= headerSize + Int(payloadSize) {
+                        let payload = received.subdata(
+                            in: headerSize..<headerSize + Int(payloadSize))
+                        let object = try? JSONSerialization.jsonObject(with: payload)
+                        let kind = (object as? [String: Any])?["kind"] as? String
+                        finish(kind == OBSCProtocol.SourceKind.screen.rawValue
+                               ? .screenListener : .appListener)
+                        return
+                    }
+                }
+                if isComplete || error != nil {
+                    finish(.none)
+                    return
+                }
+                readHello()
+            }
         }
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
-                finish(true)
+                readHello()
             case .failed, .waiting:
-                finish(false)
+                finish(.none)
             default:
                 break
             }
         }
         connection.start(queue: queue)
-        queue.asyncAfter(deadline: .now() + 3) { finish(false) }
+        queue.asyncAfter(deadline: .now() + 3) { finish(.none) }
     }
 }

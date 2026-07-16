@@ -78,6 +78,11 @@ blanks the source.
   zoom, tap-to-focus, exposure, focus lock, flashlight, camera flip) and
   **from your computer** via a browser panel at
   `http://localhost:9980` (zoom / exposure / focus / flashlight / flip).
+- **Remote start.** With the app open, OBS can start the camera for you —
+  automatically when the source connects, or from a button in the source's
+  properties or the browser panel. Siri works too: *"Start streaming with
+  LensLink."* Great for a phone mounted out of reach. (See "Remote start"
+  below.)
 - **Screen mirroring.** Mirror your whole iPhone/iPad screen — with the
   app's audio — into a dedicated **LensLink Screen** source; great for
   mobile games or app demos. Works over Wi-Fi or USB, encoded in HEVC for
@@ -92,6 +97,39 @@ blanks the source.
   seconds; tap to wake it. Optionally, enable **Disconnect when this source
   isn't shown anywhere** in the source properties and the phone stops
   streaming entirely whenever the source is hidden, reconnecting when shown.
+
+## Remote start
+
+A phone mounted behind a monitor or on a rig shouldn't need to be pulled
+down just to tap **Start**. While LensLink is open and idle, OBS can start
+the camera for you (turn off with the app's **Remote start from OBS**
+option):
+
+- **Automatically.** The LensLink Camera source's **"Start the phone's
+  camera automatically when it's ready"** option (on by default) starts
+  the stream as soon as the open, idle app becomes reachable. Open the
+  app — by hand, with Siri, or from a Shortcuts automation — and the
+  video just appears in OBS.
+- **A button in OBS.** The source's properties have **Start camera on the
+  phone**, and the browser panel (`http://localhost:9980`) shows a
+  **Start camera** button whenever the app is connected but idle.
+  (Scriptable, too: `POST http://localhost:9980/api/control` with body
+  `{"cmd":"start_stream"}`.)
+- **Siri / Shortcuts.** *"Hey Siri, start streaming with LensLink"* opens
+  the app and starts the camera (iOS 16+). The **Start/Stop Camera
+  Stream** actions are available in the Shortcuts app for automations; on
+  iOS 15, use an "Open URL" action with `lenslink://start` or
+  `lenslink://stop`.
+- **Hide/show follows too.** With **Disconnect when this source isn't
+  shown anywhere** enabled, hiding the source now stops the phone's
+  camera entirely and showing it starts it again — automatic power
+  management for scene switching.
+
+iOS only runs the camera (and LensLink's listener) while the app is on
+screen, so remote start works whenever the app is in the foreground —
+that's why the Siri/Shortcut path opens the app first. Stopping the
+stream on the phone won't ping-pong: OBS only auto-starts when the app
+has just become reachable, not after you pressed Stop.
 
 ## Screen mirroring
 

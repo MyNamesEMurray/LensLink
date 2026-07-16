@@ -56,6 +56,9 @@ static const char control_page[] =
 	".chip.on{background:var(--accent)}.chip .ic{color:var(--txt);width:20px;height:20px}"
 	"select{flex:1;background:rgba(255,255,255,.12);color:var(--txt);border:0;"
 	"border-radius:12px;padding:0 12px;height:44px;font-size:14px}"
+	".primary{width:100%;height:44px;border:0;border-radius:12px;"
+	"background:var(--accent);color:#fff;font-size:15px;font-weight:600;"
+	"cursor:pointer}"
 	"</style></head><body>"
 	"<header><h1>LensLink</h1>"
 	"<div class='pill'><span class='dot' id='dot'></span>"
@@ -63,6 +66,11 @@ static const char control_page[] =
 	/* Shown instead of the controls for a screen-mirror source. */
 	"<div class='panel' id='screennote' style='display:none'>"
 	"Screen mirroring &mdash; camera controls don&rsquo;t apply.</div>"
+	/* Remote start: the app is open but idle; one tap starts the camera. */
+	"<div class='panel' id='startpanel' style='display:none'>"
+	"<button class='primary' id='startbtn'>Start camera</button>"
+	"<div class='hint' style='margin-top:12px'>The LensLink app is open "
+	"and ready &mdash; the camera hasn&rsquo;t been started yet.</div></div>"
 	"<div class='panel' id='panel'>"
 	"<div class='row'>"
 	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
@@ -109,7 +117,8 @@ static const char control_page[] =
 	"const dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
 	"expEl=$('exposure'),evEl=$('ev'),afEl=$('af'),mfEl=$('mf'),lensEl=$('lens'),"
 	"fhintEl=$('fhint'),flashlightEl=$('flashlight'),flipEl=$('flip'),lensselEl=$('lenssel'),"
-	"panelEl=$('panel'),screennoteEl=$('screennote');"
+	"panelEl=$('panel'),screennoteEl=$('screennote'),"
+	"startpanelEl=$('startpanel'),startbtnEl=$('startbtn');"
 	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93'};"
 	"let lastTouch=0;const touch=()=>lastTouch=Date.now();"
 	"const send=o=>{touch();"
@@ -134,7 +143,11 @@ static const char control_page[] =
 	"flashlightEl.onclick=()=>{touch();flashlightUI(!fon);send({cmd:'flashlight',on:fon})};"
 	"flipEl.onclick=()=>send({cmd:'flip'});"
 	"lensselEl.onchange=()=>send({cmd:'selectLens',label:lensselEl.value});"
+	"startbtnEl.onclick=()=>send({cmd:'start_stream'});"
 	"function statusColor(t){t=(t||'').toLowerCase();"
+	/* Standby/starting are amber (ready, not live) — test before the
+	 * generic 'connected' match, which their wording also contains. */
+	"if(t.includes('idle')||t.includes('starting'))return COL.amber;"
 	"if(t.includes('connected'))return COL.live;"
 	"if(t.includes('disconnect')||t.includes('could not')||t.includes('error'))return COL.red;"
 	"if(t.includes('wait')||t.includes('trying')||t.includes('dial'))return COL.amber;"
@@ -142,10 +155,12 @@ static const char control_page[] =
 	"async function poll(){try{"
 	"const s=await(await fetch('/api/status')).json();"
 	"statusEl.textContent=s.status||'idle';dotEl.style.background=statusColor(s.status);"
-	/* Screen mirror has no camera controls: show the note instead. */
-	"panelEl.style.display=s.screen?'none':'';"
+	/* Screen mirror has no camera controls: show the note instead.
+	 * Standby (app idle): show the Start button instead of dead sliders. */
+	"panelEl.style.display=(s.screen||s.standby)?'none':'';"
 	"screennoteEl.style.display=s.screen?'':'none';"
-	"if(s.screen)return;"
+	"startpanelEl.style.display=(s.standby&&!s.screen)?'':'none';"
+	"if(s.screen||s.standby)return;"
 	"const st=await(await fetch('/api/state')).json();"
 	/* Don't fight the operator's hand: only mirror app state when the panel
 	 * hasn't been touched for a couple of seconds. */
@@ -334,9 +349,11 @@ static void handle_client(struct web_control *wc, socket_t client)
 		json_escape(status, escaped, sizeof(escaped));
 
 		char json[600];
-		snprintf(json, sizeof(json), "{\"status\":\"%s\",\"screen\":%s}",
+		snprintf(json, sizeof(json),
+			 "{\"status\":\"%s\",\"screen\":%s,\"standby\":%s}",
 			 escaped,
-			 ios_camera_is_screen(wc->source) ? "true" : "false");
+			 ios_camera_is_screen(wc->source) ? "true" : "false",
+			 ios_camera_is_standby(wc->source) ? "true" : "false");
 		respond(client, "200 OK", "application/json", json);
 		return;
 	}

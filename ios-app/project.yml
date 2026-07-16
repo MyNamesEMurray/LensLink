@@ -47,6 +47,12 @@ targets:
         NSMicrophoneUsageDescription: >-
           LensLink can send your microphone to OBS as a timing reference to
           automatically sync your real microphone to the video.
+        # lenslink://start / lenslink://stop — remote start via Shortcuts
+        # automations (and anything else that can open a URL).
+        CFBundleURLTypes:
+          - CFBundleURLName: com.exaltedpixels.LensLinkCamera
+            CFBundleURLSchemes:
+              - lenslink
     settings:
       base:
         # Explicit (not derived from bundleIdPrefix): com.exaltedpixels.LensLink
@@ -58,6 +64,9 @@ targets:
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1" # CI overrides with the run number
+        # AppIntents (Siri shortcuts) is iOS 16+; the deployment target is
+        # 15, so it must be weak-linked or the app won't launch on iOS 15.
+        OTHER_LDFLAGS: "-weak_framework AppIntents"
         # Set your Apple Developer team to run on a device:
         # DEVELOPMENT_TEAM: XXXXXXXXXX
 
