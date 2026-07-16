@@ -92,36 +92,44 @@ final class Streamer: ObservableObject {
             ? VideoCodec.h264 : codec
         if let oldEncoder = encoder,
            formatChanged || oldEncoder.codec != activeCodec {
-            oldEncoder.stop()
-            let size = resolution.size
-            let newEncoder = VideoEncoder(
-                codec: activeCodec,
-                width: size.width, height: size.height,
-                fps: Int32(fps),
-                bitrate: resolution.bitrate(for: activeCodec))
-            do {
-                try newEncoder.start()
-            } catch {
-                status = .error(error.localizedDescription)
-                stopKeepingError()
-                return
-            }
-            newEncoder.onEncodedFrame = { [weak self] frame in
-                self?.client.sendVideoFrame(frame)
-            }
-            camera.onSampleBuffer = { [weak newEncoder] sampleBuffer in
-                newEncoder?.encode(sampleBuffer)
-            }
-            encoder = newEncoder
-            client.sendVideoConfig(codec: activeCodec,
-                                   width: size.width, height: size.height,
-                                   fps: Int32(fps))
-            startAdaptiveBitrate(
-                target: resolution.bitrate(for: activeCodec))
+            rebuildEncoder(codec: activeCodec)
         }
 
         encoder?.requestKeyframe()
         scheduleStateSend()
+    }
+
+    /// Tears down the running encoder and builds a fresh one for the
+    /// current capture size (fixed-dimension encoders can't follow a
+    /// resolution/orientation change), re-announcing the format to OBS.
+    private func rebuildEncoder(codec activeCodec: VideoCodec) {
+        guard let oldEncoder = encoder else { return }
+        oldEncoder.stop()
+        let size = resolution.size
+        let newEncoder = VideoEncoder(
+            codec: activeCodec,
+            width: size.width, height: size.height,
+            fps: Int32(fps),
+            bitrate: resolution.bitrate(for: activeCodec))
+        do {
+            try newEncoder.start()
+        } catch {
+            status = .error(error.localizedDescription)
+            stopKeepingError()
+            return
+        }
+        newEncoder.onEncodedFrame = { [weak self] frame in
+            self?.client.sendVideoFrame(frame)
+        }
+        camera.onSampleBuffer = { [weak newEncoder] sampleBuffer in
+            newEncoder?.encode(sampleBuffer)
+        }
+        encoder = newEncoder
+        client.sendVideoConfig(codec: activeCodec,
+                               width: size.width, height: size.height,
+                               fps: Int32(fps))
+        startAdaptiveBitrate(
+            target: resolution.bitrate(for: activeCodec))
     }
     @Published var codec: VideoCodec {
         didSet { UserDefaults.standard.set(codec.rawValue, forKey: "videoCodec") }

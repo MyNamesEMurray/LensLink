@@ -46,6 +46,15 @@ pass shows the copy mattering, and size the encoder pool explicitly when
 you do.*
 
 ### Not planned — revisit when the world changes
+- **Stream rotation ("Match phone orientation").** Built and working
+  (PR #33's original scope, preserved in that branch's history): the
+  capture pipeline rotates buffers, the encoder rebuilds with swapped
+  dimensions on aspect flips, and OBS follows the bitstream — real
+  portrait video for portrait rigs. Shelved by choice, not difficulty:
+  it adds a setup-UI toggle few people would use, and a nudged mounted
+  phone resizing its OBS source is a support trap. The shipped behavior
+  is UI-follows-rotation with a steady sensor-native landscape stream.
+  Revisit if users actually ask for portrait streaming.
 - **AV1.** Gated on Apple shipping AV1 *hardware encode* (current Apple
   silicon has decode only, and software AV1 encode on a phone is a
   battery fire). When that changes, the plumbing is cheap: a `VideoCodec`
@@ -81,15 +90,6 @@ pinned self-signed cert — would make the app safe on shared networks
 (dorms, offices, event venues). Designed as opt-in ("Require pairing"
 toggle) to keep the zero-config home path frictionless. *Medium effort;
 the right thing to ship before promoting remote start heavily.*
-
-### 3. Orientation metadata
-A rotated phone streams sideways video today; streamers work around it
-with OBS transforms. Capturing device orientation and either rotating
-the buffer at the encoder or signaling it in VIDEO_CONFIG (plugin
-applies it) would make portrait rigs first-class. Decide once whether
-rotation happens on the phone (simpler for OBS, costs a transform on
-device) or in the plugin (free with the GPU render path in Performance
-#2). *Medium effort; worth bundling with Performance #2 if that lands.*
 
 ## How to use this document
 

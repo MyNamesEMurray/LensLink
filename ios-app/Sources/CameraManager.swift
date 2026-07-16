@@ -247,6 +247,9 @@ final class CameraManager: NSObject {
 
         if let connection = output.connection(with: .video) {
             if connection.isVideoOrientationSupported {
+                // Sensor-native landscape — the wire format LensLink has
+                // always streamed. The phone's rotation affects only the
+                // on-screen preview (CameraPreviewView), never the stream.
                 connection.videoOrientation = .landscapeRight
             }
             // Stabilization buffers multiple frames inside the capture

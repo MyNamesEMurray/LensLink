@@ -71,6 +71,11 @@ blanks the source.
   your specific camera supports.
 - **Pick any lens** — Main, Ultra Wide, Telephoto, or Front — switchable
   live while you stream.
+- **Hold it however.** The app's UI follows the phone's rotation (unless
+  rotation lock is on), and the live view stays fullscreen and upright in
+  any orientation — landscape either way round, portrait too. The video
+  sent to OBS is always steady sensor-native landscape, so rotating the
+  phone never resizes or disturbs the OBS source.
 - **Multiple cameras.** Add one "LensLink Camera" source per phone. On USB you
   can pin a source to a specific device so the same phone always maps to
   the same source.
