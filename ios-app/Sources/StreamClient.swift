@@ -52,6 +52,8 @@ final class StreamClient {
             // here would look like a fresh drop to the Streamer.
             self.teardownConnection()
             self.teardownListener()
+            self.listenGeneration += 1
+            self.bindRetries = 0
             self.listen(on: port)
         }
     }
@@ -61,7 +63,29 @@ final class StreamClient {
             guard let self else { return }
             self.teardownConnection()
             self.teardownListener()
+            // Invalidate any scheduled relisten (Bonjour fallback / bind
+            // retry): a retry firing after disconnect would resurrect the
+            // listener the caller just asked to stop.
+            self.listenGeneration += 1
             self.state = .disconnected
+        }
+    }
+
+    /// Bumped whenever the caller starts or stops listening; scheduled
+    /// relisten retries capture it and no-op if it moved. Queue-confined.
+    private var listenGeneration = 0
+    /// EADDRINUSE retries for the current listen attempt. Queue-confined.
+    private var bindRetries = 0
+
+    /// Schedules a fresh listen attempt after `delay` — used where an
+    /// immediate rebind would race the failed listener's socket release.
+    private func relisten(on port: UInt16, advertise: Bool,
+                          after delay: TimeInterval) {
+        teardownListener()
+        let generation = listenGeneration
+        queue.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self, self.listenGeneration == generation else { return }
+            self.listen(on: port, advertise: advertise)
         }
     }
 
@@ -193,6 +217,9 @@ final class StreamClient {
         listener.stateUpdateHandler = { [weak self, weak listener] newState in
             guard let self, let listener, self.listener === listener else { return }
             self.listenerStateDescription = "\(newState)"
+            if case .ready = newState {
+                self.bindRetries = 0
+            }
             if case .failed(let error) = newState {
                 // Bonjour advertising is denied when Local Network
                 // permission is off (Settings → Privacy → Local Network;
@@ -201,11 +228,22 @@ final class StreamClient {
                 // advertisement is a convenience; the listener is the
                 // product. Retry without it so typed-IP Wi-Fi and USB
                 // connects keep working, minus name discovery in OBS.
+                // Delayed: cancel releases the port asynchronously, and an
+                // immediate rebind loses that race (EADDRINUSE).
                 if advertise, case .dns = error {
                     print("Bonjour advertise failed (\(error)) — "
                           + "listening without discovery")
-                    self.teardownListener()
-                    self.listen(on: port, advertise: false)
+                    self.relisten(on: port, advertise: false, after: 0.3)
+                    return
+                }
+                // The port can still be held by the socket we just gave up
+                // (or by the broadcast extension mid-hand-off). Brief
+                // retries beat surfacing a fatal for a race that resolves
+                // itself in well under a second.
+                if case .posix(let code) = error, code == .EADDRINUSE,
+                   self.bindRetries < 4 {
+                    self.bindRetries += 1
+                    self.relisten(on: port, advertise: advertise, after: 0.5)
                     return
                 }
                 self.state = .failed(error.localizedDescription)
