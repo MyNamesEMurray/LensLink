@@ -54,6 +54,8 @@ add_library(${PROJECT_NAME} MODULE
   src/web-control.c
   src/lipsync.c
   src/mdns.c
+  src/plugin-settings.c
+  src/gpu-frame.c
   src/protocol.h
   src/web-control.h
   src/lipsync.h

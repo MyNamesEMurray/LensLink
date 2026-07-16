@@ -20,6 +20,14 @@ struct h264_decoder {
 	bool is_hw;
 	int hw_index; /* slot in hw_priority, -1 = software */
 
+	/* GPU pipeline: when a sink is set, decoded frames are handed out
+	 * as AVFrames (hardware frames stay on the GPU, software frames
+	 * pass through) instead of being downloaded and pushed via
+	 * obs_source_output_video. The sink owns each frame it receives. */
+	void (*frame_sink)(void *ud, AVFrame *frame);
+	void *frame_sink_ud;
+	bool gpu_frames; /* set at create; affects macOS surface format */
+
 	/* Diagnostics. */
 	uint64_t frames_output;
 	int last_width;
@@ -47,8 +55,38 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
 	struct h264_decoder *dec = ctx->opaque;
 
 	for (const enum AVPixelFormat *p = formats; *p != AV_PIX_FMT_NONE; p++) {
-		if (*p == dec->hw_pix_fmt)
-			return *p;
+		if (*p != dec->hw_pix_fmt)
+			continue;
+#ifdef __APPLE__
+		/* GPU pipeline: ask VideoToolbox for BGRA surfaces — they
+		 * map to a single OBS texture via IOSurface (the NV12
+		 * default would need per-plane IOSurface binds libobs
+		 * doesn't expose). On failure the default pool is used and
+		 * frames take the CPU path. */
+		if (dec->gpu_frames && *p == AV_PIX_FMT_VIDEOTOOLBOX) {
+			AVBufferRef *fctx =
+				av_hwframe_ctx_alloc(ctx->hw_device_ctx);
+			if (fctx) {
+				AVHWFramesContext *f =
+					(AVHWFramesContext *)fctx->data;
+				f->format = AV_PIX_FMT_VIDEOTOOLBOX;
+				f->sw_format = AV_PIX_FMT_BGRA;
+				f->width = ctx->coded_width;
+				f->height = ctx->coded_height;
+				if (av_hwframe_ctx_init(fctx) == 0) {
+					av_buffer_unref(&ctx->hw_frames_ctx);
+					ctx->hw_frames_ctx = fctx;
+				} else {
+					av_buffer_unref(&fctx);
+					blog(LOG_WARNING,
+					     "[lenslink] gpu pipeline: BGRA "
+					     "surface pool failed; frames "
+					     "will take the CPU path");
+				}
+			}
+		}
+#endif
+		return *p;
 	}
 
 	/* Driver refused the hw format for this stream; take the first
@@ -102,6 +140,15 @@ static bool try_init_hw(struct h264_decoder *dec, const AVCodec *codec,
 	}
 
 	return false;
+}
+
+void h264_decoder_set_frame_sink(struct h264_decoder *dec,
+				 void (*sink)(void *ud, AVFrame *frame),
+				 void *ud)
+{
+	dec->frame_sink = sink;
+	dec->frame_sink_ud = ud;
+	dec->gpu_frames = sink != NULL;
 }
 
 struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id,
@@ -295,6 +342,22 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			     "[lenslink] avcodec_receive_frame (%s): %s",
 			     h264_decoder_hw_name(dec), av_err2str(ret));
 			return false;
+		}
+
+		/* GPU pipeline: hand the frame out as-is — hardware frames
+		 * stay on the GPU (the sink maps them to textures), software
+		 * frames pass through for the sink's CPU upload path. */
+		if (dec->frame_sink) {
+			AVFrame *clone = av_frame_clone(dec->frame);
+			dec->frames_output++;
+			dec->last_width = dec->frame->width;
+			dec->last_height = dec->frame->height;
+			dec->last_format_name =
+				av_get_pix_fmt_name(dec->frame->format);
+			av_frame_unref(dec->frame);
+			if (clone)
+				dec->frame_sink(dec->frame_sink_ud, clone);
+			continue;
 		}
 
 		const AVFrame *out_frame = dec->frame;
