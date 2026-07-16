@@ -61,14 +61,37 @@ enum OBSCProtocol {
                        ptsNanoseconds: UInt64 = 0,
                        payload: Data) -> Data {
         var data = Data(capacity: headerSize + payload.count)
+        appendHeader(into: &data, type: type, flags: flags,
+                     ptsNanoseconds: ptsNanoseconds,
+                     payloadSize: payload.count)
+        data.append(payload)
+        return data
+    }
+
+    /// Builds just the header, for a payload sent as a separate write.
+    /// Large payloads (video frames) use this to avoid being memcpy'd a
+    /// second time only to gain a 20-byte prefix.
+    static func header(type: PacketType,
+                       flags: Flags = [],
+                       ptsNanoseconds: UInt64 = 0,
+                       payloadSize: Int) -> Data {
+        var data = Data(capacity: headerSize)
+        appendHeader(into: &data, type: type, flags: flags,
+                     ptsNanoseconds: ptsNanoseconds, payloadSize: payloadSize)
+        return data
+    }
+
+    private static func appendHeader(into data: inout Data,
+                                     type: PacketType,
+                                     flags: Flags,
+                                     ptsNanoseconds: UInt64,
+                                     payloadSize: Int) {
         data.append(contentsOf: magic)
         data.append(version)
         data.append(type.rawValue)
         appendBigEndian(&data, flags.rawValue)
         appendBigEndian(&data, ptsNanoseconds)
-        appendBigEndian(&data, UInt32(payload.count))
-        data.append(payload)
-        return data
+        appendBigEndian(&data, UInt32(payloadSize))
     }
 
     private static func appendBigEndian<T: FixedWidthInteger>(_ data: inout Data, _ value: T) {
