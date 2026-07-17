@@ -9,11 +9,12 @@ name: Dependabot Claude Review
 #
 # One-time setup (the workflow skips quietly until it's done):
 #   1. Settings → Secrets and variables → **Dependabot** → New secret →
-#      ANTHROPIC_API_KEY. Dependabot-triggered runs can only read
-#      Dependabot-scoped secrets — an Actions secret of the same name is
-#      invisible here. (Billing a Claude Pro/Max subscription instead:
-#      run `claude setup-token` locally and swap the `anthropic_api_key`
-#      input below for `claude_code_oauth_token`.)
+#      CLAUDE_CODE_OAUTH_TOKEN, from `claude setup-token` (bills the
+#      maintainer's Claude subscription). Dependabot-triggered runs can
+#      only read Dependabot-scoped secrets — an Actions secret of the
+#      same name is invisible here. (To bill API credits instead, store
+#      ANTHROPIC_API_KEY and swap the `claude_code_oauth_token` input
+#      below for `anthropic_api_key`.)
 #   2. Settings → General → enable **Allow auto-merge**.
 
 on:
@@ -33,13 +34,13 @@ jobs:
       - name: Guard on secret
         id: guard
         env:
-          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           if [ -n "$KEY" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::ANTHROPIC_API_KEY is not set in the *Dependabot* secrets — skipping Claude review (see this workflow's header)."
+            echo "::notice::CLAUDE_CODE_OAUTH_TOKEN is not set in the *Dependabot* secrets — skipping Claude review (see this workflow's header)."
           fi
 
       - uses: actions/checkout@v5
@@ -50,7 +51,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         if: steps.guard.outputs.run == 'true'
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             You are reviewing Dependabot PR #${{ github.event.pull_request.number }} in ${{ github.repository }} — a dependency version bump.
 
