@@ -1,0 +1,67 @@
+name: Dependabot Claude Review
+
+# When Dependabot opens a PR, Claude reviews the bumps — diff, release
+# notes, how our workflows use the changed inputs — and, only when
+# everything is routine, approves and enables auto-merge. Branch
+# protection still gates the actual merge on the required Build checks:
+# Claude is the judgment gate, not the CI gate. If anything looks risky
+# it comments instead of approving, and a human decides.
+#
+# One-time setup (the workflow skips quietly until it's done):
+#   1. Settings → Secrets and variables → **Dependabot** → New secret →
+#      ANTHROPIC_API_KEY. Dependabot-triggered runs can only read
+#      Dependabot-scoped secrets — an Actions secret of the same name is
+#      invisible here. (Billing a Claude Pro/Max subscription instead:
+#      run `claude setup-token` locally and swap the `anthropic_api_key`
+#      input below for `claude_code_oauth_token`.)
+#   2. Settings → General → enable **Allow auto-merge**.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write # gh pr merge --auto
+  pull-requests: write # gh pr review --approve
+
+jobs:
+  review:
+    name: Claude review & auto-merge
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard on secret
+        id: guard
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANTHROPIC_API_KEY is not set in the *Dependabot* secrets — skipping Claude review (see this workflow's header)."
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.guard.outputs.run == 'true'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.guard.outputs.run == 'true'
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are reviewing Dependabot PR #${{ github.event.pull_request.number }} in ${{ github.repository }} — a dependency version bump.
+
+            1. Read the diff (`gh pr diff ${{ github.event.pull_request.number }}`) and the release notes Dependabot quotes in the PR body (`gh pr view ${{ github.event.pull_request.number }}`).
+            2. This repo's Dependabot only bumps GitHub Actions. For each bump, judge whether it is routine: patch/minor releases, or major releases whose notes show no breaking changes for the inputs/behaviors our workflows in .github/workflows/ actually use (the checkout is this PR's tree — read the workflows to confirm usage).
+            3. If EVERY bump is routine:
+               gh pr review ${{ github.event.pull_request.number }} --approve --body "<one short paragraph: what was bumped and what you checked>"
+               gh pr merge ${{ github.event.pull_request.number }} --auto --merge
+            4. If ANY bump is unclear or risky — breaking changes in used inputs, changed defaults we rely on, anything unusual about the release — do NOT approve or merge. Instead leave one comment (`gh pr comment`) saying exactly what needs a human look and why.
+
+            Never modify files or push commits. Approval + auto-merge still waits for the required Build checks, so a green review never bypasses CI.
+          claude_args: |
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr review:*),Bash(gh pr merge:*),Bash(gh pr comment:*)"
+            --max-turns 12
