@@ -51,8 +51,18 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         if: steps.guard.outputs.run == 'true'
+        env:
+          # The action wires GITHUB_TOKEN into its *own* API calls, but a
+          # bare `gh` run from Claude's Bash authenticates via GH_TOKEN —
+          # without this, every allowed gh command fails and the run
+          # "succeeds" having done nothing.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Claude's transcript in the run log, while the automation earns
+          # trust. Costs verbosity on a public repo; the tools here only
+          # touch this public PR, so nothing sensitive can leak into it.
+          show_full_output: true
           # The action refuses bot-initiated events by default. Allow
           # exactly Dependabot — never '*': on a public repo that would
           # let arbitrary Apps invoke this with prompts they control.
@@ -76,3 +86,22 @@ jobs:
           claude_args: |
             --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr review:*),Bash(gh pr merge:*),Bash(gh pr comment:*)"
             --max-turns 12
+
+      # The review must end in an approval or a comment — silence means
+      # something upstream failed quietly (exactly what happened when gh
+      # had no token). Turn silence into a red X.
+      - name: Verify a verdict was left
+        if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          verdicts=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" \
+            --json reviews,comments \
+            --jq '([.reviews[].author.login] + [.comments[].author.login])
+                  | map(select(startswith("github-actions"))) | length')
+          if [ "${verdicts:-0}" -eq 0 ]; then
+            echo "::error::Claude finished without approving or commenting on PR #$PR — check the transcript above."
+            exit 1
+          fi
+          echo "verdict present ($verdicts action-authored review(s)/comment(s))"
