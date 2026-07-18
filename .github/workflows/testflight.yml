@@ -130,20 +130,29 @@ jobs:
         working-directory: ios-app
 
       # Fills the TestFlight "What to Test" box from the latest GitHub
-      # release's "What's Changed" notes. Non-fatal: the build is already
-      # uploaded; worst case the box stays empty and can be set by hand.
-      - name: Set "What to Test" from the release notes
+      # release's "What's Changed" notes, then assigns the build to the
+      # beta groups named in the ASC_BETA_GROUPS repository variable
+      # (comma-separated group names; unset = no assignment). Non-fatal:
+      # the build is already uploaded; worst case the box stays empty
+      # and testers are pointed at the build by hand.
+      - name: Set "What to Test" and distribute to test groups
         continue-on-error: true
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
           BUNDLE_ID: com.exaltedpixels.LensLinkCamera
+          ASC_BETA_GROUPS: ${{ vars.ASC_BETA_GROUPS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python3 -m pip install --quiet PyJWT cryptography
+          # The runner's default python3 is Homebrew's, which is
+          # PEP 668 "externally managed" and refuses pip installs —
+          # use a throwaway venv.
+          python3 -m venv "$RUNNER_TEMP/asc-venv"
+          "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet PyJWT cryptography
           BUILD_NUMBER=$(( GITHUB_RUN_NUMBER + 1000 )) \
-            python3 .github/scripts/testflight_whats_to_test.py
+            "$RUNNER_TEMP/asc-venv/bin/python" \
+            .github/scripts/testflight_whats_to_test.py
 
       - name: Clean up API key
         if: always()
