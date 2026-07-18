@@ -49,13 +49,34 @@ review by Apple.
 
 ## "What to Test" fills itself in
 
-After each upload, the workflow waits for App Store Connect to register
-the build and writes the latest GitHub release's "What's Changed" notes
-(as plain text) into the build's **What to Test** field — so testers see
-the actual changelog in the TestFlight app without anyone typing it
-twice. The step is non-fatal: if it can't run (build stuck in
+After each upload, the workflow waits for App Store Connect to finish
+processing the build and writes the latest GitHub release's "What's
+Changed" notes (as plain text) into the build's **What to Test** field —
+so testers see the actual changelog in the TestFlight app without anyone
+typing it twice. The step is non-fatal: if it can't run (build stuck in
 processing, no release yet), the upload still succeeds and the field can
 be filled by hand in App Store Connect.
+
+## Builds auto-assign to your test groups (optional)
+
+The same step can hand each processed build to specific TestFlight
+groups. Set a repository **variable** (not secret) — GitHub repo →
+**Settings → Secrets and variables → Actions → Variables → New
+repository variable**:
+
+| Variable | Value |
+|---|---|
+| `ASC_BETA_GROUPS` | comma-separated TestFlight group names, exactly as they appear in App Store Connect (e.g. `Friends, Public Beta`) |
+
+- **Internal groups** (App Store Connect team members) get the build
+  immediately. (For internal groups you can also skip all of this and
+  enable the group's built-in "automatic distribution" toggle in App
+  Store Connect instead.)
+- **External groups** are submitted for **beta app review**
+  automatically before assignment. The first build of each version
+  number waits on Apple (usually under a day); later builds of the same
+  version clear almost instantly.
+- Unset the variable and the step just sets What to Test, as before.
 
 ## Tester feedback flows into GitHub issues
 

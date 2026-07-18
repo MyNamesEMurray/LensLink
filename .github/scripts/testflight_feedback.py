@@ -42,7 +42,9 @@ def request(url, token, method="GET", body=None):
         req.data = json.dumps(body).encode()
     try:
         with urllib.request.urlopen(req) as resp:
-            return resp.status, json.load(resp)
+            raw = resp.read()
+            # Relationship writes answer 204 with an empty body.
+            return resp.status, (json.loads(raw) if raw else {})
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read() or b"{}")
 
