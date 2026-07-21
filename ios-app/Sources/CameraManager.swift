@@ -192,6 +192,15 @@ final class CameraManager: NSObject {
                 bestScore = score
             }
         }
+        // Device-log breadcrumb (Console.app): the candidate table with
+        // effect flags, so "Video Effects panel is empty on <device>" is
+        // diagnosable from a log instead of guessed at.
+        for candidate in candidates {
+            print("Format \(target.width)x\(target.height)@\(fps) "
+                  + "binned=\(candidate.isVideoBinned) "
+                  + "effects=\(effectsScore(candidate))"
+                  + (candidate == best ? " <- chosen" : ""))
+        }
         return best
     }
 
