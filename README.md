@@ -298,6 +298,18 @@ are the places to watch.
   through a Shortcuts automation (`lenslink://start` works everywhere).
   Also make sure the app has been launched once and "Use with Siri" is on
   in Settings → Siri & Search → LensLink.
+- **Control Center's Video Effects (Portrait, Studio Light…) are missing
+  or greyed out while streaming:** those system effects are toggled by
+  you in Control Center while an app uses the camera — but iOS only
+  offers them on certain cameras and capture formats: mostly the front
+  camera, at moderate settings (think 1080p at 30 fps, not 4K/60), on
+  hardware that supports each effect. Center Stage is iPad-only.
+  LensLink picks an effect-capable format whenever your
+  resolution/frame-rate choice allows one; if the panel is still empty,
+  drop the frame rate or resolution, or switch to the front camera.
+  Apple's Camera-app filters and Photographic Styles aren't available
+  to any third-party camera app — for creative looks, add filters to
+  the source in OBS instead (right-click the source → **Filters**).
 - **Screen broadcast won't connect (sideloaded only):** re-signing can
   silently break the broadcast extension. In the app, open **Screen mirror
   tools → Check broadcast link** while a broadcast is running — it verifies

@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import UIKit
+import os
 
 /// Owns the AVCaptureSession and delivers raw camera frames.
 final class CameraManager: NSObject {
@@ -160,9 +161,9 @@ final class CameraManager: NSObject {
                                resolution: Resolution,
                                fps: Int32) -> AVCaptureDevice.Format? {
         let target = resolution.size
-        // Prefer earlier (unbinned, video-range) formats; require exact
-        // dimensions and a frame-rate range covering the requested rate.
-        return device.formats.first { format in
+        // Require exact dimensions and a frame-rate range covering the
+        // requested rate; earlier formats (unbinned, video-range) win ties.
+        let candidates = device.formats.filter { format in
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
             guard dims.width == target.width, dims.height == target.height else {
                 return false
@@ -170,6 +171,98 @@ final class CameraManager: NSObject {
             return format.videoSupportedFrameRateRanges
                 .contains { $0.maxFrameRate >= Double(fps) }
         }
+        guard let first = candidates.first else { return nil }
+
+        // The device list carries near-duplicate formats whose practical
+        // difference is whether the system video effects (Control Center:
+        // Portrait, Studio Light, Reactions; Center Stage on iPad) can
+        // run — usually only the sensor-binned sibling supports them, and
+        // picking the other one leaves the user's Video Effects panel
+        // empty, which reads as a bug. Prefer the effect-capable sibling,
+        // but only with the same pixel format (colour range must never
+        // shift with this choice). The effects cost nothing unless the
+        // user actually switches one on.
+        let subtype = CMFormatDescriptionGetMediaSubType(first.formatDescription)
+        var best = first
+        var bestScore = effectsScore(first)
+        for candidate in candidates.dropFirst()
+        where CMFormatDescriptionGetMediaSubType(candidate.formatDescription) == subtype {
+            let score = effectsScore(candidate)
+            if score > bestScore {
+                best = candidate
+                bestScore = score
+            }
+        }
+        // Unified-log breadcrumb (Console.app when a Mac is handy; the
+        // full copyable table lives in Options → Camera diagnostics):
+        // the candidate list with effect flags, so "Video Effects panel
+        // is empty on <device>" is diagnosable instead of guessed at.
+        for candidate in candidates {
+            let line = "Format \(target.width)x\(target.height)@\(fps) "
+                + "binned=\(candidate.isVideoBinned) "
+                + "effects=\(effectsScore(candidate))"
+                + (candidate == best ? " <- chosen" : "")
+            log.info("\(line, privacy: .public)")
+        }
+        return best
+    }
+
+    private static let log = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "LensLink",
+        category: "camera")
+
+    /// Human-readable dump of every lens's capture formats with the
+    /// system video-effect flags (CS = Center Stage, P = Portrait,
+    /// SL = Studio Light, R = Reactions) — the field diagnostic behind
+    /// Options → Camera diagnostics, copyable straight from the phone.
+    static func formatReport() -> String {
+        var out = ["\(UIDevice.current.model) — iOS "
+                   + UIDevice.current.systemVersion,
+                   "flags: binned / CS / P / SL / R", ""]
+        for lens in availableLenses() {
+            guard let device = device(for: lens) else { continue }
+            out.append("== \(lens.label) ==")
+            for format in device.formats {
+                let dims = CMVideoFormatDescriptionGetDimensions(
+                    format.formatDescription)
+                let maxFps = format.videoSupportedFrameRateRanges
+                    .map(\.maxFrameRate).max() ?? 0
+                var flags = [format.isVideoBinned ? "b" : "-",
+                             format.isCenterStageSupported ? "CS" : "--",
+                             format.isPortraitEffectSupported ? "P" : "-"]
+                if #available(iOS 16.0, *) {
+                    flags.append(format.isStudioLightSupported ? "SL" : "--")
+                } else {
+                    flags.append("?")
+                }
+                if #available(iOS 17.0, *) {
+                    flags.append(format.reactionEffectsSupported ? "R" : "-")
+                } else {
+                    flags.append("?")
+                }
+                out.append(String(format: "%5dx%-5d fps<=%-3.0f  %@",
+                                  dims.width, dims.height, maxFps,
+                                  flags.joined(separator: " ")))
+            }
+            out.append("")
+        }
+        return out.joined(separator: "\n")
+    }
+
+    /// How many of the system video effects this format can run. The
+    /// effects themselves are user-toggled in Control Center — apps can't
+    /// switch them on, only pick a format that permits them.
+    private static func effectsScore(_ format: AVCaptureDevice.Format) -> Int {
+        var score = 0
+        if format.isCenterStageSupported { score += 1 }
+        if format.isPortraitEffectSupported { score += 1 }
+        if #available(iOS 16.0, *), format.isStudioLightSupported {
+            score += 1
+        }
+        if #available(iOS 17.0, *), format.reactionEffectsSupported {
+            score += 1
+        }
+        return score
     }
 
     /// Whether this lens can capture the resolution at the frame rate.
@@ -178,6 +271,46 @@ final class CameraManager: NSObject {
                          lens: Lens) -> Bool {
         guard let device = device(for: lens) else { return false }
         return format(for: device, resolution: resolution, fps: fps) != nil
+    }
+
+    /// Fires on system-pressure (thermal/power) level changes, on the
+    /// main queue — Streamer scales the bitrate down in response.
+    var onSystemPressure: ((AVCaptureDevice.SystemPressureState.Level) -> Void)?
+    private var pressureObservation: NSKeyValueObservation?
+    private var configuredFps: Int32 = 30
+    private var fpsThrottled = false
+
+    private func systemPressureChanged(on device: AVCaptureDevice) {
+        let level = device.systemPressureState.level
+        let line = "System pressure: \(level.rawValue)"
+        Self.log.warning("\(line, privacy: .public)")
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            // Halve the frame rate at .critical (60→30, 30→15) — losing
+            // cadence beats losing the capture to a thermal shutdown —
+            // and restore the configured rate once pressure abates.
+            let throttle = level == .critical
+            if throttle != self.fpsThrottled {
+                self.fpsThrottled = throttle
+                self.applyFrameRate(divisor: throttle ? 2 : 1)
+            }
+        }
+        DispatchQueue.main.async { self.onSystemPressure?(level) }
+    }
+
+    /// sessionQueue only.
+    private func applyFrameRate(divisor: CMTimeValue) {
+        guard let device = activeDevice else { return }
+        let duration = CMTime(value: divisor,
+                              timescale: configuredFps)
+        do {
+            try device.lockForConfiguration()
+            device.activeVideoMinFrameDuration = duration
+            device.activeVideoMaxFrameDuration = duration
+            device.unlockForConfiguration()
+        } catch {
+            print("Frame-rate throttle failed: \(error.localizedDescription)")
+        }
     }
 
     /// AVCaptureSession requires serialized access; start/stop run on
@@ -229,6 +362,19 @@ final class CameraManager: NSObject {
         device.activeVideoMaxFrameDuration = frameDuration
         device.unlockForConfiguration()
         activeDevice = device
+
+        // Thermal/power mitigation, per the systemPressureState docs:
+        // frame-rate throttling is Apple's recommended response, and at
+        // .shutdown iOS stops capture on its own (surfaced through the
+        // interruption observers above).
+        configuredFps = fps
+        fpsThrottled = false
+        pressureObservation?.invalidate()
+        pressureObservation = device.observe(\.systemPressureState,
+                                             options: [.new]) {
+            [weak self] observedDevice, _ in
+            self?.systemPressureChanged(on: observedDevice)
+        }
 
         let output = AVCaptureVideoDataOutput()
         output.videoSettings = [
