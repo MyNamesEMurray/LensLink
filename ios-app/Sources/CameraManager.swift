@@ -175,7 +175,8 @@ final class CameraManager: NSObject {
 
         // The device list carries near-duplicate formats whose practical
         // difference is whether the system video effects (Control Center:
-        // Portrait, Studio Light, Reactions; Center Stage on iPad) can
+        // Portrait, Studio Light, Reactions, Center Stage — all
+        // hardware-dependent, never assumed per camera) can
         // run — usually only the sensor-binned sibling supports them, and
         // picking the other one leaves the user's Video Effects panel
         // empty, which reads as a bug. Prefer the effect-capable sibling,
