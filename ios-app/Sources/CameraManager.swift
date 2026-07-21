@@ -160,9 +160,9 @@ final class CameraManager: NSObject {
                                resolution: Resolution,
                                fps: Int32) -> AVCaptureDevice.Format? {
         let target = resolution.size
-        // Prefer earlier (unbinned, video-range) formats; require exact
-        // dimensions and a frame-rate range covering the requested rate.
-        return device.formats.first { format in
+        // Require exact dimensions and a frame-rate range covering the
+        // requested rate; earlier formats (unbinned, video-range) win ties.
+        let candidates = device.formats.filter { format in
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
             guard dims.width == target.width, dims.height == target.height else {
                 return false
@@ -170,6 +170,45 @@ final class CameraManager: NSObject {
             return format.videoSupportedFrameRateRanges
                 .contains { $0.maxFrameRate >= Double(fps) }
         }
+        guard let first = candidates.first else { return nil }
+
+        // The device list carries near-duplicate formats whose practical
+        // difference is whether the system video effects (Control Center:
+        // Portrait, Studio Light, Reactions; Center Stage on iPad) can
+        // run — usually only the sensor-binned sibling supports them, and
+        // picking the other one leaves the user's Video Effects panel
+        // empty, which reads as a bug. Prefer the effect-capable sibling,
+        // but only with the same pixel format (colour range must never
+        // shift with this choice). The effects cost nothing unless the
+        // user actually switches one on.
+        let subtype = CMFormatDescriptionGetMediaSubType(first.formatDescription)
+        var best = first
+        var bestScore = effectsScore(first)
+        for candidate in candidates.dropFirst()
+        where CMFormatDescriptionGetMediaSubType(candidate.formatDescription) == subtype {
+            let score = effectsScore(candidate)
+            if score > bestScore {
+                best = candidate
+                bestScore = score
+            }
+        }
+        return best
+    }
+
+    /// How many of the system video effects this format can run. The
+    /// effects themselves are user-toggled in Control Center — apps can't
+    /// switch them on, only pick a format that permits them.
+    private static func effectsScore(_ format: AVCaptureDevice.Format) -> Int {
+        var score = 0
+        if format.isCenterStageSupported { score += 1 }
+        if format.isPortraitEffectSupported { score += 1 }
+        if #available(iOS 16.0, *), format.isStudioLightSupported {
+            score += 1
+        }
+        if #available(iOS 17.0, *), format.reactionEffectsSupported {
+            score += 1
+        }
+        return score
     }
 
     /// Whether this lens can capture the resolution at the frame rate.
