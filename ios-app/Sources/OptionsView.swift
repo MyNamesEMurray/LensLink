@@ -37,6 +37,14 @@ struct OptionsView: View {
                     // exclusivity; this footer is where users learn it.
                     Text("**Send phone mic** streams this phone's microphone as the camera source's audio in OBS — a wireless mic.\n\n**Auto lip-sync** sends the mic purely as a timing reference so the plugin can auto-align your real microphone — it's never streamed or heard.\n\nOne mic, one role: turning one on turns the other off.")
                 }
+
+                Section {
+                    NavigationLink(destination: CameraDiagnosticsView()) {
+                        Text("Camera diagnostics")
+                    }
+                } footer: {
+                    Text("The camera's capture formats and which system video effects (Control Center) each supports — copy it into a bug report when an effect you expect is missing.")
+                }
             }
             .navigationTitle("Options")
             .navigationBarTitleDisplayMode(.inline)
@@ -48,5 +56,32 @@ struct OptionsView: View {
         }
         .navigationViewStyle(.stack)
         .tint(Theme.accent)
+    }
+}
+
+/// The camera's format table with the system video-effect flags, built
+/// on demand and copyable — so "the Video Effects panel is empty on my
+/// phone" can be diagnosed from a paste instead of a Mac-tethered log.
+private struct CameraDiagnosticsView: View {
+    private let report = CameraManager.formatReport()
+    @State private var copied = false
+
+    var body: some View {
+        ScrollView([.vertical, .horizontal]) {
+            Text(report)
+                .font(.system(.caption2, design: .monospaced))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+        }
+        .navigationTitle("Camera diagnostics")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(copied ? "Copied" : "Copy") {
+                    UIPasteboard.general.string = report
+                    copied = true
+                }
+            }
+        }
     }
 }

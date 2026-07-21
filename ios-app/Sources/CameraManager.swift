@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import UIKit
+import os
 
 /// Owns the AVCaptureSession and delivers raw camera frames.
 final class CameraManager: NSObject {
@@ -192,16 +193,60 @@ final class CameraManager: NSObject {
                 bestScore = score
             }
         }
-        // Device-log breadcrumb (Console.app): the candidate table with
-        // effect flags, so "Video Effects panel is empty on <device>" is
-        // diagnosable from a log instead of guessed at.
+        // Unified-log breadcrumb (Console.app when a Mac is handy; the
+        // full copyable table lives in Options → Camera diagnostics):
+        // the candidate list with effect flags, so "Video Effects panel
+        // is empty on <device>" is diagnosable instead of guessed at.
         for candidate in candidates {
-            print("Format \(target.width)x\(target.height)@\(fps) "
-                  + "binned=\(candidate.isVideoBinned) "
-                  + "effects=\(effectsScore(candidate))"
-                  + (candidate == best ? " <- chosen" : ""))
+            let line = "Format \(target.width)x\(target.height)@\(fps) "
+                + "binned=\(candidate.isVideoBinned) "
+                + "effects=\(effectsScore(candidate))"
+                + (candidate == best ? " <- chosen" : "")
+            log.info("\(line, privacy: .public)")
         }
         return best
+    }
+
+    private static let log = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "LensLink",
+        category: "camera")
+
+    /// Human-readable dump of every lens's capture formats with the
+    /// system video-effect flags (CS = Center Stage, P = Portrait,
+    /// SL = Studio Light, R = Reactions) — the field diagnostic behind
+    /// Options → Camera diagnostics, copyable straight from the phone.
+    static func formatReport() -> String {
+        var out = ["\(UIDevice.current.model) — iOS "
+                   + UIDevice.current.systemVersion,
+                   "flags: binned / CS / P / SL / R", ""]
+        for lens in availableLenses() {
+            guard let device = device(for: lens) else { continue }
+            out.append("== \(lens.label) ==")
+            for format in device.formats {
+                let dims = CMVideoFormatDescriptionGetDimensions(
+                    format.formatDescription)
+                let maxFps = format.videoSupportedFrameRateRanges
+                    .map(\.maxFrameRate).max() ?? 0
+                var flags = [format.isVideoBinned ? "b" : "-",
+                             format.isCenterStageSupported ? "CS" : "--",
+                             format.isPortraitEffectSupported ? "P" : "-"]
+                if #available(iOS 16.0, *) {
+                    flags.append(format.isStudioLightSupported ? "SL" : "--")
+                } else {
+                    flags.append("?")
+                }
+                if #available(iOS 17.0, *) {
+                    flags.append(format.reactionEffectsSupported ? "R" : "-")
+                } else {
+                    flags.append("?")
+                }
+                out.append(String(format: "%5dx%-5d fps<=%-3.0f  %@",
+                                  dims.width, dims.height, maxFps,
+                                  flags.joined(separator: " ")))
+            }
+            out.append("")
+        }
+        return out.joined(separator: "\n")
     }
 
     /// How many of the system video effects this format can run. The
