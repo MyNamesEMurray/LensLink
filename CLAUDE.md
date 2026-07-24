@@ -26,6 +26,19 @@ Read the matching doc before touching an area:
   backpressure). Performance PRs must quote benchmark numbers
   (`tools/bench-report.py`).
 - `docs/DEVELOPMENT.md` — architecture, repo layout, CI, release automation.
+- `docs/ROADMAP.md` (planned work — check before designing a feature),
+  `docs/TESTFLIGHT.md` (App Store Connect / TestFlight automation),
+  `docs/DEBUGGING-SCREEN-MIRROR.md` (the broadcast extension's failure
+  modes, which are hard to observe from the app).
+
+### Things that must change together
+
+| Change | Also update |
+|--------|-------------|
+| Wire protocol | `docs/PROTOCOL.md` + `obs-plugin/src/protocol.h` + `ios-app/Sources/Protocol.swift` (the constants/enums are hand-mirrored, not generated) |
+| Design tokens, status vocabulary | `docs/UI_DESIGN.md` + `ios-app/Sources/DesignSystem.swift` + the inline page in `obs-plugin/src/web-control.c` |
+| Any plugin-visible string | `obs-plugin/data/locale/en-US.ini` |
+| A control the user can set from more than one place | app UI, web panel, and source properties all read the same cached STATE — add the field to STATE, not to one surface |
 
 ## Commands
 
@@ -67,6 +80,10 @@ CI builds with `-Wall -Wextra -Werror`, so use those flags locally to match.
 `qt6-base-dev` is optional — the status-bar/dock UI (`frontend-ui.cpp`)
 compiles only when Qt6 is found; the rest must build and work without it.
 
+New `.c` files must be added to the `add_library()` list in
+`obs-plugin/CMakeLists.txt` — there is no globbing. `LENSLINK_VERSION`
+defaults to `"dev"`; CI passes the release tag.
+
 ### iOS app: full build (macOS only)
 
 ```bash
@@ -74,7 +91,20 @@ brew install xcodegen
 cd ios-app && xcodegen generate && open LensLink.xcodeproj
 ```
 
-Details (signing, older Xcode): `ios-app/BUILDING.md`.
+New files under `Sources/` are picked up automatically, but anything the
+**broadcast extension** also needs must be listed explicitly under
+`LensLinkBroadcast.sources` in `ios-app/project.yml` (today: `Protocol.swift`,
+`StreamClient.swift`, `VideoEncoder.swift`). Details (signing, older Xcode):
+`ios-app/BUILDING.md`.
+
+### Performance measurements
+
+Enable "Log pipeline benchmark numbers" (Tools → LensLink Settings) and the
+plugin writes `bench-<pipeline>-<epoch>.csv` (one row per second of live
+video) into the OBS plugin config dir — `pipeline-bench.c`. Compare a
+before/after pair with `python3 tools/bench-report.py BEFORE.csv AFTER.csv`
+(standard library only). That pairing is what a performance PR is expected
+to quote.
 
 ## CI and releases
 
@@ -133,6 +163,13 @@ and idle, waiting for remote start". Points that shape the code:
   plus `/api/state` and `/api/control`.
 - `plugin-settings.c` holds plugin-wide settings (Tools → LensLink
   Settings); global settings are never duplicated in per-source properties.
+- `frontend-ui.cpp` (Qt, optional — guarded by `LENSLINK_FRONTEND`) draws
+  the status-bar readout and the LensLink dock. It resolves the five
+  obs-frontend-api symbols at runtime rather than linking a frontend
+  library, and reads state only through the `health.h` snapshot API — keep
+  that boundary; nothing else may reach across it.
+- `net-compat.h` is the Winsock/BSD-socket shim; use it instead of
+  platform `#ifdef`s in new code.
 - Locale strings: `obs-plugin/data/locale/en-US.ini`.
 
 ### iOS app (ios-app/Sources/)
@@ -149,6 +186,11 @@ and idle, waiting for remote start". Points that shape the code:
 - The app only streams while foregrounded (iOS suspends background camera
   capture); the remote-start machinery (standby HELLO + `start_stream`)
   exists because of this.
+- Deployment target is iOS 15, but `RemoteStartIntents.swift` uses
+  AppIntents (iOS 16+): it is weak-linked via `OTHER_LDFLAGS` in
+  `project.yml` and must stay `@available`-gated, or the app won't launch
+  on iOS 15. The `lenslink://start` / `lenslink://stop` URL scheme is the
+  iOS 15 fallback path for the same feature.
 
 ## Conventions
 
