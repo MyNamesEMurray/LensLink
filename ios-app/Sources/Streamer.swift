@@ -3,6 +3,16 @@ import AVFoundation
 import Combine
 import SwiftUI
 
+/// Defaults keys shared between the streamer and the views. Kept out of
+/// `Streamer` (which is `@MainActor`) so a `@AppStorage` property
+/// initializer can reference them without an isolation hop.
+enum StreamerDefaults {
+    /// Whether the Live screen shows the health pill. StreamingView owns it
+    /// via `@AppStorage`; the streamer reads it to decide whether sampling
+    /// health is worth waking SwiftUI for.
+    static let showHealth = "showStreamHealth"
+}
+
 /// Glues camera → encoder → network together and exposes state for SwiftUI.
 @MainActor
 final class Streamer: ObservableObject {
@@ -435,6 +445,10 @@ final class Streamer: ObservableObject {
         var droppedFrames = 0
     }
 
+    /// Only published while the overlay is actually on screen. It's a 1 Hz
+    /// `@Published` write on the main actor, so publishing it unwatched
+    /// invalidates the whole Live view once a second for a value nothing
+    /// reads — including while dimmed, which is meant to be idle.
     @Published private(set) var health: StreamHealth?
     /// Counters are cumulative across connections; baseline them at each
     /// stream start so the overlay shows this stream's drops, not the
@@ -885,19 +899,30 @@ final class Streamer: ObservableObject {
             var current = target
             var stableSeconds = 0
             var previousStats: StreamClient.Stats?
+            var healthWasVisible = false
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 guard let self, self.isStreaming else { break }
 
                 // Health overlay sample: per-second deltas of the send
-                // counters (the sleep above sets the 1 s window).
+                // counters (the sleep above sets the 1 s window). Skipped
+                // while the overlay is off — the counters keep advancing
+                // either way, so turning it on still reads correctly one
+                // second later.
                 let stats = self.client.statsSnapshot()
-                if let previous = previousStats {
+                let healthVisible = UserDefaults.standard.bool(
+                    forKey: StreamerDefaults.showHealth)
+                if healthVisible, let previous = previousStats {
                     self.health = StreamHealth(
                         fps: max(0, stats.framesSent - previous.framesSent),
                         megabitsPerSecond: Double(max(0, stats.bytesSent - previous.bytesSent)) * 8 / 1_000_000,
                         droppedFrames: max(0, stats.framesDropped - self.healthDroppedBaseline))
+                } else if healthWasVisible {
+                    // Cleared once on hide, so re-enabling can't flash the
+                    // reading from whenever it was last switched off.
+                    self.health = nil
                 }
+                healthWasVisible = healthVisible
                 previousStats = stats
 
                 let effectiveTarget = max(

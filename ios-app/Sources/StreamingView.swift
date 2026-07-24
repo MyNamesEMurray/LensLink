@@ -12,8 +12,9 @@ struct StreamingView: View {
     @State private var pinchBaseZoom: CGFloat = 1
     @State private var previousBrightness: CGFloat = UIScreen.main.brightness
     /// Stream health pill (fps · Mb/s · dropped). Persisted: someone who
-    /// turns it on is debugging and wants it next stream too.
-    @AppStorage("showStreamHealth") private var showHealth = false
+    /// turns it on is debugging and wants it next stream too. The streamer
+    /// reads the same key to decide whether to sample health at all.
+    @AppStorage(StreamerDefaults.showHealth) private var showHealth = false
 
     private static let dimAfterSeconds: TimeInterval = 10
 

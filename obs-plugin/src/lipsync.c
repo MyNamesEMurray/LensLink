@@ -113,13 +113,19 @@ void lipsync_add_mic(struct lipsync *ls, const float *mono, size_t count,
 	}
 }
 
+/* Newest-first walk of the ring. RING isn't a power of two, so stepping the
+ * index by hand keeps an integer division out of these per-element loops. */
+#define RING_WALK(s, idx)                                                     \
+	for (int idx = ((s)->head ? (s)->head : RING) - 1, walk_n = (s)->count; \
+	     walk_n > 0; walk_n--, idx = idx ? idx - 1 : RING - 1)
+
 static bool stream_bounds(const struct env_stream *s, int64_t *lo, int64_t *hi)
 {
 	if (s->count == 0)
 		return false;
 	int64_t mn = INT64_MAX, mx = INT64_MIN;
-	for (int i = 0; i < s->count; i++) {
-		int idx = (s->head - 1 - i + 2 * RING) % RING;
+	RING_WALK(s, idx)
+	{
 		int64_t f = s->frame[idx];
 		if (f < mn)
 			mn = f;
@@ -136,8 +142,8 @@ static void build_dense(const struct env_stream *s, int64_t lo, int64_t hi,
 			float *out)
 {
 	memset(out, 0, sizeof(float) * (size_t)(hi - lo));
-	for (int i = 0; i < s->count; i++) {
-		int idx = (s->head - 1 - i + 2 * RING) % RING;
+	RING_WALK(s, idx)
+	{
 		int64_t f = s->frame[idx];
 		if (f >= lo && f < hi)
 			out[f - lo] = s->energy[idx];
@@ -175,9 +181,13 @@ bool lipsync_estimate(struct lipsync *ls, int64_t *mic_delay_ns,
 	int ML = L + 2 * MAX_LAG_FRAMES;
 	float *p = malloc(sizeof(float) * (size_t)L);
 	float *m = malloc(sizeof(float) * (size_t)ML);
-	if (!p || !m) {
+	/* Prefix sums of m[]^2, so each lag's window energy is one
+	 * subtraction instead of a second pass over the window. */
+	double *msq = malloc(sizeof(double) * (size_t)(ML + 1));
+	if (!p || !m || !msq) {
 		free(p);
 		free(m);
+		free(msq);
 		return false;
 	}
 
@@ -194,23 +204,45 @@ bool lipsync_estimate(struct lipsync *ls, int64_t *mic_delay_ns,
 	if (norm_p < MIN_ENERGY) {
 		free(p);
 		free(m);
+		free(msq);
 		return false; /* reference essentially silent */
 	}
+
+	msq[0] = 0;
+	for (int i = 0; i < ML; i++)
+		msq[i + 1] = msq[i] + (double)m[i] * m[i];
 
 	double best = -1e30;
 	int best_lag = 0;
 	bool found = false;
-	/* score(lag) = sum p[i] * m[i+lag]; peaks at lag == mic delay. */
+	/* score(lag) = sum p[i] * m[i+lag]; peaks at lag == mic delay.
+	 *
+	 * Two things keep this ~1.8M-iteration loop honest. The window's own
+	 * energy comes from the prefix sums above: successive lags overlap
+	 * almost entirely, so recomputing it per lag was pure waste.
+	 * (Cancellation can make a near-silent window read slightly negative;
+	 * the MIN_ENERGY guard rejects that before the sqrt.) And the dot
+	 * product accumulates into four independent partials, because a single
+	 * double accumulator serializes the loop on FP-add latency — the adds
+	 * can't overlap, and the loop runs at one add per ~4 cycles no matter
+	 * how little else it does. Four chains let them pipeline. */
 	for (int lag = -MAX_LAG_FRAMES; lag <= MAX_LAG_FRAMES; lag++) {
-		double dot = 0, norm_m = 0;
 		int base = lag + MAX_LAG_FRAMES; /* index into padded m */
-		for (int i = 0; i < L; i++) {
-			float mv = m[i + base];
-			dot += (double)p[i] * mv;
-			norm_m += (double)mv * mv;
-		}
+		double norm_m = msq[base + L] - msq[base];
 		if (norm_m < MIN_ENERGY)
 			continue;
+		const float *mw = m + base;
+		double d0 = 0, d1 = 0, d2 = 0, d3 = 0;
+		int i = 0;
+		for (; i + 4 <= L; i += 4) {
+			d0 += (double)p[i] * mw[i];
+			d1 += (double)p[i + 1] * mw[i + 1];
+			d2 += (double)p[i + 2] * mw[i + 2];
+			d3 += (double)p[i + 3] * mw[i + 3];
+		}
+		double dot = (d0 + d1) + (d2 + d3);
+		for (; i < L; i++)
+			dot += (double)p[i] * mw[i];
 		double ncc = dot / sqrt(norm_p * norm_m);
 		if (!found || ncc > best) {
 			best = ncc;
@@ -221,6 +253,7 @@ bool lipsync_estimate(struct lipsync *ls, int64_t *mic_delay_ns,
 
 	free(p);
 	free(m);
+	free(msq);
 
 	/* No lag had usable mic energy (mic silent): no estimate. */
 	if (!found)

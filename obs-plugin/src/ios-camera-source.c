@@ -2634,9 +2634,16 @@ static uint32_t ios_camera_get_height(void *data)
 	return s->frame_height;
 }
 
-/* The NV12/I420 draw effect, shared by every source (graphics thread). */
+/* The NV12/I420 draw effect, shared by every source (graphics thread).
+ * The parameter handles are resolved once with it: gs_effect_get_param_by_name
+ * is a by-name lookup, and video_render runs per source per rendered frame on
+ * the graphics thread — the one thread the whole compositor waits on. Handles
+ * stay valid as long as the effect, which lives until module unload. */
 static gs_effect_t *g_yuv_effect = NULL;
 static bool g_yuv_effect_tried = false;
+static gs_eparam_t *g_yuv_y = NULL;
+static gs_eparam_t *g_yuv_uv = NULL;
+static gs_eparam_t *g_yuv_v = NULL;
 
 static gs_effect_t *yuv_effect(void)
 {
@@ -2651,6 +2658,14 @@ static gs_effect_t *yuv_effect(void)
 			blog(LOG_ERROR,
 			     "[lenslink] gpu pipeline: nv12.effect missing — "
 			     "YUV frames cannot be drawn");
+		else {
+			g_yuv_y = gs_effect_get_param_by_name(g_yuv_effect,
+							      "y_tex");
+			g_yuv_uv = gs_effect_get_param_by_name(g_yuv_effect,
+							       "uv_tex");
+			g_yuv_v = gs_effect_get_param_by_name(g_yuv_effect,
+							      "v_tex");
+		}
 	}
 	return g_yuv_effect;
 }
@@ -2807,8 +2822,17 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 
 	if (s->gpu_map.rgba) {
 		gs_effect_t *eff = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-		gs_eparam_t *image = gs_effect_get_param_by_name(eff, "image");
-		gs_effect_set_texture(image, s->gpu_map.tex[0]);
+		/* OBS owns the base effect; cache its "image" handle against
+		 * the effect we resolved it from, so a different (or reloaded)
+		 * base effect re-resolves instead of reusing a stale handle. */
+		static gs_effect_t *cached_base = NULL;
+		static gs_eparam_t *cached_image = NULL;
+		if (eff != cached_base) {
+			cached_base = eff;
+			cached_image =
+				gs_effect_get_param_by_name(eff, "image");
+		}
+		gs_effect_set_texture(cached_image, s->gpu_map.tex[0]);
 		while (gs_effect_loop(eff, "Draw"))
 			gs_draw_sprite(s->gpu_map.tex[0], 0, s->gpu_map.width,
 				       s->gpu_map.height);
@@ -2817,17 +2841,10 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 		if (eff) {
 			bool i420 = !s->gpu_mapped &&
 				    s->cpu_tex_fmt != AV_PIX_FMT_NV12;
-			gs_effect_set_texture(
-				gs_effect_get_param_by_name(eff, "y_tex"),
-				s->gpu_map.tex[0]);
-			gs_effect_set_texture(
-				gs_effect_get_param_by_name(eff, "uv_tex"),
-				s->gpu_map.tex[1]);
+			gs_effect_set_texture(g_yuv_y, s->gpu_map.tex[0]);
+			gs_effect_set_texture(g_yuv_uv, s->gpu_map.tex[1]);
 			if (i420)
-				gs_effect_set_texture(
-					gs_effect_get_param_by_name(eff,
-								    "v_tex"),
-					s->cpu_tex[2]);
+				gs_effect_set_texture(g_yuv_v, s->cpu_tex[2]);
 			while (gs_effect_loop(eff, i420 ? "DrawI420" : "Draw"))
 				gs_draw_sprite(s->gpu_map.tex[0], 0,
 					       s->gpu_map.width,
