@@ -301,12 +301,15 @@ are the places to watch.
 - **Control Center's Video Effects (Portrait, Studio Light…) are missing
   or greyed out while streaming:** those system effects are toggled by
   you in Control Center while an app uses the camera — but iOS only
-  offers them on certain cameras and capture formats: mostly the front
-  camera, at moderate settings (think 1080p at 30 fps, not 4K/60), on
-  hardware that supports each effect. Center Stage is iPad-only.
-  LensLink picks an effect-capable format whenever your
-  resolution/frame-rate choice allows one; if the panel is still empty,
-  drop the frame rate or resolution, or switch to the front camera.
+  offers them on certain cameras and capture formats — typically the
+  front camera at moderate settings (think 1080p, not 4K), with newer
+  hardware extending more effects to more cameras (Center Stage needs
+  iPads or recent iPhones; iPhone 17-generation devices add rear-camera
+  support). The app's **Options → Camera diagnostics** table shows
+  exactly what your device offers per camera and format. LensLink picks
+  an effect-capable format whenever your resolution/frame-rate choice
+  allows one; if the panel is still empty, drop the frame rate or
+  resolution, or switch to the front camera.
   Apple's Camera-app filters and Photographic Styles aren't available
   to any third-party camera app — for creative looks, add filters to
   the source in OBS instead (right-click the source → **Filters**).
