@@ -45,6 +45,13 @@ both are required.
   source on Linux (it installs a Swift toolchain on first run). Syntax
   only — SwiftUI/UIKit don't exist outside Xcode, so the full compile
   still needs macOS (CI does it on every pull request).
+- **App icon:** `AppIcon.appiconset` carries three appearance variants —
+  default, dark and tinted (see `docs/UI_DESIGN.md` §5). Compiling the
+  dark/tinted ones needs **Xcode 16 or newer**; older Xcode ignores the
+  `appearances` keys (possibly with an "unassigned children" warning) and
+  builds an app that just uses the default icon everywhere. Regenerate all
+  three with `python3 assets/make-icon.py` from the repo root rather than
+  editing the PNGs — the generator is the source of truth for the mark.
 - The app stops streaming when backgrounded (iOS suspends camera capture);
   keep it in the foreground while live. The screen is kept awake
   automatically while streaming.
