@@ -67,6 +67,7 @@ add_library(${PROJECT_NAME} MODULE
   src/protocol.h
   src/web-control.h
   src/lipsync.h
+  src/lipsync-cal.h
   src/net-compat.h
   src/h264-decoder.h
   src/usbmux.h

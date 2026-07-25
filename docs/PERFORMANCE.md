@@ -70,6 +70,15 @@ should add as close to zero as possible.
   independent accumulators, because one `double` accumulator serializes
   the loop on FP-add latency regardless of how little else it does.
   Together: 1.51 ms → 0.90 ms per estimate, bit-identical results.
+- It also runs **far less often**. What it measures — the mic's latency —
+  is a property of the audio gear, while the number that actually moves
+  is the video latency timesync already tracks for free. So the mic
+  figure is latched once confident and the offset is re-derived from
+  latency alone; the correlation returns only every 90 s to confirm the
+  latched figure still holds (`lipsync-cal.h`). Over a quiet ten-minute
+  stretch that is 6 correlations instead of 120 — and, more importantly,
+  120 offset updates instead of none, since tracking no longer waits on
+  someone talking.
 - Effect parameter handles are resolved **once**, with the effect, not per
   render (`yuv_effect()`). `video_render` runs per source per rendered
   frame on the graphics thread — the thread the whole compositor waits
