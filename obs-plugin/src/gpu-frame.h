@@ -31,11 +31,22 @@ extern "C" {
 
 struct gpu_frame_ctx;
 
+/* Pixel layout of a mapped/uploaded frame; tells the draw site which
+ * technique (and which plane textures) to use. */
+enum gpu_frame_format {
+	GPU_FRAME_NV12, /* tex[0] = luma (R8), tex[1] = chroma (R8G8, half) */
+	GPU_FRAME_I420, /* CPU upload only: three R8 planes (the caller owns
+			 * the third texture) */
+	GPU_FRAME_P010, /* tex[0] = luma (R16), tex[1] = chroma (RG16, half);
+			 * 10 bits MSB-aligned in each 16-bit word */
+	GPU_FRAME_I010, /* CPU upload only: three R16 planes; 10 bits
+			 * LSB-aligned (samples read 1/64 of intended) */
+	GPU_FRAME_RGBA, /* tex[0] is a full-color texture (macOS) */
+};
+
 struct gpu_frame_map_result {
-	/* rgba: tex[0] is a full-color texture (macOS). Otherwise NV12:
-	 * tex[0] = luma (R8), tex[1] = chroma (R8G8, half size). */
 	gs_texture_t *tex[2];
-	bool rgba;
+	enum gpu_frame_format format;
 	uint32_t width, height;
 };
 

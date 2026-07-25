@@ -279,6 +279,10 @@ static bool avframe_to_obs(const AVFrame *frame, struct obs_source_frame *out)
 	case AV_PIX_FMT_P010:
 		out->format = VIDEO_FORMAT_P010;
 		break;
+	case AV_PIX_FMT_YUV420P10:
+		/* Software HEVC Main10 decode (HDR without a GPU decoder). */
+		out->format = VIDEO_FORMAT_I010;
+		break;
 	default:
 		return false;
 	}
@@ -309,10 +313,28 @@ static bool avframe_to_obs(const AVFrame *frame, struct obs_source_frame *out)
 			     ? VIDEO_CS_2100_HLG
 			     : VIDEO_CS_2100_PQ;
 
+	/* The transfer function rides along with the frame: without it,
+	 * libobs treats 10-bit HDR video as SDR 709 (washed out / grey).
+	 * VIDEO_TRC_DEFAULT keeps today's behaviour for SDR streams. */
+	switch (frame->color_trc) {
+	case AVCOL_TRC_ARIB_STD_B67:
+		out->trc = (uint8_t)VIDEO_TRC_HLG;
+		break;
+	case AVCOL_TRC_SMPTE2084:
+		out->trc = (uint8_t)VIDEO_TRC_PQ;
+		break;
+	default:
+		out->trc = (uint8_t)VIDEO_TRC_DEFAULT;
+		break;
+	}
+
 	out->full_range = range == VIDEO_RANGE_FULL;
-	video_format_get_parameters(cs, range, out->color_matrix,
-				    out->color_range_min,
-				    out->color_range_max);
+	/* _for_format: the plain variant assumes 8-bit code ranges, which
+	 * are wrong for the 10-bit formats (I010/P010). */
+	video_format_get_parameters_for_format(cs, range, out->format,
+					       out->color_matrix,
+					       out->color_range_min,
+					       out->color_range_max);
 	return true;
 }
 
@@ -407,7 +429,8 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			size_t frame_bytes = px * 3 / 2;
 			if (out.format == VIDEO_FORMAT_I422)
 				frame_bytes = px * 2;
-			else if (out.format == VIDEO_FORMAT_P010)
+			else if (out.format == VIDEO_FORMAT_P010 ||
+				 out.format == VIDEO_FORMAT_I010)
 				frame_bytes = px * 3;
 			lenslink_bench_frame(
 				os_gettime_ns() - bench_start,

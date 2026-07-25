@@ -236,6 +236,9 @@ struct ios_camera_source {
 			     * graphics thread frees current_frame for it */
 	int render_path; /* 0 unknown, 1 zero-copy, 2 cpu fallback (logged
 			  * on transition so a black source is explicable) */
+	bool render_hdr; /* current frame is HDR (HLG/PQ transfer); set on
+			  * the graphics thread when a frame is adopted and
+			  * read there by video_get_color_space */
 
 };
 
@@ -3024,6 +3027,8 @@ static bool g_yuv_effect_tried = false;
 static gs_eparam_t *g_yuv_y = NULL;
 static gs_eparam_t *g_yuv_uv = NULL;
 static gs_eparam_t *g_yuv_v = NULL;
+static gs_eparam_t *g_yuv_scale = NULL; /* 16-bit sample -> code/1023 */
+static gs_eparam_t *g_yuv_hdr = NULL;   /* HLG peak over SDR white */
 
 static gs_effect_t *yuv_effect(void)
 {
@@ -3045,6 +3050,10 @@ static gs_effect_t *yuv_effect(void)
 							       "uv_tex");
 			g_yuv_v = gs_effect_get_param_by_name(g_yuv_effect,
 							      "v_tex");
+			g_yuv_scale = gs_effect_get_param_by_name(
+				g_yuv_effect, "sample_scale");
+			g_yuv_hdr = gs_effect_get_param_by_name(g_yuv_effect,
+								"hdr_scale");
 		}
 	}
 	return g_yuv_effect;
@@ -3057,9 +3066,28 @@ static bool upload_sw_frame(struct ios_camera_source *s, const AVFrame *f,
 			    struct gpu_frame_map_result *out)
 {
 	int fmt = f->format;
-	if (fmt != AV_PIX_FMT_NV12 && fmt != AV_PIX_FMT_YUV420P &&
-	    fmt != AV_PIX_FMT_YUVJ420P)
+	enum gpu_frame_format map_fmt;
+	switch (fmt) {
+	case AV_PIX_FMT_NV12:
+		map_fmt = GPU_FRAME_NV12;
+		break;
+	case AV_PIX_FMT_YUV420P:
+	case AV_PIX_FMT_YUVJ420P:
+		map_fmt = GPU_FRAME_I420;
+		break;
+	case AV_PIX_FMT_P010: /* HDR hardware decode, downloaded */
+		map_fmt = GPU_FRAME_P010;
+		break;
+	case AV_PIX_FMT_YUV420P10: /* HDR software decode (HEVC Main10) */
+		map_fmt = GPU_FRAME_I010;
+		break;
+	default:
 		return false;
+	}
+	/* 10-bit planes are 16-bit words; linesize (bytes) already covers
+	 * the ×2 — pass it through, never width×bpp. */
+	bool two_plane = map_fmt == GPU_FRAME_NV12 || map_fmt == GPU_FRAME_P010;
+	bool ten_bit = map_fmt == GPU_FRAME_P010 || map_fmt == GPU_FRAME_I010;
 
 	uint32_t w = (uint32_t)f->width, h = (uint32_t)f->height;
 	if (!s->cpu_tex[0] || s->cpu_tex_w != w || s->cpu_tex_h != h ||
@@ -3070,19 +3098,21 @@ static bool upload_sw_frame(struct ios_camera_source *s, const AVFrame *f,
 				s->cpu_tex[i] = NULL;
 			}
 		}
+		enum gs_color_format one = ten_bit ? GS_R16 : GS_R8;
+		enum gs_color_format two = ten_bit ? GS_RG16 : GS_R8G8;
 		s->cpu_tex[0] =
-			gs_texture_create(w, h, GS_R8, 1, NULL, GS_DYNAMIC);
-		if (fmt == AV_PIX_FMT_NV12) {
-			s->cpu_tex[1] = gs_texture_create(w / 2, h / 2, GS_R8G8,
+			gs_texture_create(w, h, one, 1, NULL, GS_DYNAMIC);
+		if (two_plane) {
+			s->cpu_tex[1] = gs_texture_create(w / 2, h / 2, two,
 							  1, NULL, GS_DYNAMIC);
 		} else {
-			s->cpu_tex[1] = gs_texture_create(w / 2, h / 2, GS_R8,
+			s->cpu_tex[1] = gs_texture_create(w / 2, h / 2, one,
 							  1, NULL, GS_DYNAMIC);
-			s->cpu_tex[2] = gs_texture_create(w / 2, h / 2, GS_R8,
+			s->cpu_tex[2] = gs_texture_create(w / 2, h / 2, one,
 							  1, NULL, GS_DYNAMIC);
 		}
 		if (!s->cpu_tex[0] || !s->cpu_tex[1] ||
-		    (fmt != AV_PIX_FMT_NV12 && !s->cpu_tex[2]))
+		    (!two_plane && !s->cpu_tex[2]))
 			return false;
 		s->cpu_tex_w = w;
 		s->cpu_tex_h = h;
@@ -3093,13 +3123,13 @@ static bool upload_sw_frame(struct ios_camera_source *s, const AVFrame *f,
 			     (uint32_t)f->linesize[0], false);
 	gs_texture_set_image(s->cpu_tex[1], f->data[1],
 			     (uint32_t)f->linesize[1], false);
-	if (fmt != AV_PIX_FMT_NV12)
+	if (!two_plane)
 		gs_texture_set_image(s->cpu_tex[2], f->data[2],
 				     (uint32_t)f->linesize[2], false);
 
 	out->tex[0] = s->cpu_tex[0];
 	out->tex[1] = s->cpu_tex[1];
-	out->rgba = false;
+	out->format = map_fmt;
 	out->width = w;
 	out->height = h;
 	return true;
@@ -3123,6 +3153,7 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 	if (clear && s->current_frame) {
 		av_frame_free(&s->current_frame);
 		s->gpu_mapped = false;
+		s->render_hdr = false;
 	}
 
 	if (fresh) {
@@ -3173,9 +3204,17 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 			}
 			copied = (size_t)s->gpu_map.width *
 				 s->gpu_map.height * 3 / 2;
+			if (s->gpu_map.format == GPU_FRAME_P010 ||
+			    s->gpu_map.format == GPU_FRAME_I010)
+				copied *= 2; /* 16-bit words per sample */
 			if (up != fresh)
 				copied *= 2; /* download + upload */
 		}
+
+		/* HDR (HLG/PQ) frames render extended-range linear values;
+		 * video_get_color_space reports the matching canvas space. */
+		s->render_hdr = fresh->color_trc == AVCOL_TRC_ARIB_STD_B67 ||
+				fresh->color_trc == AVCOL_TRC_SMPTE2084;
 
 		int path = s->gpu_mapped ? 1 : 2;
 		if (path != s->render_path) {
@@ -3200,7 +3239,7 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 	if (!locked)
 		return;
 
-	if (s->gpu_map.rgba) {
+	if (s->gpu_map.format == GPU_FRAME_RGBA) {
 		gs_effect_t *eff = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 		/* OBS owns the base effect; cache its "image" handle against
 		 * the effect we resolved it from, so a different (or reloaded)
@@ -3219,13 +3258,48 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 	} else {
 		gs_effect_t *eff = yuv_effect();
 		if (eff) {
-			bool i420 = !s->gpu_mapped &&
-				    s->cpu_tex_fmt != AV_PIX_FMT_NV12;
+			/* 10-bit frames from the phone are HLG (the app
+			 * signals BT.2020 + ARIB STD-B67); the HLG techniques
+			 * emit extended-range linear 709 to match the
+			 * GS_CS_709_EXTENDED report from
+			 * video_get_color_space. */
+			const char *tech = "Draw";
+			bool three_plane = false;
+			float scale = 0.0f;
+			switch (s->gpu_map.format) {
+			case GPU_FRAME_I420:
+				tech = "DrawI420";
+				three_plane = true;
+				break;
+			case GPU_FRAME_P010:
+				/* MSB-aligned: sample ~= code/1023 already;
+				 * the exact ratio is 65535/(1023*64). */
+				tech = "DrawP010HLG";
+				scale = 65535.0f / 65472.0f;
+				break;
+			case GPU_FRAME_I010:
+				/* LSB-aligned: samples read 1/64 of the
+				 * intended value. */
+				tech = "DrawI010HLG";
+				three_plane = true;
+				scale = 65535.0f / 1023.0f;
+				break;
+			default:
+				break;
+			}
+			if (scale != 0.0f) {
+				float white = obs_get_video_sdr_white_level();
+				gs_effect_set_float(g_yuv_scale, scale);
+				gs_effect_set_float(g_yuv_hdr,
+						    white > 0.0f
+							    ? 1000.0f / white
+							    : 1000.0f / 300.0f);
+			}
 			gs_effect_set_texture(g_yuv_y, s->gpu_map.tex[0]);
 			gs_effect_set_texture(g_yuv_uv, s->gpu_map.tex[1]);
-			if (i420)
+			if (three_plane)
 				gs_effect_set_texture(g_yuv_v, s->cpu_tex[2]);
-			while (gs_effect_loop(eff, i420 ? "DrawI420" : "Draw"))
+			while (gs_effect_loop(eff, tech))
 				gs_draw_sprite(s->gpu_map.tex[0], 0,
 					       s->gpu_map.width,
 					       s->gpu_map.height);
@@ -3256,6 +3330,25 @@ static void gpu_pipeline_free(struct ios_camera_source *s)
 		av_frame_free(&s->xfer);
 }
 
+/* HDR frames need the extended-range canvas: the HLG techniques output
+ * linear light with 1.0 = SDR white and highlights above it, which
+ * GS_CS_SRGB would clip. SDR keeps today's space untouched. Graphics
+ * thread, like video_render (which is where render_hdr is written). */
+static enum gs_color_space
+ios_camera_video_get_color_space(void *data, size_t count,
+				 const enum gs_color_space *preferred_spaces)
+{
+	struct ios_camera_source *s = data;
+	enum gs_color_space space = s->render_hdr ? GS_CS_709_EXTENDED
+						  : GS_CS_SRGB;
+	for (size_t i = 0; i < count; i++) {
+		if (preferred_spaces[i] == space)
+			return space;
+	}
+	/* Not preferred: return it anyway; libobs converts. */
+	return space;
+}
+
 /* Called from plugin-main.c at module load, BEFORE registration, when
  * the plugin-wide "GPU pipeline (beta)" setting is on: the sources
  * become self-rendering sync sources instead of async pixel-pushers. */
@@ -3267,6 +3360,7 @@ void lenslink_sources_use_gpu_pipeline(struct obs_source_info *info)
 	info->video_render = ios_camera_video_render;
 	info->get_width = ios_camera_get_width;
 	info->get_height = ios_camera_get_height;
+	info->video_get_color_space = ios_camera_video_get_color_space;
 }
 
 struct obs_source_info ios_camera_source_info = {
