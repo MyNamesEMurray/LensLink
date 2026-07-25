@@ -436,6 +436,31 @@ final class Streamer: ObservableObject {
     @Published private(set) var isStreaming = false
     @Published var cameraPermissionDenied = false
 
+    /// Tally: what OBS is doing with this camera right now. `live` means it
+    /// is part of the program — what the audience sees. `preview` means it
+    /// is visible somewhere (preview, a projector) but not on air.
+    enum Tally: String {
+        case off
+        case preview
+        case live
+    }
+
+    /// Lip-sync auto-calibration progress, as reported by the plugin. The
+    /// plugin measures the microphone's latency, locks it in, and then
+    /// tracks the camera latency on its own — these are the stages of that
+    /// (see docs/UI_DESIGN.md for the vocabulary and colours).
+    enum SyncState: String {
+        case off
+        case measuring
+        case locked
+        case relocking
+    }
+
+    /// Pushed by the plugin on change only, so these cost nothing while
+    /// they're steady.
+    @Published private(set) var tally: Tally = .off
+    @Published private(set) var syncState: SyncState = .off
+
     /// Per-second stream health for the Live screen's optional overlay.
     /// Sampled by the adaptive-bitrate loop (already 1 Hz), so the overlay
     /// costs nothing beyond what's measured anyway.
@@ -662,6 +687,16 @@ final class Streamer: ObservableObject {
             if remoteStartEnabled, isStreaming {
                 stop()
             }
+            return
+        case "tally":
+            // Handled before the isStreaming guard: the plugin announces
+            // tally on connect, which for a remote-start setup is while
+            // the app is still idle in standby.
+            let program = command["program"] as? Bool ?? false
+            let preview = command["preview"] as? Bool ?? false
+            tally = program ? .live : (preview ? .preview : .off)
+            syncState = (command["sync"] as? String)
+                .flatMap(SyncState.init(rawValue:)) ?? .off
             return
         default:
             break
@@ -964,6 +999,8 @@ final class Streamer: ObservableObject {
         adaptiveTask?.cancel()
         adaptiveTask = nil
         health = nil
+        tally = .off
+        syncState = .off
         if flashlightOn {
             flashlightOn = false
         }
@@ -988,6 +1025,14 @@ final class Streamer: ObservableObject {
 
     private func handleClientState(_ state: StreamClient.State) {
         lastClientState = state
+        // Tally is only ever as true as the connection carrying it. A
+        // "live" light left burning after OBS went away is worse than no
+        // light at all, so any state but `connected` clears it; the plugin
+        // re-announces on the next connection.
+        if case .connected = state {} else {
+            tally = .off
+            syncState = .off
+        }
         guard isStreaming else {
             handleStandbyClientState(state)
             return

@@ -13,6 +13,13 @@ enum Theme {
     static let liveGreen = Color(hex: 0x30D158)
     static let errorRed = Color(hex: 0xFF453A)
 
+    /// Tally. Deliberately its own token rather than `errorRed`: on air is
+    /// not an error, and the two must stay independently adjustable even
+    /// though both are red today. Preview borrows `connectAmber` — same
+    /// "linked, not yet live" meaning it already carries.
+    static let tallyLive = Color(hex: 0xFF3B30)
+    static let tallyPreview = connectAmber
+
     // Over-video surfaces
     static let glassPanel = Color.black.opacity(0.55)
     static let glassChip = Color.white.opacity(0.12)

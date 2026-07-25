@@ -99,6 +99,12 @@ struct ios_camera_source {
 	 * encoding (battery) and becomes usable by another LensLink source.
 	 * `showing` is maintained by the show/hide callbacks. */
 	volatile bool deactivate_hidden;
+
+	/* Tally: `active` is program (what the audience sees), `showing` is
+	 * any view at all — preview, a projector, a hidden-but-rendered
+	 * scene. Preview is therefore "showing but not active". OBS drives
+	 * both through callbacks; the dial loop reads them. */
+	volatile bool active;
 	volatile bool showing;
 
 	/* Remote start: when the app connects in standby (open but idle,
@@ -551,6 +557,12 @@ struct client_state {
 	uint64_t packets_at_decoder;
 	bool is_screen; /* screen mirror (plays system audio) vs camera */
 	bool standby;   /* app is idle, waiting for a start_stream command */
+	/* Last tally state pushed to the device. Per connection, so a
+	 * reconnect re-announces rather than assuming the phone still knows. */
+	bool tally_valid;
+	bool tally_program;
+	bool tally_preview;
+	int tally_sync;
 	uint64_t next_decoder_attempt; /* cooldown after create failure */
 	enum AVCodecID codec_id;
 	char name[128];
@@ -1122,6 +1134,68 @@ static void send_control_cmd(struct client_state *c, const char *json)
 	obsc_build_header(hdr, OBSC_PKT_CONTROL, 0, 0, (uint32_t)len);
 	client_send(c, hdr, OBSC_HEADER_SIZE);
 	client_send(c, json, len);
+}
+
+/* Wire names for the calibration states (docs/PROTOCOL.md, UI_DESIGN.md). */
+static const char *cal_state_name(enum lipsync_cal_state state)
+{
+	switch (state) {
+	case LS_CAL_MEASURING:
+		return "measuring";
+	case LS_CAL_LOCKED:
+		return "locked";
+	case LS_CAL_RELOCK:
+		return "relocking";
+	case LS_CAL_OFF:
+	default:
+		return "off";
+	}
+}
+
+/* Same vocabulary, for the web panel's readout. */
+const char *ios_camera_sync_state(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	enum lipsync_cal_state state = s->cal_state;
+	pthread_mutex_unlock(&s->status_mutex);
+	return cal_state_name(state);
+}
+
+/*
+ * Tally: tells the phone whether it's on program ("live"), merely visible
+ * somewhere ("preview"), or neither — plus how lip-sync calibration is
+ * getting on, which the app shows in the same corner.
+ *
+ * Sent only on change, so a phone sitting in one scene costs nothing, and
+ * re-announced on every new connection because the device can't be assumed
+ * to remember. Camera-only in practice: the screen-mirror extension has no
+ * UI and ignores it, like any command it doesn't recognise.
+ */
+static void tally_tick(struct ios_camera_source *s, struct client_state *c)
+{
+	bool program = s->active;
+	bool preview = s->showing && !program;
+
+	pthread_mutex_lock(&s->status_mutex);
+	int sync = (int)s->cal_state;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	if (c->tally_valid && c->tally_program == program &&
+	    c->tally_preview == preview && c->tally_sync == sync)
+		return;
+
+	c->tally_valid = true;
+	c->tally_program = program;
+	c->tally_preview = preview;
+	c->tally_sync = sync;
+
+	char json[160];
+	snprintf(json, sizeof(json),
+		 "{\"cmd\":\"tally\",\"program\":%s,\"preview\":%s,"
+		 "\"sync\":\"%s\"}",
+		 program ? "true" : "false", preview ? "true" : "false",
+		 cal_state_name((enum lipsync_cal_state)sync));
+	send_control_cmd(c, json);
 }
 
 /* Asks the device to emit a fresh keyframe immediately. The screen
@@ -2187,6 +2261,7 @@ static void dial_loop(struct ios_camera_source *s)
 				client_flush(&client);
 			latency_tick(s, &client);
 			control_tick(s, &client);
+			tally_tick(s, &client);
 			diag_tick(s, &client);
 			stats_tick(s, &client);
 			if (client.out.failed)
@@ -2258,6 +2333,20 @@ static void ios_camera_hide(void *data)
 {
 	struct ios_camera_source *s = data;
 	s->showing = false;
+}
+
+/* Program tally: OBS calls these when the source starts/stops being part
+ * of what's actually going out. Same contract as show/hide — record only. */
+static void ios_camera_activate(void *data)
+{
+	struct ios_camera_source *s = data;
+	s->active = true;
+}
+
+static void ios_camera_deactivate(void *data)
+{
+	struct ios_camera_source *s = data;
+	s->active = false;
 }
 
 static const char *ios_camera_get_name(void *unused)
@@ -3048,6 +3137,8 @@ struct obs_source_info ios_camera_source_info = {
 	.get_properties = ios_camera_get_properties,
 	.show = ios_camera_show,
 	.hide = ios_camera_hide,
+	.activate = ios_camera_activate,
+	.deactivate = ios_camera_deactivate,
 	.icon_type = OBS_ICON_TYPE_CAMERA,
 };
 
@@ -3064,5 +3155,7 @@ struct obs_source_info lenslink_screen_source_info = {
 	.get_properties = lenslink_screen_get_properties,
 	.show = ios_camera_show,
 	.hide = ios_camera_hide,
+	.activate = ios_camera_activate,
+	.deactivate = ios_camera_deactivate,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

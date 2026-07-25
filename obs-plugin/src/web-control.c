@@ -36,8 +36,11 @@ static const char control_page[] =
 	"*{box-sizing:border-box}"
 	"body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);"
 	"color:var(--txt);max-width:440px;margin:0 auto;padding:20px 16px}"
+	/* Wraps so the sync pill drops below the status pill on a narrow
+	 * phone screen instead of squeezing either one. */
 	"header{display:flex;align-items:center;justify-content:space-between;"
-	"margin-bottom:16px}h1{font-size:20px;font-weight:600;margin:0}"
+	"gap:8px;flex-wrap:wrap;margin-bottom:16px}"
+	"h1{font-size:20px;font-weight:600;margin:0}"
 	".pill{display:inline-flex;align-items:center;gap:8px;background:var(--glass);"
 	"border:1px solid var(--hair);border-radius:999px;padding:6px 12px;"
 	"font-size:13px;font-weight:600}"
@@ -78,7 +81,12 @@ static const char control_page[] =
 	"</style></head><body>"
 	"<header><h1>LensLink</h1>"
 	"<div class='pill'><span class='dot' id='dot'></span>"
-	"<span id='status'>connecting&hellip;</span></div></header>"
+	"<span id='status'>connecting&hellip;</span></div>"
+	/* Lip-sync calibration stage — hidden unless auto-calibrate is on,
+	 * so it never nags setups that don't use it. */
+	"<div class='pill' id='syncpill' style='display:none'>"
+	"<span class='dot' id='syncdot'></span>"
+	"<span id='sync'></span></div></header>"
 	/* Source tabs: hidden until more than one camera source is live.
 	 * Every API call carries the selected source's ?src= id. */
 	"<div class='seg' id='srctabs' "
@@ -184,7 +192,8 @@ static const char control_page[] =
 	/* NB: elements are looked up explicitly — a bare `status` would
 	 * resolve to window.status, not the element. */
 	"const $=id=>document.getElementById(id);"
-	"const dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
+	"const syncEl=$('sync'),syncdotEl=$('syncdot'),syncpillEl=$('syncpill'),"
+	"dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
 	"expEl=$('exposure'),evEl=$('ev'),afEl=$('af'),mfEl=$('mf'),lensEl=$('lens'),"
 	"fhintEl=$('fhint'),flashlightEl=$('flashlight'),flipEl=$('flip'),lensselEl=$('lenssel'),"
 	"panelEl=$('panel'),screennoteEl=$('screennote'),"
@@ -198,7 +207,8 @@ static const char control_page[] =
 	"wbrowEl=$('wbrow'),awbEl=$('awb'),wblEl=$('wbl'),wbtempEl=$('wbtemp'),"
 	"wbvEl=$('wbv'),wbhintEl=$('wbhint'),"
 	"microwEl=$('microw'),micselEl=$('micsel'),srctabsEl=$('srctabs');"
-	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93'};"
+	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93',"
+	"accent:'#3D7BFF'};"
 	/* Selected source id (from /api/sources); every request carries it. */
 	"let src=null;const q=()=>src==null?'':('?src='+src);"
 	"let lastTouch=0;const touch=()=>lastTouch=Date.now();"
@@ -302,6 +312,12 @@ static const char control_page[] =
 	"b.onclick=()=>{src=x.id;lastTouch=0;poll()};return b}))}"
 	"const s=await(await fetch('/api/status'+q())).json();"
 	"statusEl.textContent=s.status||'idle';dotEl.style.background=statusColor(s.status);"
+	/* Lip-sync stage: same words and colours as the phone's own light. */
+	"const SYNC={measuring:['Measuring lip-sync',COL.accent],"
+	"locked:['Lip-sync locked',COL.live],"
+	"relocking:['Recalibrating lip-sync',COL.amber]};"
+	"const sy=SYNC[s.sync];syncpillEl.style.display=sy?'':'none';"
+	"if(sy){syncEl.textContent=sy[0];syncdotEl.style.background=sy[1]}"
 	/* Live controls only when a camera stream is actually connected;
 	 * standby gets the Start panel; screen mirror gets the note; not
 	 * connected shows just the status pill. */
@@ -634,6 +650,7 @@ static void handle_client(socket_t client)
 		char json[768];
 		bool screen = false, standby = false, connected = false;
 		bool auto_start = false;
+		const char *sync = "off";
 
 		pthread_mutex_lock(&g_reg.mutex);
 		struct ios_camera_source *s = locked_pick_source(request);
@@ -643,6 +660,7 @@ static void handle_client(socket_t client)
 			standby = ios_camera_is_standby(s);
 			connected = ios_camera_is_connected(s);
 			auto_start = ios_camera_auto_start(s);
+			sync = ios_camera_sync_state(s);
 		}
 		pthread_mutex_unlock(&g_reg.mutex);
 		if (!s) {
@@ -653,11 +671,11 @@ static void handle_client(socket_t client)
 		json_escape(status, escaped, sizeof(escaped));
 		snprintf(json, sizeof(json),
 			 "{\"status\":\"%s\",\"screen\":%s,\"standby\":%s,"
-			 "\"connected\":%s,\"autoStart\":%s}",
+			 "\"connected\":%s,\"autoStart\":%s,\"sync\":\"%s\"}",
 			 escaped, screen ? "true" : "false",
 			 standby ? "true" : "false",
 			 connected ? "true" : "false",
-			 auto_start ? "true" : "false");
+			 auto_start ? "true" : "false", sync);
 		respond(client, "200 OK", "application/json", json);
 		return;
 	}
