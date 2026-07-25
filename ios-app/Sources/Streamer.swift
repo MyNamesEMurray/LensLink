@@ -144,6 +144,10 @@ final class Streamer: ObservableObject {
     @Published var codec: VideoCodec {
         didSet { UserDefaults.standard.set(codec.rawValue, forKey: "videoCodec") }
     }
+    /// "Dim screen to save battery": governs both the Live screen's 10 s
+    /// dim and the Setup screen's standby dim. The name and stored key
+    /// predate the standby dim being brought under it — the key stays so
+    /// nobody's preference resets.
     @Published var dimWhileStreaming: Bool {
         didSet { UserDefaults.standard.set(dimWhileStreaming, forKey: "dimWhileStreaming") }
     }

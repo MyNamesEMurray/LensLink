@@ -19,10 +19,10 @@ struct OptionsView: View {
                 }
 
                 Section {
-                    Toggle("Dim screen while streaming",
+                    Toggle("Dim screen to save battery",
                            isOn: $streamer.dimWhileStreaming)
                 } footer: {
-                    Text("Dims 10 seconds into streaming to save battery — tap to wake.")
+                    Text("Dims 10 seconds into streaming, or a minute into remote-start standby — tap to wake. Never while you're using the app.")
                 }
 
                 Section {

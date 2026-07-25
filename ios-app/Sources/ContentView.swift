@@ -52,10 +52,19 @@ struct ContentView: View {
                 tailSection
             }
             .tint(Theme.accent)
+            // Every touch is activity — scrolling and reading included.
+            // Before this, only streamer-visible changes reset the standby
+            // dim's fuse, so a minute spent in a menu that doesn't touch
+            // the streamer (the tally screen, say) read as "idle" and the
+            // screen dimmed mid-use.
+            .simultaneousGesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in lastInteraction = Date() })
             .sheet(isPresented: $showOptions) {
                 OptionsView()
                     .environmentObject(streamer)
             }
+            // Opening or closing the sheet is activity too.
+            .onChange(of: showOptions) { _ in lastInteraction = Date() }
 
             if dimmed {
                 dimOverlay
@@ -85,7 +94,12 @@ struct ContentView: View {
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
-                if streamer.standbyActive && !dimmed &&
+                // Gated on the dim setting (one switch governs both dims)
+                // and on no sheet being up: the overlay would sit behind
+                // the sheet with its tap-to-wake unreachable, leaving the
+                // screen dark with no visible way back.
+                if streamer.standbyActive && streamer.dimWhileStreaming &&
+                    !showOptions && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
                 } else if !streamer.standbyActive && dimmed {
