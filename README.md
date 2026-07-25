@@ -309,15 +309,17 @@ are the places to watch.
   or greyed out while streaming:** those system effects are toggled by
   you in Control Center while an app uses the camera — but iOS only
   offers them on certain cameras and capture formats, typically the
-  front camera at moderate settings (think 1080p, not 4K); on many
+  front camera at moderate settings (nothing above 1920×1440); on many
   iPhones the rear cameras offer none at all, while newer hardware
   extends more effects to more cameras. The app's **Options → Camera
   diagnostics** table shows exactly what your device offers per camera
-  and format. LensLink picks an effect-capable format whenever your
-  resolution/frame-rate choice allows one; if the panel is still empty
-  on a format the table says supports effects, try **Options → Allow
-  system video effects** (experimental — lets iOS vary the frame rate,
-  which the effects may require).
+  and format, and LensLink picks an effect-capable format whenever your
+  resolution/frame-rate choice allows one. If an effect toggle shows but
+  greys out, drop the frame rate — effects can cap the capture rate, and
+  **Options → Allow system video effects** lets iOS vary it. (Versions
+  before 1.8.1 never showed the panel at all: iOS only populates it for
+  apps that declare each effect in their Info.plist, which LensLink now
+  does.)
   Apple's Camera-app filters and Photographic Styles aren't available
   to any third-party camera app — for creative looks, add filters to
   the source in OBS instead (right-click the source → **Filters**).
