@@ -86,7 +86,14 @@ jobs:
         run: |
           bash <(curl -fsSL \
             https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash)
-          ./actionlint -color .github/workflows/*.yml
+          # -shellcheck= disables the shellcheck pass on run: blocks. It
+          # only reported style notes on scripts that have shipped many
+          # releases, plus one intentional unquoted expansion (the
+          # optional VERSION_OVERRIDE argument, which must word-split).
+          # The failure class this job exists for — invalid expressions,
+          # which kill the whole file at validation with no PR-visible
+          # error — is actionlint's own check and stays fully on.
+          ./actionlint -color -shellcheck= .github/workflows/*.yml
   obs-plugin-linux:
     name: OBS plugin (Linux)
     needs: changes
