@@ -59,6 +59,16 @@ change mid-stream resets the decoder (the next keyframe re-initializes it).
 `kind` mirrors the HELLO field. Dimensions/fps are informational; the
 authoritative values come from the bitstream parameter sets.
 
+An optional `"color"` field names the stream's colour mode: `"hlg"`
+(10-bit HEVC, BT.2020 primaries, HLG transfer) today, with `"log"`
+(Apple Log) reserved for a future mode. Absent = 8-bit SDR BT.709, which
+every stream was before the field existed. Like dimensions, it is
+**informational** — the decoder takes the authoritative colour
+description from the bitstream's VUI, so a receiver that ignores the
+field still renders correctly; it exists so UIs can label the stream
+without decoding it. HDR streams are HEVC-only (the iPhone encoder has
+no 10-bit H.264) and camera-only (screen broadcast stays 8-bit).
+
 ### 3 — VIDEO
 Payload: one H.264 or HEVC **access unit in Annex B format** (start-code
 delimited NAL units), per the codec announced in VIDEO_CONFIG. Keyframe
