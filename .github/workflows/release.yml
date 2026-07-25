@@ -392,8 +392,12 @@ jobs:
         with:
           tag_name: ${{ inputs.tag_name || github.ref_name }}
           generate_release_notes: true
-          # A tag pushed by hand publishes a normal release, as before.
-          prerelease: ${{ inputs.prerelease || false }}
+          # The tag name is authoritative as well as the input: a -beta.N
+          # tag pushed by hand must not publish as a stable release just
+          # because it arrived without the flag set.
+          prerelease: >-
+            ${{ inputs.prerelease
+                || contains(inputs.tag_name || github.ref_name, '-beta.') }}
           files: |
             dist/LensLink-installer-windows-x64.exe
             dist/lenslink-windows-x64.zip

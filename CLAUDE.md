@@ -122,6 +122,10 @@ to quote.
   (`v1.8.2-beta.1`) — still uploaded to TestFlight, but never "Latest" on
   GitHub. Betas count up within a version; merging without the trailer
   cuts the stable release. Details: `docs/DEVELOPMENT.md`.
+- Trailers are read across **every commit of the PR, last one wins**. A
+  release-suppressing trailer written for an early docs-only commit is
+  therefore revised by a later release request, rather than silently
+  killing the whole PR's release — which it did once.
 - **Never manually dispatch** `testflight.yml` or anything that creates
   releases/tags — a run uploads a real build to TestFlight / publishes a
   real release.
