@@ -20,15 +20,6 @@ enum TallyStatus: String, Codable, CaseIterable {
         }
     }
 
-    var explanation: String {
-        switch self {
-        case .onAir: return "The camera is in OBS's live output."
-        case .preview: return "Visible in OBS (preview or a projector) but not live."
-        case .connectionLost: return "Streaming, but the link to OBS dropped."
-        case .calibrating: return "Auto lip-sync is measuring or re-measuring."
-        case .syncLocked: return "Auto lip-sync has locked on."
-        }
-    }
 }
 
 /// The border colours a status can be given. "None" means the status
@@ -58,6 +49,50 @@ enum TallyColor: String, Codable, CaseIterable {
         case .purple: return Theme.tallyPurple
         case .white: return .white
         }
+    }
+
+    /// The same values as UIColor, for the menu dots: SwiftUI tint/
+    /// foreground modifiers are ignored inside Menu/Picker items (every
+    /// symbol renders in the accent colour), but an original-rendering
+    /// UIImage keeps its pixels. Hexes must match the Theme tokens above.
+    private var uiColor: UIColor? {
+        switch self {
+        case .none: return nil
+        case .red: return UIColor(hex: 0xFF3B30)
+        case .amber: return UIColor(hex: 0xFF9F0A)
+        case .green: return UIColor(hex: 0x30D158)
+        case .blue: return UIColor(hex: 0x3D7BFF)
+        case .purple: return UIColor(hex: 0xBF5AF2)
+        case .white: return .white
+        }
+    }
+
+    /// A pre-rendered swatch that survives menu rendering: a filled dot in
+    /// the actual colour, or a stroked slashed circle for Off.
+    var dotImage: UIImage {
+        let side: CGFloat = 16
+        let rect = CGRect(x: 0, y: 0, width: side, height: side)
+        let image = UIGraphicsImageRenderer(size: rect.size).image { ctx in
+            let g = ctx.cgContext
+            if let fill = uiColor {
+                fill.setFill()
+                g.fillEllipse(in: rect.insetBy(dx: 1, dy: 1))
+                if self == .white {
+                    // A white dot on a white menu needs an edge.
+                    UIColor.separator.setStroke()
+                    g.setLineWidth(1)
+                    g.strokeEllipse(in: rect.insetBy(dx: 1.5, dy: 1.5))
+                }
+            } else {
+                UIColor.secondaryLabel.setStroke()
+                g.setLineWidth(1.5)
+                g.strokeEllipse(in: rect.insetBy(dx: 1.5, dy: 1.5))
+                g.move(to: CGPoint(x: 3.5, y: side - 3.5))
+                g.addLine(to: CGPoint(x: side - 3.5, y: 3.5))
+                g.strokePath()
+            }
+        }
+        return image.withRenderingMode(.alwaysOriginal)
     }
 }
 
@@ -130,7 +165,7 @@ final class TallySettings: ObservableObject {
     }
 }
 
-/// Options → Tally light: colour per status, drag to set priority.
+/// Options → Tally light: color per status, drag to set priority.
 struct TallyLightOptionsView: View {
     @ObservedObject private var settings = TallySettings.shared
 
@@ -139,22 +174,15 @@ struct TallyLightOptionsView: View {
             Section {
                 ForEach($settings.entries) { $entry in
                     HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(entry.status.displayName)
-                            Text(entry.status.explanation)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        Text(entry.status.displayName)
                         Spacer()
                         Picker("", selection: $entry.color) {
                             ForEach(TallyColor.allCases, id: \.self) { c in
                                 Label {
                                     Text(c.displayName)
                                 } icon: {
-                                    Image(systemName: c == .none
-                                          ? "circle.slash" : "circle.fill")
+                                    Image(uiImage: c.dotImage)
                                 }
-                                .tint(c.color)
                                 .tag(c)
                             }
                         }
@@ -169,7 +197,7 @@ struct TallyLightOptionsView: View {
             } header: {
                 Text("Statuses, highest priority first")
             } footer: {
-                Text("The border around the Live screen shows the colour of the highest status in this list that's currently true. Set a status to Off and it's skipped — lower statuses show through. Tap Edit to reorder.")
+                Text("The highest status here that's currently true sets the border color; Off skips it. Tap Edit to reorder.")
             }
 
             Section {

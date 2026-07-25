@@ -52,10 +52,19 @@ struct ContentView: View {
                 tailSection
             }
             .tint(Theme.accent)
+            // Every touch is activity — scrolling and reading included.
+            // Before this, only streamer-visible changes reset the standby
+            // dim's fuse, so a minute spent in a menu that doesn't touch
+            // the streamer (the tally screen, say) read as "idle" and the
+            // screen dimmed mid-use.
+            .simultaneousGesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in lastInteraction = Date() })
             .sheet(isPresented: $showOptions) {
                 OptionsView()
                     .environmentObject(streamer)
             }
+            // Opening or closing the sheet is activity too.
+            .onChange(of: showOptions) { _ in lastInteraction = Date() }
 
             if dimmed {
                 dimOverlay
@@ -85,7 +94,12 @@ struct ContentView: View {
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
-                if streamer.standbyActive && !dimmed &&
+                // Gated on the dim setting (one switch governs both dims)
+                // and on no sheet being up: the overlay would sit behind
+                // the sheet with its tap-to-wake unreachable, leaving the
+                // screen dark with no visible way back.
+                if streamer.standbyActive && streamer.dimWhileStreaming &&
+                    !showOptions && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
                 } else if !streamer.standbyActive && dimmed {
@@ -191,7 +205,7 @@ struct ContentView: View {
                         UIApplication.shared.open(url)
                     }
                 } label: {
-                    Label("Not visible by name in OBS — tap to allow Local Network access in Settings. Connecting by IP still works.",
+                    Label("Not visible by name in OBS — tap to allow Local Network in Settings. Connecting by IP still works.",
                           systemImage: "wifi.exclamationmark")
                         .font(.footnote)
                         .foregroundColor(.secondary)
@@ -199,7 +213,7 @@ struct ContentView: View {
             }
             DisclosureGroup("How to connect", isExpanded: $showConnectionHelp) {
                 Label {
-                    Text("Install the LensLink plugin in OBS Studio (see the GitHub link below), then add the source you want — camera or screen — from **Sources → +**.")
+                    Text("Install the LensLink plugin in OBS (GitHub link below), then add a **LensLink Camera** or **LensLink Screen** source.")
                         .font(.callout)
                         .foregroundColor(.secondary)
                 } icon: {
@@ -207,11 +221,11 @@ struct ContentView: View {
                 }
                 Label {
                     if let ip = wifiIP {
-                        Text("Point it at this phone: enter \(Text(ip).bold()) as the Phone IP (same Wi-Fi), or plug in a USB cable and set Connection to \"USB cable\" (Windows needs iTunes).")
+                        Text("Enter \(Text(ip).bold()) as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes).")
                             .font(.callout)
                             .foregroundColor(.secondary)
                     } else {
-                        Text("No Wi-Fi address found — connect to Wi-Fi, or plug in a USB cable and set the source's Connection to \"USB cable\" (Windows needs iTunes).")
+                        Text("No Wi-Fi address — join Wi-Fi, or plug in USB and set the source's Connection to \"USB cable\" (Windows needs iTunes).")
                             .font(.callout)
                             .foregroundColor(.secondary)
                     }
@@ -338,7 +352,7 @@ struct ContentView: View {
         } header: {
             Text("Screen mirror")
         } footer: {
-            Text("Streams your whole screen, with app audio, to a \"LensLink Screen\" source in OBS. DRM audio (Apple Music, Netflix) is muted by iOS during broadcasts.")
+            Text("Streams your whole screen, with app audio, to a \"LensLink Screen\" source in OBS. iOS mutes DRM audio (Apple Music, Netflix).")
         }
         .onAppear {
             // Whether the extension survived sideloading — the broadcast

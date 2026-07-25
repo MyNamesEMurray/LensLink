@@ -61,6 +61,17 @@ extension Color {
     }
 }
 
+extension UIColor {
+    /// Same palette as Color(hex:), for the places SwiftUI colour
+    /// modifiers don't reach (rendered UIImages in menus).
+    convenience init(hex: UInt32) {
+        self.init(red: CGFloat((hex >> 16) & 0xFF) / 255,
+                  green: CGFloat((hex >> 8) & 0xFF) / 255,
+                  blue: CGFloat(hex & 0xFF) / 255,
+                  alpha: 1)
+    }
+}
+
 /// A circular 44 pt glass control button (icon only). `active` fills it
 /// with the accent colour (e.g. flashlight on).
 struct ControlButton: View {
