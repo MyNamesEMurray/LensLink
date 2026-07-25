@@ -79,6 +79,11 @@ should add as close to zero as possible.
   stretch that is 6 correlations instead of 120 — and, more importantly,
   120 offset updates instead of none, since tracking no longer waits on
   someone talking.
+- Once locked, the plugin also tells the phone to **stop the reference
+  entirely** (`{"cmd":"reference","on":false}`): a live mic capture and
+  ~256 kbit/s that teach the correlation nothing more, gone — including
+  iOS's persistent mic indicator. It's requested back briefly around
+  each periodic verification, and while measuring/relocking.
 - Effect parameter handles are resolved **once**, with the effect, not per
   render (`yuv_effect()`). `video_render` runs per source per rendered
   frame on the graphics thread — the thread the whole compositor waits

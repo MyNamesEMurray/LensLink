@@ -187,6 +187,14 @@ final class StreamClient {
         send(OBSCProtocol.packet(type: .diag, payload: payload))
     }
 
+    /// Sends a plugin-directed request (REQUEST packet, CONTROL's mirror
+    /// image): one JSON command, e.g. ["cmd": "recalibrate"].
+    func sendRequest(_ command: [String: Any]) {
+        guard let payload = try? JSONSerialization.data(withJSONObject: command)
+        else { return }
+        send(OBSCProtocol.packet(type: .request, payload: payload))
+    }
+
     private func listen(on port: UInt16, advertise: Bool = true) {
         guard let nwPort = NWEndpoint.Port(rawValue: port),
               let listener = try? NWListener(using: Self.tcpParameters(), on: nwPort) else {

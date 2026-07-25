@@ -93,6 +93,13 @@ red today: on air is not an error, and the two must stay independently
 adjustable. Preview reuses `connectAmber` — it means the same thing the
 amber statuses do, "linked, not yet live".
 
+The border's corners are **rounded** (continuous curve, ~58 pt) on
+devices whose display corners are rounded — a sharp-cornered stroke gets
+physically clipped by the panel and visibly breaks at all four corners.
+Squared displays (SE, iPads) keep square corners; erring on the large
+side is fine, curving early looks intentional where getting clipped
+looks broken.
+
 ### Lip-sync calibration (dot + label)
 
 | State      | Token          | Hex       | Label            |
@@ -102,16 +109,28 @@ amber statuses do, "linked, not yet live".
 | Locked     | `liveGreen`    | `#30D158` | "Sync locked"    |
 | Relocking  | `connectAmber` | `#FF9F0A` | "Recalibrating"  |
 
-Shown on the Live screen beside the status pill, and in the web panel's
-header as a second pill. Blue reads as *working on it*, green as *done*,
-amber as *attention, transitional* — the same reading those colours carry
-elsewhere in the product. Nothing is drawn when auto-calibrate isn't
-running, so setups that don't use it never see a readout they'd have to
-learn to ignore.
+Shown on the Live screen on **its own row under the status bar** (the
+top bar's three buttons left too little width — "Sync lo…" is worse than
+nothing), and in the web panel's header as a second pill. Blue reads as
+*working on it*, green as *done*, amber as *attention, transitional* —
+the same reading those colours carry elsewhere in the product. Nothing
+is drawn when auto-calibrate isn't running, so setups that don't use it
+never see a readout they'd have to learn to ignore — and the web panel
+also hides it while no phone is connected, because the plugin's lock
+survives disconnects by design and "Lip-sync locked" beside "Trying to
+reach the phone" reads as stale.
+
+**Recalibrate** lives with the readout, shown only in the locked state
+(the one state where it does anything): on the phone, the pill itself is
+tappable and gains a small `arrow.clockwise`; on the web panel it's a
+small button inside the pill. Both flip optimistically to the amber
+"Recalibrating" wording — the next state push corrects them if the
+request was lost.
 
 The plugin owns these states (`lipsync-cal.h`) and pushes them to the app
 in the `tally` command's `sync` field; the web panel reads the same value
-from `/api/status`.
+from `/api/status`. Recalibration requests flow back as a REQUEST packet
+(app) or `POST /api/recalibrate` (panel).
 
 ### Surfaces (dark / over-video)
 | Token          | Value                                   | Use |

@@ -53,6 +53,12 @@ struct StreamingView: View {
 
             VStack {
                 statusBar
+                // Its own row: sharing the top bar with three buttons
+                // truncated the words ("Sync lo…"), and an unreadable
+                // status is worse than none.
+                if syncLabel != nil {
+                    syncPill
+                }
                 if showHealth, let health = streamer.health {
                     healthPill(health)
                 }
@@ -135,10 +141,26 @@ struct StreamingView: View {
         }
     }
 
+    /// Corner radius for the tally border. Modern iPhones have rounded
+    /// display corners that physically clip a sharp-cornered stroke, so the
+    /// border visibly broke at all four corners. There's no public API for
+    /// the exact panel radius; a generous continuous curve covers every
+    /// current device (their radii run ~40–55 pt) and errs by curving
+    /// slightly *inside* the corner rather than getting cut off. Squared
+    /// devices (SE, iPads) are detected by their zero bottom safe-area
+    /// inset and keep square corners.
+    private static let tallyCornerRadius: CGFloat = {
+        let bottomInset = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.windows.first }
+            .first?.safeAreaInsets.bottom ?? 0
+        return bottomInset > 0 ? 58 : 0
+    }()
+
     private func tallyEdge(_ colour: Color, width: CGFloat) -> some View {
         // allowsHitTesting(false): the border sits over the preview, and
         // tap-to-focus near the screen edge must still reach it.
-        Rectangle()
+        RoundedRectangle(cornerRadius: Self.tallyCornerRadius,
+                         style: .continuous)
             .strokeBorder(colour, lineWidth: width)
             .ignoresSafeArea()
             .allowsHitTesting(false)
@@ -157,19 +179,6 @@ struct StreamingView: View {
                     .lineLimit(1)
             }
             .glassPill()
-
-            if let sync = syncLabel {
-                HStack(spacing: Theme.Space.s) {
-                    Circle()
-                        .fill(sync.colour)
-                        .frame(width: 8, height: 8)
-                    Text(sync.text)
-                        .font(.caption)
-                        .lineLimit(1)
-                }
-                .glassPill()
-                .foregroundColor(Theme.textSecondary)
-            }
 
             Spacer()
 
@@ -209,6 +218,39 @@ struct StreamingView: View {
         case .relocking:
             return ("Recalibrating", Theme.connectAmber)
         }
+    }
+
+    /// Tapping while locked asks the plugin to throw away the measured mic
+    /// latency and calibrate afresh — for when you changed audio gear and
+    /// don't want to wait for the periodic check to notice. The arrow only
+    /// appears when the tap does something.
+    private var syncPill: some View {
+        HStack {
+            Button {
+                touched()
+                streamer.requestRecalibrate()
+            } label: {
+                HStack(spacing: Theme.Space.s) {
+                    if let sync = syncLabel {
+                        Circle()
+                            .fill(sync.colour)
+                            .frame(width: 8, height: 8)
+                        Text(sync.text)
+                            .font(.caption)
+                            .lineLimit(1)
+                        if streamer.syncState == .locked {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption2)
+                        }
+                    }
+                }
+                .glassPill()
+                .foregroundColor(Theme.textSecondary)
+            }
+            .disabled(streamer.syncState != .locked)
+            Spacer()
+        }
+        .padding(.top, Theme.Space.s)
     }
 
     /// One-line health readout under the status bar: encoder output rate,

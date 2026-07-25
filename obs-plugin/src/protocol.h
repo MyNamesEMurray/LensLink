@@ -51,6 +51,10 @@ enum obsc_packet_type {
 	 * useful because the broadcast extension has no console of its own.
 	 * Purely informational; ignored when diagnostics logging is off. */
 	OBSC_PKT_DIAG = 11,
+	/* Plugin-directed request, app → plugin. UTF-8 JSON, one command per
+	 * packet — CONTROL's mirror image (e.g. {"cmd":"recalibrate"}).
+	 * Unknown commands are ignored, so new ones stay compatible. */
+	OBSC_PKT_REQUEST = 12,
 };
 
 /* Reference-audio format (fixed). */

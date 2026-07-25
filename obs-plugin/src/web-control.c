@@ -82,11 +82,18 @@ static const char control_page[] =
 	"<header><h1>LensLink</h1>"
 	"<div class='pill'><span class='dot' id='dot'></span>"
 	"<span id='status'>connecting&hellip;</span></div>"
-	/* Lip-sync calibration stage — hidden unless auto-calibrate is on,
-	 * so it never nags setups that don't use it. */
+	/* Lip-sync calibration stage — hidden unless auto-calibrate is on
+	 * AND a phone is connected: the plugin keeps its lock across
+	 * reconnects (by design), but claiming "locked" beside a "trying to
+	 * reach the phone" status reads as stale nonsense. The Recalibrate
+	 * button appears only while locked — the one state where it acts. */
 	"<div class='pill' id='syncpill' style='display:none'>"
 	"<span class='dot' id='syncdot'></span>"
-	"<span id='sync'></span></div></header>"
+	"<span id='sync'></span>"
+	"<button id='recal' style='display:none;border:0;cursor:pointer;"
+	"background:var(--glass2,rgba(255,255,255,.12));color:inherit;"
+	"border-radius:999px;font-size:12px;padding:2px 10px;margin-left:4px'>"
+	"Recalibrate</button></div></header>"
 	/* Source tabs: hidden until more than one camera source is live.
 	 * Every API call carries the selected source's ?src= id. */
 	"<div class='seg' id='srctabs' "
@@ -193,6 +200,7 @@ static const char control_page[] =
 	 * resolve to window.status, not the element. */
 	"const $=id=>document.getElementById(id);"
 	"const syncEl=$('sync'),syncdotEl=$('syncdot'),syncpillEl=$('syncpill'),"
+	"recalEl=$('recal'),"
 	"dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
 	"expEl=$('exposure'),evEl=$('ev'),afEl=$('af'),mfEl=$('mf'),lensEl=$('lens'),"
 	"fhintEl=$('fhint'),flashlightEl=$('flashlight'),flipEl=$('flip'),lensselEl=$('lenssel'),"
@@ -285,6 +293,11 @@ static const char control_page[] =
 	"temperature:+wbtempEl.value}),60);"
 	"wbtempEl.oninput=()=>{touch();wbvEl.textContent=wbtempEl.value+'K';dWb()};"
 	"micselEl.onchange=()=>send({cmd:'mic',id:micselEl.value});"
+	/* Optimistic flip to 'relocking'; the 1 Hz poll corrects if lost. */
+	"recalEl.onclick=()=>{recalEl.style.display='none';"
+	"syncEl.textContent='Recalibrating lip-sync';"
+	"syncdotEl.style.background=COL.amber;"
+	"fetch('/api/recalibrate'+q(),{method:'POST'})};"
 	"function statusColor(t){t=(t||'').toLowerCase();"
 	/* Standby/starting are amber (ready, not live) — test before the
 	 * generic 'connected' match, which their wording also contains. */
@@ -312,12 +325,17 @@ static const char control_page[] =
 	"b.onclick=()=>{src=x.id;lastTouch=0;poll()};return b}))}"
 	"const s=await(await fetch('/api/status'+q())).json();"
 	"statusEl.textContent=s.status||'idle';dotEl.style.background=statusColor(s.status);"
-	/* Lip-sync stage: same words and colours as the phone's own light. */
+	/* Lip-sync stage: same words and colours as the phone's own light.
+	 * Only meaningful while a phone is connected — the plugin's lock
+	 * survives disconnects, but showing it next to a "trying to reach
+	 * the phone" status would read as stale. */
 	"const SYNC={measuring:['Measuring lip-sync',COL.accent],"
 	"locked:['Lip-sync locked',COL.live],"
 	"relocking:['Recalibrating lip-sync',COL.amber]};"
-	"const sy=SYNC[s.sync];syncpillEl.style.display=sy?'':'none';"
-	"if(sy){syncEl.textContent=sy[0];syncdotEl.style.background=sy[1]}"
+	"const sy=s.connected?SYNC[s.sync]:null;"
+	"syncpillEl.style.display=sy?'':'none';"
+	"if(sy){syncEl.textContent=sy[0];syncdotEl.style.background=sy[1];"
+	"recalEl.style.display=s.sync==='locked'?'':'none'}"
 	/* Live controls only when a camera stream is actually connected;
 	 * standby gets the Start panel; screen mirror gets the note; not
 	 * connected shows just the status pill. */
@@ -689,6 +707,19 @@ static void handle_client(socket_t client)
 			ios_camera_set_auto_start(
 				s,
 				strstr(request + body_offset, "true") != NULL);
+		pthread_mutex_unlock(&g_reg.mutex);
+		respond(client, s ? "204 No Content" : "503 Service Unavailable",
+			"text/plain", s ? NULL : "no sources");
+		return;
+	}
+
+	if (strncmp(request, "POST /api/recalibrate", 21) == 0) {
+		/* Drops the locked lip-sync mic figure and measures afresh —
+		 * the panel's Recalibrate button. No body. */
+		pthread_mutex_lock(&g_reg.mutex);
+		struct ios_camera_source *s = locked_pick_source(request);
+		if (s)
+			ios_camera_recalibrate(s);
 		pthread_mutex_unlock(&g_reg.mutex);
 		respond(client, s ? "204 No Content" : "503 Service Unavailable",
 			"text/plain", s ? NULL : "no sources");

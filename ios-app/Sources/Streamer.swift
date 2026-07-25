@@ -461,6 +461,16 @@ final class Streamer: ObservableObject {
     @Published private(set) var tally: Tally = .off
     @Published private(set) var syncState: SyncState = .off
 
+    /// Asks the plugin to drop its locked mic latency and calibrate afresh
+    /// (the sync pill's tap). Optimistically shows "Recalibrating" so the
+    /// tap has immediate feedback; the plugin's next tally push corrects it
+    /// if the request was lost.
+    func requestRecalibrate() {
+        guard syncState == .locked else { return }
+        syncState = .relocking
+        client.sendRequest(["cmd": "recalibrate"])
+    }
+
     /// Per-second stream health for the Live screen's optional overlay.
     /// Sampled by the adaptive-bitrate loop (already 1 Hz), so the overlay
     /// costs nothing beyond what's measured anyway.
@@ -698,6 +708,24 @@ final class Streamer: ObservableObject {
             syncState = (command["sync"] as? String)
                 .flatMap(SyncState.init(rawValue:)) ?? .off
             return
+        case "reference":
+            // The plugin stops the lip-sync reference once its calibration
+            // locks (a live mic capture and ~256 kbit/s that teach it
+            // nothing more) and asks for it back for periodic re-checks.
+            // This only ever modulates a reference the user enabled: it
+            // never starts a capture whose Options toggle is off, and
+            // never touches the phone-mic-as-source capture (type 10) —
+            // that one belongs to the "Send phone mic to OBS" setting.
+            guard sendAudioReference, !sendMicAudio else { return }
+            let on = command["on"] as? Bool ?? true
+            if !on {
+                if micCapturePurpose == .lipSyncReference {
+                    stopMicCapture()
+                }
+            } else if audioReference == nil, isStreaming {
+                Task { await startMicCapture(purpose: .lipSyncReference) }
+            }
+            return
         default:
             break
         }
@@ -891,6 +919,10 @@ final class Streamer: ObservableObject {
         }
     }
 
+    /// What the current mic capture is for, so a remote "reference off"
+    /// can never stop a capture serving the phone-mic-as-source role.
+    private var micCapturePurpose: AudioReference.Purpose?
+
     /// Captures the phone mic — as the lip-sync calibration reference
     /// (packet type 9, never heard) or as the source's playable audio
     /// (packet type 10, same wire format as screen-mirror audio).
@@ -912,12 +944,20 @@ final class Streamer: ObservableObject {
         do {
             try capture.start()
             audioReference = capture
+            micCapturePurpose = purpose
             // The STATE snapshot gates its mic fields on capture being
             // up; resend now that it is.
             scheduleStateSend()
         } catch {
             print("Mic capture failed: \(error.localizedDescription)")
         }
+    }
+
+    private func stopMicCapture() {
+        audioReference?.stop()
+        audioReference = nil
+        micCapturePurpose = nil
+        scheduleStateSend()
     }
 
     /// Adaptive bitrate: back off quickly when the link drops frames,
@@ -1011,6 +1051,7 @@ final class Streamer: ObservableObject {
         encoder = nil
         audioReference?.stop()
         audioReference = nil
+        micCapturePurpose = nil
 
         // Back to standby (if enabled and foreground) so OBS can start the
         // camera again without touching the phone. The plugin only
