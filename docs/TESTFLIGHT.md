@@ -80,8 +80,14 @@ repository variable**:
 
 | Variable | Value |
 |---|---|
-| `ASC_BETA_GROUPS` | comma-separated TestFlight group names, exactly as they appear in App Store Connect (e.g. `Friends, Public Beta`) |
+| `ASC_BETA_GROUPS` | comma-separated TestFlight group names, exactly as they appear in App Store Connect (e.g. `Friends, Public Beta`). **Stable releases only.** |
+| `ASC_PRERELEASE_GROUPS` | same format, used for `-beta.N` pre-releases instead. Normally unset: a beta then reaches only internal testers, and nobody has to clear `ASC_BETA_GROUPS` before a beta and restore it after. |
 
+- Which variable applies is decided per upload from the release tag
+  (`-beta.` in the tag, or a release flagged pre-release). A bare manual
+  dispatch with no tag counts as stable.
+- `ASC_BETA_GROUPS` keeps its historical name for compatibility — read
+  it as "the groups a finished release goes to", not "beta groups".
 - **Internal groups** (App Store Connect team members) get the build
   immediately. (For internal groups you can also skip all of this and
   enable the group's built-in "automatic distribution" toggle in App
