@@ -45,6 +45,17 @@ struct OptionsView: View {
                     Text("Experimental: lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
                 }
 
+                // Hidden entirely on devices that can't encode Main10 —
+                // a toggle that can never work is worse than none.
+                if VideoEncoder.hdrSupported {
+                    Section {
+                        Toggle("HDR (10-bit HEVC)",
+                               isOn: $streamer.hdrEnabled)
+                    } footer: {
+                        Text("Streams 10-bit HLG color — OBS tone-maps it for SDR scenes, and HDR canvases get the real thing. HEVC only; takes effect when the camera next starts.")
+                    }
+                }
+
                 Section {
                     NavigationLink(destination: TallyLightOptionsView()) {
                         Text("Tally light")
