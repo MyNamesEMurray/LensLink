@@ -118,6 +118,10 @@ to quote.
   `Release-Bump: major`, or `Release-Skip: true` (no release). Mind this
   when writing commit messages. The TestFlight upload runs only when the
   merge touched `ios-app/`.
+- `Release-Beta: true` publishes the same builds as a **pre-release**
+  (`v1.8.2-beta.1`) — still uploaded to TestFlight, but never "Latest" on
+  GitHub. Betas count up within a version; merging without the trailer
+  cuts the stable release. Details: `docs/DEVELOPMENT.md`.
 - **Never manually dispatch** `testflight.yml` or anything that creates
   releases/tags — a run uploads a real build to TestFlight / publishes a
   real release.

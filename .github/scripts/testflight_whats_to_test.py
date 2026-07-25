@@ -33,9 +33,22 @@ POLL_LIMIT = 30       # ~30 min; processing usually takes 5-15
 
 
 def release_notes(repo):
-    """Latest release's tag + the changelog part of its body."""
-    status, rel = gh(f"/repos/{repo}/releases/latest")
+    """The release's tag + the changelog part of its body.
+
+    RELEASE_TAG names the release this build came from. It matters for
+    pre-releases: /releases/latest is defined as the newest release that
+    is *not* a pre-release, so a beta would otherwise hand testers the
+    previous stable release's notes without any error to notice. It also
+    closes the race where another release publishes mid-upload.
+    """
+    tag = os.environ.get("RELEASE_TAG", "").strip()
+    path = f"/repos/{repo}/releases/tags/{tag}" if tag \
+        else f"/repos/{repo}/releases/latest"
+    status, rel = gh(path)
     if status != 200:
+        if tag:
+            print(f"::warning::no release found for tag {tag} "
+                  f"(HTTP {status}) — leaving 'What to Test' empty")
         return "", ""
     body = rel.get("body") or ""
     # The release body is install boilerplate followed by the

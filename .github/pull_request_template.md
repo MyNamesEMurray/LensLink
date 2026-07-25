@@ -11,4 +11,6 @@
 <!-- Releases: merging auto-releases a patch bump when obs-plugin/ or
      ios-app/ changed. For a bigger bump put `Release-Bump: minor` or
      `Release-Bump: major` on its own line in a commit message;
-     `Release-Skip: true` suppresses the release. See docs/DEVELOPMENT.md. -->
+     `Release-Skip: true` suppresses the release, and `Release-Beta: true`
+     publishes it as a pre-release (still goes to TestFlight, but isn't
+     marked Latest on GitHub). See docs/DEVELOPMENT.md. -->

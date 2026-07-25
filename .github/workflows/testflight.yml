@@ -23,6 +23,14 @@ on:
   release:
     types: [published]
   workflow_call:
+    inputs:
+      tag:
+        description: >-
+          Release tag this build comes from, for the "What to Test" notes.
+          Required for pre-releases: the fallback lookup is
+          /releases/latest, which by definition skips them.
+        required: false
+        type: string
 
 concurrency:
   group: testflight
@@ -144,6 +152,9 @@ jobs:
           BUNDLE_ID: com.exaltedpixels.LensLinkCamera
           ASC_BETA_GROUPS: ${{ vars.ASC_BETA_GROUPS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Empty for a release-triggered or manual run, where the script
+          # falls back to /releases/latest as before.
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           # The runner's default python3 is Homebrew's, which is
           # PEP 668 "externally managed" and refuses pip installs —

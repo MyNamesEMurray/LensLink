@@ -19,6 +19,15 @@ on:
         description: "Existing tag to publish the release under"
         required: true
         type: string
+      prerelease:
+        description: >-
+          Publish as a pre-release: flagged "Pre-release" on the releases
+          page and never shown as Latest, so the README badge and anyone
+          following the latest release stay on the last stable build.
+          Assets, install table and TestFlight upload are unchanged.
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -383,6 +392,8 @@ jobs:
         with:
           tag_name: ${{ inputs.tag_name || github.ref_name }}
           generate_release_notes: true
+          # A tag pushed by hand publishes a normal release, as before.
+          prerelease: ${{ inputs.prerelease || false }}
           files: |
             dist/LensLink-installer-windows-x64.exe
             dist/lenslink-windows-x64.zip

@@ -75,12 +75,44 @@ touched `ios-app/`.
 The bump is a **git trailer** on its own line in any commit of the merged
 PR (case-insensitive):
 
-| Trailer line          | Bump   | Example           |
-|-----------------------|--------|-------------------|
-| *(none)*              | patch  | v0.3.0 → v0.3.1   |
-| `Release-Bump: minor` | minor  | v0.3.0 → v0.4.0   |
-| `Release-Bump: major` | major  | v0.3.0 → v1.0.0   |
-| `Release-Skip: true`  | none   | no release        |
+| Trailer line          | Bump   | Example                 |
+|-----------------------|--------|-------------------------|
+| *(none)*              | patch  | v0.3.0 → v0.3.1         |
+| `Release-Bump: minor` | minor  | v0.3.0 → v0.4.0         |
+| `Release-Bump: major` | major  | v0.3.0 → v1.0.0         |
+| `Release-Skip: true`  | none   | no release              |
+| `Release-Beta: true`  | *(as above)*, pre-release | v0.3.0 → v0.3.1-beta.1 |
+
+### Beta releases
+
+`Release-Beta: true` ships everything a normal release does — same builds,
+same assets, **same TestFlight upload** (TestFlight is the beta channel
+either way) — but publishes the GitHub release flagged **Pre-release**. A
+pre-release never becomes "Latest", so the README's version badge and
+anyone downloading the latest release stay on the last stable build until
+you cut one.
+
+The tag gains a `-beta.N` suffix inside the version it is a beta *of*, and
+`N` counts up as you iterate:
+
+```
+v1.8.1                    <- last stable
+v1.8.2-beta.1             merge with Release-Beta: true
+v1.8.2-beta.2             merge again with Release-Beta: true
+v1.8.2                    merge without it — the beta becomes the release
+```
+
+Combine it with a bump trailer to beta a bigger version:
+`Release-Bump: minor` + `Release-Beta: true` → `v1.9.0-beta.1`.
+
+Two details worth knowing. The next version is computed from **stable tags
+only** — git's version sort puts `v1.9.0-beta.2` *above* `v1.9.0`, and the
+patch field would read `0-beta.2`, which the shell can't add 1 to, so an
+unfiltered list would fail the next stable release outright. And the
+TestFlight "What to Test" notes are looked up **by tag**, because the
+`/releases/latest` endpoint is defined as the newest non-pre-release and
+would otherwise hand testers the previous stable release's changelog with
+nothing to indicate it had.
 
 Because it must be a standalone line, mentioning the keywords in prose
 can't trigger a bump. Manual releases also work — push any `v*` tag:
