@@ -50,6 +50,50 @@ enum TallyColor: String, Codable, CaseIterable {
         case .white: return .white
         }
     }
+
+    /// The same values as UIColor, for the menu dots: SwiftUI tint/
+    /// foreground modifiers are ignored inside Menu/Picker items (every
+    /// symbol renders in the accent colour), but an original-rendering
+    /// UIImage keeps its pixels. Hexes must match the Theme tokens above.
+    private var uiColor: UIColor? {
+        switch self {
+        case .none: return nil
+        case .red: return UIColor(hex: 0xFF3B30)
+        case .amber: return UIColor(hex: 0xFF9F0A)
+        case .green: return UIColor(hex: 0x30D158)
+        case .blue: return UIColor(hex: 0x3D7BFF)
+        case .purple: return UIColor(hex: 0xBF5AF2)
+        case .white: return .white
+        }
+    }
+
+    /// A pre-rendered swatch that survives menu rendering: a filled dot in
+    /// the actual colour, or a stroked slashed circle for Off.
+    var dotImage: UIImage {
+        let side: CGFloat = 16
+        let rect = CGRect(x: 0, y: 0, width: side, height: side)
+        let image = UIGraphicsImageRenderer(size: rect.size).image { ctx in
+            let g = ctx.cgContext
+            if let fill = uiColor {
+                fill.setFill()
+                g.fillEllipse(in: rect.insetBy(dx: 1, dy: 1))
+                if self == .white {
+                    // A white dot on a white menu needs an edge.
+                    UIColor.separator.setStroke()
+                    g.setLineWidth(1)
+                    g.strokeEllipse(in: rect.insetBy(dx: 1.5, dy: 1.5))
+                }
+            } else {
+                UIColor.secondaryLabel.setStroke()
+                g.setLineWidth(1.5)
+                g.strokeEllipse(in: rect.insetBy(dx: 1.5, dy: 1.5))
+                g.move(to: CGPoint(x: 3.5, y: side - 3.5))
+                g.addLine(to: CGPoint(x: side - 3.5, y: 3.5))
+                g.strokePath()
+            }
+        }
+        return image.withRenderingMode(.alwaysOriginal)
+    }
 }
 
 /// One row of the tally configuration: a status and the colour it shows.
@@ -137,10 +181,8 @@ struct TallyLightOptionsView: View {
                                 Label {
                                     Text(c.displayName)
                                 } icon: {
-                                    Image(systemName: c == .none
-                                          ? "circle.slash" : "circle.fill")
+                                    Image(uiImage: c.dotImage)
                                 }
-                                .tint(c.color)
                                 .tag(c)
                             }
                         }
