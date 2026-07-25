@@ -1085,23 +1085,35 @@ final class Streamer: ObservableObject {
             var current = target
             var stableSeconds = 0
             var previousStats: StreamClient.Stats?
+            var previousStatsAt = DispatchTime.now()
             var healthWasVisible = false
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 guard let self, self.isStreaming else { break }
 
-                // Health overlay sample: per-second deltas of the send
-                // counters (the sleep above sets the 1 s window). Skipped
-                // while the overlay is off — the counters keep advancing
-                // either way, so turning it on still reads correctly one
-                // second later.
+                // Health overlay sample: per-second RATES from the send
+                // counters, normalized by the actual time between
+                // snapshots — Task.sleep wakes tens of ms late under
+                // load, and a raw per-window count shows the locked
+                // 60 fps capture as 57–63 depending on window length.
+                // Skipped while the overlay is off — the counters keep
+                // advancing either way, so turning it on still reads
+                // correctly one second later.
                 let stats = self.client.statsSnapshot()
+                let now = DispatchTime.now()
+                let elapsed = Double(now.uptimeNanoseconds
+                    - previousStatsAt.uptimeNanoseconds) / 1_000_000_000
                 let healthVisible = UserDefaults.standard.bool(
                     forKey: StreamerDefaults.showHealth)
-                if healthVisible, let previous = previousStats {
+                if healthVisible, let previous = previousStats,
+                   elapsed > 0.2 {
+                    let frames = Double(max(0, stats.framesSent
+                        - previous.framesSent))
+                    let bits = Double(max(0, stats.bytesSent
+                        - previous.bytesSent)) * 8
                     self.health = StreamHealth(
-                        fps: max(0, stats.framesSent - previous.framesSent),
-                        megabitsPerSecond: Double(max(0, stats.bytesSent - previous.bytesSent)) * 8 / 1_000_000,
+                        fps: Int((frames / elapsed).rounded()),
+                        megabitsPerSecond: bits / elapsed / 1_000_000,
                         droppedFrames: max(0, stats.framesDropped - self.healthDroppedBaseline))
                 } else if healthWasVisible {
                     // Cleared once on hide, so re-enabling can't flash the
@@ -1110,6 +1122,7 @@ final class Streamer: ObservableObject {
                 }
                 healthWasVisible = healthVisible
                 previousStats = stats
+                previousStatsAt = now
 
                 let effectiveTarget = max(
                     1_000_000, Int(Double(target) * self.thermalBitrateScale))
