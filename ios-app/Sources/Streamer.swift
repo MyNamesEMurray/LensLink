@@ -83,13 +83,16 @@ final class Streamer: ObservableObject {
     }
 
     private func reconfigureLiveCapture(formatChanged: Bool) {
-        let color = activeColor
+        // The colour capture actually delivered — the output can refuse
+        // 10-bit and degrade to SDR, so everything downstream (encoder,
+        // VIDEO_CONFIG, STATE) keys off configure's return, not the ask.
+        let color: StreamColor
         do {
-            try camera.configure(lens: selectedLens,
-                                 resolution: resolution,
-                                 fps: Int32(fps),
-                                 lockFrameRate: !allowVideoEffects,
-                                 color: color)
+            color = try camera.configure(lens: selectedLens,
+                                         resolution: resolution,
+                                         fps: Int32(fps),
+                                         lockFrameRate: !allowVideoEffects,
+                                         color: activeColor)
         } catch {
             // Never swallow this: a failed reconfigure leaves the session
             // without input/output — a black stream labelled "Live".
@@ -399,7 +402,10 @@ final class Streamer: ObservableObject {
 
     private func controlStateSnapshot() -> [String: Any] {
         let (resolutions, frameRates) = formatCapabilities()
-        let color = activeColor
+        // The running encoder is ground truth for what's on the wire —
+        // capture may have degraded HLG to SDR (see configure) — and the
+        // settings' intent covers the idle case.
+        let color = encoder?.color ?? activeColor
         // While HLG is active the only valid codec is HEVC; advertising
         // just it makes remote UIs refuse h264 switches through the
         // existing set_format validation machinery.
@@ -963,21 +969,24 @@ final class Streamer: ObservableObject {
         // Fall back to H.264 automatically if this device can't encode HEVC.
         let activeCodec = (codec == .hevc && !VideoEncoder.isSupported(.hevc))
             ? VideoCodec.h264 : codec
-        let color = activeColor
 
+        // Camera first: the encoder must be built for the colour capture
+        // actually delivers (the output can refuse 10-bit and degrade to
+        // SDR), so configure's return decides the profile and bitrate.
         let size = resolution.size
-        let encoder = VideoEncoder(codec: activeCodec,
+        let encoder: VideoEncoder
+        do {
+            let color = try camera.configure(lens: selectedLens,
+                                             resolution: resolution,
+                                             fps: Int32(fps),
+                                             lockFrameRate: !allowVideoEffects,
+                                             color: activeColor)
+            encoder = VideoEncoder(codec: activeCodec,
                                    width: size.width, height: size.height,
                                    fps: Int32(fps),
                                    bitrate: resolution.bitrate(for: activeCodec,
                                                                color: color),
                                    color: color)
-        do {
-            try camera.configure(lens: selectedLens,
-                                 resolution: resolution,
-                                 fps: Int32(fps),
-                                 lockFrameRate: !allowVideoEffects,
-                                 color: color)
             try encoder.start()
         } catch {
             status = .error(error.localizedDescription)
@@ -1000,7 +1009,7 @@ final class Streamer: ObservableObject {
         resetCameraControls()
         healthDroppedBaseline = client.statsSnapshot().framesDropped
         startAdaptiveBitrate(target: resolution.bitrate(for: activeCodec,
-                                                        color: color))
+                                                        color: encoder.color))
         client.setStandby(false)
         if standbyActive {
             // Remote start: reuse the standby transport. If OBS is already
