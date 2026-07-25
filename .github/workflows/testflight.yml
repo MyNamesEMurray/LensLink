@@ -114,9 +114,22 @@ jobs:
       - name: Archive (unsigned)
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # The release tag, whichever trigger delivered it. Empty on a
+          # bare manual dispatch — the project.yml default applies then.
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
           set -o pipefail
           BUILD_NUMBER="${{ steps.buildnum.outputs.build_number }}"
+          # TestFlight's "Version" comes from the tag: v1.8.2 -> 1.8.2,
+          # and a beta strips to its base version (v1.8.2-beta.3 -> 1.8.2;
+          # ASC rejects suffixed version strings) — betas of a version are
+          # told apart by build number, which is the TestFlight convention.
+          APP_VERSION="${RELEASE_TAG#v}"
+          APP_VERSION="${APP_VERSION%%-*}"
+          VERSION_OVERRIDE=""
+          if [ -n "$APP_VERSION" ]; then
+            VERSION_OVERRIDE="MARKETING_VERSION=$APP_VERSION"
+          fi
           # Archive WITHOUT signing. Automatic signing here defaults to a
           # *development* profile (get-task-allow=1), which needs a
           # registered device this CI account has none of. The export step
@@ -131,7 +144,8 @@ jobs:
             DEVELOPMENT_TEAM="$TEAM_ID" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            $VERSION_OVERRIDE
         working-directory: ios-app
 
       - name: Export & upload to TestFlight
@@ -178,14 +192,33 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
           BUNDLE_ID: com.exaltedpixels.LensLinkCamera
-          ASC_BETA_GROUPS: ${{ vars.ASC_BETA_GROUPS }}
+          # Group assignment splits by channel: ASC_BETA_GROUPS is for
+          # STABLE releases only (the name predates pre-releases and stays
+          # for compatibility); pre-releases use ASC_PRERELEASE_GROUPS,
+          # normally unset — a beta then reaches only the internal group,
+          # with no variable-juggling between beta and release pushes.
+          STABLE_GROUPS: ${{ vars.ASC_BETA_GROUPS }}
+          PRERELEASE_GROUPS: ${{ vars.ASC_PRERELEASE_GROUPS }}
+          IS_PRERELEASE: >-
+            ${{ contains(inputs.tag || github.event.release.tag_name, '-beta.')
+                || github.event.release.prerelease == true }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Empty for a release-triggered or manual run, where the script
           # falls back to /releases/latest as before.
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
+          # Selected in shell, not a ${{ && || }} chain: an unset
+          # pre-release variable would make the "ternary" fall through to
+          # the stable groups — exactly the assignment a beta must not do.
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            ASSIGN_GROUPS="$PRERELEASE_GROUPS"
+            echo "pre-release: assigning to [${ASSIGN_GROUPS:-internal only}]"
+          else
+            ASSIGN_GROUPS="$STABLE_GROUPS"
+          fi
           # Reuses the venv the build-number step set up.
-          BUILD_NUMBER="${{ steps.buildnum.outputs.build_number }}" \
+          ASC_BETA_GROUPS="$ASSIGN_GROUPS" \
+            BUILD_NUMBER="${{ steps.buildnum.outputs.build_number }}" \
             "$RUNNER_TEMP/asc-venv/bin/python" \
             .github/scripts/testflight_whats_to_test.py
 
