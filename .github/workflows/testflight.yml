@@ -88,14 +88,35 @@ jobs:
           mkdir -p ~/private_keys
           echo "$KEY_P8" > ~/private_keys/AuthKey_${KEY_ID}.p8
 
+      # Highest existing build in App Store Connect + 1. Derived from ASC
+      # rather than GITHUB_RUN_NUMBER because run numbers are per-workflow
+      # counters: a directly-dispatched upload and one called from
+      # auto-release count in unrelated sequences, and the first manual
+      # dispatch shipped build 1011 into a history already at 1039 —
+      # which TestFlight then never offered as an update (auto-update
+      # follows the highest number). Falls back to epoch seconds if ASC
+      # is unreachable: ugly, but strictly increasing.
+      - name: Next build number (App Store Connect)
+        id: buildnum
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+          BUNDLE_ID: com.exaltedpixels.LensLinkCamera
+        run: |
+          # Homebrew python3 is PEP 668 "externally managed" — venv it.
+          # The "What to Test" step reuses this venv.
+          python3 -m venv "$RUNNER_TEMP/asc-venv"
+          "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet PyJWT cryptography
+          "$RUNNER_TEMP/asc-venv/bin/python" \
+            .github/scripts/testflight_next_build.py
+
       - name: Archive (unsigned)
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -o pipefail
-          # Build number must strictly increase per upload; the run number
-          # is monotonic. Offset keeps it clear of any earlier manual builds.
-          BUILD_NUMBER=$(( GITHUB_RUN_NUMBER + 1000 ))
+          BUILD_NUMBER="${{ steps.buildnum.outputs.build_number }}"
           # Archive WITHOUT signing. Automatic signing here defaults to a
           # *development* profile (get-task-allow=1), which needs a
           # registered device this CI account has none of. The export step
@@ -163,12 +184,8 @@ jobs:
           # falls back to /releases/latest as before.
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          # The runner's default python3 is Homebrew's, which is
-          # PEP 668 "externally managed" and refuses pip installs —
-          # use a throwaway venv.
-          python3 -m venv "$RUNNER_TEMP/asc-venv"
-          "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet PyJWT cryptography
-          BUILD_NUMBER=$(( GITHUB_RUN_NUMBER + 1000 )) \
+          # Reuses the venv the build-number step set up.
+          BUILD_NUMBER="${{ steps.buildnum.outputs.build_number }}" \
             "$RUNNER_TEMP/asc-venv/bin/python" \
             .github/scripts/testflight_whats_to_test.py
 
