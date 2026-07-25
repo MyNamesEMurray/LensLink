@@ -201,8 +201,12 @@ Deliberate divergences (don't "fix" these without reading this):
   lets auto-exposure sag the frame rate in low light, like the Camera
   app's Auto FPS. A sagging cadence hurts the encoder's rate control,
   OBS timing, and the lip-sync/latency math; we hold cadence and let the
-  image get noisier instead. The thermal throttle above is the one
-  sanctioned exception.
+  image get noisier instead. Two sanctioned exceptions: the thermal
+  throttle above, and the opt-in **Allow system video effects** toggle
+  (Options), which leaves the max duration at the format default —
+  the Control Center effects appear to require that downward
+  flexibility, and the toggle exists to prove or disprove exactly that.
+  The thermal path keeps max unlocked too while the toggle is on.
 - **Video stabilization stays off** (the AVCaptureVideoDataOutput
   default). Every stabilization mode adds frames of latency; this is a
   latency-first product. Revisit only as an opt-in.

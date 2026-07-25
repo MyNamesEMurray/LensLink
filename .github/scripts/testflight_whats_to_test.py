@@ -4,7 +4,8 @@
 Runs right after the TestFlight upload: waits for App Store Connect to
 finish processing the build (matched by CFBundleVersion), writes the
 latest GitHub release's "What's Changed" section — converted to plain
-text — into the build's betaBuildLocalizations `whatsToTest` attribute
+text — into the build's betaBuildLocalizations `whatsNew` attribute
+(Apple's API name for the field the UI labels "What to Test")
 (exactly what testers see under "What to Test" in the TestFlight app),
 then assigns the build to the beta groups named in ASC_BETA_GROUPS.
 External groups are submitted for beta app review automatically — the
@@ -27,7 +28,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from testflight_feedback import ASC_BASE, asc_get, asc_token, gh, request
 
-MAX_LEN = 4000        # ASC limit for whatsToTest
+MAX_LEN = 4000        # ASC limit for whatsNew ("What to Test")
 POLL_SECONDS = 60
 POLL_LIMIT = 30       # ~30 min; processing usually takes 5-15
 
@@ -185,12 +186,12 @@ def main():
             f"{ASC_BASE}/v1/betaBuildLocalizations/{loc_id}", token,
             method="PATCH",
             body={"data": {"type": "betaBuildLocalizations", "id": loc_id,
-                           "attributes": {"whatsToTest": text}}})
+                           "attributes": {"whatsNew": text}}})
     else:
         status, resp = request(
             f"{ASC_BASE}/v1/betaBuildLocalizations", token, method="POST",
             body={"data": {"type": "betaBuildLocalizations",
-                           "attributes": {"whatsToTest": text,
+                           "attributes": {"whatsNew": text,
                                           "locale": "en-US"},
                            "relationships": {"build": {"data": {
                                "type": "builds", "id": build_id}}}}})
