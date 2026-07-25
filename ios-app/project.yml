@@ -50,6 +50,10 @@ targets:
         # from effects regardless; see the Camera diagnostics table.)
         NSCameraPortraitEffectEnabled: true
         NSCameraStudioLightEnabled: true
+        # Reactions has TWO keys: this one makes the effect available at
+        # all (its absence is why Reactions alone stayed missing on the
+        # first pass), the Gestures one governs the hand-gesture trigger.
+        NSCameraReactionEffectsEnabled: true
         NSCameraReactionEffectGesturesEnabled: true
         NSLocalNetworkUsageDescription: >-
           LensLink connects to OBS Studio on your local network to send the
