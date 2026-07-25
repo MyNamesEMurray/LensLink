@@ -207,9 +207,13 @@ jobs:
           # falls back to /releases/latest as before.
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          # Selected in shell, not a ${{ && || }} chain: an unset
-          # pre-release variable would make the "ternary" fall through to
+          # Selected in shell, not an expression-level and/or "ternary":
+          # an unset pre-release variable would make that fall through to
           # the stable groups — exactly the assignment a beta must not do.
+          # (Never write the expression delimiters themselves in comments
+          # here: GitHub expands them ANYWHERE in the file, run-block
+          # comments included, and an invalid one kills the whole
+          # workflow at validation — that exact mistake blocked v1.8.0.)
           if [ "$IS_PRERELEASE" = "true" ]; then
             ASSIGN_GROUPS="$PRERELEASE_GROUPS"
             echo "pre-release: assigning to [${ASSIGN_GROUPS:-internal only}]"
