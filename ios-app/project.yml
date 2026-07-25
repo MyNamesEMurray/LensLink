@@ -41,6 +41,16 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSCameraUsageDescription: >-
           LensLink streams your camera to OBS on your computer.
+        # Control Center's Video Effects panel (Portrait, Studio Light,
+        # Reactions) populates automatically only for VoIP/conferencing
+        # apps; a plain camera app must opt in per effect with these keys,
+        # or the panel stays EMPTY no matter what the active format's
+        # capability flags say — which it did, on every device, until
+        # these were added. (iOS also excludes formats above 1920x1440
+        # from effects regardless; see the Camera diagnostics table.)
+        NSCameraPortraitEffectEnabled: true
+        NSCameraStudioLightEnabled: true
+        NSCameraReactionEffectGesturesEnabled: true
         NSLocalNetworkUsageDescription: >-
           LensLink connects to OBS Studio on your local network to send the
           camera feed.
