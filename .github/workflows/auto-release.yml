@@ -173,10 +173,10 @@ jobs:
   # workflows (GitHub's recursion guard), so the TestFlight upload would
   # silently not happen for auto-releases.
   # Only when the push touched ios-app/: the version stream is repo-wide,
-  # but a plugin- or installer-only release would otherwise upload a
-  # byte-identical app (MARKETING_VERSION is static; only the injected
-  # build number changes) — burning a macOS runner, an App Store Connect
-  # build number, and a tester update notification for nothing.
+  # but a plugin- or installer-only release would otherwise upload an app
+  # whose code hasn't changed (only the injected version/build number
+  # would differ) — burning a macOS runner, an App Store Connect build
+  # number, and a tester update notification for nothing.
   # Betas upload here too — TestFlight *is* the beta channel, so a
   # pre-release that skipped it would defeat the point. The tag is passed
   # explicitly because the "What to Test" lookup otherwise falls back to
