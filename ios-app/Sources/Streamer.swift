@@ -86,7 +86,8 @@ final class Streamer: ObservableObject {
         do {
             try camera.configure(lens: selectedLens,
                                  resolution: resolution,
-                                 fps: Int32(fps))
+                                 fps: Int32(fps),
+                                 lockFrameRate: !allowVideoEffects)
         } catch {
             // Never swallow this: a failed reconfigure leaves the session
             // without input/output — a black stream labelled "Live".
@@ -150,6 +151,13 @@ final class Streamer: ObservableObject {
     /// nobody's preference resets.
     @Published var dimWhileStreaming: Bool {
         didSet { UserDefaults.standard.set(dimWhileStreaming, forKey: "dimWhileStreaming") }
+    }
+    /// Experiment: leave the max frame duration unlocked so iOS may lower
+    /// the rate on its own — which the Control Center video effects appear
+    /// to require (see CameraManager.configure). Applies when the camera
+    /// next starts.
+    @Published var allowVideoEffects: Bool {
+        didSet { UserDefaults.standard.set(allowVideoEffects, forKey: "allowVideoEffects") }
     }
     /// Send phone-mic audio as a lip-sync calibration reference (never
     /// played out — the plugin correlates it against your real mic).
@@ -537,6 +545,7 @@ final class Streamer: ObservableObject {
         codec = VideoCodec(rawValue: defaults.string(forKey: "videoCodec") ?? "")
             ?? (VideoEncoder.isSupported(.hevc) ? .hevc : .h264)
         dimWhileStreaming = defaults.object(forKey: "dimWhileStreaming") as? Bool ?? true
+        allowVideoEffects = defaults.bool(forKey: "allowVideoEffects")
         sendAudioReference = defaults.bool(forKey: "sendAudioReference")
         // didSet doesn't run during init; enforce the exclusivity here.
         sendMicAudio = defaults.bool(forKey: "sendMicAudio")
@@ -880,7 +889,8 @@ final class Streamer: ObservableObject {
         do {
             try camera.configure(lens: selectedLens,
                                  resolution: resolution,
-                                 fps: Int32(fps))
+                                 fps: Int32(fps),
+                                 lockFrameRate: !allowVideoEffects)
             try encoder.start()
         } catch {
             status = .error(error.localizedDescription)

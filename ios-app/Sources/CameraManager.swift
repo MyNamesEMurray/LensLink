@@ -278,6 +278,7 @@ final class CameraManager: NSObject {
     var onSystemPressure: ((AVCaptureDevice.SystemPressureState.Level) -> Void)?
     private var pressureObservation: NSKeyValueObservation?
     private var configuredFps: Int32 = 30
+    private var configuredFrameRateLock = true
     private var fpsThrottled = false
 
     private func systemPressureChanged(on device: AVCaptureDevice) {
@@ -306,7 +307,15 @@ final class CameraManager: NSObject {
         do {
             try device.lockForConfiguration()
             device.activeVideoMinFrameDuration = duration
-            device.activeVideoMaxFrameDuration = duration
+            // Min alone caps the rate; pinning max too is the cadence
+            // lock. When the video-effects experiment has unlocked max,
+            // keep it unlocked through thermal throttling as well — the
+            // throttle's goal (a lower ceiling) is met by min, and
+            // re-pinning max here would silently end the experiment
+            // after one pressure episode.
+            if configuredFrameRateLock {
+                device.activeVideoMaxFrameDuration = duration
+            }
             device.unlockForConfiguration()
         } catch {
             print("Frame-rate throttle failed: \(error.localizedDescription)")
@@ -318,16 +327,18 @@ final class CameraManager: NSObject {
     /// keep the throwing API).
     func configure(lens: Lens,
                    resolution: Resolution,
-                   fps: Int32) throws {
+                   fps: Int32,
+                   lockFrameRate: Bool = true) throws {
         try sessionQueue.sync {
             try configureOnQueue(lens: lens, resolution: resolution,
-                                 fps: fps)
+                                 fps: fps, lockFrameRate: lockFrameRate)
         }
     }
 
     private func configureOnQueue(lens: Lens,
                                   resolution: Resolution,
-                                  fps: Int32) throws {
+                                  fps: Int32,
+                                  lockFrameRate: Bool) throws {
         let position = lens.position
         session.beginConfiguration()
         defer { session.commitConfiguration() }
@@ -357,9 +368,18 @@ final class CameraManager: NSObject {
 
         try device.lockForConfiguration()
         device.activeFormat = format
+        // Min duration always caps the rate at the user's choice. The max
+        // (the cadence lock, see PERFORMANCE.md) is normally pinned too —
+        // but the "Allow system video effects" experiment leaves it at the
+        // format default, giving iOS the downward flexibility the Control
+        // Center effects appear to demand: the reproducing iPhone 15 Pro
+        // shows effect-capable formats chosen and active, yet a blank
+        // Video Effects panel — the lock is the last variable standing.
         let frameDuration = CMTime(value: 1, timescale: fps)
         device.activeVideoMinFrameDuration = frameDuration
-        device.activeVideoMaxFrameDuration = frameDuration
+        if lockFrameRate {
+            device.activeVideoMaxFrameDuration = frameDuration
+        }
         device.unlockForConfiguration()
         activeDevice = device
 
@@ -368,6 +388,7 @@ final class CameraManager: NSObject {
         // .shutdown iOS stops capture on its own (surfaced through the
         // interruption observers above).
         configuredFps = fps
+        configuredFrameRateLock = lockFrameRate
         fpsThrottled = false
         pressureObservation?.invalidate()
         pressureObservation = device.observe(\.systemPressureState,

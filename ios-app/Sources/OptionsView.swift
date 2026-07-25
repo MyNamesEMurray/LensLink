@@ -39,6 +39,13 @@ struct OptionsView: View {
                 }
 
                 Section {
+                    Toggle("Allow system video effects",
+                           isOn: $streamer.allowVideoEffects)
+                } footer: {
+                    Text("Experimental: lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
+                }
+
+                Section {
                     NavigationLink(destination: TallyLightOptionsView()) {
                         Text("Tally light")
                     }
