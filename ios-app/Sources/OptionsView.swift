@@ -15,14 +15,14 @@ struct OptionsView: View {
                     Toggle("Remote start from OBS",
                            isOn: $streamer.remoteStartEnabled)
                 } footer: {
-                    Text("While the app is open and idle, OBS can start the camera for you — automatically when its source connects, or from the source's \"Start camera on the phone\" button. The phone stays awake while it waits (the screen dims after a minute — tap to wake); locking it or leaving the app ends remote start. Siri works too: \"Start streaming with LensLink.\"")
+                    Text("While the app is open and idle, OBS can start the camera for you. The phone stays awake while it waits — locking it or leaving the app ends remote start. Siri: \"Start streaming with LensLink.\"")
                 }
 
                 Section {
                     Toggle("Dim screen while streaming",
                            isOn: $streamer.dimWhileStreaming)
                 } footer: {
-                    Text("The screen dims after 10 seconds of streaming to save battery; tap it to wake.")
+                    Text("Dims 10 seconds into streaming to save battery — tap to wake.")
                 }
 
                 Section {
@@ -35,7 +35,7 @@ struct OptionsView: View {
                 } footer: {
                     // One capture, two jobs — Streamer enforces the
                     // exclusivity; this footer is where users learn it.
-                    Text("**Send phone mic** streams this phone's microphone as the camera source's audio in OBS — a wireless mic.\n\n**Auto lip-sync** sends the mic purely as a timing reference so the plugin can auto-align your real microphone — it's never streamed or heard.\n\nOne mic, one role: turning one on turns the other off.")
+                    Text("**Send phone mic** makes this phone the camera's audio in OBS — a wireless mic. **Auto lip-sync** sends the mic only as a timing reference for aligning your real microphone; it's never heard. One mic, one role — turning one on turns the other off.")
                 }
 
                 Section {
@@ -43,7 +43,7 @@ struct OptionsView: View {
                         Text("Tally light")
                     }
                 } footer: {
-                    Text("The coloured border around the Live screen. Choose which statuses light it, in which colours, and which takes priority.")
+                    Text("The colored border around the Live screen while streaming.")
                 }
 
                 Section {
@@ -51,7 +51,7 @@ struct OptionsView: View {
                         Text("Camera diagnostics")
                     }
                 } footer: {
-                    Text("The camera's capture formats and which system video effects (Control Center) each supports — copy it into a bug report when an effect you expect is missing.")
+                    Text("The camera's formats and which Control Center video effects each supports — paste into a bug report if an effect is missing.")
                 }
             }
             .navigationTitle("Options")

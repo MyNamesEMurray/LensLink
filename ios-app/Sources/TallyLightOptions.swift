@@ -20,15 +20,6 @@ enum TallyStatus: String, Codable, CaseIterable {
         }
     }
 
-    var explanation: String {
-        switch self {
-        case .onAir: return "The camera is in OBS's live output."
-        case .preview: return "Visible in OBS (preview or a projector) but not live."
-        case .connectionLost: return "Streaming, but the link to OBS dropped."
-        case .calibrating: return "Auto lip-sync is measuring or re-measuring."
-        case .syncLocked: return "Auto lip-sync has locked on."
-        }
-    }
 }
 
 /// The border colours a status can be given. "None" means the status
@@ -130,7 +121,7 @@ final class TallySettings: ObservableObject {
     }
 }
 
-/// Options → Tally light: colour per status, drag to set priority.
+/// Options → Tally light: color per status, drag to set priority.
 struct TallyLightOptionsView: View {
     @ObservedObject private var settings = TallySettings.shared
 
@@ -139,12 +130,7 @@ struct TallyLightOptionsView: View {
             Section {
                 ForEach($settings.entries) { $entry in
                     HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(entry.status.displayName)
-                            Text(entry.status.explanation)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        Text(entry.status.displayName)
                         Spacer()
                         Picker("", selection: $entry.color) {
                             ForEach(TallyColor.allCases, id: \.self) { c in
@@ -169,7 +155,7 @@ struct TallyLightOptionsView: View {
             } header: {
                 Text("Statuses, highest priority first")
             } footer: {
-                Text("The border around the Live screen shows the colour of the highest status in this list that's currently true. Set a status to Off and it's skipped — lower statuses show through. Tap Edit to reorder.")
+                Text("The highest status here that's currently true sets the border color; Off skips it. Tap Edit to reorder.")
             }
 
             Section {
