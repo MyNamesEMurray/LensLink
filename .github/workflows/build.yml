@@ -32,6 +32,7 @@ jobs:
     outputs:
       plugin: ${{ steps.diff.outputs.plugin }}
       ios: ${{ steps.diff.outputs.ios }}
+      workflows: ${{ steps.diff.outputs.workflows }}
     steps:
       - uses: actions/checkout@v7
 
@@ -44,6 +45,7 @@ jobs:
             # workflow_dispatch: build everything
             echo "plugin=true" >> "$GITHUB_OUTPUT"
             echo "ios=true" >> "$GITHUB_OUTPUT"
+            echo "workflows=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git fetch --depth=1 origin "$BASE"
@@ -61,6 +63,37 @@ jobs:
           else
             echo "ios=false" >> "$GITHUB_OUTPUT"
           fi
+          if echo "$CHANGED" | grep -qE '^\.github/workflows/'; then
+            echo "workflows=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "workflows=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # GitHub validates expressions EVERYWHERE in a workflow file — comments
+  # inside run: blocks included — and an invalid one fails the whole file
+  # at run time with zero jobs and no PR-visible error. A stray
+  # expression-delimiter pair in a shell comment got exactly that far once
+  # and silently blocked a release, so workflow edits now lint before they
+  # can merge. actionlint also shellchecks the run: blocks.
+  workflows-lint:
+    name: Workflow files lint
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL \
+            https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash)
+          # -shellcheck= disables the shellcheck pass on run: blocks. It
+          # only reported style notes on scripts that have shipped many
+          # releases, plus one intentional unquoted expansion (the
+          # optional VERSION_OVERRIDE argument, which must word-split).
+          # The failure class this job exists for — invalid expressions,
+          # which kill the whole file at validation with no PR-visible
+          # error — is actionlint's own check and stays fully on.
+          ./actionlint -color -shellcheck= .github/workflows/*.yml
   obs-plugin-linux:
     name: OBS plugin (Linux)
     needs: changes
