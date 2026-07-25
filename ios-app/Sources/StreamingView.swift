@@ -127,16 +127,48 @@ struct StreamingView: View {
     }
 
     /// Tally: a border round the whole screen, readable at arm's length
-    /// from behind a monitor where a small dot wouldn't be. Red is on air,
-    /// amber is in preview, and nothing is drawn otherwise — an unlit
-    /// tally has to be as unambiguous as a lit one.
-    @ViewBuilder private var tallyBorder: some View {
+    /// from behind a monitor where a small dot wouldn't be. Which statuses
+    /// light it, in which colours and priority order, is the user's call
+    /// (Options → Tally light); the defaults are red on air, amber in
+    /// preview, nothing otherwise — an unlit tally has to be as
+    /// unambiguous as a lit one.
+    @ObservedObject private var tallySettings = TallySettings.shared
+
+    /// Everything currently true about the stream, for the priority list
+    /// to pick from.
+    private var activeTallyStatuses: Set<TallyStatus> {
+        var active: Set<TallyStatus> = []
         switch streamer.tally {
-        case .live:
-            tallyEdge(Theme.tallyLive, width: 6)
-        case .preview:
-            tallyEdge(Theme.tallyPreview, width: 4)
-        case .off:
+        case .live: active.insert(.onAir)
+        case .preview: active.insert(.preview)
+        case .off: break
+        }
+        // Mid-stream link drop: the client auto-reconnects (status flips
+        // to .connecting) or died outright (.error). Either way the phone
+        // is capturing into a void, which is worth a glance-able warning
+        // if the user assigned one.
+        if streamer.isStreaming {
+            if case .error = streamer.status {
+                active.insert(.connectionLost)
+            } else if streamer.status == .connecting {
+                active.insert(.connectionLost)
+            }
+        }
+        switch streamer.syncState {
+        case .measuring, .relocking: active.insert(.calibrating)
+        case .locked: active.insert(.syncLocked)
+        case .off: break
+        }
+        return active
+    }
+
+    @ViewBuilder private var tallyBorder: some View {
+        if let light = tallySettings.activeLight(for: activeTallyStatuses) {
+            // On air keeps the heaviest stroke; everything informational
+            // stays lighter so live remains the most emphatic state even
+            // in user-chosen colours.
+            tallyEdge(light.color, width: light.status == .onAir ? 6 : 4)
+        } else {
             EmptyView()
         }
     }
@@ -165,7 +197,7 @@ struct StreamingView: View {
             .ignoresSafeArea()
             .allowsHitTesting(false)
             .transition(.opacity)
-            .animation(.easeInOut(duration: 0.15), value: streamer.tally)
+            .animation(.easeInOut(duration: 0.15), value: colour)
     }
 
     private var statusBar: some View {

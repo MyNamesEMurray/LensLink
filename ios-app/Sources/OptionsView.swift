@@ -39,6 +39,14 @@ struct OptionsView: View {
                 }
 
                 Section {
+                    NavigationLink(destination: TallyLightOptionsView()) {
+                        Text("Tally light")
+                    }
+                } footer: {
+                    Text("The coloured border around the Live screen. Choose which statuses light it, in which colours, and which takes priority.")
+                }
+
+                Section {
                     NavigationLink(destination: CameraDiagnosticsView()) {
                         Text("Camera diagnostics")
                     }
