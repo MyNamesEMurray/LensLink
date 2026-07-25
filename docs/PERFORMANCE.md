@@ -210,9 +210,12 @@ Deliberate divergences (don't "fix" these without reading this):
 - **Video stabilization stays off** (the AVCaptureVideoDataOutput
   default). Every stabilization mode adds frames of latency; this is a
   latency-first product. Revisit only as an opt-in.
-- **The wire is 8-bit 4:2:0 video-range** (`420v`); HDR formats are not
-  selected. The whole chain — encoder profile, wire protocol, plugin
-  decode, OBS frame — assumes 8-bit; HDR would need end-to-end work.
+- **The wire defaults to 8-bit 4:2:0 video-range** (`420v`). With the
+  opt-in HDR toggle the camera path switches to 10-bit HLG (`x420`
+  capture, HEVC Main10) end-to-end — but 10-bit only ever enters the
+  pipeline through that toggle. SDR capture, the screen mirror, and the
+  H.264 path stay 8-bit; keep the 8-bit paths free of 10-bit branches
+  (the decoder maps formats per-frame, so SDR costs nothing extra).
 - **Rotation is sensor-native** (`.landscapeRight`, an effective 0°).
   The AVCaptureConnection docs warn per-frame rotation costs; we never
   rotate the stream, only the on-phone preview.

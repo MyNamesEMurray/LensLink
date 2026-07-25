@@ -77,6 +77,10 @@ blanks the source.
 - **Up to 4K at 60 fps**, in **H.264 or HEVC** (HEVC looks the same at
   ~40% less data). The app only offers resolution/frame-rate combinations
   your specific camera supports.
+- **HDR streaming (beta).** On cameras that support it, an **HDR (HLG)**
+  toggle captures and streams 10-bit HLG over HEVC; OBS renders it
+  correctly on both SDR and HDR canvases. Off by default — SDR remains
+  the standard path.
 - **Pick any lens** — Main, Ultra Wide, Telephoto, or Front — switchable
   live while you stream.
 - **Hold it however.** The app's UI follows the phone's rotation (unless
