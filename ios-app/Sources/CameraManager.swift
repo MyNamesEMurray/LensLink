@@ -377,11 +377,17 @@ final class CameraManager: NSObject {
     /// AVCaptureSession requires serialized access; start/stop run on
     /// `sessionQueue`, so configuration hops there too (synchronously, to
     /// keep the throwing API).
+    /// Returns the colour pipeline actually configured: the capture
+    /// output can refuse 10-bit delivery even when the device format
+    /// supports HLG (see the degrade comment below), so callers must
+    /// build the encoder and announce the stream from this value, never
+    /// from the colour they asked for.
+    @discardableResult
     func configure(lens: Lens,
                    resolution: Resolution,
                    fps: Int32,
                    lockFrameRate: Bool = true,
-                   color: StreamColor = .sdr) throws {
+                   color: StreamColor = .sdr) throws -> StreamColor {
         try sessionQueue.sync {
             try configureOnQueue(lens: lens, resolution: resolution,
                                  fps: fps, lockFrameRate: lockFrameRate,
@@ -393,7 +399,7 @@ final class CameraManager: NSObject {
                                   resolution: Resolution,
                                   fps: Int32,
                                   lockFrameRate: Bool,
-                                  color: StreamColor) throws {
+                                  color: StreamColor) throws -> StreamColor {
         let position = lens.position
         session.beginConfiguration()
         defer { session.commitConfiguration() }
@@ -472,17 +478,6 @@ final class CameraManager: NSObject {
         }
 
         let output = AVCaptureVideoDataOutput()
-        // Video-range in both pipelines; only the bit depth differs.
-        let pixelFormat: OSType
-        switch color {
-        case .sdr:
-            pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
-        case .hlg:
-            pixelFormat = kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
-        }
-        output.videoSettings = [
-            kCVPixelBufferPixelFormatTypeKey as String: pixelFormat
-        ]
         output.alwaysDiscardsLateVideoFrames = true
         output.setSampleBufferDelegate(self, queue: videoQueue)
 
@@ -492,6 +487,33 @@ final class CameraManager: NSObject {
         }
         session.addOutput(output)
         videoOutput = output
+
+        // The pixel format is chosen AFTER the output joins the session:
+        // a detached output only advertises the generic 8-bit formats —
+        // x420 enters availableVideoPixelFormatTypes once the output is
+        // connected to a device whose active format is 10-bit — and
+        // assigning a format missing from that list raises an NSException
+        // Swift cannot catch (the issue #81 TestFlight crash).
+        if color == .hlg,
+           !output.availableVideoPixelFormatTypes.contains(
+               kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange) {
+            // Degrade to SDR rather than crash — and rebuild the whole
+            // graph (begin/commit pairs nest) so the format choice,
+            // colour space, and wide-colour management all match: 8-bit
+            // capture behind an HLG-tagged Main10 encode would reach OBS
+            // with the wrong colours.
+            return try configureOnQueue(lens: lens, resolution: resolution,
+                                        fps: fps,
+                                        lockFrameRate: lockFrameRate,
+                                        color: .sdr)
+        }
+        // Video-range in both pipelines; only the bit depth differs.
+        output.videoSettings = [
+            kCVPixelBufferPixelFormatTypeKey as String:
+                color == .hlg
+                    ? kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+                    : kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+        ]
 
         if let connection = output.connection(with: .video) {
             if connection.isVideoOrientationSupported {
@@ -509,6 +531,7 @@ final class CameraManager: NSObject {
                 connection.isVideoMirrored = true
             }
         }
+        return color
     }
 
     // MARK: - Live camera controls
