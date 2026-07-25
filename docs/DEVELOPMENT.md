@@ -105,6 +105,13 @@ v1.8.2                    merge without it — the beta becomes the release
 Combine it with a bump trailer to beta a bigger version:
 `Release-Bump: minor` + `Release-Beta: true` → `v1.9.0-beta.1`.
 
+A `-beta.` tag publishes as a pre-release however it was created, so a
+hand-pushed `v1.8.0-beta.1` doesn't become a stable release just because
+it arrived without the flag set. (A hand-pushed tag still won't upload to
+TestFlight — releases published with `GITHUB_TOKEN` don't trigger other
+workflows, which is why the auto-release path *calls* TestFlight directly.
+Dispatch `testflight.yml` with the tag if you need that.)
+
 Two details worth knowing. The next version is computed from **stable tags
 only** — git's version sort puts `v1.9.0-beta.2` *above* `v1.9.0`, and the
 patch field would read `0-beta.2`, which the shell can't add 1 to, so an
@@ -115,7 +122,18 @@ would otherwise hand testers the previous stable release's changelog with
 nothing to indicate it had.
 
 Because it must be a standalone line, mentioning the keywords in prose
-can't trigger a bump. Manual releases also work — push any `v*` tag:
+can't trigger a bump.
+
+**The last directive wins.** Every commit of the merged PR is scanned, in
+order, and the newest release directive is the one that counts — a later
+commit revises an earlier one, in either direction. Asking to release
+clears an earlier skip; asking to skip after that suppresses it again.
+This matters on branches that start with a docs-only commit: a
+release-suppressing trailer written for that commit alone used to outrank
+every later, deliberate request, and the only sign was one line in the
+Auto Release log (it silently swallowed v1.8.0-beta.1 once).
+
+Manual releases also work — push any `v*` tag:
 
 ```bash
 git tag v0.4.0 && git push origin v0.4.0

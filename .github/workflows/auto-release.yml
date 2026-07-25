@@ -72,12 +72,15 @@ jobs:
           IFS=. read -r major minor patch <<< "$version"
 
           # Every commit newly pushed to main (the merge commit AND the PR's
-          # own commits), so a trailer in any PR commit counts.
+          # own commits), so a trailer in any PR commit counts. --reverse
+          # puts them oldest-first, which is what makes "the last directive
+          # wins" below mean the newest one; git log defaults to the
+          # opposite order.
           if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
             messages=$(git log -1 --format=%B "$AFTER")
             changed=$(git diff-tree --no-commit-id --name-only -r "$AFTER")
           else
-            messages=$(git log --format=%B "$BEFORE..$AFTER")
+            messages=$(git log --reverse --format=%B "$BEFORE..$AFTER")
             changed=$(git diff --name-only "$BEFORE" "$AFTER")
           fi
 
@@ -90,28 +93,54 @@ jobs:
             echo "ios=false" >> "$GITHUB_OUTPUT"
           fi
 
-          # Trailers only match on their own line (^…$), so prose that
+          # Read the directives in commit order, oldest first, and let the
+          # LAST one win.
+          #
+          # Scanning every commit of the PR is deliberate, but "any skip
+          # anywhere wins" made a stale trailer silently outrank a
+          # deliberate one: a docs-only first commit that suppressed its own
+          # release went on to suppress the release for the whole branch,
+          # four commits and two explicit release requests later, and the
+          # only sign was one line in this log. Last-wins reads the way
+          # people actually work — a later commit revises the earlier
+          # intent, in either direction. Asking to release clears a previous
+          # skip; asking to skip after that suppresses it again.
+          #
+          # Trailers still only match on their own line, so prose that
           # merely mentions the keywords is ignored.
-          if grep -qiE '^Release-Skip:[[:space:]]*true[[:space:]]*$' <<< "$messages"; then
-            echo "Release-Skip trailer found — no release."
+          skip=false
+          bump=patch
+          beta=false
+          shopt -s nocasematch
+          while IFS= read -r line; do
+            if [[ $line =~ ^Release-Skip:[[:space:]]*true[[:space:]]*$ ]]; then
+              skip=true
+            elif [[ $line =~ ^Release-Bump:[[:space:]]*(major|minor|patch)[[:space:]]*$ ]]; then
+              bump=${BASH_REMATCH[1],,}; skip=false
+            elif [[ $line =~ ^Release-Beta:[[:space:]]*true[[:space:]]*$ ]]; then
+              beta=true; skip=false
+            fi
+          done <<< "$messages"
+          shopt -u nocasematch
+
+          if [ "$skip" = true ]; then
+            echo "Release-Skip is the last release directive — no release."
             echo "tag=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          if grep -qiE '^Release-Bump:[[:space:]]*major[[:space:]]*$' <<< "$messages"; then
-            major=$((major + 1)); minor=0; patch=0
-          elif grep -qiE '^Release-Bump:[[:space:]]*minor[[:space:]]*$' <<< "$messages"; then
-            minor=$((minor + 1)); patch=0
-          else
-            patch=$((patch + 1))
-          fi
+          case "$bump" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            *)     patch=$((patch + 1)) ;;
+          esac
 
           tag="v$major.$minor.$patch"
 
           # Beta: same version, suffixed, counting up within it. Probing for
           # the first free suffix (rather than counting existing ones) keeps
           # numbering right even if a beta tag was deleted by hand.
-          if grep -qiE '^Release-Beta:[[:space:]]*true[[:space:]]*$' <<< "$messages"; then
+          if [ "$beta" = true ]; then
             n=1
             while git rev-parse -q --verify "refs/tags/$tag-beta.$n" >/dev/null; do
               n=$((n + 1))

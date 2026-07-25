@@ -16,6 +16,13 @@ name: TestFlight
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: >-
+          Release tag to take the "What to Test" notes from. Needed when
+          that release is a pre-release, which the default lookup skips.
+        required: false
+        type: string
   # Only fires for releases published by a real user. Auto-releases are
   # published with GITHUB_TOKEN, whose events GitHub suppresses from
   # triggering workflows — auto-release.yml therefore *calls* this
