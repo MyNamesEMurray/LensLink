@@ -20,7 +20,8 @@ final class CameraManager: NSObject {
             }
         }
 
-        func bitrate(for codec: VideoCodec) -> Int {
+        func bitrate(for codec: VideoCodec,
+                     color: StreamColor = .sdr) -> Int {
             let h264: Int
             switch self {
             case .hd720: h264 = 4_000_000
@@ -28,7 +29,14 @@ final class CameraManager: NSObject {
             case .uhd4k: h264 = 30_000_000
             }
             // HEVC reaches comparable quality at roughly 60% of the bits.
-            return codec == .hevc ? h264 * 6 / 10 : h264
+            let base = codec == .hevc ? h264 * 6 / 10 : h264
+            switch color {
+            case .sdr:
+                return base
+            case .hlg:
+                // 10-bit carries more data per pixel; give it headroom.
+                return base * 5 / 4
+            }
         }
     }
 
@@ -159,14 +167,28 @@ final class CameraManager: NSObject {
 
     private static func format(for device: AVCaptureDevice,
                                resolution: Resolution,
-                               fps: Int32) -> AVCaptureDevice.Format? {
+                               fps: Int32,
+                               color: StreamColor) -> AVCaptureDevice.Format? {
         let target = resolution.size
         // Require exact dimensions and a frame-rate range covering the
         // requested rate; earlier formats (unbinned, video-range) win ties.
+        // HLG additionally requires a 10-bit (x420) format that can
+        // capture BT.2020 HLG — nil (unsupported) if none exists. SDR
+        // considers every format, exactly as before colour existed.
         let candidates = device.formats.filter { format in
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
             guard dims.width == target.width, dims.height == target.height else {
                 return false
+            }
+            switch color {
+            case .sdr:
+                break
+            case .hlg:
+                guard CMFormatDescriptionGetMediaSubType(format.formatDescription)
+                        == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange,
+                      format.supportedColorSpaces.contains(.HLG_BT2020) else {
+                    return false
+                }
             }
             return format.videoSupportedFrameRateRanges
                 .contains { $0.maxFrameRate >= Double(fps) }
@@ -218,7 +240,7 @@ final class CameraManager: NSObject {
     static func formatReport() -> String {
         var out = ["\(UIDevice.current.model) — iOS "
                    + UIDevice.current.systemVersion,
-                   "flags: binned / CS / P / SL / R", ""]
+                   "flags: binned / CS / P / SL / R / colour", ""]
         for lens in availableLenses() {
             guard let device = device(for: lens) else { continue }
             out.append("== \(lens.label) ==")
@@ -240,6 +262,7 @@ final class CameraManager: NSObject {
                 } else {
                     flags.append("?")
                 }
+                flags.append(colourFlags(format))
                 out.append(String(format: "%5dx%-5d fps<=%-3.0f  %@",
                                   dims.width, dims.height, maxFps,
                                   flags.joined(separator: " ")))
@@ -247,6 +270,26 @@ final class CameraManager: NSObject {
             out.append("")
         }
         return out.joined(separator: "\n")
+    }
+
+    /// Colour column of the diagnostics table: the format's bit depth
+    /// plus the HDR colour spaces it can capture. This is the per-device
+    /// truth behind the HDR toggle — and, once Apple Log lands, behind
+    /// that too — the same way the effect flags are for Video Effects.
+    private static func colourFlags(_ format: AVCaptureDevice.Format) -> String {
+        let subtype = CMFormatDescriptionGetMediaSubType(
+            format.formatDescription)
+        let tenBit = subtype == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+            || subtype == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
+        var flags = [tenBit ? "10bit" : "8bit "]
+        if format.supportedColorSpaces.contains(.HLG_BT2020) {
+            flags.append("HLG")
+        }
+        if #available(iOS 17.0, *),
+           format.supportedColorSpaces.contains(.appleLog) {
+            flags.append("Log")
+        }
+        return flags.joined(separator: " ")
     }
 
     /// How many of the system video effects this format can run. The
@@ -265,12 +308,21 @@ final class CameraManager: NSObject {
         return score
     }
 
-    /// Whether this lens can capture the resolution at the frame rate.
-    /// Drives the app's pickers so unsupported combos are never offered.
+    /// Whether this lens can capture the resolution at the frame rate
+    /// (in the given colour pipeline). Drives the app's pickers so
+    /// unsupported combos are never offered.
     static func supports(resolution: Resolution, fps: Int32,
-                         lens: Lens) -> Bool {
+                         lens: Lens, color: StreamColor = .sdr) -> Bool {
         guard let device = device(for: lens) else { return false }
-        return format(for: device, resolution: resolution, fps: fps) != nil
+        return format(for: device, resolution: resolution, fps: fps,
+                      color: color) != nil
+    }
+
+    /// Whether this combo has a 10-bit HLG capture format — the UI's
+    /// gate for what the HDR toggle can actually deliver.
+    static func hdrAvailable(lens: Lens, resolution: Resolution,
+                             fps: Int32) -> Bool {
+        supports(resolution: resolution, fps: fps, lens: lens, color: .hlg)
     }
 
     /// Fires on system-pressure (thermal/power) level changes, on the
@@ -328,17 +380,20 @@ final class CameraManager: NSObject {
     func configure(lens: Lens,
                    resolution: Resolution,
                    fps: Int32,
-                   lockFrameRate: Bool = true) throws {
+                   lockFrameRate: Bool = true,
+                   color: StreamColor = .sdr) throws {
         try sessionQueue.sync {
             try configureOnQueue(lens: lens, resolution: resolution,
-                                 fps: fps, lockFrameRate: lockFrameRate)
+                                 fps: fps, lockFrameRate: lockFrameRate,
+                                 color: color)
         }
     }
 
     private func configureOnQueue(lens: Lens,
                                   resolution: Resolution,
                                   fps: Int32,
-                                  lockFrameRate: Bool) throws {
+                                  lockFrameRate: Bool,
+                                  color: StreamColor) throws {
         let position = lens.position
         session.beginConfiguration()
         defer { session.commitConfiguration() }
@@ -349,11 +404,23 @@ final class CameraManager: NSObject {
         // Format is chosen manually below; presets can't express 4K60.
         session.sessionPreset = .inputPriority
 
+        // For HLG we set the device's colour space ourselves below, so
+        // the session must not manage it (it would override our choice
+        // on input changes). For SDR, automatic is the iOS default —
+        // keeping it preserves the pre-HDR behaviour exactly.
+        switch color {
+        case .sdr:
+            session.automaticallyConfiguresCaptureDeviceForWideColor = true
+        case .hlg:
+            session.automaticallyConfiguresCaptureDeviceForWideColor = false
+        }
+
         guard let device = Self.device(for: lens) else {
             throw NSError(domain: "CameraManager", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Camera not available"])
         }
-        guard let format = Self.format(for: device, resolution: resolution, fps: fps) else {
+        guard let format = Self.format(for: device, resolution: resolution,
+                                       fps: fps, color: color) else {
             throw NSError(domain: "CameraManager", code: 4,
                           userInfo: [NSLocalizedDescriptionKey:
                             "\(resolution.rawValue) at \(fps) fps is not supported by the \(lens.label) camera"])
@@ -368,6 +435,13 @@ final class CameraManager: NSObject {
 
         try device.lockForConfiguration()
         device.activeFormat = format
+        switch color {
+        case .sdr:
+            // The session manages colour (automatic wide colour, above).
+            break
+        case .hlg:
+            device.activeColorSpace = .HLG_BT2020
+        }
         // Min duration always caps the rate at the user's choice. The max
         // (the cadence lock, see PERFORMANCE.md) is normally pinned too —
         // but the "Allow system video effects" experiment leaves it at the
@@ -398,9 +472,16 @@ final class CameraManager: NSObject {
         }
 
         let output = AVCaptureVideoDataOutput()
+        // Video-range in both pipelines; only the bit depth differs.
+        let pixelFormat: OSType
+        switch color {
+        case .sdr:
+            pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+        case .hlg:
+            pixelFormat = kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+        }
         output.videoSettings = [
-            kCVPixelBufferPixelFormatTypeKey as String:
-                kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            kCVPixelBufferPixelFormatTypeKey as String: pixelFormat
         ]
         output.alwaysDiscardsLateVideoFrames = true
         output.setSampleBufferDelegate(self, queue: videoQueue)

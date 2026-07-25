@@ -14,6 +14,18 @@ enum VideoCodec: String, CaseIterable, Identifiable {
     }
 }
 
+/// The stream's colour pipeline. Apple Log will slot in as another case
+/// (capture colorSpace .appleLog, iOS 17+); everything downstream switches
+/// on this rather than on booleans.
+///
+/// Lives here (not CameraManager.swift) because the broadcast extension
+/// compiles VideoEncoder.swift and StreamClient.swift — both of which
+/// take a colour — but not CameraManager.swift.
+enum StreamColor: String {
+    case sdr   // 8-bit 420v, BT.709 — every stream before 1.9
+    case hlg   // 10-bit x420, BT.2020 + HLG, HEVC Main10 only
+}
+
 /// Hardware video encoder (VideoToolbox). Emits Annex B access units;
 /// keyframes are self-contained (parameter sets prepended: SPS/PPS for
 /// H.264, VPS/SPS/PPS for HEVC) so the OBS plugin can join at any keyframe.
@@ -27,6 +39,7 @@ final class VideoEncoder {
     var onEncodedFrame: ((EncodedFrame) -> Void)?
 
     let codec: VideoCodec
+    let color: StreamColor
 
     /// Guards `session` and `forceNextKeyframe`: `encode()` runs on the
     /// capture queue while `stop()`/`setBitrate()`/`requestKeyframe()`
@@ -41,12 +54,14 @@ final class VideoEncoder {
 
     private static let startCode = Data([0x00, 0x00, 0x00, 0x01])
 
-    init(codec: VideoCodec, width: Int32, height: Int32, fps: Int32, bitrate: Int) {
+    init(codec: VideoCodec, width: Int32, height: Int32, fps: Int32, bitrate: Int,
+         color: StreamColor = .sdr) {
         self.codec = codec
         self.width = width
         self.height = height
         self.fps = fps
         self.bitrate = bitrate
+        self.color = color
     }
 
     /// Whether this device can hardware-encode the codec (HEVC needs A10+).
@@ -73,6 +88,27 @@ final class VideoEncoder {
         return status == noErr
     }()
 
+    /// Whether this device can hardware-encode 10-bit HEVC (Main10) — the
+    /// gate for the HDR toggle. Cached for the same reason as
+    /// `hevcSupported`; any error means unsupported.
+    static let hdrSupported: Bool = {
+        var session: VTCompressionSession?
+        let status = VTCompressionSessionCreate(
+            allocator: kCFAllocatorDefault,
+            width: 1280, height: 720,
+            codecType: VideoCodec.hevc.vtCodecType,
+            encoderSpecification: nil,
+            imageBufferAttributes: nil,
+            compressedDataAllocator: nil,
+            outputCallback: nil, refcon: nil,
+            compressionSessionOut: &session)
+        guard status == noErr, let session else { return false }
+        defer { VTCompressionSessionInvalidate(session) }
+        return VTSessionSetProperty(
+            session, key: kVTCompressionPropertyKey_ProfileLevel,
+            value: kVTProfileLevel_HEVC_Main10_AutoLevel) == noErr
+    }()
+
     func start() throws {
         var session: VTCompressionSession?
         let status = VTCompressionSessionCreate(
@@ -94,9 +130,27 @@ final class VideoEncoder {
 
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_RealTime,
                              value: kCFBooleanTrue)
-        VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ProfileLevel,
-                             value: codec == .h264 ? kVTProfileLevel_H264_Main_AutoLevel
-                                                   : kVTProfileLevel_HEVC_Main_AutoLevel)
+        switch color {
+        case .sdr:
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ProfileLevel,
+                                 value: codec == .h264 ? kVTProfileLevel_H264_Main_AutoLevel
+                                                       : kVTProfileLevel_HEVC_Main_AutoLevel)
+        case .hlg:
+            // Streamer never pairs HLG with H.264 (its didSets force HEVC
+            // and `activeColor` requires `hdrSupported`).
+            assert(codec == .hevc, "HLG requires HEVC Main10")
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ProfileLevel,
+                                 value: kVTProfileLevel_HEVC_Main10_AutoLevel)
+            // Tag the bitstream itself (VUI colour description): pixel
+            // buffer attachments can be lost between capture and decode,
+            // and downstream tone mapping trusts these.
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ColorPrimaries,
+                                 value: kCVImageBufferColorPrimaries_ITU_R_2020)
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_TransferFunction,
+                                 value: kCVImageBufferTransferFunction_ITU_R_2100_HLG)
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_YCbCrMatrix,
+                                 value: kCVImageBufferYCbCrMatrix_ITU_R_2020)
+        }
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering,
                              value: kCFBooleanFalse)
         // Shave per-frame encode time; quality difference is negligible

@@ -261,7 +261,11 @@ struct ContentView: View {
             }
 
             Picker("Codec", selection: $streamer.codec) {
-                Text(VideoCodec.h264.label).tag(VideoCodec.h264)
+                // HDR is HEVC-only; offering H.264 would let the picker
+                // pick a value the didSet immediately reverts.
+                if !streamer.hdrEnabled {
+                    Text(VideoCodec.h264.label).tag(VideoCodec.h264)
+                }
                 if VideoEncoder.isSupported(.hevc) {
                     Text(VideoCodec.hevc.label).tag(VideoCodec.hevc)
                 }

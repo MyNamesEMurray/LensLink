@@ -69,3 +69,105 @@ technique DrawI420
 		pixel_shader  = PSI420(vert_in);
 	}
 }
+
+// ---------------------------------------------------------------------
+// 10-bit HDR (HLG): HEVC Main10 from the phone — BT.2020 primaries,
+// ARIB STD-B67 (HLG) transfer, limited range. The planes arrive as
+// normalized 16-bit textures (GS_R16 / GS_RG16); sample_scale converts a
+// sample to 10-bit code / 1023 (P010 packs the 10 bits MSB-aligned:
+// scale 65535/65472 ~= 1; I010 packs them LSB-aligned: scale 65535/1023
+// ~= 64). The chain: limited-range BT.2020 Y'CbCr -> R'G'B', BT.2100
+// HLG inverse OETF, the BT.2100 reference OOTF, BT.2020 -> BT.709
+// primaries, then scale so 1.0 = SDR white on the extended-range
+// (GS_CS_709_EXTENDED, linear) canvas. Deliberately NO saturate():
+// values above SDR white and outside 709 gamut are the point of HDR.
+
+uniform float sample_scale = 1.0;
+uniform float hdr_scale = 3.3333333; // 1000-nit HLG peak / 300-nit SDR
+                                     // white default; set per draw from
+                                     // obs_get_video_sdr_white_level().
+
+float3 yuv2020_to_rgb(float y, float u, float v)
+{
+	// BT.2020 NCL, 10-bit limited (64-940 / 64-960) -> full, unclamped.
+	float yl = (y - 0.0625611) * 1.1678082;
+	float uc = u * 1.1417411;
+	float vc = v * 1.1417411;
+	float3 rgb;
+	rgb.r = yl + 1.4746 * vc;
+	rgb.g = yl - 0.1645531 * uc - 0.5713531 * vc;
+	rgb.b = yl + 1.8814 * uc;
+	return rgb;
+}
+
+float hlg_inv_oetf(float e)
+{
+	// BT.2100 HLG inverse OETF: E' in [0,1] -> scene light E in [0,1].
+	float a = 0.17883277;
+	float b = 0.28466892; // 1 - 4a
+	float c = 0.55991073; // 0.5 - a*ln(4a)
+	return (e <= 0.5) ? ((e * e) / 3.0) : ((exp((e - c) / a) + b) / 12.0);
+}
+
+float3 hlg2020_to_canvas(float3 rgbp)
+{
+	float3 scene;
+	scene.r = hlg_inv_oetf(rgbp.r);
+	scene.g = hlg_inv_oetf(rgbp.g);
+	scene.b = hlg_inv_oetf(rgbp.b);
+
+	// BT.2100 OOTF: Fd = Ys^(gamma-1) * Es per channel, Ys = BT.2020
+	// scene luminance. Chosen gamma: the reference system gamma 1.2,
+	// i.e. the nominal 1000-nit HLG display (BT.2100's gamma =
+	// 1.2 + 0.42*log10(Lw/1000) at Lw = 1000) — the same assumption
+	// hdr_scale's 1000-nit numerator makes.
+	float ys = dot(scene, float3(0.2627, 0.6780, 0.0593));
+	float3 display = scene * pow(max(ys, 0.000001), 0.2);
+
+	// Linear BT.2020 -> BT.709 primaries (BT.2087), unclamped:
+	// out-of-gamut 709 values are valid on the extended canvas.
+	float3 c709;
+	c709.r = dot(display, float3(1.660491, -0.587641, -0.072850));
+	c709.g = dot(display, float3(-0.124550, 1.132900, -0.008349));
+	c709.b = dot(display, float3(-0.018151, -0.100579, 1.118730));
+
+	return c709 * hdr_scale; // 1.0 = SDR white, peak at hdr_scale
+}
+
+float4 PSP010HLG(VertInOut vert_in) : TARGET
+{
+	// 512/1023 = 0.5004888: the 10-bit chroma midpoint.
+	float y = y_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	float2 uv = uv_tex.Sample(tex_sampler, vert_in.uv).rg * sample_scale;
+	return float4(hlg2020_to_canvas(yuv2020_to_rgb(y, uv.r - 0.5004888,
+						       uv.g - 0.5004888)),
+		      1.0);
+}
+
+float4 PSI010HLG(VertInOut vert_in) : TARGET
+{
+	float y = y_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	float u = uv_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	float v = v_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	return float4(hlg2020_to_canvas(yuv2020_to_rgb(y, u - 0.5004888,
+						       v - 0.5004888)),
+		      1.0);
+}
+
+technique DrawP010HLG
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSP010HLG(vert_in);
+	}
+}
+
+technique DrawI010HLG
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSI010HLG(vert_in);
+	}
+}

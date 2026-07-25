@@ -55,7 +55,16 @@ void gpu_frame_ctx_destroy(struct gpu_frame_ctx *ctx)
 
 bool gpu_frame_supported(const AVFrame *frame)
 {
-	return frame && frame->format == AV_PIX_FMT_VAAPI;
+	if (!frame || frame->format != AV_PIX_FMT_VAAPI ||
+	    !frame->hw_frames_ctx)
+		return false;
+	/* The dmabuf import below hardcodes 8-bit NV12 (R8 + GR88); a P010
+	 * surface (10-bit HDR hardware decode) would import as garbage.
+	 * Refuse it so those frames take the CPU path — zero-copy 10-bit
+	 * (R16/GR1616) is stage 2. */
+	const AVHWFramesContext *fctx =
+		(const AVHWFramesContext *)frame->hw_frames_ctx->data;
+	return fctx->sw_format == AV_PIX_FMT_NV12;
 }
 
 bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
@@ -144,7 +153,7 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 
 	out->tex[0] = y;
 	out->tex[1] = uv;
-	out->rgba = false;
+	out->format = GPU_FRAME_NV12;
 	out->width = w;
 	out->height = h;
 	return true;
@@ -252,7 +261,7 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 
 	out->tex[0] = ctx->tex;
 	out->tex[1] = NULL;
-	out->rgba = true;
+	out->format = GPU_FRAME_RGBA;
 	out->width = (uint32_t)frame->width;
 	out->height = (uint32_t)frame->height;
 	return true;
@@ -339,7 +348,16 @@ bool gpu_frame_supported(const AVFrame *frame)
 {
 	/* DXVA2 frames are D3D9 surfaces — no D3D11 interop; the decoder's
 	 * hardware priority list tries D3D11VA first anyway. */
-	return frame && frame->format == AV_PIX_FMT_D3D11;
+	if (!frame || frame->format != AV_PIX_FMT_D3D11 ||
+	    !frame->hw_frames_ctx)
+		return false;
+	/* The shared texture below is NV12 (8-bit); copying a P010 decode
+	 * surface (10-bit HDR) into it fails, leaving a black source.
+	 * Refuse so those frames take the CPU path — a shared P010 texture
+	 * (gs_texture_create_p010) is stage 2. */
+	const AVHWFramesContext *fctx =
+		(const AVHWFramesContext *)frame->hw_frames_ctx->data;
+	return fctx->sw_format == AV_PIX_FMT_NV12;
 }
 
 static bool win_ensure_textures(struct gpu_frame_ctx *ctx, uint32_t w,
@@ -470,7 +488,7 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 
 	out->tex[0] = ctx->tex_y;
 	out->tex[1] = ctx->tex_uv;
-	out->rgba = false;
+	out->format = GPU_FRAME_NV12;
 	out->width = ctx->width;
 	out->height = ctx->height;
 	return true;

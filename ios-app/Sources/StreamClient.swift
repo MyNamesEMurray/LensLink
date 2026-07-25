@@ -485,14 +485,20 @@ final class StreamClient {
         send(OBSCProtocol.packet(type: .hello, payload: payload))
     }
 
-    func sendVideoConfig(codec: VideoCodec, width: Int32, height: Int32, fps: Int32) {
-        let config: [String: Any] = [
+    func sendVideoConfig(codec: VideoCodec, width: Int32, height: Int32, fps: Int32,
+                         color: StreamColor = .sdr) {
+        var config: [String: Any] = [
             "codec": codec.rawValue,
             "width": Int(width),
             "height": Int(height),
             "fps": Int(fps),
             "kind": sourceKind.rawValue,
         ]
+        // Absent = SDR: older plugins ignore unknown keys, and remote
+        // UIs key off the key's absence.
+        if color != .sdr {
+            config["color"] = color.rawValue
+        }
         guard let payload = try? JSONSerialization.data(withJSONObject: config) else { return }
         send(OBSCProtocol.packet(type: .videoConfig, payload: payload))
     }
