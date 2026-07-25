@@ -584,7 +584,12 @@ static void handle_client(socket_t client)
 	if (strncmp(request, "POST ", 5) == 0) {
 		const char *cl = find_header(request, "Content-Length");
 		content_length = cl ? (size_t)strtoul(cl, NULL, 10) : 0;
-		if (content_length == 0 || content_length > MAX_CONTROL_BODY) {
+		/* A zero-length body is legal here: action-only endpoints
+		 * (/api/recalibrate) POST with no body at all, and rejecting
+		 * that generically 400'd them before routing — the panel's
+		 * Recalibrate button died of exactly that. Endpoints that
+		 * *need* a body enforce it themselves below. */
+		if (content_length > MAX_CONTROL_BODY) {
 			respond(client, "400 Bad Request", "text/plain",
 				"bad length");
 			return;
@@ -700,7 +705,13 @@ static void handle_client(socket_t client)
 
 	if (strncmp(request, "POST /api/autostart", 19) == 0) {
 		/* Body: {"on":true|false}. Toggles the source's auto-start
-		 * property (same value the properties checkbox edits). */
+		 * property (same value the properties checkbox edits). An
+		 * empty body must not silently read as "false". */
+		if (content_length == 0) {
+			respond(client, "400 Bad Request", "text/plain",
+				"body required");
+			return;
+		}
 		pthread_mutex_lock(&g_reg.mutex);
 		struct ios_camera_source *s = locked_pick_source(request);
 		if (s)
@@ -727,6 +738,11 @@ static void handle_client(socket_t client)
 	}
 
 	if (strncmp(request, "POST /api/control", 17) == 0) {
+		if (content_length == 0) {
+			respond(client, "400 Bad Request", "text/plain",
+				"body required");
+			return;
+		}
 		pthread_mutex_lock(&g_reg.mutex);
 		struct ios_camera_source *s = locked_pick_source(request);
 		if (s)

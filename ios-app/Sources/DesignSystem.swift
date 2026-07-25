@@ -16,9 +16,11 @@ enum Theme {
     /// Tally. Deliberately its own token rather than `errorRed`: on air is
     /// not an error, and the two must stay independently adjustable even
     /// though both are red today. Preview borrows `connectAmber` — same
-    /// "linked, not yet live" meaning it already carries.
+    /// "linked, not yet live" meaning it already carries. Purple exists
+    /// only as a user-assignable tally colour (mirrors iOS systemPurple).
     static let tallyLive = Color(hex: 0xFF3B30)
     static let tallyPreview = connectAmber
+    static let tallyPurple = Color(hex: 0xBF5AF2)
 
     // Over-video surfaces
     static let glassPanel = Color.black.opacity(0.55)

@@ -71,22 +71,35 @@ The status **word and colour are defined once** (`Streamer.Status.displayName`
 / `.tint` in the app) and reused by every view; the web panel maps the
 plugin's status string to the same palette.
 
-### Tally (on air)
+### Tally (screen border)
 
-| State   | Token          | Hex       | Treatment |
-|---------|----------------|-----------|-----------|
-| Live    | `tallyLive`    | `#FF3B30` | 6 pt border around the whole Live screen |
-| Preview | `tallyPreview` | `#FF9F0A` | 4 pt border (same as `connectAmber`) |
-| Neither | —              | —         | No border drawn |
+A border around the whole Live screen, driven by a **user-ordered
+priority list** of statuses (Options → Tally light): the highest status
+in the list that is currently true and has a colour lights the border.
+"Off" removes a status from consideration — lower ones show through.
 
-The tally answers one question — *am I on air?* — and must never be
-ambiguous, so it is **its own indicator**, not a mode of the status dot,
-and it carries no other meaning. It's a border rather than a dot because
-it has to read at arm's length from a phone mounted behind a monitor, and
-it draws **above the dim overlay**: the screen dims after ten seconds
-exactly when the operator is furthest away. An unlit tally is as
-meaningful as a lit one, so "not on air" draws nothing at all rather than
-a grey border that could be mistaken for a dark red one.
+| Status (default order) | Default colour | Meaning |
+|---|---|---|
+| On air | Red `tallyLive` `#FF3B30`, 6 pt | in OBS's live output |
+| In preview | Amber `connectAmber` `#FF9F0A`, 4 pt | visible but not live |
+| Connection lost | Off | streaming, link to OBS dropped |
+| Calibrating lip-sync | Off | measuring / re-measuring |
+| Lip-sync locked | Off | calibration locked on |
+
+Assignable colours: Red `#FF3B30`, Amber `#FF9F0A`, Green `#30D158`,
+Blue `#3D7BFF`, Purple `tallyPurple` `#BF5AF2`, White, or Off. The
+defaults reproduce the pre-customization behaviour exactly. On air keeps
+the heaviest stroke (6 pt vs 4 pt) whatever its colour, so live stays
+the most emphatic state.
+
+The tally's core answer — *am I on air?* — must never be ambiguous, so
+it is **its own indicator**, not a mode of the status dot. It's a border
+rather than a dot because it has to read at arm's length from a phone
+mounted behind a monitor, and it draws **above the dim overlay**: the
+screen dims after ten seconds exactly when the operator is furthest
+away. By default an unlit tally is as meaningful as a lit one — "not on
+air" draws nothing rather than a grey border that could be mistaken for
+a dark red one.
 
 `tallyLive` is deliberately separate from `errorRed` despite both being
 red today: on air is not an error, and the two must stay independently
