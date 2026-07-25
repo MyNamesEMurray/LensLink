@@ -12,8 +12,9 @@ struct StreamingView: View {
     @State private var pinchBaseZoom: CGFloat = 1
     @State private var previousBrightness: CGFloat = UIScreen.main.brightness
     /// Stream health pill (fps · Mb/s · dropped). Persisted: someone who
-    /// turns it on is debugging and wants it next stream too.
-    @AppStorage("showStreamHealth") private var showHealth = false
+    /// turns it on is debugging and wants it next stream too. The streamer
+    /// reads the same key to decide whether to sample health at all.
+    @AppStorage(StreamerDefaults.showHealth) private var showHealth = false
 
     private static let dimAfterSeconds: TimeInterval = 10
 
@@ -63,6 +64,11 @@ struct StreamingView: View {
             if dimmed {
                 dimOverlay
             }
+
+            // Above the dim overlay on purpose: a phone mounted out of
+            // reach dims itself after ten seconds, and that is exactly
+            // when knowing you're on air matters most.
+            tallyBorder
         }
         .statusBar(hidden: true)
         .task {
@@ -114,6 +120,32 @@ struct StreamingView: View {
         .onTapGesture { undim() }
     }
 
+    /// Tally: a border round the whole screen, readable at arm's length
+    /// from behind a monitor where a small dot wouldn't be. Red is on air,
+    /// amber is in preview, and nothing is drawn otherwise — an unlit
+    /// tally has to be as unambiguous as a lit one.
+    @ViewBuilder private var tallyBorder: some View {
+        switch streamer.tally {
+        case .live:
+            tallyEdge(Theme.tallyLive, width: 6)
+        case .preview:
+            tallyEdge(Theme.tallyPreview, width: 4)
+        case .off:
+            EmptyView()
+        }
+    }
+
+    private func tallyEdge(_ colour: Color, width: CGFloat) -> some View {
+        // allowsHitTesting(false): the border sits over the preview, and
+        // tap-to-focus near the screen edge must still reach it.
+        Rectangle()
+            .strokeBorder(colour, lineWidth: width)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.15), value: streamer.tally)
+    }
+
     private var statusBar: some View {
         HStack(spacing: Theme.Space.m) {
             HStack(spacing: Theme.Space.s) {
@@ -125,6 +157,19 @@ struct StreamingView: View {
                     .lineLimit(1)
             }
             .glassPill()
+
+            if let sync = syncLabel {
+                HStack(spacing: Theme.Space.s) {
+                    Circle()
+                        .fill(sync.colour)
+                        .frame(width: 8, height: 8)
+                    Text(sync.text)
+                        .font(.caption)
+                        .lineLimit(1)
+                }
+                .glassPill()
+                .foregroundColor(Theme.textSecondary)
+            }
 
             Spacer()
 
@@ -148,6 +193,22 @@ struct StreamingView: View {
             }
         }
         .foregroundColor(Theme.textPrimary)
+    }
+
+    /// Lip-sync calibration, shown only while it has something to say —
+    /// nothing appears unless auto-calibrate is running in OBS. Wording and
+    /// colours come from docs/UI_DESIGN.md and match the web panel's pill.
+    private var syncLabel: (text: String, colour: Color)? {
+        switch streamer.syncState {
+        case .off:
+            return nil
+        case .measuring:
+            return ("Measuring sync", Theme.accent)
+        case .locked:
+            return ("Sync locked", Theme.liveGreen)
+        case .relocking:
+            return ("Recalibrating", Theme.connectAmber)
+        }
     }
 
     /// One-line health readout under the status bar: encoder output rate,

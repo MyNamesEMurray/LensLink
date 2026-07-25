@@ -105,6 +105,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "stop_stream" }
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
 { "cmd": "mic", "id": "builtin:2" }
+{ "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
 ```
 
 `set_format` switches the capture format mid-stream; any subset of its
@@ -121,6 +122,21 @@ mid-stream. Ids come from the STATE snapshot's `mics` list: `"auto"`
 Bottom/Front/Back), or `"port:<uid>"` (an external input). The app
 validates the id against the live list and ignores stale ones (e.g. a
 Bluetooth mic that just disconnected).
+
+`tally` drives the app's on-air light and its lip-sync readout. `program`
+is true while the source is part of what OBS is actually sending out;
+`preview` is true when it's visible somewhere else (preview, a projector)
+but not on air — the two are mutually exclusive, and both false means
+neither. `sync` reports auto lip-sync calibration as one of `"off"`,
+`"measuring"`, `"locked"` or `"relocking"` (see docs/UI_DESIGN.md for the
+words and colours each maps to).
+
+Unlike the camera commands, `tally` is sent **on change** rather than on
+request, and re-announced on every new connection — a device is never
+assumed to remember what it was last told. The app clears the light
+whenever the connection drops, so a stale "live" can't outlive the OBS
+that set it. Screen-mirror connections receive it too and ignore it: the
+broadcast extension has no UI.
 
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.

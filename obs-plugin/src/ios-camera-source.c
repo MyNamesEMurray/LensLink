@@ -24,6 +24,7 @@
 #include "usbmux.h"
 #include "web-control.h"
 #include "lipsync.h"
+#include "lipsync-cal.h"
 #include "plugin-settings.h"
 #include "gpu-frame.h"
 #include "pipeline-bench.h"
@@ -98,6 +99,12 @@ struct ios_camera_source {
 	 * encoding (battery) and becomes usable by another LensLink source.
 	 * `showing` is maintained by the show/hide callbacks. */
 	volatile bool deactivate_hidden;
+
+	/* Tally: `active` is program (what the audience sees), `showing` is
+	 * any view at all — preview, a projector, a hidden-but-rendered
+	 * scene. Preview is therefore "showing but not active". OBS drives
+	 * both through callbacks; the dial loop reads them. */
+	volatile bool active;
 	volatile bool showing;
 
 	/* Remote start: when the app connects in standby (open but idle,
@@ -145,6 +152,25 @@ struct ios_camera_source {
 	 * median smoothing before applying an offset. */
 	int64_t cal_hist[5];
 	int cal_count;
+
+	/*
+	 * Latched mic latency. The correlation recovers a property of the
+	 * streamer's audio gear (interface buffering, driver, OBS's audio
+	 * path) — not of the link — because it compares timestamps already
+	 * translated into a common clock. It therefore doesn't change while
+	 * the audio path doesn't. Video latency *does* change, and timesync
+	 * measures it every second for free, so once the mic figure is known
+	 * the offset can be re-derived from latency alone: offset = video
+	 * latency - mic latency, applied whether or not anyone is talking.
+	 * That both removes a repeated correlation of a constant and fixes a
+	 * real gap — before, a latency change during silence went uncorrected
+	 * because no confident reading arrived to trigger an update.
+	 * cal_verified_ns is network-thread only; the rest is status_mutex.
+	 */
+	bool cal_locked;
+	int64_t cal_locked_mic_ns;
+	uint64_t cal_verified_ns; /* last correlation run while locked */
+	enum lipsync_cal_state cal_state;
 
 	/* Remote-control commands queued for the device (JSON strings),
 	 * pushed by the web control thread, drained by the stream thread.
@@ -531,6 +557,12 @@ struct client_state {
 	uint64_t packets_at_decoder;
 	bool is_screen; /* screen mirror (plays system audio) vs camera */
 	bool standby;   /* app is idle, waiting for a start_stream command */
+	/* Last tally state pushed to the device. Per connection, so a
+	 * reconnect re-announces rather than assuming the phone still knows. */
+	bool tally_valid;
+	bool tally_program;
+	bool tally_preview;
+	int tally_sync;
 	uint64_t next_decoder_attempt; /* cooldown after create failure */
 	enum AVCodecID codec_id;
 	char name[128];
@@ -689,8 +721,8 @@ static void hook_audio(struct ios_camera_source *s, const char *name)
 	obs_source_release(src);
 }
 
-#define CAL_MIN_CONFIDENCE 0.5
-#define CAL_NS_MS 1000000LL
+/* Calibration policy (states, thresholds, the lock/verify decisions) lives
+ * in lipsync-cal.h, free of libobs so it can be exercised standalone. */
 
 /*
  * Adds/updates/removes a private "Video Delay (Async)" filter on our own
@@ -758,90 +790,31 @@ static int cmp_i64(const void *a, const void *b)
 	return (x > y) - (x < y);
 }
 
-/*
- * Cross-correlation result drives the offset. A single measurement is
- * noisy, so we gate on confidence and smooth over recent measurements
- * (median of the last few, only when they agree) before applying. Then
- * offset = videoLatency - micLatency; if the mic is actually slower than
- * the video path, audio delay can't help and we say so.
- */
-static void apply_auto_calibrated(struct ios_camera_source *s,
-				  int64_t video_latency_ns)
+/* Records the calibration stage for the user-facing readouts. */
+static void set_cal_state(struct ios_camera_source *s,
+			  enum lipsync_cal_state state)
 {
-	char name[256];
-
 	pthread_mutex_lock(&s->status_mutex);
-	bool enabled = s->audio_sync && s->auto_calibrate;
-	bool video_delay = s->auto_video_delay;
-	snprintf(name, sizeof(name), "%s", s->audio_source);
-	int64_t applied = s->applied_audio_offset;
+	s->cal_state = state;
 	pthread_mutex_unlock(&s->status_mutex);
+}
 
-	if (!enabled || !name[0])
-		return;
-
-	/* Hold the mutex only for a snapshot: the correlation is ~1.8M
-	 * multiply-adds, and the OBS audio callback blocks on this lock. */
-	int64_t mic_delay = 0;
-	double conf = 0;
-	pthread_mutex_lock(&s->lipsync_mutex);
-	struct lipsync *snap = s->lipsync ? lipsync_clone(s->lipsync) : NULL;
-	pthread_mutex_unlock(&s->lipsync_mutex);
-
-	bool ok = snap && lipsync_estimate(snap, &mic_delay, &conf);
-	lipsync_destroy(snap);
-
-	if (!ok) {
-		blog(LOG_INFO,
-		     "[lenslink] auto lip-sync: no reading (need the app's "
-		     "'Auto lip-sync reference' on, plus speech/sound)");
-		return;
-	}
-	if (conf < CAL_MIN_CONFIDENCE) {
-		blog(LOG_INFO,
-		     "[lenslink] auto lip-sync: mic ~%d ms but low "
-		     "confidence %.2f — ignoring (keep talking / raise mic "
-		     "level)",
-		     (int)(mic_delay / CAL_NS_MS), conf);
-		return;
-	}
-
-	/* Accumulate confident readings; require agreement before acting. */
-	int n = s->cal_count < 5 ? s->cal_count : 5;
-	if (n == 5)
-		memmove(&s->cal_hist[0], &s->cal_hist[1], sizeof(int64_t) * 4);
-	s->cal_hist[n < 5 ? n : 4] = mic_delay;
-	if (s->cal_count < 5)
-		s->cal_count++;
-
-	if (s->cal_count < 3) {
-		blog(LOG_INFO,
-		     "[lenslink] auto lip-sync: mic ~%d ms (conf %.2f), "
-		     "collecting %d/3…",
-		     (int)(mic_delay / CAL_NS_MS), conf, s->cal_count);
-		return;
-	}
-
-	int64_t sorted[5];
-	memcpy(sorted, s->cal_hist, sizeof(int64_t) * (size_t)s->cal_count);
-	qsort(sorted, (size_t)s->cal_count, sizeof(int64_t), cmp_i64);
-	int64_t median = sorted[s->cal_count / 2];
-	int64_t spread = sorted[s->cal_count - 1] - sorted[0];
-
-	if (spread > 40 * CAL_NS_MS) {
-		blog(LOG_INFO,
-		     "[lenslink] auto lip-sync: readings unstable "
-		     "(spread %d ms) — holding",
-		     (int)(spread / CAL_NS_MS));
-		return;
-	}
-
-	int64_t offset = video_latency_ns - median;
+/*
+ * offset = videoLatency - micLatency, applied to the chosen OBS audio
+ * source. If the mic is actually slower than the video path, audio delay
+ * can't help and we say so (or delay the video instead, when enabled).
+ */
+static void apply_calibrated_offset(struct ios_camera_source *s,
+				    int64_t video_latency_ns,
+				    int64_t mic_delay_ns, const char *name,
+				    bool video_delay, int64_t applied,
+				    bool from_lock, double conf)
+{
+	int64_t offset = video_latency_ns - mic_delay_ns;
 	bool mic_slower = offset < 0;
-	int video_delay_ms = mic_slower
-				     ? (int)((median - video_latency_ns) /
-					     CAL_NS_MS)
-				     : 0;
+	int video_delay_ms =
+		mic_slower ? (int)((mic_delay_ns - video_latency_ns) / CAL_NS_MS)
+			   : 0;
 	if (mic_slower)
 		offset = 0;
 
@@ -864,29 +837,191 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 	if (video_delay)
 		set_video_delay(s, video_delay_ms);
 
+	/* Tracking a latency change against an already-known mic figure is
+	 * routine and happens every window — only log when something is
+	 * actually applied, or the log would fill with unchanged values. */
+	if (from_lock && diff < 5 * CAL_NS_MS)
+		return;
+
 	if (mic_slower && video_delay) {
 		blog(LOG_INFO,
 		     "[lenslink] auto lip-sync: mic %d ms > video %d ms -> "
 		     "delaying video by %d ms (conf %.2f)",
-		     (int)(median / CAL_NS_MS),
-		     (int)(video_latency_ns / CAL_NS_MS), video_delay_ms,
-		     conf);
+		     (int)(mic_delay_ns / CAL_NS_MS),
+		     (int)(video_latency_ns / CAL_NS_MS), video_delay_ms, conf);
 	} else if (mic_slower) {
 		blog(LOG_WARNING,
 		     "[lenslink] auto lip-sync: mic latency %d ms exceeds "
 		     "video %d ms — audio can't be delayed to match. Enable "
 		     "'Auto video delay' to delay the video ~%d ms, or use a "
 		     "lower-latency mic.",
-		     (int)(median / CAL_NS_MS),
+		     (int)(mic_delay_ns / CAL_NS_MS),
 		     (int)(video_latency_ns / CAL_NS_MS), video_delay_ms);
+	} else if (from_lock) {
+		blog(LOG_INFO,
+		     "[lenslink] auto lip-sync: video latency now %d ms, mic "
+		     "%d ms (locked) -> '%s' offset %d ms",
+		     (int)(video_latency_ns / CAL_NS_MS),
+		     (int)(mic_delay_ns / CAL_NS_MS), name,
+		     (int)(offset / CAL_NS_MS));
 	} else {
 		blog(LOG_INFO,
 		     "[lenslink] auto lip-sync: mic %d ms, video %d ms -> "
 		     "'%s' offset %d ms (conf %.2f)",
-		     (int)(median / CAL_NS_MS),
+		     (int)(mic_delay_ns / CAL_NS_MS),
 		     (int)(video_latency_ns / CAL_NS_MS), name,
 		     (int)(offset / CAL_NS_MS), conf);
 	}
+}
+
+/*
+ * Runs on each stable latency window. Two phases:
+ *
+ *  - Measuring. A single correlation is noisy, so gate on confidence and
+ *    smooth over recent readings (median of the last few, only when they
+ *    agree) before latching the mic's latency.
+ *  - Locked. The latched figure is a property of the audio gear, so the
+ *    offset just tracks the video latency from here on — no correlation,
+ *    and no dependence on the streamer making noise. The correlation
+ *    re-runs only every CAL_VERIFY_INTERVAL_NS, purely to notice if the
+ *    audio path changed underneath us (a re-plugged interface, a headset
+ *    taking over) and re-measure if so.
+ */
+static void apply_auto_calibrated(struct ios_camera_source *s,
+				  int64_t video_latency_ns)
+{
+	char name[256];
+
+	pthread_mutex_lock(&s->status_mutex);
+	bool enabled = s->audio_sync && s->auto_calibrate;
+	bool video_delay = s->auto_video_delay;
+	snprintf(name, sizeof(name), "%s", s->audio_source);
+	int64_t applied = s->applied_audio_offset;
+	bool locked = s->cal_locked;
+	int64_t locked_mic = s->cal_locked_mic_ns;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	if (!enabled || !name[0]) {
+		set_cal_state(s, LS_CAL_OFF);
+		return;
+	}
+
+	uint64_t now = os_gettime_ns();
+
+	if (locked) {
+		apply_calibrated_offset(s, video_latency_ns, locked_mic, name,
+					video_delay, applied, true, 0);
+		if (!lipsync_cal_due_for_verify(now, s->cal_verified_ns))
+			return;
+	}
+
+	/* Hold the mutex only for a snapshot: the correlation is ~1.8M
+	 * multiply-adds, and the OBS audio callback blocks on this lock. */
+	int64_t mic_delay = 0;
+	double conf = 0;
+	pthread_mutex_lock(&s->lipsync_mutex);
+	struct lipsync *snap = s->lipsync ? lipsync_clone(s->lipsync) : NULL;
+	pthread_mutex_unlock(&s->lipsync_mutex);
+
+	bool ok = snap && lipsync_estimate(snap, &mic_delay, &conf);
+	lipsync_destroy(snap);
+
+	/* While locked, a missing or unconvincing reading means nothing — it
+	 * usually just means nobody is talking. The lock stands; try again at
+	 * the next verification interval. */
+	if (!ok) {
+		if (locked) {
+			s->cal_verified_ns = now;
+			return;
+		}
+		blog(LOG_INFO,
+		     "[lenslink] auto lip-sync: no reading (need the app's "
+		     "'Auto lip-sync reference' on, plus speech/sound)");
+		return;
+	}
+	if (conf < CAL_MIN_CONFIDENCE) {
+		if (locked) {
+			s->cal_verified_ns = now;
+			return;
+		}
+		blog(LOG_INFO,
+		     "[lenslink] auto lip-sync: mic ~%d ms but low "
+		     "confidence %.2f — ignoring (keep talking / raise mic "
+		     "level)",
+		     (int)(mic_delay / CAL_NS_MS), conf);
+		return;
+	}
+
+	if (locked) {
+		s->cal_verified_ns = now;
+		if (!lipsync_cal_reading_invalidates(mic_delay, locked_mic))
+			return; /* still the same audio path */
+
+		blog(LOG_WARNING,
+		     "[lenslink] auto lip-sync: mic latency moved %d ms -> "
+		     "%d ms (conf %.2f) — the audio path changed, "
+		     "recalibrating",
+		     (int)(locked_mic / CAL_NS_MS), (int)(mic_delay / CAL_NS_MS),
+		     conf);
+		pthread_mutex_lock(&s->status_mutex);
+		s->cal_locked = false;
+		pthread_mutex_unlock(&s->status_mutex);
+		s->cal_count = 0;
+		set_cal_state(s, LS_CAL_RELOCK);
+		return;
+	}
+
+	/* Accumulate confident readings; require agreement before acting. */
+	int n = s->cal_count < 5 ? s->cal_count : 5;
+	if (n == 5)
+		memmove(&s->cal_hist[0], &s->cal_hist[1], sizeof(int64_t) * 4);
+	s->cal_hist[n < 5 ? n : 4] = mic_delay;
+	if (s->cal_count < 5)
+		s->cal_count++;
+
+	if (s->cal_count < 3) {
+		set_cal_state(s, s->cal_locked_mic_ns ? LS_CAL_RELOCK
+						      : LS_CAL_MEASURING);
+		blog(LOG_INFO,
+		     "[lenslink] auto lip-sync: mic ~%d ms (conf %.2f), "
+		     "collecting %d/3…",
+		     (int)(mic_delay / CAL_NS_MS), conf, s->cal_count);
+		return;
+	}
+
+	int64_t sorted[5];
+	memcpy(sorted, s->cal_hist, sizeof(int64_t) * (size_t)s->cal_count);
+	qsort(sorted, (size_t)s->cal_count, sizeof(int64_t), cmp_i64);
+	int64_t median = sorted[s->cal_count / 2];
+	int64_t spread = sorted[s->cal_count - 1] - sorted[0];
+
+	if (spread > 40 * CAL_NS_MS) {
+		blog(LOG_INFO,
+		     "[lenslink] auto lip-sync: readings unstable "
+		     "(spread %d ms) — holding",
+		     (int)(spread / CAL_NS_MS));
+		return;
+	}
+
+	/* Agreed readings: latch the mic figure. From here the offset tracks
+	 * the video latency without needing the correlation — including
+	 * across reconnects, where the latency changes but the audio gear
+	 * doesn't, so the right offset applies immediately instead of after
+	 * another 15 s of talking. */
+	pthread_mutex_lock(&s->status_mutex);
+	s->cal_locked = true;
+	s->cal_locked_mic_ns = median;
+	pthread_mutex_unlock(&s->status_mutex);
+	s->cal_verified_ns = now;
+	set_cal_state(s, LS_CAL_LOCKED);
+
+	blog(LOG_INFO,
+	     "[lenslink] auto lip-sync: locked mic latency at %d ms "
+	     "(conf %.2f) — tracking video latency from here",
+	     (int)(median / CAL_NS_MS), conf);
+
+	apply_calibrated_offset(s, video_latency_ns, median, name, video_delay,
+				applied, false, conf);
 }
 
 /*
@@ -912,6 +1047,18 @@ static void lipsync_reference_absent(struct ios_camera_source *s)
 
 	bool cleared = s->sync_offset_owned;
 	set_video_delay(s, 0);
+
+	/* Drop the lock with it: no reference means no way to confirm the
+	 * latched figure, and the offset it produced is being cleared here
+	 * anyway. (If a future protocol command lets the plugin stop the
+	 * reference on purpose after locking, this path has to learn the
+	 * difference between "off" and "no longer needed".) */
+	pthread_mutex_lock(&s->status_mutex);
+	s->cal_locked = false;
+	s->cal_locked_mic_ns = 0;
+	s->cal_state = LS_CAL_OFF;
+	pthread_mutex_unlock(&s->status_mutex);
+	s->cal_count = 0;
 
 	if (applied != 0 && name[0]) {
 		obs_source_t *audio = obs_get_source_by_name(name);
@@ -987,6 +1134,68 @@ static void send_control_cmd(struct client_state *c, const char *json)
 	obsc_build_header(hdr, OBSC_PKT_CONTROL, 0, 0, (uint32_t)len);
 	client_send(c, hdr, OBSC_HEADER_SIZE);
 	client_send(c, json, len);
+}
+
+/* Wire names for the calibration states (docs/PROTOCOL.md, UI_DESIGN.md). */
+static const char *cal_state_name(enum lipsync_cal_state state)
+{
+	switch (state) {
+	case LS_CAL_MEASURING:
+		return "measuring";
+	case LS_CAL_LOCKED:
+		return "locked";
+	case LS_CAL_RELOCK:
+		return "relocking";
+	case LS_CAL_OFF:
+	default:
+		return "off";
+	}
+}
+
+/* Same vocabulary, for the web panel's readout. */
+const char *ios_camera_sync_state(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	enum lipsync_cal_state state = s->cal_state;
+	pthread_mutex_unlock(&s->status_mutex);
+	return cal_state_name(state);
+}
+
+/*
+ * Tally: tells the phone whether it's on program ("live"), merely visible
+ * somewhere ("preview"), or neither — plus how lip-sync calibration is
+ * getting on, which the app shows in the same corner.
+ *
+ * Sent only on change, so a phone sitting in one scene costs nothing, and
+ * re-announced on every new connection because the device can't be assumed
+ * to remember. Camera-only in practice: the screen-mirror extension has no
+ * UI and ignores it, like any command it doesn't recognise.
+ */
+static void tally_tick(struct ios_camera_source *s, struct client_state *c)
+{
+	bool program = s->active;
+	bool preview = s->showing && !program;
+
+	pthread_mutex_lock(&s->status_mutex);
+	int sync = (int)s->cal_state;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	if (c->tally_valid && c->tally_program == program &&
+	    c->tally_preview == preview && c->tally_sync == sync)
+		return;
+
+	c->tally_valid = true;
+	c->tally_program = program;
+	c->tally_preview = preview;
+	c->tally_sync = sync;
+
+	char json[160];
+	snprintf(json, sizeof(json),
+		 "{\"cmd\":\"tally\",\"program\":%s,\"preview\":%s,"
+		 "\"sync\":\"%s\"}",
+		 program ? "true" : "false", preview ? "true" : "false",
+		 cal_state_name((enum lipsync_cal_state)sync));
+	send_control_cmd(c, json);
 }
 
 /* Asks the device to emit a fresh keyframe immediately. The screen
@@ -2052,6 +2261,7 @@ static void dial_loop(struct ios_camera_source *s)
 				client_flush(&client);
 			latency_tick(s, &client);
 			control_tick(s, &client);
+			tally_tick(s, &client);
 			diag_tick(s, &client);
 			stats_tick(s, &client);
 			if (client.out.failed)
@@ -2123,6 +2333,20 @@ static void ios_camera_hide(void *data)
 {
 	struct ios_camera_source *s = data;
 	s->showing = false;
+}
+
+/* Program tally: OBS calls these when the source starts/stops being part
+ * of what's actually going out. Same contract as show/hide — record only. */
+static void ios_camera_activate(void *data)
+{
+	struct ios_camera_source *s = data;
+	s->active = true;
+}
+
+static void ios_camera_deactivate(void *data)
+{
+	struct ios_camera_source *s = data;
+	s->active = false;
 }
 
 static const char *ios_camera_get_name(void *unused)
@@ -2231,6 +2455,13 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 			lipsync_reset(s->lipsync);
 		pthread_mutex_unlock(&s->lipsync_mutex);
 		s->cal_count = 0;
+		/* A different audio source is different gear: the latched mic
+		 * latency describes the old one and must not carry over. */
+		pthread_mutex_lock(&s->status_mutex);
+		s->cal_locked = false;
+		s->cal_locked_mic_ns = 0;
+		s->cal_state = LS_CAL_MEASURING;
+		pthread_mutex_unlock(&s->status_mutex);
 	} else if (!want_hook && was_hooked) {
 		unhook_audio(s);
 	}
@@ -2634,9 +2865,16 @@ static uint32_t ios_camera_get_height(void *data)
 	return s->frame_height;
 }
 
-/* The NV12/I420 draw effect, shared by every source (graphics thread). */
+/* The NV12/I420 draw effect, shared by every source (graphics thread).
+ * The parameter handles are resolved once with it: gs_effect_get_param_by_name
+ * is a by-name lookup, and video_render runs per source per rendered frame on
+ * the graphics thread — the one thread the whole compositor waits on. Handles
+ * stay valid as long as the effect, which lives until module unload. */
 static gs_effect_t *g_yuv_effect = NULL;
 static bool g_yuv_effect_tried = false;
+static gs_eparam_t *g_yuv_y = NULL;
+static gs_eparam_t *g_yuv_uv = NULL;
+static gs_eparam_t *g_yuv_v = NULL;
 
 static gs_effect_t *yuv_effect(void)
 {
@@ -2651,6 +2889,14 @@ static gs_effect_t *yuv_effect(void)
 			blog(LOG_ERROR,
 			     "[lenslink] gpu pipeline: nv12.effect missing — "
 			     "YUV frames cannot be drawn");
+		else {
+			g_yuv_y = gs_effect_get_param_by_name(g_yuv_effect,
+							      "y_tex");
+			g_yuv_uv = gs_effect_get_param_by_name(g_yuv_effect,
+							       "uv_tex");
+			g_yuv_v = gs_effect_get_param_by_name(g_yuv_effect,
+							      "v_tex");
+		}
 	}
 	return g_yuv_effect;
 }
@@ -2807,8 +3053,17 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 
 	if (s->gpu_map.rgba) {
 		gs_effect_t *eff = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-		gs_eparam_t *image = gs_effect_get_param_by_name(eff, "image");
-		gs_effect_set_texture(image, s->gpu_map.tex[0]);
+		/* OBS owns the base effect; cache its "image" handle against
+		 * the effect we resolved it from, so a different (or reloaded)
+		 * base effect re-resolves instead of reusing a stale handle. */
+		static gs_effect_t *cached_base = NULL;
+		static gs_eparam_t *cached_image = NULL;
+		if (eff != cached_base) {
+			cached_base = eff;
+			cached_image =
+				gs_effect_get_param_by_name(eff, "image");
+		}
+		gs_effect_set_texture(cached_image, s->gpu_map.tex[0]);
 		while (gs_effect_loop(eff, "Draw"))
 			gs_draw_sprite(s->gpu_map.tex[0], 0, s->gpu_map.width,
 				       s->gpu_map.height);
@@ -2817,17 +3072,10 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 		if (eff) {
 			bool i420 = !s->gpu_mapped &&
 				    s->cpu_tex_fmt != AV_PIX_FMT_NV12;
-			gs_effect_set_texture(
-				gs_effect_get_param_by_name(eff, "y_tex"),
-				s->gpu_map.tex[0]);
-			gs_effect_set_texture(
-				gs_effect_get_param_by_name(eff, "uv_tex"),
-				s->gpu_map.tex[1]);
+			gs_effect_set_texture(g_yuv_y, s->gpu_map.tex[0]);
+			gs_effect_set_texture(g_yuv_uv, s->gpu_map.tex[1]);
 			if (i420)
-				gs_effect_set_texture(
-					gs_effect_get_param_by_name(eff,
-								    "v_tex"),
-					s->cpu_tex[2]);
+				gs_effect_set_texture(g_yuv_v, s->cpu_tex[2]);
 			while (gs_effect_loop(eff, i420 ? "DrawI420" : "Draw"))
 				gs_draw_sprite(s->gpu_map.tex[0], 0,
 					       s->gpu_map.width,
@@ -2889,6 +3137,8 @@ struct obs_source_info ios_camera_source_info = {
 	.get_properties = ios_camera_get_properties,
 	.show = ios_camera_show,
 	.hide = ios_camera_hide,
+	.activate = ios_camera_activate,
+	.deactivate = ios_camera_deactivate,
 	.icon_type = OBS_ICON_TYPE_CAMERA,
 };
 
@@ -2905,5 +3155,7 @@ struct obs_source_info lenslink_screen_source_info = {
 	.get_properties = lenslink_screen_get_properties,
 	.show = ios_camera_show,
 	.hide = ios_camera_hide,
+	.activate = ios_camera_activate,
+	.deactivate = ios_camera_deactivate,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

@@ -71,6 +71,48 @@ The status **word and colour are defined once** (`Streamer.Status.displayName`
 / `.tint` in the app) and reused by every view; the web panel maps the
 plugin's status string to the same palette.
 
+### Tally (on air)
+
+| State   | Token          | Hex       | Treatment |
+|---------|----------------|-----------|-----------|
+| Live    | `tallyLive`    | `#FF3B30` | 6 pt border around the whole Live screen |
+| Preview | `tallyPreview` | `#FF9F0A` | 4 pt border (same as `connectAmber`) |
+| Neither | —              | —         | No border drawn |
+
+The tally answers one question — *am I on air?* — and must never be
+ambiguous, so it is **its own indicator**, not a mode of the status dot,
+and it carries no other meaning. It's a border rather than a dot because
+it has to read at arm's length from a phone mounted behind a monitor, and
+it draws **above the dim overlay**: the screen dims after ten seconds
+exactly when the operator is furthest away. An unlit tally is as
+meaningful as a lit one, so "not on air" draws nothing at all rather than
+a grey border that could be mistaken for a dark red one.
+
+`tallyLive` is deliberately separate from `errorRed` despite both being
+red today: on air is not an error, and the two must stay independently
+adjustable. Preview reuses `connectAmber` — it means the same thing the
+amber statuses do, "linked, not yet live".
+
+### Lip-sync calibration (dot + label)
+
+| State      | Token          | Hex       | Label            |
+|------------|----------------|-----------|------------------|
+| Off        | —              | —         | *(nothing shown)* |
+| Measuring  | `accent`       | `#3D7BFF` | "Measuring sync" |
+| Locked     | `liveGreen`    | `#30D158` | "Sync locked"    |
+| Relocking  | `connectAmber` | `#FF9F0A` | "Recalibrating"  |
+
+Shown on the Live screen beside the status pill, and in the web panel's
+header as a second pill. Blue reads as *working on it*, green as *done*,
+amber as *attention, transitional* — the same reading those colours carry
+elsewhere in the product. Nothing is drawn when auto-calibrate isn't
+running, so setups that don't use it never see a readout they'd have to
+learn to ignore.
+
+The plugin owns these states (`lipsync-cal.h`) and pushes them to the app
+in the `tally` command's `sync` field; the web panel reads the same value
+from `/api/status`.
+
 ### Surfaces (dark / over-video)
 | Token          | Value                                   | Use |
 |----------------|-----------------------------------------|-----|

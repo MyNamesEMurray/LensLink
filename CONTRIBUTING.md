@@ -36,7 +36,9 @@ surfaces follow).
 Merging to `main` releases automatically when `obs-plugin/` or `ios-app/`
 changed: a patch bump by default, or the bump named by a
 `Release-Bump: minor` / `Release-Bump: major` trailer line in a commit of
-the PR (`Release-Skip: true` suppresses it). Details in
+the PR (`Release-Skip: true` suppresses it). `Release-Beta: true` publishes
+it as a pre-release instead — same builds, still uploaded to TestFlight,
+but not marked "Latest" on GitHub. Details in
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#releases).
 
 ## Bugs and ideas

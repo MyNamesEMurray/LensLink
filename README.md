@@ -229,6 +229,13 @@ exact offset and correct it. If your mic is *slower* than the video (some
 USB audio interfaces are), enable **Auto video delay** and it delays the
 video to match instead.
 
+It settles after about fifteen seconds of talking and then locks on. From
+there your microphone's own delay is a known quantity, so the correction
+keeps following the camera's latency by itself — through silence, and
+straight after a reconnect — instead of waiting for you to speak again. It
+re-checks periodically and recalibrates on its own if you change audio gear
+mid-stream.
+
 Prefer a fixed correction? Leave **Auto-calibrate** off and the delay
 checkbox alone shifts your mic by the measured camera latency; if your
 audio device adds its own delay, enter it under **Audio device's own

@@ -9,8 +9,17 @@ name: Auto Release
 #   Release-Bump: major   -> major (v0.3.0 -> v1.0.0)
 #   (none)                -> patch (v0.3.0 -> v0.3.1)
 #   Release-Skip: true    -> no release
+#   Release-Beta: true    -> pre-release (v0.3.0 -> v0.3.1-beta.1)
 # A trailer must be its own line, so merely *writing about* the keywords in
 # prose can never trigger a bump (that mistake shipped v1.0.0 once).
+#
+# Release-Beta publishes the same builds, from the same code, and still
+# uploads to TestFlight — TestFlight is the beta channel either way. What
+# changes is the GitHub release: it's flagged "Pre-release", so it never
+# becomes Latest and the README's version badge keeps pointing at the last
+# stable build. The tag gains a -beta.N suffix, counting up within the
+# version it is a beta *of*, so v0.3.1-beta.1, -beta.2, … all lead up to
+# the eventual stable v0.3.1 (merge without the trailer to cut it).
 on:
   push:
     branches: ["main"]
@@ -36,6 +45,7 @@ jobs:
     outputs:
       tag: ${{ steps.bump.outputs.tag }}
       ios: ${{ steps.bump.outputs.ios }}
+      prerelease: ${{ steps.bump.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -50,7 +60,13 @@ jobs:
           # Refresh tags at the last moment: a queued run's checkout can
           # predate the previous run's tag push.
           git fetch origin --tags --quiet
-          latest=$(git tag --list 'v*' --sort=-v:refname | head -1)
+          # Only *stable* tags seed the next number. Git's version sort puts
+          # a pre-release above the version it precedes (v1.9.0-beta.2 sorts
+          # top), and the patch field would then read "0-beta.2", which
+          # $(( )) rejects outright — so an unfiltered list doesn't just pick
+          # the wrong base, it fails the next stable release entirely.
+          latest=$(git tag --list 'v*' --sort=-v:refname \
+                   | grep -xE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           latest=${latest:-v0.1.0}
           version=${latest#v}
           IFS=. read -r major minor patch <<< "$version"
@@ -91,7 +107,23 @@ jobs:
           fi
 
           tag="v$major.$minor.$patch"
-          echo "Releasing $tag (previous: $latest)"
+
+          # Beta: same version, suffixed, counting up within it. Probing for
+          # the first free suffix (rather than counting existing ones) keeps
+          # numbering right even if a beta tag was deleted by hand.
+          if grep -qiE '^Release-Beta:[[:space:]]*true[[:space:]]*$' <<< "$messages"; then
+            n=1
+            while git rev-parse -q --verify "refs/tags/$tag-beta.$n" >/dev/null; do
+              n=$((n + 1))
+            done
+            tag="$tag-beta.$n"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "Releasing $tag as a pre-release (previous stable: $latest)"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "Releasing $tag (previous: $latest)"
+          fi
+
           git tag "$tag"
           git push origin "$tag"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
@@ -103,6 +135,7 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       tag_name: ${{ needs.version.outputs.tag }}
+      prerelease: ${{ needs.version.outputs.prerelease == 'true' }}
     permissions:
       contents: write
 
@@ -115,9 +148,16 @@ jobs:
   # byte-identical app (MARKETING_VERSION is static; only the injected
   # build number changes) — burning a macOS runner, an App Store Connect
   # build number, and a tester update notification for nothing.
+  # Betas upload here too — TestFlight *is* the beta channel, so a
+  # pre-release that skipped it would defeat the point. The tag is passed
+  # explicitly because the "What to Test" lookup otherwise falls back to
+  # /releases/latest, which by definition never returns a pre-release and
+  # would quietly hand testers the previous stable release's notes.
   testflight:
     name: TestFlight
     needs: [version, release]
     if: needs.version.outputs.tag != '' && needs.version.outputs.ios == 'true'
     uses: ./.github/workflows/testflight.yml
+    with:
+      tag: ${{ needs.version.outputs.tag }}
     secrets: inherit

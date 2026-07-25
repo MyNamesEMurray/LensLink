@@ -43,6 +43,11 @@ should add as close to zero as possible.
 - Idle standby listener costs nothing measurable: no timers, no camera —
   just an accepting socket and 1 Hz timesync replies while OBS is
   connected.
+- The health overlay's `@Published` sample is only written while the
+  overlay is on screen (off by default). A 1 Hz publish on the main actor
+  invalidates the whole Live view once a second, which is exactly the
+  wakeup "dimmed = GPU idle" is trying to avoid; the counters advance
+  regardless, so switching it on still reads correctly a second later.
 
 **OBS plugin**
 - The receive buffer is parsed **in place**; video packets go to
@@ -57,6 +62,27 @@ should add as close to zero as possible.
   timesync (1 Hz), control forwarding, and diagnostics all piggyback on
   that loop — no extra threads or timers.
 - The web panel is a 1 Hz poll of two tiny JSON endpoints on loopback.
+- Lip-sync cross-correlation runs **on the dial-loop thread**, so its cost
+  is a hole in the video receive path, not spare CPU. Two things keep it
+  small (`lipsync.c`): the mic window's energy comes from a prefix sum
+  (successive lags overlap almost completely — recomputing it per lag was
+  a second pass over the whole window), and the dot product uses four
+  independent accumulators, because one `double` accumulator serializes
+  the loop on FP-add latency regardless of how little else it does.
+  Together: 1.51 ms → 0.90 ms per estimate, bit-identical results.
+- It also runs **far less often**. What it measures — the mic's latency —
+  is a property of the audio gear, while the number that actually moves
+  is the video latency timesync already tracks for free. So the mic
+  figure is latched once confident and the offset is re-derived from
+  latency alone; the correlation returns only every 90 s to confirm the
+  latched figure still holds (`lipsync-cal.h`). Over a quiet ten-minute
+  stretch that is 6 correlations instead of 120 — and, more importantly,
+  120 offset updates instead of none, since tracking no longer waits on
+  someone talking.
+- Effect parameter handles are resolved **once**, with the effect, not per
+  render (`yuv_effect()`). `video_render` runs per source per rendered
+  frame on the graphics thread — the thread the whole compositor waits
+  on — and `gs_effect_get_param_by_name` is a by-name lookup.
 
 ## How to measure (before optimizing further)
 

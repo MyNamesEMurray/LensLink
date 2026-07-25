@@ -3,6 +3,16 @@ import AVFoundation
 import Combine
 import SwiftUI
 
+/// Defaults keys shared between the streamer and the views. Kept out of
+/// `Streamer` (which is `@MainActor`) so a `@AppStorage` property
+/// initializer can reference them without an isolation hop.
+enum StreamerDefaults {
+    /// Whether the Live screen shows the health pill. StreamingView owns it
+    /// via `@AppStorage`; the streamer reads it to decide whether sampling
+    /// health is worth waking SwiftUI for.
+    static let showHealth = "showStreamHealth"
+}
+
 /// Glues camera → encoder → network together and exposes state for SwiftUI.
 @MainActor
 final class Streamer: ObservableObject {
@@ -426,6 +436,31 @@ final class Streamer: ObservableObject {
     @Published private(set) var isStreaming = false
     @Published var cameraPermissionDenied = false
 
+    /// Tally: what OBS is doing with this camera right now. `live` means it
+    /// is part of the program — what the audience sees. `preview` means it
+    /// is visible somewhere (preview, a projector) but not on air.
+    enum Tally: String {
+        case off
+        case preview
+        case live
+    }
+
+    /// Lip-sync auto-calibration progress, as reported by the plugin. The
+    /// plugin measures the microphone's latency, locks it in, and then
+    /// tracks the camera latency on its own — these are the stages of that
+    /// (see docs/UI_DESIGN.md for the vocabulary and colours).
+    enum SyncState: String {
+        case off
+        case measuring
+        case locked
+        case relocking
+    }
+
+    /// Pushed by the plugin on change only, so these cost nothing while
+    /// they're steady.
+    @Published private(set) var tally: Tally = .off
+    @Published private(set) var syncState: SyncState = .off
+
     /// Per-second stream health for the Live screen's optional overlay.
     /// Sampled by the adaptive-bitrate loop (already 1 Hz), so the overlay
     /// costs nothing beyond what's measured anyway.
@@ -435,6 +470,10 @@ final class Streamer: ObservableObject {
         var droppedFrames = 0
     }
 
+    /// Only published while the overlay is actually on screen. It's a 1 Hz
+    /// `@Published` write on the main actor, so publishing it unwatched
+    /// invalidates the whole Live view once a second for a value nothing
+    /// reads — including while dimmed, which is meant to be idle.
     @Published private(set) var health: StreamHealth?
     /// Counters are cumulative across connections; baseline them at each
     /// stream start so the overlay shows this stream's drops, not the
@@ -648,6 +687,16 @@ final class Streamer: ObservableObject {
             if remoteStartEnabled, isStreaming {
                 stop()
             }
+            return
+        case "tally":
+            // Handled before the isStreaming guard: the plugin announces
+            // tally on connect, which for a remote-start setup is while
+            // the app is still idle in standby.
+            let program = command["program"] as? Bool ?? false
+            let preview = command["preview"] as? Bool ?? false
+            tally = program ? .live : (preview ? .preview : .off)
+            syncState = (command["sync"] as? String)
+                .flatMap(SyncState.init(rawValue:)) ?? .off
             return
         default:
             break
@@ -885,19 +934,30 @@ final class Streamer: ObservableObject {
             var current = target
             var stableSeconds = 0
             var previousStats: StreamClient.Stats?
+            var healthWasVisible = false
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 guard let self, self.isStreaming else { break }
 
                 // Health overlay sample: per-second deltas of the send
-                // counters (the sleep above sets the 1 s window).
+                // counters (the sleep above sets the 1 s window). Skipped
+                // while the overlay is off — the counters keep advancing
+                // either way, so turning it on still reads correctly one
+                // second later.
                 let stats = self.client.statsSnapshot()
-                if let previous = previousStats {
+                let healthVisible = UserDefaults.standard.bool(
+                    forKey: StreamerDefaults.showHealth)
+                if healthVisible, let previous = previousStats {
                     self.health = StreamHealth(
                         fps: max(0, stats.framesSent - previous.framesSent),
                         megabitsPerSecond: Double(max(0, stats.bytesSent - previous.bytesSent)) * 8 / 1_000_000,
                         droppedFrames: max(0, stats.framesDropped - self.healthDroppedBaseline))
+                } else if healthWasVisible {
+                    // Cleared once on hide, so re-enabling can't flash the
+                    // reading from whenever it was last switched off.
+                    self.health = nil
                 }
+                healthWasVisible = healthVisible
                 previousStats = stats
 
                 let effectiveTarget = max(
@@ -939,6 +999,8 @@ final class Streamer: ObservableObject {
         adaptiveTask?.cancel()
         adaptiveTask = nil
         health = nil
+        tally = .off
+        syncState = .off
         if flashlightOn {
             flashlightOn = false
         }
@@ -963,6 +1025,14 @@ final class Streamer: ObservableObject {
 
     private func handleClientState(_ state: StreamClient.State) {
         lastClientState = state
+        // Tally is only ever as true as the connection carrying it. A
+        // "live" light left burning after OBS went away is worse than no
+        // light at all, so any state but `connected` clears it; the plugin
+        // re-announces on the next connection.
+        if case .connected = state {} else {
+            tally = .off
+            syncState = .off
+        }
         guard isStreaming else {
             handleStandbyClientState(state)
             return
