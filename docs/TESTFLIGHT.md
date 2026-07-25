@@ -47,6 +47,20 @@ yourself (internal testing group) and it lands on your phone via the
 TestFlight app immediately — external tester groups need a one-time beta
 review by Apple.
 
+## Build numbers come from App Store Connect
+
+Each upload's build number is **the highest build ASC has ever seen for
+the app, plus one** (`testflight_next_build.py`), regardless of version
+or state — expired builds included, since ASC's uniqueness rule spans
+them all. It used to be derived from `GITHUB_RUN_NUMBER`, which is a
+*per-workflow* counter: an upload dispatched by hand and one called from
+auto-release counted in two unrelated sequences, and the first manual
+dispatch shipped build 1011 into a history already at 1039 — a build
+TestFlight then never offered to testers, because auto-update follows
+the highest number. If ASC can't be queried, the workflow falls back to
+epoch seconds: unreadable, but strictly increasing, so a degraded run
+can never repeat that mistake.
+
 ## "What to Test" fills itself in
 
 After each upload, the workflow waits for App Store Connect to finish

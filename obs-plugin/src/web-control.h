@@ -28,6 +28,9 @@ bool ios_camera_auto_start(struct ios_camera_source *s);
 /* Lip-sync calibration stage: "off", "measuring", "locked" or "relocking"
  * (docs/UI_DESIGN.md). Returns a static string — no ownership. */
 const char *ios_camera_sync_state(struct ios_camera_source *s);
+/* Requests a fresh lip-sync calibration (drops the locked mic figure).
+ * Safe from any thread; the dial loop performs the reset. */
+void ios_camera_recalibrate(struct ios_camera_source *s);
 void ios_camera_set_auto_start(struct ios_camera_source *s, bool on);
 
 /* One server, many sources. Camera sources register at create and

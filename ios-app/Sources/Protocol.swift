@@ -42,6 +42,12 @@ enum OBSCProtocol {
         /// ends of the pipeline appear together (the broadcast extension has
         /// no console of its own).
         case diag = 11
+        /// Plugin-directed request, app → plugin: UTF-8 JSON, one command
+        /// per packet — CONTROL's mirror image (e.g. "recalibrate"). The
+        /// plugin ignores commands it doesn't understand, so new ones stay
+        /// backwards-compatible; an old plugin logs an unknown-type warning
+        /// and carries on.
+        case request = 12
     }
 
     /// What a connection is streaming, sent in the HELLO / video config.

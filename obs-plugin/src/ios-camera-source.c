@@ -172,6 +172,19 @@ struct ios_camera_source {
 	uint64_t cal_verified_ns; /* last correlation run while locked */
 	enum lipsync_cal_state cal_state;
 
+	/* Recalibrate requested (app's sync pill via REQUEST, or the web
+	 * panel via /api/recalibrate). A flag rather than a direct reset:
+	 * requests arrive on the web/network threads, but the calibration
+	 * history is dial-loop territory, so the dial loop consumes it. */
+	volatile bool cal_reset_requested;
+
+	/* Reference-audio gating (stage 2): while locked, the phone is told
+	 * to stop capturing/streaming the lip-sync reference; it's asked back
+	 * on briefly for each periodic verification. Dial-loop thread only. */
+	bool verify_pending;         /* reference requested for a verify */
+	uint64_t verify_started_ns;  /* when it was requested */
+	uint64_t ref_pkts_at_verify; /* reference packets seen at request */
+
 	/* Remote-control commands queued for the device (JSON strings),
 	 * pushed by the web control thread, drained by the stream thread.
 	 * Guarded by status_mutex. */
@@ -563,6 +576,10 @@ struct client_state {
 	bool tally_program;
 	bool tally_preview;
 	int tally_sync;
+	/* Last reference-gating command pushed (same per-connection
+	 * re-announce contract as tally). */
+	bool ref_valid;
+	bool ref_on;
 	uint64_t next_decoder_attempt; /* cooldown after create failure */
 	enum AVCodecID codec_id;
 	char name[128];
@@ -882,12 +899,15 @@ static void apply_calibrated_offset(struct ios_camera_source *s,
  *    agree) before latching the mic's latency.
  *  - Locked. The latched figure is a property of the audio gear, so the
  *    offset just tracks the video latency from here on — no correlation,
- *    and no dependence on the streamer making noise. The correlation
- *    re-runs only every CAL_VERIFY_INTERVAL_NS, purely to notice if the
- *    audio path changed underneath us (a re-plugged interface, a headset
- *    taking over) and re-measure if so.
+ *    and no dependence on the streamer making noise. Every
+ *    CAL_VERIFY_INTERVAL_NS the latched figure is re-confirmed, purely to
+ *    notice if the audio path changed underneath us (a re-plugged
+ *    interface, a headset taking over). Because the phone's reference is
+ *    stopped while locked (reference_tick), a verification first asks for
+ *    it back and waits for enough fresh overlap before correlating.
  */
 static void apply_auto_calibrated(struct ios_camera_source *s,
+				  struct client_state *c,
 				  int64_t video_latency_ns)
 {
 	char name[256];
@@ -911,8 +931,36 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 	if (locked) {
 		apply_calibrated_offset(s, video_latency_ns, locked_mic, name,
 					video_delay, applied, true, 0);
-		if (!lipsync_cal_due_for_verify(now, s->cal_verified_ns))
+
+		if (!s->verify_pending) {
+			if (!lipsync_cal_due_for_verify(now,
+							s->cal_verified_ns))
+				return;
+			/* Confirmation due. The reference has been off since
+			 * the lock, so request it (reference_tick sends the
+			 * command on this state change) and come back once
+			 * there's audio to correlate. */
+			s->verify_pending = true;
+			s->verify_started_ns = now;
+			s->ref_pkts_at_verify = c->ref_audio_packets;
 			return;
+		}
+
+		/* Verify in flight. Wait out the command round-trip plus a
+		 * ring's worth (~6 s) of fresh reference; if none arrives —
+		 * app toggle off, or an older app that ignores the command
+		 * but whose stream predates the request — give up quietly
+		 * and try again next interval. */
+		bool have_audio = c->ref_audio_packets > s->ref_pkts_at_verify;
+		if (now - s->verify_started_ns < 10000000000ULL)
+			return;
+		if (!have_audio) {
+			if (now - s->verify_started_ns > 30000000000ULL) {
+				s->verify_pending = false;
+				s->cal_verified_ns = now;
+			}
+			return;
+		}
 	}
 
 	/* Hold the mutex only for a snapshot: the correlation is ~1.8M
@@ -931,6 +979,7 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 	 * the next verification interval. */
 	if (!ok) {
 		if (locked) {
+			s->verify_pending = false;
 			s->cal_verified_ns = now;
 			return;
 		}
@@ -941,6 +990,7 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 	}
 	if (conf < CAL_MIN_CONFIDENCE) {
 		if (locked) {
+			s->verify_pending = false;
 			s->cal_verified_ns = now;
 			return;
 		}
@@ -953,6 +1003,7 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 	}
 
 	if (locked) {
+		s->verify_pending = false;
 		s->cal_verified_ns = now;
 		if (!lipsync_cal_reading_invalidates(mic_delay, locked_mic))
 			return; /* still the same audio path */
@@ -1161,6 +1212,43 @@ const char *ios_camera_sync_state(struct ios_camera_source *s)
 	return cal_state_name(state);
 }
 
+/* Web panel's Recalibrate button. Just raises the flag — the dial loop
+ * owns the calibration history and performs the actual reset. */
+void ios_camera_recalibrate(struct ios_camera_source *s)
+{
+	s->cal_reset_requested = true;
+}
+
+/* Consumes a recalibrate request (dial-loop thread): drop the lock and
+ * the correlation history so calibration starts from scratch, exactly as
+ * if the audio source had just been selected. tally_tick runs right after
+ * in the same loop pass, so the phone's pill flips without extra plumbing. */
+static void recal_tick(struct ios_camera_source *s)
+{
+	if (!s->cal_reset_requested)
+		return;
+	s->cal_reset_requested = false;
+
+	pthread_mutex_lock(&s->lipsync_mutex);
+	if (s->lipsync)
+		lipsync_reset(s->lipsync);
+	pthread_mutex_unlock(&s->lipsync_mutex);
+	s->cal_count = 0;
+	s->verify_pending = false;
+
+	pthread_mutex_lock(&s->status_mutex);
+	bool was_enabled = s->audio_sync && s->auto_calibrate;
+	s->cal_locked = false;
+	s->cal_locked_mic_ns = 0;
+	s->cal_state = was_enabled ? LS_CAL_MEASURING : LS_CAL_OFF;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	if (was_enabled)
+		blog(LOG_INFO,
+		     "[lenslink] auto lip-sync: recalibration requested — "
+		     "measuring afresh");
+}
+
 /*
  * Tally: tells the phone whether it's on program ("live"), merely visible
  * somewhere ("preview"), or neither — plus how lip-sync calibration is
@@ -1196,6 +1284,42 @@ static void tally_tick(struct ios_camera_source *s, struct client_state *c)
 		 program ? "true" : "false", preview ? "true" : "false",
 		 cal_state_name((enum lipsync_cal_state)sync));
 	send_control_cmd(c, json);
+}
+
+/*
+ * Reference-audio gating. The lip-sync reference costs the phone a live
+ * mic capture (with iOS's orange indicator) and ~256 kbit/s for as long
+ * as it runs — but once the mic latency is locked, the correlation has
+ * nothing left to learn from it. So the phone is told to stop it while
+ * locked, and asked for it back while measuring/relocking and for the
+ * duration of each periodic verification.
+ *
+ * Sent on change only, re-announced per connection (same contract as
+ * tally). An older app ignores the command and keeps streaming — exactly
+ * the pre-gating behaviour — and an app whose reference toggle is off
+ * ignores "on", which the verify path treats as a quiet timeout.
+ */
+static void reference_tick(struct ios_camera_source *s,
+			   struct client_state *c)
+{
+	if (c->is_screen)
+		return;
+
+	pthread_mutex_lock(&s->status_mutex);
+	bool calibrating = s->audio_sync && s->auto_calibrate &&
+			   s->audio_source[0];
+	bool locked = s->cal_locked;
+	pthread_mutex_unlock(&s->status_mutex);
+
+	/* verify_pending is dial-loop state — same thread as this tick. */
+	bool want = calibrating && (!locked || s->verify_pending);
+
+	if (c->ref_valid && c->ref_on == want)
+		return;
+	c->ref_valid = true;
+	c->ref_on = want;
+	send_control_cmd(c, want ? "{\"cmd\":\"reference\",\"on\":true}"
+				 : "{\"cmd\":\"reference\",\"on\":false}");
 }
 
 /* Asks the device to emit a fresh keyframe immediately. The screen
@@ -1275,7 +1399,7 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 			/* Auto-calibrate measures the mic latency directly;
 			 * the manual path assumes a fixed device latency. */
 			if (auto_cal)
-				apply_auto_calibrated(s, avg);
+				apply_auto_calibrated(s, c, avg);
 			else
 				apply_audio_sync(s, avg);
 		}
@@ -1646,12 +1770,21 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		/* Reference-absent check: the mic role is fixed for the
 		 * stream's lifetime (the app starts capture with the
 		 * stream), so a few seconds of live video with no type-9
-		 * packet is conclusive, not just early. */
+		 * packet is conclusive, not just early. Two expected
+		 * absences don't count: a locked source told the phone to
+		 * stop the reference itself, and a connection we've asked
+		 * to keep it off. Only an absence we *didn't* ask for means
+		 * the app's toggle is off. */
 		if (!c->ref_absent_handled && !c->is_screen &&
 		    c->ref_audio_packets == 0 && c->first_frame_ns &&
 		    os_gettime_ns() - c->first_frame_ns > 5000000000ULL) {
 			c->ref_absent_handled = true;
-			lipsync_reference_absent(s);
+			pthread_mutex_lock(&s->status_mutex);
+			bool locked = s->cal_locked;
+			pthread_mutex_unlock(&s->status_mutex);
+			bool asked_off = c->ref_valid && !c->ref_on;
+			if (!locked && !asked_off)
+				lipsync_reference_absent(s);
 		}
 		bool keyframe = (hdr->flags & OBSC_FLAG_KEYFRAME) != 0;
 		if (keyframe)
@@ -1895,6 +2028,20 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			     (const char *)payload);
 		}
 		break;
+	case OBSC_PKT_REQUEST: {
+		/* One JSON command, CONTROL's mirror image. The command set is
+		 * tiny and flat, so a substring probe on a bounded copy stands
+		 * in for a JSON parser the plugin otherwise doesn't need (and
+		 * memmem isn't portable to Windows); unknown commands fall
+		 * through silently, keeping new ones compatible. */
+		char req[257];
+		size_t len = hdr->payload_size < 256 ? hdr->payload_size : 256;
+		memcpy(req, payload, len);
+		req[len] = '\0';
+		if (strstr(req, "\"recalibrate\""))
+			s->cal_reset_requested = true;
+		break;
+	}
 	default:
 		blog(LOG_WARNING, "[lenslink] unknown packet type %d",
 		     hdr->type);
@@ -2259,9 +2406,11 @@ static void dial_loop(struct ios_camera_source *s)
 				break;
 			if (client.out.len > 0)
 				client_flush(&client);
+			recal_tick(s);
 			latency_tick(s, &client);
 			control_tick(s, &client);
 			tally_tick(s, &client);
+			reference_tick(s, &client);
 			diag_tick(s, &client);
 			stats_tick(s, &client);
 			if (client.out.failed)

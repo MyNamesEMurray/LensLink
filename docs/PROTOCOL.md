@@ -138,6 +138,24 @@ whenever the connection drops, so a stale "live" can't outlive the OBS
 that set it. Screen-mirror connections receive it too and ignore it: the
 broadcast extension has no UI.
 
+`reference` gates the lip-sync reference (packet type 9):
+
+```json
+{ "cmd": "reference", "on": false }
+```
+
+The reference costs the phone a live mic capture and ~256 kbit/s for as
+long as it runs, but once the plugin's calibration has locked the mic
+latency it has nothing left to learn — so the plugin sends `on: false`
+after locking, and `on: true` while measuring/relocking and briefly
+around each periodic re-verification. Same on-change + re-announce
+contract as `tally`. The app only ever honours it *within* the user's own
+settings: `on: true` never starts a capture whose **Auto lip-sync
+reference** toggle is off, and `on: false` never touches a mic capture
+serving as source audio (type 10). An older app ignores the command and
+streams continuously, which the plugin handles fine; a plugin that never
+sends it gets today's always-on behaviour.
+
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
 
@@ -218,6 +236,20 @@ connection state). The plugin echoes it into the OBS log (prefixed
 `[lenslink][phone]`) when the source's **Verbose diagnostics** option is on,
 so both ends of the pipeline appear together — the broadcast extension has
 no console of its own. Purely informational; a receiver may ignore it.
+
+### 12 — REQUEST (app → plugin)
+CONTROL's mirror image: one UTF-8 JSON command per packet, directed at
+the plugin itself rather than the camera. Commands:
+
+```json
+{ "cmd": "recalibrate" }
+```
+
+`recalibrate` asks the plugin to discard its locked lip-sync mic latency
+and measure afresh (the app's sync pill tap; the web panel does the same
+thing via `POST /api/recalibrate`, no packet involved). Unknown commands
+are ignored, so new ones stay compatible; a plugin older than this type
+logs an unknown-type warning and carries on.
 
 ## Discovery (Bonjour)
 
