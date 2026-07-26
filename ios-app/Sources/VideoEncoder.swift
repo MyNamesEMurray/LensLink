@@ -14,9 +14,8 @@ enum VideoCodec: String, CaseIterable, Identifiable {
     }
 }
 
-/// The stream's colour pipeline. Apple Log will slot in as another case
-/// (capture colorSpace .appleLog, iOS 17+); everything downstream switches
-/// on this rather than on booleans.
+/// The stream's colour pipeline; everything downstream switches on this
+/// rather than on booleans.
 ///
 /// Lives here (not CameraManager.swift) because the broadcast extension
 /// compiles VideoEncoder.swift and StreamClient.swift — both of which
@@ -24,6 +23,11 @@ enum VideoCodec: String, CaseIterable, Identifiable {
 enum StreamColor: String {
     case sdr   // 8-bit 420v, BT.709 — every stream before 1.9
     case hlg   // 10-bit x420, BT.2020 + HLG, HEVC Main10 only
+    /// Apple Log 1 (capture colorSpace .appleLog, iOS 17+): 10-bit x422
+    /// capture, BT.2020 primaries, log-encoded transfer, HEVC Main10
+    /// only. Apple Log 2 (`.appleLog2`, Apple-Gamut primaries) is
+    /// deliberately NOT this case — it is reserved for a future "log2".
+    case log
 }
 
 /// Hardware video encoder (VideoToolbox). Emits Annex B access units;
@@ -150,6 +154,20 @@ final class VideoEncoder {
                                  value: kCVImageBufferTransferFunction_ITU_R_2100_HLG)
             VTSessionSetProperty(session, key: kVTCompressionPropertyKey_YCbCrMatrix,
                                  value: kCVImageBufferYCbCrMatrix_ITU_R_2020)
+        case .log:
+            // Streamer never pairs Apple Log with H.264 (its didSets
+            // force HEVC and `activeColor` requires `hdrSupported`).
+            assert(codec == .hevc, "Apple Log requires HEVC Main10")
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ProfileLevel,
+                                 value: kVTProfileLevel_HEVC_Main10_AutoLevel)
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ColorPrimaries,
+                                 value: kCVImageBufferColorPrimaries_ITU_R_2020)
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_YCbCrMatrix,
+                                 value: kCVImageBufferYCbCrMatrix_ITU_R_2020)
+            // DELIBERATELY no TransferFunction: Apple Log has no
+            // VUI/CoreVideo transfer constant, so leaving it unset makes
+            // the bitstream's VUI say transfer_characteristics =
+            // unspecified (2) — the only correct value for Apple Log.
         }
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering,
                              value: kCFBooleanFalse)

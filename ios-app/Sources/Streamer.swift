@@ -154,27 +154,30 @@ final class Streamer: ObservableObject {
     @Published var codec: VideoCodec {
         didSet {
             UserDefaults.standard.set(codec.rawValue, forKey: "videoCodec")
-            // HDR is 10-bit HEVC Main10 only; switching to H.264
-            // switches it off (mirrors the mic toggles' exclusivity).
-            if codec == .h264 && hdrEnabled {
-                hdrEnabled = false
+            // HLG and Apple Log are 10-bit HEVC Main10 only; switching
+            // to H.264 resets the colour to Standard (mirrors the mic
+            // toggles' exclusivity).
+            if codec == .h264 && colorSetting != .sdr {
+                colorSetting = .sdr
             }
         }
     }
-    /// Stream 10-bit HLG (HDR) instead of 8-bit BT.709. HEVC only —
-    /// enabling it forces the codec — and it degrades to SDR (never a
-    /// dead stream) when the device or the current lens/format can't
-    /// capture HLG; see `activeColor`.
-    @Published var hdrEnabled: Bool {
+    /// The colour pipeline the user chose: Standard (8-bit BT.709),
+    /// HDR (10-bit HLG), or Apple Log (10-bit, iOS 17+). Non-Standard is
+    /// HEVC only — choosing it forces the codec — and it degrades to SDR
+    /// (never a dead stream) when the device or the current lens/format
+    /// can't capture it; see `activeColor`.
+    @Published var colorSetting: StreamColor {
         didSet {
-            UserDefaults.standard.set(hdrEnabled, forKey: "hdrEnabled")
-            if hdrEnabled && codec != .hevc {
+            UserDefaults.standard.set(colorSetting.rawValue,
+                                      forKey: "streamColor")
+            if colorSetting != .sdr && codec != .hevc {
                 codec = .hevc
             }
             // The capture pixel format and the encoder profile both
             // follow the colour, so a live stream rebuilds like a
             // format change.
-            if isStreaming && hdrEnabled != oldValue {
+            if isStreaming && colorSetting != oldValue {
                 reconfigureLiveCapture(formatChanged: true)
             }
         }
@@ -184,17 +187,22 @@ final class Streamer: ObservableObject {
     var activeColor: StreamColor { color(for: resolution, fps: fps) }
 
     /// `activeColor`'s degrade rule, parameterised so remote format
-    /// requests can be validated for a combo before it's applied: HDR
-    /// falls back to SDR — never to a black stream — when the encoder
-    /// can't do Main10 or the combo has no HLG capture format.
+    /// requests can be validated for a combo before it's applied: the
+    /// chosen colour falls back to SDR — never to a black stream, and
+    /// never sideways to the other 10-bit pipeline (a Log stream that
+    /// silently turned HLG would be graded wrong; predictable beats
+    /// clever) — when the encoder can't do Main10 or the combo has no
+    /// matching capture format. Below iOS 17 Apple Log has no capture
+    /// formats at all, so `.log` can never survive this check there.
     private func color(for resolution: CameraManager.Resolution,
                        fps: Int) -> StreamColor {
-        guard hdrEnabled, VideoEncoder.hdrSupported,
+        guard colorSetting != .sdr, VideoEncoder.hdrSupported,
               CameraManager.supports(resolution: resolution, fps: Int32(fps),
-                                     lens: selectedLens, color: .hlg) else {
+                                     lens: selectedLens,
+                                     color: colorSetting) else {
             return .sdr
         }
-        return .hlg
+        return colorSetting
     }
     /// "Dim screen to save battery": governs both the Live screen's 10 s
     /// dim and the Setup screen's standby dim. The name and stored key
@@ -406,16 +414,16 @@ final class Streamer: ObservableObject {
         // capture may have degraded HLG to SDR (see configure) — and the
         // settings' intent covers the idle case.
         let color = encoder?.color ?? activeColor
-        // While HLG is active the only valid codec is HEVC; advertising
-        // just it makes remote UIs refuse h264 switches through the
-        // existing set_format validation machinery.
+        // While HLG or Apple Log is active the only valid codec is HEVC;
+        // advertising just it makes remote UIs refuse h264 switches
+        // through the existing set_format validation machinery.
         let codecs: [String]
         switch color {
         case .sdr:
             codecs = VideoCodec.allCases
                 .filter { VideoEncoder.isSupported($0) }
                 .map { $0.rawValue }
-        case .hlg:
+        case .hlg, .log:
             codecs = [VideoCodec.hevc.rawValue]
         }
         var state: [String: Any] = [
@@ -451,10 +459,18 @@ final class Streamer: ObservableObject {
             "frameRates": frameRates,
             "codecs": codecs,
         ]
-        // Absent = SDR — remote UIs key off the key's absence, and an
+        // Absent = SDR — remote UIs key off the keys' absence, and an
         // SDR snapshot must look exactly as it did before HDR existed.
-        if color == .hlg {
+        // HLG keeps the original "hdr" flag byte-for-byte; Apple Log is
+        // announced as "color": "log" instead (and never "hdr" — a Log
+        // stream is scene-referred, not display HDR).
+        switch color {
+        case .sdr:
+            break
+        case .hlg:
             state["hdr"] = true
+        case .log:
+            state["color"] = StreamColor.log.rawValue
         }
         // Mic picker (docs/PROTOCOL.md §8): only while the phone mic is
         // live as the source's audio — remote UIs key their row off
@@ -474,9 +490,9 @@ final class Streamer: ObservableObject {
     private var capabilityCache: (key: String, resolutions: [String], frameRates: [Int])?
 
     private func formatCapabilities() -> ([String], [Int]) {
-        // The colour is part of the key: flipping the HDR toggle changes
-        // which combos are supported, and a stale list would let remote
-        // UIs offer combos the HLG pipeline can't capture.
+        // The colour is part of the key: changing the colour choice
+        // changes which combos are supported, and a stale list would let
+        // remote UIs offer combos the 10-bit pipelines can't capture.
         let color = activeColor
         let key = "\(selectedLens.id)|\(resolution.rawValue)|\(color.rawValue)"
         if let cached = capabilityCache, cached.key == key {
@@ -579,9 +595,10 @@ final class Streamer: ObservableObject {
 
     /// Keeps resolution/fps within what the selected lens supports.
     func clampCaptureSettings() {
-        // Colour-aware: if the current combo can't do HLG, activeColor
-        // has already degraded to .sdr and the checks match today's —
-        // clamping never changes resolution just to preserve HDR.
+        // Colour-aware: if the current combo can't capture the chosen
+        // colour, activeColor has already degraded to .sdr and the
+        // checks match today's — clamping never changes resolution just
+        // to preserve HDR or Log.
         let color = activeColor
         let supported = { (r: CameraManager.Resolution, f: Int) in
             CameraManager.supports(resolution: r, fps: Int32(f),
@@ -624,9 +641,21 @@ final class Streamer: ObservableObject {
         let storedCodec = VideoCodec(rawValue: defaults.string(forKey: "videoCodec") ?? "")
             ?? (VideoEncoder.isSupported(.hevc) ? .hevc : .h264)
         codec = storedCodec
+        // Colour choice, stored under "streamColor". One-time migration
+        // from the boolean-era "hdrEnabled" key: true → .hlg. The old
+        // key is read only while "streamColor" is absent and is never
+        // written again — the first colour didSet persists the new key,
+        // and "hdrEnabled" just goes stale.
+        let storedColor: StreamColor
+        if let raw = defaults.string(forKey: "streamColor"),
+           let parsed = StreamColor(rawValue: raw) {
+            storedColor = parsed
+        } else {
+            storedColor = defaults.bool(forKey: "hdrEnabled") ? .hlg : .sdr
+        }
         // didSet doesn't run during init; enforce the HEVC-only rule here
         // (stored defaults could disagree after an edit or migration).
-        hdrEnabled = defaults.bool(forKey: "hdrEnabled") && storedCodec == .hevc
+        colorSetting = storedCodec == .hevc ? storedColor : .sdr
         dimWhileStreaming = defaults.object(forKey: "dimWhileStreaming") as? Bool ?? true
         allowVideoEffects = defaults.bool(forKey: "allowVideoEffects")
         sendAudioReference = defaults.bool(forKey: "sendAudioReference")
@@ -911,10 +940,11 @@ final class Streamer: ObservableObject {
         if let raw = command["codec"] as? String {
             guard let parsed = VideoCodec(rawValue: raw),
                   VideoEncoder.isSupported(parsed) else { return }
-            // Double-guard: while HDR is on the advertised codec list is
-            // HEVC-only, but a stale remote UI could still ask — refuse
-            // rather than let the didSet chain silently drop HDR.
-            guard !(hdrEnabled && parsed != .hevc) else { return }
+            // Double-guard: while HLG or Apple Log is on the advertised
+            // codec list is HEVC-only, but a stale remote UI could still
+            // ask — refuse rather than let the didSet chain silently
+            // drop the colour choice.
+            guard !(colorSetting != .sdr && parsed != .hevc) else { return }
             newCodec = parsed
         }
         guard CameraManager.supports(resolution: newResolution,
