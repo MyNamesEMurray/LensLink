@@ -60,14 +60,21 @@ change mid-stream resets the decoder (the next keyframe re-initializes it).
 authoritative values come from the bitstream parameter sets.
 
 An optional `"color"` field names the stream's colour mode: `"hlg"`
-(10-bit HEVC, BT.2020 primaries, HLG transfer) today, with `"log"`
-(Apple Log) reserved for a future mode. Absent = 8-bit SDR BT.709, which
-every stream was before the field existed. Like dimensions, it is
-**informational** — the decoder takes the authoritative colour
-description from the bitstream's VUI, so a receiver that ignores the
-field still renders correctly; it exists so UIs can label the stream
-without decoding it. HDR streams are HEVC-only (the iPhone encoder has
-no 10-bit H.264) and camera-only (screen broadcast stays 8-bit).
+(10-bit HEVC, BT.2020 primaries, HLG transfer) or `"log"` (10-bit
+HEVC, **Apple Log 1**: BT.2020 primaries and matrix, Apple's log curve
+— the VUI carries transfer *unspecified*, because H.273 has no code
+point for Apple Log; the receiver shows the flat log image untouched
+for LUT grading). `"log2"` (Apple Log 2, which uses Apple-Gamut
+primaries, not BT.2020) is reserved and must not be sent as `"log"`.
+Absent = 8-bit SDR BT.709, which every stream was before the field
+existed. For `"hlg"` the field is **informational** — the decoder
+takes the authoritative colour description from the bitstream's VUI;
+for `"log"` it is the *only* label (an elementary stream cannot carry
+Apple Log identity), though a receiver that ignores it still renders
+the flat image correctly since the VUI's matrix/primaries are real and
+transfer-unspecified decodes as-is. 10-bit streams are HEVC-only (the
+iPhone encoder has no 10-bit H.264) and camera-only (screen broadcast
+stays 8-bit).
 
 ### 3 — VIDEO
 Payload: one H.264 or HEVC **access unit in Annex B format** (start-code
@@ -201,6 +208,13 @@ The snapshot also carries white-balance and manual-exposure state
 `supportsManualExposure` so UIs hide what the camera lacks) and the
 capture format (`resolution`/`fps`/`codec` with `resolutions`/
 `frameRates`/`codecs` capability lists for `set_format` pickers).
+
+While a 10-bit colour pipeline is active the snapshot says so —
+`"hdr": true` for HLG, `"color": "log"` for Apple Log — and the
+`codecs` list shrinks to `["hevc"]`, which is how remote UIs refuse
+H.264 through the ordinary `set_format` validation. Both fields are
+absent on SDR streams, whose snapshots are unchanged from before
+colour modes existed.
 
 While the phone mic streams as the source's audio (packet type 10), the
 snapshot additionally carries `micEnabled: true`, the selected `mic` id,
