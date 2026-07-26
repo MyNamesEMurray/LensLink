@@ -33,7 +33,7 @@ final class CameraManager: NSObject {
             switch color {
             case .sdr:
                 return base
-            case .hlg:
+            case .hlg, .log:
                 // 10-bit carries more data per pixel; give it headroom.
                 return base * 5 / 4
             }
@@ -173,8 +173,9 @@ final class CameraManager: NSObject {
         // Require exact dimensions and a frame-rate range covering the
         // requested rate; earlier formats (unbinned, video-range) win ties.
         // HLG additionally requires a 10-bit (x420) format that can
-        // capture BT.2020 HLG — nil (unsupported) if none exists. SDR
-        // considers every format, exactly as before colour existed.
+        // capture BT.2020 HLG; Apple Log a 10-bit 4:2:2 (x422) format
+        // that can capture .appleLog — nil (unsupported) if none exists.
+        // SDR considers every format, exactly as before colour existed.
         let candidates = device.formats.filter { format in
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
             guard dims.width == target.width, dims.height == target.height else {
@@ -187,6 +188,17 @@ final class CameraManager: NSObject {
                 guard CMFormatDescriptionGetMediaSubType(format.formatDescription)
                         == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange,
                       format.supportedColorSpaces.contains(.HLG_BT2020) else {
+                    return false
+                }
+            case .log:
+                // Log-capable device formats are x422, NOT the x420 HLG
+                // uses. `.appleLog` is iOS 17+; below that there are no
+                // candidates, so Log degrades/clamps exactly like an
+                // HLG-less combo does.
+                guard #available(iOS 17.0, *) else { return false }
+                guard CMFormatDescriptionGetMediaSubType(format.formatDescription)
+                        == kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange,
+                      format.supportedColorSpaces.contains(.appleLog) else {
                     return false
                 }
             }
@@ -273,14 +285,16 @@ final class CameraManager: NSObject {
     }
 
     /// Colour column of the diagnostics table: the format's bit depth
-    /// plus the HDR colour spaces it can capture. This is the per-device
-    /// truth behind the HDR toggle — and, once Apple Log lands, behind
-    /// that too — the same way the effect flags are for Video Effects.
+    /// plus the HDR/Log colour spaces it can capture. This is the
+    /// per-device truth behind the colour picker's HDR and Apple Log
+    /// choices, the same way the effect flags are for Video Effects.
     private static func colourFlags(_ format: AVCaptureDevice.Format) -> String {
         let subtype = CMFormatDescriptionGetMediaSubType(
             format.formatDescription)
+        // x422 is the Apple Log capture subtype — 10-bit like the x420s.
         let tenBit = subtype == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
             || subtype == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
+            || subtype == kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange
         var flags = [tenBit ? "10bit" : "8bit "]
         if format.supportedColorSpaces.contains(.HLG_BT2020) {
             flags.append("HLG")
@@ -319,11 +333,26 @@ final class CameraManager: NSObject {
     }
 
     /// Whether this combo has a 10-bit HLG capture format — the UI's
-    /// gate for what the HDR toggle can actually deliver.
+    /// gate for what the HDR choice can actually deliver.
     static func hdrAvailable(lens: Lens, resolution: Resolution,
                              fps: Int32) -> Bool {
         supports(resolution: resolution, fps: fps, lens: lens, color: .hlg)
     }
+
+    /// Whether any lens on this device has an Apple Log capture format —
+    /// the UI's gate for offering the Apple Log choice at all. Always
+    /// false below iOS 17 (`.appleLog` doesn't exist there). Cached like
+    /// `VideoEncoder.hdrSupported`: it walks every lens's format table,
+    /// far too expensive to run per SwiftUI render of the picker.
+    static let appleLogCaptureAvailable: Bool = {
+        guard #available(iOS 17.0, *) else { return false }
+        return availableLenses().contains { lens in
+            guard let device = device(for: lens) else { return false }
+            return device.formats.contains {
+                $0.supportedColorSpaces.contains(.appleLog)
+            }
+        }
+    }()
 
     /// Fires on system-pressure (thermal/power) level changes, on the
     /// main queue — Streamer scales the bitrate down in response.
@@ -410,14 +439,15 @@ final class CameraManager: NSObject {
         // Format is chosen manually below; presets can't express 4K60.
         session.sessionPreset = .inputPriority
 
-        // For HLG we set the device's colour space ourselves below, so
-        // the session must not manage it (it would override our choice
-        // on input changes). For SDR, automatic is the iOS default —
-        // keeping it preserves the pre-HDR behaviour exactly.
+        // For HLG and Apple Log we set the device's colour space
+        // ourselves below, so the session must not manage it (it would
+        // override our choice on input changes). For SDR, automatic is
+        // the iOS default — keeping it preserves the pre-HDR behaviour
+        // exactly.
         switch color {
         case .sdr:
             session.automaticallyConfiguresCaptureDeviceForWideColor = true
-        case .hlg:
+        case .hlg, .log:
             session.automaticallyConfiguresCaptureDeviceForWideColor = false
         }
 
@@ -447,6 +477,12 @@ final class CameraManager: NSObject {
             break
         case .hlg:
             device.activeColorSpace = .HLG_BT2020
+        case .log:
+            if #available(iOS 17.0, *) {
+                device.activeColorSpace = .appleLog
+            }
+            // No else: format(for:) has no Log candidates below iOS 17,
+            // so configure has already thrown before reaching here.
         }
         // Min duration always caps the rate at the user's choice. The max
         // (the cadence lock, see PERFORMANCE.md) is normally pinned too —
@@ -488,31 +524,40 @@ final class CameraManager: NSObject {
         session.addOutput(output)
         videoOutput = output
 
+        // Video-range in every pipeline; only the depth/chroma differ.
+        // Apple Log delivers x422 (the Log formats' native subtype);
+        // VideoToolbox accepts x422 into a Main10 HEVC session and
+        // converts internally, so the encoder needs no pixel-format
+        // knowledge.
+        let outputPixelFormat: OSType
+        switch color {
+        case .sdr:
+            outputPixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+        case .hlg:
+            outputPixelFormat = kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+        case .log:
+            outputPixelFormat = kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange
+        }
         // The pixel format is chosen AFTER the output joins the session:
         // a detached output only advertises the generic 8-bit formats —
-        // x420 enters availableVideoPixelFormatTypes once the output is
-        // connected to a device whose active format is 10-bit — and
+        // x420/x422 enter availableVideoPixelFormatTypes once the output
+        // is connected to a device whose active format is 10-bit — and
         // assigning a format missing from that list raises an NSException
         // Swift cannot catch (the issue #81 TestFlight crash).
-        if color == .hlg,
-           !output.availableVideoPixelFormatTypes.contains(
-               kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange) {
+        if color != .sdr,
+           !output.availableVideoPixelFormatTypes.contains(outputPixelFormat) {
             // Degrade to SDR rather than crash — and rebuild the whole
             // graph (begin/commit pairs nest) so the format choice,
             // colour space, and wide-colour management all match: 8-bit
-            // capture behind an HLG-tagged Main10 encode would reach OBS
-            // with the wrong colours.
+            // capture behind a Main10 encode tagged for HLG or Log would
+            // reach OBS with the wrong colours.
             return try configureOnQueue(lens: lens, resolution: resolution,
                                         fps: fps,
                                         lockFrameRate: lockFrameRate,
                                         color: .sdr)
         }
-        // Video-range in both pipelines; only the bit depth differs.
         output.videoSettings = [
-            kCVPixelBufferPixelFormatTypeKey as String:
-                color == .hlg
-                    ? kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
-                    : kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            kCVPixelBufferPixelFormatTypeKey as String: outputPixelFormat
         ]
 
         if let connection = output.connection(with: .video) {

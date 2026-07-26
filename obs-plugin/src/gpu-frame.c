@@ -19,6 +19,12 @@
 #ifndef DRM_FORMAT_GR88
 #define DRM_FORMAT_GR88 0x38385247
 #endif
+#ifndef DRM_FORMAT_R16
+#define DRM_FORMAT_R16 0x20363152 /* 'R','1','6',' ' little-endian */
+#endif
+#ifndef DRM_FORMAT_GR1616
+#define DRM_FORMAT_GR1616 0x32335247 /* 'G','R','3','2' little-endian */
+#endif
 
 struct gpu_frame_ctx {
 	gs_texture_t *tex[2];
@@ -58,13 +64,13 @@ bool gpu_frame_supported(const AVFrame *frame)
 	if (!frame || frame->format != AV_PIX_FMT_VAAPI ||
 	    !frame->hw_frames_ctx)
 		return false;
-	/* The dmabuf import below hardcodes 8-bit NV12 (R8 + GR88); a P010
-	 * surface (10-bit HDR hardware decode) would import as garbage.
-	 * Refuse it so those frames take the CPU path — zero-copy 10-bit
-	 * (R16/GR1616) is stage 2. */
+	/* The dmabuf import below handles 8-bit NV12 (R8 + GR88) and 10-bit
+	 * P010 (R16 + GR1616); any other surface format would import as
+	 * garbage, so refuse it and let those frames take the CPU path. */
 	const AVHWFramesContext *fctx =
 		(const AVHWFramesContext *)frame->hw_frames_ctx->data;
-	return fctx->sw_format == AV_PIX_FMT_NV12;
+	return fctx->sw_format == AV_PIX_FMT_NV12 ||
+	       fctx->sw_format == AV_PIX_FMT_P010;
 }
 
 bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
@@ -99,6 +105,18 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 
 	uint32_t w = (uint32_t)frame->width, h = (uint32_t)frame->height;
 
+	/* Pick the per-plane import formats from the hw surface format:
+	 * NV12 -> R8 + GR88, P010 -> R16 + GR1616. Plane geometry is the
+	 * same for both (full-size luma, half-size interleaved chroma);
+	 * pitches come from the DRM descriptor either way. */
+	const AVHWFramesContext *fctx =
+		(const AVHWFramesContext *)frame->hw_frames_ctx->data;
+	bool ten_bit = fctx->sw_format == AV_PIX_FMT_P010;
+	uint32_t drm_y = ten_bit ? DRM_FORMAT_R16 : DRM_FORMAT_R8;
+	uint32_t drm_uv = ten_bit ? DRM_FORMAT_GR1616 : DRM_FORMAT_GR88;
+	enum gs_color_format gs_y = ten_bit ? GS_R16 : GS_R8;
+	enum gs_color_format gs_uv = ten_bit ? GS_RG16 : GS_R8G8;
+
 	int fds[2];
 	uint32_t strides[2], offsets[2];
 	uint64_t modifiers[2];
@@ -119,11 +137,11 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 	}
 
 	gs_texture_t *y = gs_texture_create_from_dmabuf(
-		w, h, DRM_FORMAT_R8, GS_R8, 1, &fds[0], &strides[0],
-		&offsets[0], &modifiers[0]);
+		w, h, drm_y, gs_y, 1, &fds[0], &strides[0], &offsets[0],
+		&modifiers[0]);
 	gs_texture_t *uv = gs_texture_create_from_dmabuf(
-		w / 2, h / 2, DRM_FORMAT_GR88, GS_R8G8, 1, &fds[1],
-		&strides[1], &offsets[1], &modifiers[1]);
+		w / 2, h / 2, drm_uv, gs_uv, 1, &fds[1], &strides[1],
+		&offsets[1], &modifiers[1]);
 	if (!y || !uv) {
 		if (!ctx->warned) {
 			ctx->warned = true;
@@ -147,13 +165,15 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 
 	if (!ctx->announced) {
 		ctx->announced = true;
-		blog(LOG_INFO, "[lenslink] gpu pipeline: zero-copy active "
-			       "(VAAPI dmabuf -> EGL)");
+		blog(LOG_INFO,
+		     "[lenslink] gpu pipeline: zero-copy active "
+		     "(VAAPI dmabuf -> EGL, %s)",
+		     ten_bit ? "P010" : "NV12");
 	}
 
 	out->tex[0] = y;
 	out->tex[1] = uv;
-	out->format = GPU_FRAME_NV12;
+	out->format = ten_bit ? GPU_FRAME_P010 : GPU_FRAME_NV12;
 	out->width = w;
 	out->height = h;
 	return true;
@@ -205,7 +225,11 @@ bool gpu_frame_supported(const AVFrame *frame)
 {
 	/* Only BGRA surfaces map to a single OBS texture; the decoder
 	 * requests BGRA output in GPU mode (see h264-decoder.c). NV12
-	 * surfaces fall back to the CPU path. */
+	 * surfaces fall back to the CPU path. For 10-bit (HDR) streams
+	 * VideoToolbox hands back 8-bit BGRA it converted itself
+	 * (display-referred), so HDR on macOS GPU-pipeline renders via
+	 * the RGBA path without our HLG shader — true 10-bit IOSurface
+	 * plane mapping is future work. */
 	if (!frame || frame->format != AV_PIX_FMT_VIDEOTOOLBOX)
 		return false;
 	CVPixelBufferRef pix = (CVPixelBufferRef)frame->data[3];
@@ -279,7 +303,7 @@ void gpu_frame_unlock(struct gpu_frame_ctx *ctx)
 }
 
 /* ------------------------------------------------------------------ */
-/* Windows: D3D11VA -> keyed-mutex shared NV12 texture pair            */
+/* Windows: D3D11VA -> keyed-mutex shared NV12/P010 texture pair       */
 /* ------------------------------------------------------------------ */
 #elif defined(_WIN32)
 
@@ -288,10 +312,12 @@ void gpu_frame_unlock(struct gpu_frame_ctx *ctx)
 #include <d3d11.h>
 
 struct gpu_frame_ctx {
-	/* OBS-side pair backed by ONE shared NV12 texture (keyed mutex). */
+	/* OBS-side pair backed by ONE shared NV12/P010 texture (keyed
+	 * mutex). */
 	gs_texture_t *tex_y;
 	gs_texture_t *tex_uv;
 	uint32_t width, height;
+	enum AVPixelFormat sw_format; /* format of the cached textures */
 	uint32_t shared_handle;
 
 	/* FFmpeg-device-side view of the same texture. */
@@ -332,6 +358,7 @@ static void win_release(struct gpu_frame_ctx *ctx)
 	ctx->ff_device = NULL;
 	ctx->shared_handle = 0;
 	ctx->width = ctx->height = 0;
+	ctx->sw_format = AV_PIX_FMT_NONE;
 }
 
 void gpu_frame_ctx_destroy(struct gpu_frame_ctx *ctx)
@@ -351,33 +378,43 @@ bool gpu_frame_supported(const AVFrame *frame)
 	if (!frame || frame->format != AV_PIX_FMT_D3D11 ||
 	    !frame->hw_frames_ctx)
 		return false;
-	/* The shared texture below is NV12 (8-bit); copying a P010 decode
-	 * surface (10-bit HDR) into it fails, leaving a black source.
-	 * Refuse so those frames take the CPU path — a shared P010 texture
-	 * (gs_texture_create_p010) is stage 2. */
+	/* The shared texture is created to match the decode surface: NV12
+	 * (8-bit) or P010 (10-bit HDR). Any other surface format has no
+	 * matching shared-texture creator, so refuse it and let those
+	 * frames take the CPU path. */
 	const AVHWFramesContext *fctx =
 		(const AVHWFramesContext *)frame->hw_frames_ctx->data;
-	return fctx->sw_format == AV_PIX_FMT_NV12;
+	return fctx->sw_format == AV_PIX_FMT_NV12 ||
+	       fctx->sw_format == AV_PIX_FMT_P010;
 }
 
 static bool win_ensure_textures(struct gpu_frame_ctx *ctx, uint32_t w,
-				uint32_t h, ID3D11Device *ff_device)
+				uint32_t h, enum AVPixelFormat sw_format,
+				ID3D11Device *ff_device)
 {
 	if (ctx->tex_y && ctx->width == w && ctx->height == h &&
-	    ctx->ff_device == ff_device)
+	    ctx->sw_format == sw_format && ctx->ff_device == ff_device)
 		return true;
 
 	win_release(ctx);
 
-	/* OBS side: an NV12 texture pair (one underlying resource, a luma
-	 * view and a chroma view) created shared with a keyed mutex. */
-	if (!gs_texture_create_nv12(&ctx->tex_y, &ctx->tex_uv, w, h,
-				    GS_SHARED_KM_TEX)) {
+	/* OBS side: an NV12 or P010 texture pair (one underlying resource,
+	 * a luma view and a chroma view) matching the decode surface,
+	 * created shared with a keyed mutex. An SDR<->HDR switch
+	 * mid-connection changes sw_format, which recreates here. */
+	bool created =
+		sw_format == AV_PIX_FMT_P010
+			? gs_texture_create_p010(&ctx->tex_y, &ctx->tex_uv,
+						 w, h, GS_SHARED_KM_TEX)
+			: gs_texture_create_nv12(&ctx->tex_y, &ctx->tex_uv,
+						 w, h, GS_SHARED_KM_TEX);
+	if (!created) {
 		if (!ctx->warned) {
 			ctx->warned = true;
 			blog(LOG_WARNING,
-			     "[lenslink] gpu pipeline: shared NV12 texture "
-			     "creation failed — using the CPU path");
+			     "[lenslink] gpu pipeline: shared %s texture "
+			     "creation failed — using the CPU path",
+			     sw_format == AV_PIX_FMT_P010 ? "P010" : "NV12");
 		}
 		return false;
 	}
@@ -391,8 +428,8 @@ static bool win_ensure_textures(struct gpu_frame_ctx *ctx, uint32_t w,
 		if (!ctx->warned) {
 			ctx->warned = true;
 			blog(LOG_WARNING,
-			     "[lenslink] gpu pipeline: shared NV12 texture "
-			     "has no shared handle — using the CPU path");
+			     "[lenslink] gpu pipeline: shared texture has "
+			     "no shared handle — using the CPU path");
 		}
 		win_release(ctx);
 		return false;
@@ -432,6 +469,7 @@ static bool win_ensure_textures(struct gpu_frame_ctx *ctx, uint32_t w,
 	ctx->ff_device = ff_device;
 	ctx->width = w;
 	ctx->height = h;
+	ctx->sw_format = sw_format;
 	return true;
 }
 
@@ -450,7 +488,8 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 	UINT slice = (UINT)(uintptr_t)frame->data[1];
 
 	if (!win_ensure_textures(ctx, (uint32_t)frame->width,
-				 (uint32_t)frame->height, d3d->device))
+				 (uint32_t)frame->height, frames->sw_format,
+				 d3d->device))
 		return false;
 
 	/* Copy the decoder's array slice into the shared texture on the
@@ -482,13 +521,16 @@ bool gpu_frame_map(struct gpu_frame_ctx *ctx, AVFrame *frame,
 
 	if (!ctx->announced) {
 		ctx->announced = true;
-		blog(LOG_INFO, "[lenslink] gpu pipeline: zero-copy active "
-			       "(D3D11 shared NV12)");
+		blog(LOG_INFO,
+		     "[lenslink] gpu pipeline: zero-copy active "
+		     "(D3D11 shared %s)",
+		     ctx->sw_format == AV_PIX_FMT_P010 ? "P010" : "NV12");
 	}
 
 	out->tex[0] = ctx->tex_y;
 	out->tex[1] = ctx->tex_uv;
-	out->format = GPU_FRAME_NV12;
+	out->format = ctx->sw_format == AV_PIX_FMT_P010 ? GPU_FRAME_P010
+							: GPU_FRAME_NV12;
 	out->width = ctx->width;
 	out->height = ctx->height;
 	return true;

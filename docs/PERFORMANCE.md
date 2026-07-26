@@ -183,6 +183,15 @@ process CPU. Capture→decode latency and decoded fps are measured before
 the pipelines diverge and showed no systematic difference — those are
 set by the network and the phone's encoder, not by the render path.
 
+The table above is 8-bit. 10-bit streams (HLG / Apple Log) gained the
+same zero-copy path (D3D11 shared P010, VAAPI R16/GR1616 dmabuf) a
+release later; the sanity check applies unchanged — pixel copies must
+read 0.00 with the GPU pipeline on, and at 10 bits the eliminated
+copy traffic is 2× the 8-bit figures. A before/after bench pair for a
+10-bit config still needs to be captured and pasted here (macOS is
+excluded: VideoToolbox converts 10-bit to 8-bit BGRA itself, so HDR
+there renders via the RGBA path).
+
 ## Apple capture guidance: what we follow, what we deliberately don't
 
 The iOS capture/encode path was audited against Apple's AVFoundation and
@@ -210,12 +219,14 @@ Deliberate divergences (don't "fix" these without reading this):
 - **Video stabilization stays off** (the AVCaptureVideoDataOutput
   default). Every stabilization mode adds frames of latency; this is a
   latency-first product. Revisit only as an opt-in.
-- **The wire defaults to 8-bit 4:2:0 video-range** (`420v`). With the
-  opt-in HDR toggle the camera path switches to 10-bit HLG (`x420`
-  capture, HEVC Main10) end-to-end — but 10-bit only ever enters the
-  pipeline through that toggle. SDR capture, the screen mirror, and the
-  H.264 path stay 8-bit; keep the 8-bit paths free of 10-bit branches
-  (the decoder maps formats per-frame, so SDR costs nothing extra).
+- **The wire defaults to 8-bit 4:2:0 video-range** (`420v`). The
+  opt-in colour modes switch the camera path to 10-bit end-to-end —
+  HLG captures `x420`, Apple Log captures `x422` (its formats are the
+  10-bit-422 class; VideoToolbox does the 4:2:0 downsample inside the
+  Main10 encode) — but 10-bit only ever enters the pipeline through
+  that setting. SDR capture, the screen mirror, and the H.264 path
+  stay 8-bit; keep the 8-bit paths free of 10-bit branches (the
+  decoder maps formats per-frame, so SDR costs nothing extra).
 - **Rotation is sensor-native** (`.landscapeRight`, an effective 0°).
   The AVCaptureConnection docs warn per-frame rotation costs; we never
   rotate the stream, only the on-phone preview.

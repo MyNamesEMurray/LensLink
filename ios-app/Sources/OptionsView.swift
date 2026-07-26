@@ -46,13 +46,26 @@ struct OptionsView: View {
                 }
 
                 // Hidden entirely on devices that can't encode Main10 —
-                // a toggle that can never work is worse than none.
+                // a choice that can never work is worse than none (only
+                // "Standard" would remain). Apple Log appears only when
+                // some lens actually has a Log capture format (iOS 17+).
                 if VideoEncoder.hdrSupported {
                     Section {
-                        Toggle("HDR (10-bit HEVC)",
-                               isOn: $streamer.hdrEnabled)
+                        Picker("Color", selection: $streamer.colorSetting) {
+                            Text("Standard").tag(StreamColor.sdr)
+                            Text("HDR (HLG)").tag(StreamColor.hlg)
+                            if CameraManager.appleLogCaptureAvailable {
+                                Text("Apple Log").tag(StreamColor.log)
+                            }
+                        }
                     } footer: {
-                        Text("Streams 10-bit HLG color — OBS tone-maps it for SDR scenes, and HDR canvases get the real thing. HEVC only; takes effect when the camera next starts.")
+                        if CameraManager.appleLogCaptureAvailable {
+                            // Three sentences covering two choices — the
+                            // sanctioned exception (docs/UI_DESIGN.md).
+                            Text("HDR streams 10-bit HLG color — OBS tone-maps it for SDR scenes. Apple Log streams a flat 10-bit image made for grading with a LUT in OBS; both are HEVC-only and take effect when the camera next starts.")
+                        } else {
+                            Text("HDR streams 10-bit HLG color — OBS tone-maps it for SDR scenes, and HDR canvases get the real thing. HEVC only; takes effect when the camera next starts.")
+                        }
                     }
                 }
 

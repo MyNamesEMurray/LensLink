@@ -238,7 +238,9 @@ struct ios_camera_source {
 			  * on transition so a black source is explicable) */
 	bool render_hdr; /* current frame is HDR (HLG/PQ transfer); set on
 			  * the graphics thread when a frame is adopted and
-			  * read there by video_get_color_space */
+			  * read there by video_get_color_space and by the
+			  * draw's technique pick (10-bit + !render_hdr =
+			  * Apple Log -> Log techniques, SDR canvas) */
 
 };
 
@@ -3212,7 +3214,12 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 		}
 
 		/* HDR (HLG/PQ) frames render extended-range linear values;
-		 * video_get_color_space reports the matching canvas space. */
+		 * video_get_color_space reports the matching canvas space.
+		 * A 10-bit frame with any other transfer is the Apple Log
+		 * path: render_hdr stays false (SDR canvas is correct — the
+		 * flat log image is display-referred content for the user's
+		 * Apply LUT filter) and the draw below keys the technique
+		 * on this flag, not just the pixel format. */
 		s->render_hdr = fresh->color_trc == AVCOL_TRC_ARIB_STD_B67 ||
 				fresh->color_trc == AVCOL_TRC_SMPTE2084;
 
@@ -3258,11 +3265,14 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 	} else {
 		gs_effect_t *eff = yuv_effect();
 		if (eff) {
-			/* 10-bit frames from the phone are HLG (the app
-			 * signals BT.2020 + ARIB STD-B67); the HLG techniques
-			 * emit extended-range linear 709 to match the
-			 * GS_CS_709_EXTENDED report from
-			 * video_get_color_space. */
+			/* 10-bit frames pick their technique by transfer,
+			 * not just pixel format: HLG/PQ (render_hdr) use the
+			 * HLG techniques, which emit extended-range linear
+			 * 709 to match the GS_CS_709_EXTENDED report from
+			 * video_get_color_space; anything else is Apple Log
+			 * (transfer unspecified on the wire) and uses the
+			 * Log techniques, which emit the untouched BT.2020-
+			 * decoded R'G'B' on the SDR canvas for LUT grading. */
 			const char *tech = "Draw";
 			bool three_plane = false;
 			float scale = 0.0f;
@@ -3274,13 +3284,15 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 			case GPU_FRAME_P010:
 				/* MSB-aligned: sample ~= code/1023 already;
 				 * the exact ratio is 65535/(1023*64). */
-				tech = "DrawP010HLG";
+				tech = s->render_hdr ? "DrawP010HLG"
+						     : "DrawP010Log";
 				scale = 65535.0f / 65472.0f;
 				break;
 			case GPU_FRAME_I010:
 				/* LSB-aligned: samples read 1/64 of the
 				 * intended value. */
-				tech = "DrawI010HLG";
+				tech = s->render_hdr ? "DrawI010HLG"
+						     : "DrawI010Log";
 				three_plane = true;
 				scale = 65535.0f / 1023.0f;
 				break;
@@ -3288,12 +3300,19 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 				break;
 			}
 			if (scale != 0.0f) {
-				float white = obs_get_video_sdr_white_level();
 				gs_effect_set_float(g_yuv_scale, scale);
-				gs_effect_set_float(g_yuv_hdr,
-						    white > 0.0f
-							    ? 1000.0f / white
-							    : 1000.0f / 300.0f);
+				/* hdr_scale feeds only the HLG techniques;
+				 * the Log techniques are display-referred
+				 * and must not be brightness-scaled. */
+				if (s->render_hdr) {
+					float white =
+						obs_get_video_sdr_white_level();
+					gs_effect_set_float(
+						g_yuv_hdr,
+						white > 0.0f
+							? 1000.0f / white
+							: 1000.0f / 300.0f);
+				}
 			}
 			gs_effect_set_texture(g_yuv_y, s->gpu_map.tex[0]);
 			gs_effect_set_texture(g_yuv_uv, s->gpu_map.tex[1]);
