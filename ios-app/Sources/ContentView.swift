@@ -15,8 +15,11 @@ struct ContentView: View {
     @AppStorage("showConnectionHelp") private var showConnectionHelp = true
 
     // The behaviour toggles live in a sheet (OptionsView) so the main
-    // screen stays short — see that file for why.
+    // screen stays short — see that file for why. The explanations live
+    // in a second sheet (DocumentationView) so the sections themselves
+    // are pure controls.
     @State private var showOptions = false
+    @State private var showDocs = false
 
     // Standby keeps the phone awake (see Streamer.updateIdleTimer) so
     // remote start stays reachable; this dim overlay is what makes that
@@ -64,8 +67,21 @@ struct ContentView: View {
                 OptionsView()
                     .environmentObject(streamer)
             }
-            // Opening or closing the sheet is activity too.
+            .sheet(isPresented: $showDocs) {
+                NavigationView {
+                    DocumentationView()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { showDocs = false }
+                            }
+                        }
+                }
+                .navigationViewStyle(.stack)
+                .tint(Theme.accent)
+            }
+            // Opening or closing a sheet is activity too.
             .onChange(of: showOptions) { _ in lastInteraction = Date() }
+            .onChange(of: showDocs) { _ in lastInteraction = Date() }
 
             if dimmed {
                 dimOverlay
@@ -100,7 +116,7 @@ struct ContentView: View {
                 // the sheet with its tap-to-wake unreachable, leaving the
                 // screen dark with no visible way back.
                 if streamer.standbyActive && streamer.dimWhileStreaming &&
-                    !showOptions && !dimmed &&
+                    !showOptions && !showDocs && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
                 } else if !streamer.standbyActive && dimmed {
@@ -305,20 +321,9 @@ struct ContentView: View {
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
         } header: {
+            // Sections are pure controls; every explanation lives in
+            // the Documentation sheet (tail row).
             Text("Camera & color")
-        } footer: {
-            // The colour hint rides the camera footer only while the
-            // picker is visible; without it the footer is the original
-            // one-liner.
-            if VideoEncoder.hdrSupported {
-                if CameraManager.appleLogCaptureAvailable {
-                    Text("Streams to a \"LensLink Camera\" source in OBS. HDR streams 10-bit HLG color — OBS tone-maps it for SDR scenes; Apple Log streams a flat 10-bit image made for grading with a LUT in OBS. Both are HEVC-only and take effect when the camera next starts.")
-                } else {
-                    Text("Streams to a \"LensLink Camera\" source in OBS. HDR streams 10-bit HLG color — OBS tone-maps it for SDR scenes; HEVC only, takes effect when the camera next starts.")
-                }
-            } else {
-                Text("Streams to a \"LensLink Camera\" source in OBS.")
-            }
         }
     }
 
@@ -334,10 +339,6 @@ struct ContentView: View {
                    isOn: $streamer.sendAudioReference)
         } header: {
             Text("Microphone")
-        } footer: {
-            // One capture, two jobs — Streamer enforces the
-            // exclusivity; this footer is where users learn it.
-            Text("**Send phone mic** makes this phone the camera's audio in OBS — a wireless mic. **Auto lip-sync** sends the mic only as a timing reference for aligning your real microphone; it's never heard. One mic, one role — turning one on turns the other off.")
         }
     }
 
@@ -369,8 +370,6 @@ struct ContentView: View {
             .listRowBackground(Color.clear)
         } header: {
             Text("Screen mirror")
-        } footer: {
-            Text("Streams your whole screen, with app audio, to a \"LensLink Screen\" source in OBS. iOS mutes DRM audio (Apple Music, Netflix).")
         }
         .onAppear {
             // Whether the extension survived sideloading — the broadcast
@@ -406,6 +405,24 @@ struct ContentView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            Button {
+                showDocs = true
+            } label: {
+                HStack {
+                    Label {
+                        Text("Documentation")
+                    } icon: {
+                        Image(systemName: "book")
+                            .foregroundColor(Theme.accent)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
             Link(destination: Self.reportProblemURL) {
                 Label("Report a problem", systemImage: "ladybug")
             }
@@ -413,7 +430,9 @@ struct ContentView: View {
                 Label("LensLink on GitHub", systemImage: "link")
             }
         } footer: {
-            Text("OBS plugin downloads, guides, and bug reports. \(Self.versionLine)")
+            // The one surviving footer: bug reports need a build to cite,
+            // and the version has no control it could live beside.
+            Text(Self.versionLine)
         }
     }
 

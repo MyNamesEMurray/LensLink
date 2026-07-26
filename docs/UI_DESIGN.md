@@ -183,25 +183,32 @@ Native system font (SF on Apple, `system-ui` on web).
 | Label / caption | 13 regular               | Secondary text, field labels |
 | Numeric readout | 13–15 **monospaced digits** | Zoom `2.0×`, exposure `+0.3`, latency `57 ms` — monospaced so values don't jitter while dragging |
 
-### Microcopy (hints, footers, captions)
+### Microcopy (explanations, captions, the Documentation screen)
 
 Explanatory text is a cost the reader pays on every visit. The rules:
 
-- **A hint earns its place by adding a consequence or constraint the
+- **Setting screens are pure controls — no section footers.** Every
+  explanation lives in the **Documentation** screen (main screen tail →
+  Documentation, `DocumentationView.swift`), grouped by feature.
+  Adding or changing a control means updating its Documentation entry
+  in the same change — the screen is the manual, and a control it
+  doesn't cover doesn't exist as far as the reader knows. Two
+  sanctioned exceptions: the version line under the tail (bug reports
+  need a build to cite) and failure text that must be seen in place
+  (a broken broadcast extension warns on the main screen).
+- **An entry earns its place by adding a consequence or constraint the
   control's label can't carry** — a precondition ("while the app is open
   and idle"), a cost ("the phone stays awake"), a boundary ("iOS mutes
-  DRM audio"). A hint that restates the label, or describes what the
-  reader can see, gets deleted, not shortened.
-- **At most two sentences** — three only when one footer covers two
-  controls (the Microphone section). Anything longer belongs in the
-  README, one tap away.
+  DRM audio"). An entry that restates the label gets deleted, not
+  shortened.
 - Sentence case; no exclamation marks; no "please". Em-dash asides over
-  nested parentheses. Numbers as numerals ("10 seconds").
+  nested parentheses. Numbers as numerals ("10 seconds"). Bold the
+  control's name at the start of its entry so the list scans.
 - **American English** in user-facing copy ("color"), matching the
   platform's own language. (These docs may write "colour"; the UI must
   not.)
 - Name OBS-side things exactly as OBS shows them: a "LensLink Camera"
-  source, the Phone IP field.
+  source, the Phone IP field, an "Apply LUT" filter.
 - Overlay/status lines follow the pattern *state — action*: "Streaming —
   tap to wake", "Not visible by name in OBS — tap to allow…".
 - Diagnostics (probe results, extension checks) are exempt from the
