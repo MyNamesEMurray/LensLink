@@ -13,7 +13,6 @@ struct ContentView: View {
     // Collapsible extras: essential exactly once, then noise. Persisted so
     // the form stays compact after the user has read them.
     @AppStorage("showConnectionHelp") private var showConnectionHelp = true
-    @AppStorage("showMirrorTools") private var showMirrorTools = false
 
     // The behaviour toggles live in a sheet (OptionsView) so the main
     // screen stays short — see that file for why.
@@ -37,8 +36,9 @@ struct ContentView: View {
         }
     }
 
-    // The form is three parallel modules — Connect, Camera, Screen mirror —
-    // each saying which OBS source it talks to and ending in the same
+    // The form is the per-stream decisions in order — Connect,
+    // Camera & color, Microphone, Screen mirror — the stream modules
+    // saying which OBS source they talk to and ending in the same
     // full-width action button, plus a two-row tail (Options sheet +
     // GitHub/version). The banner is the title (no NavigationView: nothing
     // is ever pushed, and the wordmark replaces the large-title text).
@@ -48,6 +48,7 @@ struct ContentView: View {
                 bannerHeader
                 connectSection
                 cameraSection
+                micSection
                 screenMirrorSection
                 tailSection
             }
@@ -272,6 +273,20 @@ struct ContentView: View {
                 }
             }
 
+            // Hidden on devices that can't encode Main10 — a choice that
+            // can never work is worse than none (only "Standard" would
+            // remain). Apple Log appears only when some lens actually
+            // has a Log capture format (iOS 17+).
+            if VideoEncoder.hdrSupported {
+                Picker("Color", selection: $streamer.colorSetting) {
+                    Text("Standard").tag(StreamColor.sdr)
+                    Text("HDR (HLG)").tag(StreamColor.hlg)
+                    if CameraManager.appleLogCaptureAvailable {
+                        Text("Apple Log").tag(StreamColor.log)
+                    }
+                }
+            }
+
             if streamer.cameraPermissionDenied || streamer.micPermissionDenied {
                 Button("Camera access denied — open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -290,15 +305,44 @@ struct ContentView: View {
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
         } header: {
-            Text("Camera")
+            Text("Camera & color")
         } footer: {
-            Text("Streams to a \"LensLink Camera\" source in OBS.")
+            // The colour hint rides the camera footer only while the
+            // picker is visible; without it the footer is the original
+            // one-liner.
+            if VideoEncoder.hdrSupported {
+                if CameraManager.appleLogCaptureAvailable {
+                    Text("Streams to a \"LensLink Camera\" source in OBS. HDR streams 10-bit HLG color — OBS tone-maps it for SDR scenes; Apple Log streams a flat 10-bit image made for grading with a LUT in OBS. Both are HEVC-only and take effect when the camera next starts.")
+                } else {
+                    Text("Streams to a \"LensLink Camera\" source in OBS. HDR streams 10-bit HLG color — OBS tone-maps it for SDR scenes; HEVC only, takes effect when the camera next starts.")
+                }
+            } else {
+                Text("Streams to a \"LensLink Camera\" source in OBS.")
+            }
+        }
+    }
+
+    // MARK: - Microphone
+
+    /// Moved up from Options: mic role is a per-stream decision, not a
+    /// set-and-forget behaviour toggle, so it earns main-screen space.
+    private var micSection: some View {
+        Section {
+            Toggle("Send phone mic to OBS",
+                   isOn: $streamer.sendMicAudio)
+            Toggle("Auto lip-sync reference",
+                   isOn: $streamer.sendAudioReference)
+        } header: {
+            Text("Microphone")
+        } footer: {
+            // One capture, two jobs — Streamer enforces the
+            // exclusivity; this footer is where users learn it.
+            Text("**Send phone mic** makes this phone the camera's audio in OBS — a wireless mic. **Auto lip-sync** sends the mic only as a timing reference for aligning your real microphone; it's never heard. One mic, one role — turning one on turns the other off.")
         }
     }
 
     // MARK: - Screen mirror
 
-    @State private var probeResult: String?
     @State private var extensionStatus = ""
 
     /// Same shape as the camera module: content, then one full-width
@@ -308,43 +352,12 @@ struct ContentView: View {
     private var screenMirrorSection: some View {
         Section {
             // Surface a broken extension unconditionally (sideloading can
-            // silently drop it); the healthy checkmark lives in the tools
-            // disclosure below.
+            // silently drop it); the healthy state and the broadcast-link
+            // probe live in Options → Diagnostics.
             if !extensionStatus.isEmpty && !extensionStatus.hasPrefix("✓") {
                 Text(extensionStatus)
                     .font(.caption)
                     .foregroundColor(.red)
-            }
-
-            DisclosureGroup("Screen mirror tools", isExpanded: $showMirrorTools) {
-                Text(extensionStatus)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                // Diagnostic: verifies the broadcast extension's listener
-                // is reachable on-device, independent of OBS/USB. Run it
-                // while a broadcast is active.
-                Button {
-                    probeResult = "Checking…"
-                    BroadcastProbe.run { result in
-                        switch result {
-                        case .screenListener:
-                            probeResult = "✓ Broadcast link is up — OBS should be able to connect"
-                        case .appListener:
-                            probeResult = "✗ Only the app's own listener answered — start a screen broadcast, then run this again"
-                        case .none:
-                            probeResult = "✗ No listener — is a screen broadcast running? If yes, the extension isn't working"
-                        }
-                    }
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Check broadcast link")
-                        if let probeResult {
-                            Text(probeResult)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
             }
 
             ZStack {
@@ -369,8 +382,8 @@ struct ContentView: View {
     // MARK: - Tail (Options / About)
 
     /// Two compact rows close the form: the Options sheet (remote start,
-    /// dim, mic toggles — each explained in place there, not in a footer
-    /// here) and the GitHub link. TestFlight testers otherwise have no
+    /// dim, effects, tally, diagnostics — each explained in place there,
+    /// not in a footer here) and the GitHub link. TestFlight testers otherwise have no
     /// pointer to the plugin/docs/issues; the version line gives bug
     /// reports a build to cite.
     private var tailSection: some View {
