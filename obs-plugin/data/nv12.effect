@@ -171,3 +171,55 @@ technique DrawI010HLG
 		pixel_shader  = PSI010HLG(vert_in);
 	}
 }
+
+// ---------------------------------------------------------------------
+// 10-bit log (Apple Log): HEVC Main10 from the phone tagged BT.2020
+// primaries/matrix with an UNSPECIFIED transfer — the elementary stream
+// cannot carry Apple Log identity; VIDEO_CONFIG {"color":"log"} is the
+// wire-level label. Product intent (LUT-in-OBS workflow): show the
+// UNTOUCHED flat log image as ordinary SDR content so streamers grade
+// it with OBS's Apply LUT filter — Apple's and third-party Apple Log
+// LUTs expect the raw log R'G'B' after a correct BT.2020-matrix decode.
+// So: identical sampling and sample_scale to the HLG twins, the same
+// limited-range 10-bit BT.2020 NCL Y'CbCr -> R'G'B' matrix, then output
+// DIRECTLY — no HLG inverse OETF, no OOTF, no 2020->709 primaries
+// conversion, no hdr_scale. saturate() because this is display-referred
+// SDR-canvas content: the limited-range expansion can overshoot [0,1]
+// on sub-black / super-white codes, and an SDR canvas must clip them.
+
+float4 PSP010Log(VertInOut vert_in) : TARGET
+{
+	float y = y_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	float2 uv = uv_tex.Sample(tex_sampler, vert_in.uv).rg * sample_scale;
+	return float4(saturate(yuv2020_to_rgb(y, uv.r - 0.5004888,
+					      uv.g - 0.5004888)),
+		      1.0);
+}
+
+float4 PSI010Log(VertInOut vert_in) : TARGET
+{
+	float y = y_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	float u = uv_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	float v = v_tex.Sample(tex_sampler, vert_in.uv).r * sample_scale;
+	return float4(saturate(yuv2020_to_rgb(y, u - 0.5004888,
+					      v - 0.5004888)),
+		      1.0);
+}
+
+technique DrawP010Log
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSP010Log(vert_in);
+	}
+}
+
+technique DrawI010Log
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSI010Log(vert_in);
+	}
+}

@@ -306,16 +306,41 @@ static bool avframe_to_obs(const AVFrame *frame, struct obs_source_frame *out)
 	else if (frame->colorspace == AVCOL_SPC_SMPTE170M ||
 		 frame->colorspace == AVCOL_SPC_BT470BG)
 		cs = VIDEO_CS_601;
-	else if (frame->colorspace == AVCOL_SPC_BT2020_NCL)
-		/* HDR from newer iPhones: pick the right transfer so OBS
-		 * doesn't tone-map 10-bit video as if it were SDR 709. */
-		cs = frame->color_trc == AVCOL_TRC_ARIB_STD_B67
-			     ? VIDEO_CS_2100_HLG
-			     : VIDEO_CS_2100_PQ;
+	else if (frame->colorspace == AVCOL_SPC_BT2020_NCL) {
+		/* 10-bit from newer iPhones: pick the colourspace by the
+		 * transfer so OBS treats each stream correctly. */
+		switch (frame->color_trc) {
+		case AVCOL_TRC_ARIB_STD_B67:
+			cs = VIDEO_CS_2100_HLG; /* HDR (HLG) */
+			break;
+		case AVCOL_TRC_SMPTE2084:
+			cs = VIDEO_CS_2100_PQ; /* HDR (PQ) */
+			break;
+		default:
+			/* Apple Log / untagged BT.2020: the transfer is
+			 * unspecified in the VUI (an elementary stream cannot
+			 * carry Apple Log identity — VIDEO_CONFIG
+			 * "color":"log" is the wire-level label). The frame
+			 * still needs the BT.2020 NCL matrix and 10-bit code
+			 * ranges; VIDEO_CS_2100_PQ is only the parameter
+			 * label for video_format_get_parameters_for_format
+			 * (in libobs, the HLG and PQ colourspaces alias to
+			 * the same BT.2020 matrix/ranges). Combined with
+			 * VIDEO_TRC_DEFAULT below, libobs applies just that
+			 * matrix and displays the result as ordinary SDR —
+			 * the untouched flat log image, no tone mapping and
+			 * no primaries conversion, ready for the user's
+			 * Apply LUT filter. */
+			cs = VIDEO_CS_2100_PQ;
+			break;
+		}
+	}
 
 	/* The transfer function rides along with the frame: without it,
 	 * libobs treats 10-bit HDR video as SDR 709 (washed out / grey).
-	 * VIDEO_TRC_DEFAULT keeps today's behaviour for SDR streams. */
+	 * VIDEO_TRC_DEFAULT keeps today's behaviour for SDR streams, and
+	 * for the Apple Log path above it is what makes libobs display
+	 * the decoded R'G'B' as-is (flat log image for LUT grading). */
 	switch (frame->color_trc) {
 	case AVCOL_TRC_ARIB_STD_B67:
 		out->trc = (uint8_t)VIDEO_TRC_HLG;
