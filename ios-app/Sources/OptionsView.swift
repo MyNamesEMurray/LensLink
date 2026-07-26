@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// The Options sheet: the set-and-forget behaviour toggles plus the
-/// diagnostics, each with its own short explanation. They live off the
-/// main screen so the Setup form stays focused on per-stream decisions
-/// (camera, color, mic role) — a single wall-of-text footer under a
-/// pile of toggles was unreadable, and pushed the form into scrolling.
+/// diagnostics. They live off the main screen so the Setup form stays
+/// focused on per-stream decisions (camera, color, mic role). No footer
+/// text anywhere — every explanation lives in DocumentationView, so
+/// both surfaces stay pure controls.
 struct OptionsView: View {
     @EnvironmentObject private var streamer: Streamer
     @Environment(\.dismiss) private var dismiss
@@ -19,30 +19,16 @@ struct OptionsView: View {
                 Section {
                     Toggle("Remote start from OBS",
                            isOn: $streamer.remoteStartEnabled)
-                } footer: {
-                    Text("While the app is open and idle, OBS can start the camera for you. The phone stays awake while it waits — locking it or leaving the app ends remote start. Siri: \"Start streaming with LensLink.\"")
-                }
-
-                Section {
                     Toggle("Dim screen to save battery",
                            isOn: $streamer.dimWhileStreaming)
-                } footer: {
-                    Text("Dims 10 seconds into streaming, or a minute into remote-start standby — tap to wake. Never while you're using the app.")
-                }
-
-                Section {
                     Toggle("Allow system video effects",
                            isOn: $streamer.allowVideoEffects)
-                } footer: {
-                    Text("Experimental: lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
                 }
 
                 Section {
                     NavigationLink(destination: TallyLightOptionsView()) {
                         Text("Tally light")
                     }
-                } footer: {
-                    Text("The colored border around the Live screen while streaming.")
                 }
 
                 Section {
@@ -83,8 +69,6 @@ struct OptionsView: View {
                     }
                 } header: {
                     Text("Diagnostics")
-                } footer: {
-                    Text("Camera diagnostics lists the camera's formats and capabilities — paste into a bug report if an effect or color mode is missing. Check broadcast link verifies the screen-mirror extension while a broadcast is running.")
                 }
             }
             .navigationTitle("Options")
