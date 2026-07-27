@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
-"""Generates the LensLink logo, app icon, and README banner.
+"""Generates the LensLink logo, app icons, and README banner.
 
 The mark is a camera lens (big ring + aperture dot) with a smaller link
 ring layered onto its lower-right edge, in the design system's palette
 (docs/UI_DESIGN.md: accent #3D7BFF on dark #0E0F13).
 
+The iOS app icon ships in Apple's three appearance variants (iOS 18+):
+default (light), dark, and tinted. Only the default one carries our own
+background — for dark and tinted, iOS draws the backdrop itself and
+composites the artwork over it, so those two are transparent PNGs. In
+tinted mode iOS throws the hue away and maps luminance through the
+colour the user picked, so that variant is authored in greys.
+
 Outputs (run from the repo root):
-  assets/icon-1024.png   app icon master (opaque — iOS forbids alpha)
+  assets/icon-1024.png          app icon master (opaque — iOS forbids alpha)
+  assets/icon-1024-dark.png     dark-appearance master (transparent)
+  assets/icon-1024-tinted.png   tinted-appearance master (transparent, greys)
   assets/logo.png        icon on transparent, 512x512
   assets/banner.png      icon + wordmark on transparent (README)
   assets/social-preview.png  1280x640 GitHub social preview (opaque)
-  ios-app/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+  ios-app/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024{,-dark,-tinted}.png
 """
 
+import collections
 import math
 import os
 
@@ -27,6 +37,31 @@ APERTURE_HI = (0x6F, 0xA0, 0xFF)   # aperture dot, highlight side
 APERTURE_LO = (0x2E, 0x5F, 0xD6)   # aperture dot, shadow side
 BG_TOP = (0x17, 0x1A, 0x22)
 BG_BOTTOM = (0x0D, 0x0E, 0x12)
+
+# The four inks of the mark, so it can be re-coloured per icon appearance.
+Palette = collections.namedtuple("Palette", "ring link aperture_hi aperture_lo")
+
+BRAND = Palette(ACCENT, ACCENT_LIGHT, APERTURE_HI, APERTURE_LO)
+
+
+def shade(colour, factor):
+    return tuple(min(255, int(round(c * factor))) for c in colour)
+
+
+def grey(v):
+    return (v, v, v)
+
+
+# Dark appearance: the artwork sits on iOS's own dark backdrop with no
+# gradient of ours to sit against, and a dark home screen makes saturated
+# blues glare. Same hues, dialled back.
+DARK = Palette(*(shade(c, 0.86) for c in BRAND))
+
+# Tinted appearance: greys only — iOS remaps luminance into the user's
+# tint, brightest where this image is whitest. The ordering matters more
+# than the absolute values: link ring brightest, then the lens ring, with
+# the aperture dot keeping enough range to still read as a sphere.
+TINTED = Palette(grey(0xCC), grey(0xFF), grey(0xC2), grey(0x73))
 
 # Geometry (1024-space). The small ring straddles the big ring's band so
 # the two interlock like chain links.
@@ -56,14 +91,18 @@ def circle_mask(size, center, r):
 
 
 def vertical_gradient(size, top, bottom):
-    img = Image.new("RGB", (size, size))
+    # Drawn as a 1px column and stretched sideways. (Painting the column
+    # into a full-width image and then "resizing" it to its own size — a
+    # no-op — leaves every other column black; that is why the icon
+    # shipped on a flat black background instead of this gradient.)
+    col = Image.new("RGB", (1, size))
     for y in range(size):
         t = y / (size - 1)
-        img.putpixel((0, y), tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3)))
-    return img.resize((size, size))  # broadcast the 1px column
+        col.putpixel((0, y), tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3)))
+    return col.resize((size, size))
 
 
-def make_mark(size):
+def make_mark(size, palette=BRAND):
     """The lens+link mark with a transparent background, at size*S px."""
     px = size * S
     mark = Image.new("RGBA", (px, px), (0, 0, 0, 0))
@@ -75,7 +114,9 @@ def make_mark(size):
     grad = Image.new("RGB", (px, px))
     for y in range(0, px, S):
         t = y / (px - 1)
-        row = tuple(int(APERTURE_HI[i] + (APERTURE_LO[i] - APERTURE_HI[i]) * t) for i in range(3))
+        row = tuple(int(palette.aperture_hi[i]
+                        + (palette.aperture_lo[i] - palette.aperture_hi[i]) * t)
+                    for i in range(3))
         for yy in range(y, min(y + S, px)):
             grad.paste(row, (0, yy, px, yy + 1))
     dot.paste(grad, (0, 0), circle_mask(px, BIG_C, DOT_R))
@@ -84,7 +125,7 @@ def make_mark(size):
     big = ring_mask(px, BIG_C, BIG_R_OUT, BIG_R_IN)
     small = ring_mask(px, SMALL_C, SMALL_R_OUT, SMALL_R_IN)
 
-    mark.paste(solid(ACCENT), (0, 0), big)
+    mark.paste(solid(palette.ring), (0, 0), big)
 
     # The two bands cross at a shallow angle, so their overlap is one
     # connected crescent — a chain-style over/under weave can't render
@@ -96,7 +137,7 @@ def make_mark(size):
     keyline = ImageChops.multiply(keyline, big)
     mark.paste(Image.new("RGBA", (px, px), (0, 0, 0, 0)), (0, 0), keyline)
 
-    mark.paste(solid(ACCENT_LIGHT), (0, 0), small)
+    mark.paste(solid(palette.link), (0, 0), small)
 
     return mark
 
@@ -111,12 +152,24 @@ def main():
 
     mark_big = make_mark(SIZE)
 
-    # --- App icon: mark on the dark gradient, opaque RGB ---------------
+    # --- App icon, default (light) appearance: opaque RGB ---------------
+    # The only variant with a background of ours; iOS forbids alpha here.
     icon = vertical_gradient(SIZE * S, BG_TOP, BG_BOTTOM).convert("RGBA")
     icon.alpha_composite(mark_big)
     icon = icon.resize((SIZE, SIZE), Image.LANCZOS).convert("RGB")
     icon.save(os.path.join(assets, "icon-1024.png"))
     icon.save(os.path.join(appiconset, "icon-1024.png"))
+
+    # --- App icon, dark + tinted appearances: transparent RGBA ----------
+    # iOS draws its own backdrop under these two (a dark gradient, or the
+    # user's tint), so shipping our gradient would double it up and box
+    # the mark in. Keep them transparent; the keyline gap around the link
+    # ring then reveals that backdrop instead of our background, which is
+    # the same read.
+    for name, palette in (("dark", DARK), ("tinted", TINTED)):
+        variant = make_mark(SIZE, palette).resize((SIZE, SIZE), Image.LANCZOS)
+        variant.save(os.path.join(assets, "icon-1024-%s.png" % name))
+        variant.save(os.path.join(appiconset, "icon-1024-%s.png" % name))
 
     # --- Standalone logo: transparent, 512 ------------------------------
     logo = mark_big.resize((512, 512), Image.LANCZOS)
@@ -188,9 +241,10 @@ def main():
 
     social_preview(os.path.join(assets, "social-preview.png"))
 
-    print("wrote assets/icon-1024.png, assets/logo.png, assets/banner-*.png,")
-    print("assets/social-preview.png,")
-    print("and", os.path.relpath(os.path.join(appiconset, "icon-1024.png"), root))
+    print("wrote assets/icon-1024{,-dark,-tinted}.png, assets/logo.png,")
+    print("assets/banner-*.png, assets/social-preview.png,")
+    print("and the same three icons in",
+          os.path.relpath(appiconset, root))
 
 
 if __name__ == "__main__":
