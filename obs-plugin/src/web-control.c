@@ -157,6 +157,22 @@ static const char control_page[] =
 	"style='display:none'>"
 	"<span class='ro' id='wbv' style='display:none'>5000K</span>"
 	"<span class='hint' id='wbhint'>Auto white balance</span></div>"
+	/* Green screen: hidden until the app's STATE advertises support
+	 * (supportsGreenScreen). The subject-distance slider appears only
+	 * while depth assist is actually running (greenScreenDepth). Same
+	 * anatomy as the app's Live row (UI_DESIGN §5): with no cutoff the
+	 * thumb parks at the far (5.0) end and the readout shows "All";
+	 * tapping the readout returns to "All" (sends 0). The slider only
+	 * ever sends real cutoffs (0.5-5.0) — 0 comes from the readout. */
+	"<div class='row' id='gsrow' style='display:none'>"
+	"<button class='chip' id='gs' title='Green screen'>"
+	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"stroke-width='2' stroke-linecap='round'><circle cx='12' cy='8' r='4'/>"
+	"<path d='M4 21 v-1 a8 8 0 0 1 16 0 v1'/></svg></button>"
+	"<input id='gsd' type='range' min='0.5' max='5' step='0.1' value='5' "
+	"style='display:none'>"
+	"<span class='ro' id='gsdv' style='display:none'>All</span>"
+	"<span class='hint' id='gshint'>Green screen</span></div>"
 	/* Mic picker: shown while the app streams its mic as the source's
 	 * audio (STATE micEnabled) — mirrors the app's mic row. */
 	"<div class='row' id='microw' style='display:none'>"
@@ -214,6 +230,8 @@ static const char control_page[] =
 	"shutrowEl=$('shutrow'),shutEl=$('shut'),shutvEl=$('shutv'),"
 	"wbrowEl=$('wbrow'),awbEl=$('awb'),wblEl=$('wbl'),wbtempEl=$('wbtemp'),"
 	"wbvEl=$('wbv'),wbhintEl=$('wbhint'),"
+	"gsrowEl=$('gsrow'),gsEl=$('gs'),gsdEl=$('gsd'),gsdvEl=$('gsdv'),"
+	"gshintEl=$('gshint'),"
 	"microwEl=$('microw'),micselEl=$('micsel'),srctabsEl=$('srctabs');"
 	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93',"
 	"accent:'#3D7BFF'};"
@@ -292,6 +310,18 @@ static const char control_page[] =
 	"const dWb=deb(()=>send({cmd:'white_balance',mode:'locked',"
 	"temperature:+wbtempEl.value}),60);"
 	"wbtempEl.oninput=()=>{touch();wbvEl.textContent=wbtempEl.value+'K';dWb()};"
+	/* Green screen: optimistic chip toggle. Dragging the slider always
+	 * sets a real cutoff (0.5-5.0 m); "All" (0) is reachable only by
+	 * clicking the readout, mirroring the app's Live row exactly so the
+	 * full-left gesture means "tightest cutoff" on both surfaces. */
+	"let gson=false;"
+	"function gsUI(on){gson=on;gsEl.className=on?'chip on':'chip'}"
+	"gsEl.onclick=()=>{touch();gsUI(!gson);send({cmd:'green_screen',on:gson})};"
+	"const gsLabel=v=>v?v.toFixed(1)+' m':'All';"
+	"const dGs=deb(()=>send({cmd:'green_screen',maxDistance:+gsdEl.value}),60);"
+	"gsdEl.oninput=()=>{touch();gsdvEl.textContent=gsLabel(+gsdEl.value);dGs()};"
+	"gsdvEl.onclick=()=>{touch();gsdEl.value=5;gsdvEl.textContent=gsLabel(0);"
+	"send({cmd:'green_screen',maxDistance:0})};"
 	"micselEl.onchange=()=>send({cmd:'mic',id:micselEl.value});"
 	/* Optimistic flip to 'relocking'; the 1 Hz poll corrects if lost. */
 	"recalEl.onclick=()=>{recalEl.style.display='none';"
@@ -384,6 +414,16 @@ static const char control_page[] =
 	"if(typeof st.whiteBalanceTemperature==='number'){"
 	"wbtempEl.value=Math.round(st.whiteBalanceTemperature);"
 	"wbvEl.textContent=Math.round(st.whiteBalanceTemperature)+'K'}}"
+	/* Green screen, mirrored from the app. */
+	"gsrowEl.style.display=st.supportsGreenScreen?'':'none';"
+	"if(st.supportsGreenScreen){gsUI(!!st.greenScreen);"
+	"const gd=!!st.greenScreenDepth;"
+	"gsdEl.style.display=gd?'':'none';gsdvEl.style.display=gd?'':'none';"
+	"gshintEl.style.display=gd?'none':'';"
+	"let md=typeof st.greenScreenMaxDistance==='number'"
+	"?st.greenScreenMaxDistance:0;"
+	"md=md<0.5?0:Math.min(md,5);"
+	"gsdEl.value=md||5;gsdvEl.textContent=gsLabel(md)}"
 	/* Mic picker, only while the phone mic is live as source audio.
 	 * Options are {id,name} pairs: ids round-trip, names display. */
 	"microwEl.style.display=st.micEnabled?'':'none';"
@@ -652,7 +692,9 @@ static void handle_client(socket_t client)
 	}
 
 	if (strncmp(request, "GET /api/state", 14) == 0) {
-		char state[1024] = {0};
+		/* Must fit the source's whole device_state cache (2048) —
+		 * truncation here would hand the panel unparsable JSON. */
+		char state[2048] = {0};
 		pthread_mutex_lock(&g_reg.mutex);
 		struct ios_camera_source *s = locked_pick_source(request);
 		if (s)

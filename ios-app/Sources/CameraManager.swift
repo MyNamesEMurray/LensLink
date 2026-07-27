@@ -53,6 +53,19 @@ final class CameraManager: NSObject {
     private var _onSampleBuffer: ((CMSampleBuffer) -> Void)?
     private let callbackLock = NSLock()
 
+    /// Latest synchronized depth frame while depth assist is active
+    /// (green screen). Same locking pattern as `onSampleBuffer`: set on
+    /// the main thread, read per frame on the capture queue. Depth runs
+    /// slower than video, so this fires less often than `onSampleBuffer`
+    /// (and never when depth assist is off).
+    var onDepthData: ((AVDepthData) -> Void)? {
+        get { callbackLock.lock(); defer { callbackLock.unlock() }
+              return _onDepthData }
+        set { callbackLock.lock(); defer { callbackLock.unlock() }
+              _onDepthData = newValue }
+    }
+    private var _onDepthData: ((AVDepthData) -> Void)?
+
     /// Capture was interrupted (phone call, Camera app, Split View) or
     /// resumed. Delivered on the main queue.
     var onInterruption: ((Bool) -> Void)?
@@ -66,6 +79,18 @@ final class CameraManager: NSObject {
     let sessionQueue = DispatchQueue(label: "obscam.session")
     private let videoQueue = DispatchQueue(label: "obscam.video")
     private var videoOutput: AVCaptureVideoDataOutput?
+
+    /// Depth-assist plumbing (green screen). The synchronizer must stay
+    /// retained in a property or synchronized delivery silently stops.
+    private var depthOutput: AVCaptureDepthDataOutput?
+    private var outputSynchronizer: AVCaptureDataOutputSynchronizer?
+
+    /// True only when the depth path fully armed during the last
+    /// configure: depth sibling device selected, a depth-capable format
+    /// matched the EXACT requested resolution+fps, and the synchronizer
+    /// replaced the plain video delegate. False = segmentation-only
+    /// (graceful degrade). Valid once configure() has returned.
+    private(set) var depthAssistActive = false
 
     override init() {
         super.init()
@@ -165,10 +190,33 @@ final class CameraManager: NSObject {
                                 position: lens.position)
     }
 
+    /// The depth-registered sibling of a user-facing lens: TrueDepth for
+    /// the front camera, LiDAR for the rear Main (Wide) lens — Apple
+    /// registers their depth maps to exactly those YUV cameras. Ultra
+    /// Wide and Telephoto have no depth sibling, and LiDAR needs
+    /// iOS 15.4 (`.builtInLiDARDepthCamera` doesn't exist below that).
+    /// nil = depth assist unavailable; capture stays on the normal
+    /// device, segmentation-only.
+    private static func depthSiblingDevice(for lens: Lens) -> AVCaptureDevice? {
+        if lens.position == .front {
+            return AVCaptureDevice.default(.builtInTrueDepthCamera,
+                                           for: .video, position: .front)
+        }
+        if lens.position == .back,
+           lens.deviceType == .builtInWideAngleCamera {
+            if #available(iOS 15.4, *) {
+                return AVCaptureDevice.default(.builtInLiDARDepthCamera,
+                                               for: .video, position: .back)
+            }
+        }
+        return nil
+    }
+
     private static func format(for device: AVCaptureDevice,
                                resolution: Resolution,
                                fps: Int32,
-                               color: StreamColor) -> AVCaptureDevice.Format? {
+                               color: StreamColor,
+                               requireDepth: Bool = false) -> AVCaptureDevice.Format? {
         let target = resolution.size
         // Require exact dimensions and a frame-rate range covering the
         // requested rate; earlier formats (unbinned, video-range) win ties.
@@ -176,9 +224,15 @@ final class CameraManager: NSObject {
         // capture BT.2020 HLG; Apple Log a 10-bit 4:2:2 (x422) format
         // that can capture .appleLog — nil (unsupported) if none exists.
         // SDR considers every format, exactly as before colour existed.
+        // `requireDepth` (depth assist) additionally requires a format
+        // that can pair with a depth stream — the depth sibling devices
+        // carry both depth-capable and depth-less formats.
         let candidates = device.formats.filter { format in
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
             guard dims.width == target.width, dims.height == target.height else {
+                return false
+            }
+            if requireDepth, format.supportedDepthDataFormats.isEmpty {
                 return false
             }
             switch color {
@@ -252,36 +306,81 @@ final class CameraManager: NSObject {
     static func formatReport() -> String {
         var out = ["\(UIDevice.current.model) — iOS "
                    + UIDevice.current.systemVersion,
-                   "flags: binned / CS / P / SL / R / colour", ""]
+                   "flags: binned / CS / P / SL / R / colour / depth", ""]
         for lens in availableLenses() {
             guard let device = device(for: lens) else { continue }
             out.append("== \(lens.label) ==")
-            for format in device.formats {
-                let dims = CMVideoFormatDescriptionGetDimensions(
-                    format.formatDescription)
-                let maxFps = format.videoSupportedFrameRateRanges
-                    .map(\.maxFrameRate).max() ?? 0
-                var flags = [format.isVideoBinned ? "b" : "-",
-                             format.isCenterStageSupported ? "CS" : "--",
-                             format.isPortraitEffectSupported ? "P" : "-"]
-                if #available(iOS 16.0, *) {
-                    flags.append(format.isStudioLightSupported ? "SL" : "--")
-                } else {
-                    flags.append("?")
-                }
-                if #available(iOS 17.0, *) {
-                    flags.append(format.reactionEffectsSupported ? "R" : "-")
-                } else {
-                    flags.append("?")
-                }
-                flags.append(colourFlags(format))
-                out.append(String(format: "%5dx%-5d fps<=%-3.0f  %@",
-                                  dims.width, dims.height, maxFps,
-                                  flags.joined(separator: " ")))
-            }
+            appendFormatRows(of: device, to: &out)
+            out.append("")
+        }
+        // The depth-sibling devices (green screen's depth assist) carry
+        // their own format tables, different from the plain lenses above.
+        // Dump them under their own headers so device reports answer
+        // which resolution+fps combos can actually carry depth.
+        var depthSiblings: [(String, AVCaptureDevice)] = []
+        if let trueDepth = AVCaptureDevice.default(.builtInTrueDepthCamera,
+                                                   for: .video,
+                                                   position: .front) {
+            depthSiblings.append(("Front TrueDepth (depth sibling)",
+                                  trueDepth))
+        }
+        if #available(iOS 15.4, *),
+           let lidar = AVCaptureDevice.default(.builtInLiDARDepthCamera,
+                                               for: .video,
+                                               position: .back) {
+            depthSiblings.append(("Rear LiDAR (depth sibling)", lidar))
+        }
+        for (title, device) in depthSiblings {
+            out.append("== \(title) ==")
+            appendFormatRows(of: device, to: &out)
             out.append("")
         }
         return out.joined(separator: "\n")
+    }
+
+    /// One diagnostics row per capture format of `device` — shared by
+    /// the user-facing lens dumps and the depth-sibling dumps above.
+    private static func appendFormatRows(of device: AVCaptureDevice,
+                                         to out: inout [String]) {
+        for format in device.formats {
+            let dims = CMVideoFormatDescriptionGetDimensions(
+                format.formatDescription)
+            let maxFps = format.videoSupportedFrameRateRanges
+                .map(\.maxFrameRate).max() ?? 0
+            var flags = [format.isVideoBinned ? "b" : "-",
+                         format.isCenterStageSupported ? "CS" : "--",
+                         format.isPortraitEffectSupported ? "P" : "-"]
+            if #available(iOS 16.0, *) {
+                flags.append(format.isStudioLightSupported ? "SL" : "--")
+            } else {
+                flags.append("?")
+            }
+            if #available(iOS 17.0, *) {
+                flags.append(format.reactionEffectsSupported ? "R" : "-")
+            } else {
+                flags.append("?")
+            }
+            flags.append(colourFlags(format))
+            flags.append(depthFlags(format))
+            out.append(String(format: "%5dx%-5d fps<=%-3.0f  %@",
+                              dims.width, dims.height, maxFps,
+                              flags.joined(separator: " ")))
+        }
+    }
+
+    /// Depth column of the diagnostics table: the largest depth map this
+    /// video format can pair with ("D320x240"), or "-" when it supports
+    /// no depth at all. This is the per-device truth behind which
+    /// combos can run depth assist, the same way the colour column is
+    /// for HDR/Log.
+    private static func depthFlags(_ format: AVCaptureDevice.Format) -> String {
+        let dims = format.supportedDepthDataFormats.map {
+            CMVideoFormatDescriptionGetDimensions($0.formatDescription)
+        }
+        guard let best = dims.max(by: {
+            $0.width * $0.height < $1.width * $1.height
+        }) else { return "-" }
+        return "D\(best.width)x\(best.height)"
     }
 
     /// Colour column of the diagnostics table: the format's bit depth
@@ -416,11 +515,12 @@ final class CameraManager: NSObject {
                    resolution: Resolution,
                    fps: Int32,
                    lockFrameRate: Bool = true,
-                   color: StreamColor = .sdr) throws -> StreamColor {
+                   color: StreamColor = .sdr,
+                   wantsDepth: Bool = false) throws -> StreamColor {
         try sessionQueue.sync {
             try configureOnQueue(lens: lens, resolution: resolution,
                                  fps: fps, lockFrameRate: lockFrameRate,
-                                 color: color)
+                                 color: color, wantsDepth: wantsDepth)
         }
     }
 
@@ -428,13 +528,20 @@ final class CameraManager: NSObject {
                                   resolution: Resolution,
                                   fps: Int32,
                                   lockFrameRate: Bool,
-                                  color: StreamColor) throws -> StreamColor {
+                                  color: StreamColor,
+                                  wantsDepth: Bool) throws -> StreamColor {
         let position = lens.position
         session.beginConfiguration()
         defer { session.commitConfiguration() }
 
         session.inputs.forEach(session.removeInput)
         session.outputs.forEach(session.removeOutput)
+
+        // Reset depth plumbing from any previous configuration; the
+        // depth block below re-arms it only when everything lines up.
+        depthOutput = nil
+        outputSynchronizer = nil
+        depthAssistActive = false
 
         // Format is chosen manually below; presets can't express 4K60.
         session.sessionPreset = .inputPriority
@@ -451,12 +558,28 @@ final class CameraManager: NSObject {
             session.automaticallyConfiguresCaptureDeviceForWideColor = false
         }
 
-        guard let device = Self.device(for: lens) else {
+        guard var device = Self.device(for: lens) else {
             throw NSError(domain: "CameraManager", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Camera not available"])
         }
-        guard let format = Self.format(for: device, resolution: resolution,
-                                       fps: fps, color: color) else {
+        // Depth assist (green screen): swap to the depth-registered
+        // sibling device (TrueDepth / LiDAR) — the plain lenses have no
+        // depth formats at all — but ONLY when the sibling has a
+        // depth-capable format at the EXACT requested resolution+fps.
+        // Otherwise stay on the normal device with depth off:
+        // resolution/fps are NEVER changed to chase depth.
+        var depthPinnedFormat: AVCaptureDevice.Format?
+        if wantsDepth, let sibling = Self.depthSiblingDevice(for: lens),
+           let siblingFormat = Self.format(for: sibling,
+                                           resolution: resolution,
+                                           fps: fps, color: color,
+                                           requireDepth: true) {
+            device = sibling
+            depthPinnedFormat = siblingFormat
+        }
+        guard let format = depthPinnedFormat
+                ?? Self.format(for: device, resolution: resolution,
+                               fps: fps, color: color) else {
             throw NSError(domain: "CameraManager", code: 4,
                           userInfo: [NSLocalizedDescriptionKey:
                             "\(resolution.rawValue) at \(fps) fps is not supported by the \(lens.label) camera"])
@@ -496,6 +619,30 @@ final class CameraManager: NSObject {
         if lockFrameRate {
             device.activeVideoMaxFrameDuration = frameDuration
         }
+        if depthPinnedFormat != nil {
+            // Largest DepthFloat16 entry: meters directly, mapping to an
+            // r16Float texture. Must come from the ACTIVE format's own
+            // supportedDepthDataFormats — anything else throws an
+            // (uncatchable) NSException. If no Float16 entry exists the
+            // system default depth format applies; the compositor
+            // converts defensively either way.
+            let depthFormats = format.supportedDepthDataFormats.filter {
+                CMFormatDescriptionGetMediaSubType($0.formatDescription)
+                    == kCVPixelFormatType_DepthFloat16
+            }
+            if let best = depthFormats.max(by: {
+                let a = CMVideoFormatDescriptionGetDimensions($0.formatDescription)
+                let b = CMVideoFormatDescriptionGetDimensions($1.formatDescription)
+                return a.width * a.height < b.width * b.height
+            }) {
+                device.activeDepthDataFormat = best
+            }
+            // ~15 Hz depth is plenty for a distance cutoff and keeps the
+            // added thermal/power load small. Set AFTER the formats —
+            // changing either resets this duration.
+            device.activeDepthDataMinFrameDuration = CMTime(value: 1,
+                                                            timescale: 15)
+        }
         device.unlockForConfiguration()
         activeDevice = device
 
@@ -515,7 +662,12 @@ final class CameraManager: NSObject {
 
         let output = AVCaptureVideoDataOutput()
         output.alwaysDiscardsLateVideoFrames = true
-        output.setSampleBufferDelegate(self, queue: videoQueue)
+        if depthPinnedFormat == nil {
+            // The pre-existing (and only) delivery path whenever depth is
+            // off; the synchronizer below REPLACES it in depth mode (the
+            // two must never both be active).
+            output.setSampleBufferDelegate(self, queue: videoQueue)
+        }
 
         guard session.canAddOutput(output) else {
             throw NSError(domain: "CameraManager", code: 3,
@@ -523,6 +675,31 @@ final class CameraManager: NSObject {
         }
         session.addOutput(output)
         videoOutput = output
+
+        if depthPinnedFormat != nil {
+            let depth = AVCaptureDepthDataOutput()
+            // Filtered depth avoids NaN holes punched through the
+            // subject (the compositor's gate is NaN-safe regardless, but
+            // filtering gives the smoother matte); late maps are
+            // dropped, never queued.
+            depth.isFilteringEnabled = true
+            depth.alwaysDiscardsLateDepthData = true
+            if session.canAddOutput(depth) {
+                session.addOutput(depth)
+                // One time-matched callback delivers video + depth on
+                // the same capture queue.
+                let synchronizer = AVCaptureDataOutputSynchronizer(
+                    dataOutputs: [output, depth])
+                synchronizer.setDelegate(self, queue: videoQueue)
+                depthOutput = depth
+                outputSynchronizer = synchronizer
+                depthAssistActive = true
+            } else {
+                // Depth output refused: degrade to segmentation-only via
+                // the ordinary delegate path.
+                output.setSampleBufferDelegate(self, queue: videoQueue)
+            }
+        }
 
         // Video-range in every pipeline; only the depth/chroma differ.
         // Apple Log delivers x422 (the Log formats' native subtype);
@@ -554,7 +731,8 @@ final class CameraManager: NSObject {
             return try configureOnQueue(lens: lens, resolution: resolution,
                                         fps: fps,
                                         lockFrameRate: lockFrameRate,
-                                        color: .sdr)
+                                        color: .sdr,
+                                        wantsDepth: wantsDepth)
         }
         output.videoSettings = [
             kCVPixelBufferPixelFormatTypeKey as String: outputPixelFormat
@@ -574,6 +752,18 @@ final class CameraManager: NSObject {
             }
             if position == .front, connection.isVideoMirroringSupported {
                 connection.isVideoMirrored = true
+            }
+        }
+        // Mirror the video connection's geometry onto the depth stream
+        // (when supported) so the depth map stays registered to the
+        // video buffer instead of arriving rotated/flipped.
+        if let depthConnection = depthOutput?.connection(with: .depthData) {
+            if depthConnection.isVideoOrientationSupported {
+                depthConnection.videoOrientation = .landscapeRight
+            }
+            if position == .front,
+               depthConnection.isVideoMirroringSupported {
+                depthConnection.isVideoMirrored = true
             }
         }
         return color
@@ -596,6 +786,12 @@ final class CameraManager: NSObject {
     }
 
     func setZoom(_ factor: CGFloat) {
+        // TODO(green screen depth assist): whether the streamed depth map
+        // tracks videoZoomFactor crops is unconfirmed — under zoom the
+        // compositor's depth gate may misalign with the video. Zoom is
+        // deliberately left alone here (no clamping, no depth teardown);
+        // `depthAssistActive` reports the state and the gate simply may
+        // be off until this is verified on a real device.
         withLockedDevice { device in
             let clamped = max(device.minAvailableVideoZoomFactor,
                               min(factor, maxZoomFactor))
@@ -779,5 +975,46 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
         onSampleBuffer?(sampleBuffer)
+    }
+}
+
+/// Depth mode only: the synchronizer replaces the plain sample-buffer
+/// delegate above and delivers time-matched video + depth in one
+/// callback on the same capture queue.
+extension CameraManager: AVCaptureDataOutputSynchronizerDelegate {
+    func dataOutputSynchronizer(
+        _ synchronizer: AVCaptureDataOutputSynchronizer,
+        didOutput synchronizedDataCollection: AVCaptureSynchronizedDataCollection
+    ) {
+        // Resolve the outputs from the CALLBACK's own synchronizer, never
+        // from self.videoOutput/self.depthOutput: those properties are
+        // rewritten on sessionQueue during a reconfigure while this
+        // callback runs on the capture queue — an unsynchronized
+        // cross-queue read (and a callback holding the OLD synchronizer
+        // could misresolve against the NEW outputs). Everything below is
+        // callback-local state, so a mid-reconfigure delivery is safe.
+        var syncedDepth: AVCaptureSynchronizedDepthData?
+        var syncedVideo: AVCaptureSynchronizedSampleBufferData?
+        for output in synchronizer.dataOutputs {
+            switch synchronizedDataCollection.synchronizedData(for: output) {
+            case let depth as AVCaptureSynchronizedDepthData:
+                syncedDepth = depth
+            case let video as AVCaptureSynchronizedSampleBufferData:
+                syncedVideo = video
+            default:
+                break
+            }
+        }
+        // Depth first, so the compositor holds the freshest map when the
+        // matching video frame lands below. Depth legitimately runs
+        // slower than video — many callbacks carry no depth at all, and
+        // the consumer keeps reusing the last map.
+        if let syncedDepth, !syncedDepth.depthDataWasDropped {
+            onDepthData?(syncedDepth.depthData)
+        }
+        guard let syncedVideo, !syncedVideo.sampleBufferWasDropped else {
+            return
+        }
+        onSampleBuffer?(syncedVideo.sampleBuffer)
     }
 }

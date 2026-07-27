@@ -92,7 +92,8 @@ final class Streamer: ObservableObject {
                                          resolution: resolution,
                                          fps: Int32(fps),
                                          lockFrameRate: !allowVideoEffects,
-                                         color: activeColor)
+                                         color: activeColor,
+                                         wantsDepth: greenScreenEnabled)
         } catch {
             // Never swallow this: a failed reconfigure leaves the session
             // without input/output — a black stream labelled "Live".
@@ -110,6 +111,13 @@ final class Streamer: ObservableObject {
            formatChanged || oldEncoder.codec != activeCodec
                || oldEncoder.color != color {
             rebuildEncoder(codec: activeCodec, color: color)
+        } else if greenScreenEnabled, let encoder {
+            // Lens-only reconfigure while green screen is on: the
+            // encoder survives, but the compositor must be rebuilt
+            // (fresh depth state for the new lens geometry) and depth
+            // availability re-read — Ultra Wide/Telephoto have no
+            // depth sibling. Green screen OFF skips this entirely.
+            wireCameraToEncoder(encoder, color: color)
         }
 
         encoder?.requestKeyframe()
@@ -140,9 +148,7 @@ final class Streamer: ObservableObject {
         newEncoder.onEncodedFrame = { [weak self] frame in
             self?.client.sendVideoFrame(frame)
         }
-        camera.onSampleBuffer = { [weak newEncoder] sampleBuffer in
-            newEncoder?.encode(sampleBuffer)
-        }
+        wireCameraToEncoder(newEncoder, color: color)
         encoder = newEncoder
         client.sendVideoConfig(codec: activeCodec,
                                width: size.width, height: size.height,
@@ -150,6 +156,56 @@ final class Streamer: ObservableObject {
                                color: color)
         startAdaptiveBitrate(
             target: resolution.bitrate(for: activeCodec, color: color))
+    }
+
+    /// Points capture output at `encoder`, routed through the green
+    /// screen compositor when armed. The arm condition is green screen
+    /// ON *and* `color == .sdr` — configure()'s RETURN, not the ask:
+    /// the capture degrade path can flip a 10-bit request to SDR, and
+    /// green screen's BT.709 green is only correct on the SDR path.
+    /// Disarmed keeps the literal pre-green-screen closure, so OFF adds
+    /// zero work to the per-frame hot path. Called after every
+    /// camera.configure at both closure-assignment sites (start /
+    /// rebuildEncoder) plus the lens-only reconfigure while armed.
+    private func wireCameraToEncoder(_ encoder: VideoEncoder,
+                                     color: StreamColor) {
+        if greenScreenEnabled, color == .sdr,
+           FrameCompositor.supportsSegmentation {
+            // A fresh instance per (re)configure: the compositor's
+            // Vision request and cached depth map are stream-shaped
+            // state, and a lens/format change must not leak a stale
+            // depth map into the new geometry. nil = Metal/shader
+            // unavailable — stream uncomposited (the compositor logs).
+            compositor = FrameCompositor(targetFps: Int32(fps))
+        } else {
+            compositor = nil
+        }
+        greenScreenDistance.value = Float(greenScreenMaxDistance)
+        greenScreenDepthActive = compositor != nil && camera.depthAssistActive
+        if let compositor {
+            camera.onSampleBuffer = { [weak encoder, compositor] sampleBuffer in
+                // Fail-open is the compositor's contract: any
+                // Vision/Metal failure returns the original buffer
+                // untouched; nil only on pool exhaustion — drop the
+                // frame, never queue.
+                if let output = compositor.composite(sampleBuffer: sampleBuffer) {
+                    encoder?.encode(output)
+                }
+            }
+            camera.onDepthData = { [compositor,
+                                    distance = greenScreenDistance] depth in
+                // Capture queue: the compositor's properties are
+                // confined there, so the cutoff crosses over on this
+                // ~15 Hz depth path, not per video frame.
+                compositor.maxDistance = distance.value
+                compositor.updateDepth(depth)
+            }
+        } else {
+            camera.onSampleBuffer = { [weak encoder] sampleBuffer in
+                encoder?.encode(sampleBuffer)
+            }
+            camera.onDepthData = nil
+        }
     }
     @Published var codec: VideoCodec {
         didSet {
@@ -174,6 +230,16 @@ final class Streamer: ObservableObject {
             if colorSetting != .sdr && codec != .hevc {
                 codec = .hevc
             }
+            // Green screen is SDR-only (its composite paints BT.709
+            // video-range green): choosing HDR or Apple Log turns it
+            // off — the mirror of greenScreenEnabled forcing Standard.
+            // No re-entry: that didSet only ever writes
+            // `colorSetting = .sdr`, which this `!= .sdr` branch never
+            // matches, so the codec/colour/green-screen triangle
+            // terminates.
+            if colorSetting != .sdr && greenScreenEnabled {
+                greenScreenEnabled = false
+            }
             // The capture pixel format and the encoder profile both
             // follow the colour, so a live stream rebuilds like a
             // format change.
@@ -182,6 +248,55 @@ final class Streamer: ObservableObject {
             }
         }
     }
+    /// Virtual green screen: the phone segments the person (optionally
+    /// depth-gated) and paints everything else chroma green *before*
+    /// encoding, so the wire carries ordinary video and OBS keys it
+    /// like a physical green screen (docs/PROTOCOL.md §7–8). SDR-only:
+    /// enabling forces Standard colour, and picking a non-SDR colour
+    /// turns this off (see colorSetting's didSet for why the pair
+    /// terminates).
+    @Published var greenScreenEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(greenScreenEnabled,
+                                      forKey: "greenScreen")
+            if greenScreenEnabled && colorSetting != .sdr {
+                // Forcing Standard runs colorSetting's didSet, which
+                // reconfigures a live stream itself (with green screen
+                // already on) — the else-if keeps one toggle to one
+                // reconfigure.
+                colorSetting = .sdr
+            } else if isStreaming && greenScreenEnabled != oldValue
+                        && colorSetting == .sdr {
+                // Arm/disarm changes the capture wiring and the depth
+                // request (wantsDepth), so a live change rebuilds like
+                // a format change. The colorSetting == .sdr guard skips
+                // the redundant rebuild when this didSet was ENTERED
+                // from colorSetting.didSet (a non-SDR pick disarming
+                // green screen): that caller reconfigures for the new
+                // colour right after we return — without the guard, one
+                // user action would tear the session down twice.
+                reconfigureLiveCapture(formatChanged: true)
+            }
+        }
+    }
+    /// Depth-assisted max subject distance in metres: anything farther
+    /// is background even where the person mask disagrees. 0 = no
+    /// cutoff ("All"); otherwise the slider's 0.5–5.0 range. A live
+    /// change only updates the compositor's shader parameter (via
+    /// `greenScreenDistance`, on the capture queue) — no reconfigure.
+    @Published var greenScreenMaxDistance: Double {
+        didSet {
+            UserDefaults.standard.set(greenScreenMaxDistance,
+                                      forKey: "greenScreenMaxDistance")
+            greenScreenDistance.value = Float(greenScreenMaxDistance)
+            scheduleStateSend()
+        }
+    }
+    /// True while the live stream is green-screen composited *and*
+    /// depth assist actually armed (TrueDepth front / LiDAR rear Main
+    /// lens with a depth-capable format). The Live screen's Subject
+    /// distance row keys off this; segmentation-only streams hide it.
+    @Published private(set) var greenScreenDepthActive = false
     /// The colour pipeline the next capture/encode will use — the single
     /// source of truth every configure/encoder/config-send site reads.
     var activeColor: StreamColor { color(for: resolution, fps: fps) }
@@ -472,6 +587,25 @@ final class Streamer: ObservableObject {
         case .log:
             state["color"] = StreamColor.log.rawValue
         }
+        // Green screen (docs/PROTOCOL.md §8): the support flag is
+        // always advertised (remote UIs gate their row on it); the
+        // live keys appear only while actually armed — the compositor,
+        // not the setting, is the truth — so a snapshot with green
+        // screen off matches today's apart from supportsGreenScreen.
+        state["supportsGreenScreen"] = FrameCompositor.supportsSegmentation
+        if compositor != nil {
+            state["greenScreen"] = true
+            // Only when true: absent reads as false to every truthiness
+            // consumer, and each byte matters — an OLD plugin's STATE
+            // cache is 1024 bytes with silent truncation, so the armed
+            // snapshot should grow as little as possible.
+            if camera.depthAssistActive {
+                state["greenScreenDepth"] = true
+            }
+            if greenScreenMaxDistance > 0 {
+                state["greenScreenMaxDistance"] = greenScreenMaxDistance
+            }
+        }
         // Mic picker (docs/PROTOCOL.md §8): only while the phone mic is
         // live as the source's audio — remote UIs key their row off
         // micEnabled, and the list is only meaningful with capture up.
@@ -627,6 +761,17 @@ final class Streamer: ObservableObject {
     private let client = StreamClient()
     private var audioReference: AudioReference?
 
+    /// The green screen compositor — exists exactly while armed (green
+    /// screen ON and the colour capture actually delivered is SDR),
+    /// created by `wireCameraToEncoder` and released on disarm/stop.
+    /// nil with green screen on means arming failed (no Metal) and the
+    /// stream runs uncomposited — the STATE snapshot stays honest by
+    /// keying off this, not the setting.
+    private var compositor: FrameCompositor?
+    /// Bridges the main-actor `greenScreenMaxDistance` onto the capture
+    /// queue, where the compositor's `maxDistance` is confined.
+    private let greenScreenDistance = GreenScreenDistanceCell()
+
     init() {
         let defaults = UserDefaults.standard
         resolution = CameraManager.Resolution(
@@ -655,7 +800,24 @@ final class Streamer: ObservableObject {
         }
         // didSet doesn't run during init; enforce the HEVC-only rule here
         // (stored defaults could disagree after an edit or migration).
-        colorSetting = storedCodec == .hevc ? storedColor : .sdr
+        let resolvedColor: StreamColor =
+            storedCodec == .hevc ? storedColor : .sdr
+        colorSetting = resolvedColor
+        // didSet doesn't run during init; enforce the SDR-only green
+        // screen rule here too. When the stored defaults disagree
+        // (green screen saved on alongside a non-SDR colour), the
+        // COLOUR wins and green screen loads off — deliberately:
+        // silently swapping the colour pipeline would change the look
+        // of every frame on the wire, while a dropped green screen is
+        // one visible toggle away.
+        greenScreenEnabled = resolvedColor == .sdr
+            && defaults.bool(forKey: "greenScreen")
+        // Out-of-range persisted cutoffs (an edited plist) reset to
+        // "no cutoff" rather than clamping to an edge the user never
+        // chose.
+        let storedDistance = defaults.double(forKey: "greenScreenMaxDistance")
+        greenScreenMaxDistance =
+            (0.5...5.0).contains(storedDistance) ? storedDistance : 0
         dimWhileStreaming = defaults.object(forKey: "dimWhileStreaming") as? Bool ?? true
         allowVideoEffects = defaults.bool(forKey: "allowVideoEffects")
         sendAudioReference = defaults.bool(forKey: "sendAudioReference")
@@ -915,6 +1077,20 @@ final class Streamer: ObservableObject {
                                       fps: Int32(fps), lens: lens) {
                 selectedLens = lens
             }
+        case "green_screen":
+            // Either field may arrive alone (docs/PROTOCOL.md §7). The
+            // toggle goes through the didSet chain (SDR forcing + live
+            // reconfigure); the cutoff clamps to 0 (no cutoff) or the
+            // slider's 0.5–5.0 m. Screen-mirror connections never reach
+            // here — the broadcast extension runs its own process
+            // without a Streamer.
+            if let on = command["on"] as? Bool, on != greenScreenEnabled {
+                greenScreenEnabled = on
+            }
+            if let distance = (command["maxDistance"] as? NSNumber)?.doubleValue {
+                greenScreenMaxDistance =
+                    distance <= 0 ? 0 : min(max(distance, 0.5), 5.0)
+            }
         default:
             break
         }
@@ -1010,7 +1186,8 @@ final class Streamer: ObservableObject {
                                              resolution: resolution,
                                              fps: Int32(fps),
                                              lockFrameRate: !allowVideoEffects,
-                                             color: activeColor)
+                                             color: activeColor,
+                                             wantsDepth: greenScreenEnabled)
             encoder = VideoEncoder(codec: activeCodec,
                                    width: size.width, height: size.height,
                                    fps: Int32(fps),
@@ -1026,9 +1203,10 @@ final class Streamer: ObservableObject {
         encoder.onEncodedFrame = { [weak self] frame in
             self?.client.sendVideoFrame(frame)
         }
-        camera.onSampleBuffer = { [weak encoder] sampleBuffer in
-            encoder?.encode(sampleBuffer)
-        }
+        // encoder.color is configure()'s returned colour verbatim (the
+        // encoder was just built from it) — the green screen arm check
+        // keys off the return, not the ask.
+        wireCameraToEncoder(encoder, color: encoder.color)
         self.encoder = encoder
 
         isStreaming = true
@@ -1201,6 +1379,11 @@ final class Streamer: ObservableObject {
         client.disconnect()
         camera.stop()
         camera.onSampleBuffer = nil
+        camera.onDepthData = nil
+        // The compositor holds Metal resources and a frame pool —
+        // stream-lifetime state, released with the stream.
+        compositor = nil
+        greenScreenDepthActive = false
         encoder?.stop()
         encoder = nil
         audioReference?.stop()
@@ -1285,5 +1468,30 @@ final class Streamer: ObservableObject {
         let currentStatus = status
         stop()
         status = currentStatus
+    }
+}
+
+/// A locked Float cell bridging the main-actor `greenScreenMaxDistance`
+/// onto the capture queue: the compositor's `maxDistance` is
+/// capture-queue-confined by contract, so the armed depth closure
+/// re-reads this cell there instead of touching main-actor state. File
+/// scope on purpose — nested inside Streamer it would inherit
+/// @MainActor and defeat the point. Same NSLock-per-callback pattern as
+/// CameraManager's closure properties.
+private final class GreenScreenDistanceCell {
+    private let lock = NSLock()
+    private var stored: Float = 0
+
+    var value: Float {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return stored
+        }
+        set {
+            lock.lock()
+            stored = newValue
+            lock.unlock()
+        }
     }
 }

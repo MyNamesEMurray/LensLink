@@ -301,7 +301,13 @@ struct ContentView: View {
                         Text("Apple Log").tag(StreamColor.log)
                     }
                 }
+                // Green screen forces Standard: disabled, not hidden —
+                // a vanished row reads as a lost feature, a greyed one
+                // as a constraint (the Documentation sheet explains).
+                .disabled(streamer.greenScreenEnabled)
             }
+
+            Toggle("Green screen", isOn: $streamer.greenScreenEnabled)
 
             if streamer.cameraPermissionDenied || streamer.micPermissionDenied {
                 Button("Camera access denied — open Settings") {
