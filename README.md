@@ -85,6 +85,14 @@ blanks the source.
   **Apple Log** image and grade it yourself with OBS's Apply LUT filter
   — the plugin decodes it faithfully and otherwise keeps its hands off.
   Nothing else in this space offers it.
+- **Virtual green screen (beta).** Remove your background without a
+  green screen: the phone segments you (any camera, no depth hardware
+  required), composites the background to chroma green before encoding,
+  and the plugin auto-adds a pre-configured chroma-key filter — toggle
+  on the phone, keyed subject in OBS. On Face ID front cameras and
+  LiDAR rear Main cameras, depth sharpens the matte and a
+  **subject distance** cutoff (app Live screen or web panel) drops
+  people walking by behind you.
 - **Pick any lens** — Main, Ultra Wide, Telephoto, or Front — switchable
   live while you stream.
 - **Hold it however.** The app's UI follows the phone's rotation (unless

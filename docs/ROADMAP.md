@@ -17,25 +17,27 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P1 | Thermal & low-power adaptation | Reliability & security | Medium |
 | P1 | Optional pairing & encryption | Reliability & security | Medium |
 | P1 | Graduate the GPU decode pipeline | Performance | Small |
-| P1 | Tally light on the phone | Control & workflow | Small |
 | P2 | Digital pan/tilt + crop | Control & workflow | Medium |
-| P2 | Virtual green screen (background removal) | Video & audio quality | Medium |
-| P2 | 10-bit HEVC + HDR (HLG/PQ) | Video & audio quality | Large |
 | P2 | Voice isolation for the phone mic | Video & audio quality | Small |
 | P2 | Document the control API | Control & workflow | Small |
-| P3 | Apple Log capture | Video & audio quality | Small¹ |
 | P3 | Manual bitrate cap | Video & audio quality | Small |
 | P3 | Zero-copy encoder output | Performance | Medium |
 | P3 | iPad: keep streaming in Split View | Control & workflow | Small |
 | P3 | Two lenses at once (multicam) | Video & audio quality | Large |
-
-¹ once 10-bit HEVC ships.
 
 - **P1 — next up.** Protects or finishes what already ships, plus the
   one tiny-effort/large-payoff outlier. Pick from here first.
 - **P2 — on deck.** Clearly worth building; start once P1 is moving.
 - **P3 — needs a trigger.** A dependency landing, a measurement, or
   real user demand should promote these before anyone starts.
+
+Recently shipped and pruned from this file (see the release notes):
+tally light with customizable colours (v1.8.0), 10-bit HDR (HLG) with
+the zero-copy GPU path and Apple Log (v1.9.0), virtual green screen
+with depth assist and subject-distance cutoff (v1.10.0). Pairing &
+encryption was explicitly deprioritized by the maintainer in 2026-07 —
+revisit when remote start gets promoted or users stream on shared
+networks.
 
 ## Reliability & security
 
@@ -91,46 +93,12 @@ if you do it.*
 
 ## Video & audio quality
 
-### 10-bit HEVC + HDR (HLG/PQ) — P2, large
-iPhones capture HDR by default; the current 8-bit NV12 pipeline throws
-that away, and DroidCam already ships 10-bit HDR transfer. App: 10-bit
-capture format + HEVC Main-10 in `VideoEncoder`; protocol: VIDEO_CONFIG
-gains colour metadata (primaries/transfer/matrix); plugin: map to
-P010 + OBS's HDR colour handling (OBS 28+), including the GPU
-pipeline's per-backend texture formats. Ship with a sensible SDR
-default — Twitch is still SDR, so HDR mainly pays off for YouTube and
-local recording. *The headline video-quality differentiator; the only
-large item on the active list, and it unlocks Apple Log below.*
-
-### Virtual green screen — background removal without the screen — P2, medium
-Camo's flagship paid feature, on the free table. Vision's person
-segmentation (`VNGeneratePersonSegmentationRequest`, iOS 15 — exactly
-our floor) mattes a person from plain RGB on any camera, front or rear
-— no depth hardware required. The wire stays untouched: composite the
-removed background to solid chroma green on the phone and let OBS's
-chroma key provide the transparency. Staged: **v1** segmentation +
-green composite behind an Options toggle (per-frame GPU work — quote
-before/after numbers, lean on the thermal mitigation); **v2** the app
-advertises the mode in STATE and the plugin auto-adds a pre-configured
-chroma-key filter to the source, so the phone toggle alone yields a
-keyed subject in the scene; **v3** depth-assisted edge refinement
-(hair, glasses) where TrueDepth or LiDAR exists — this is where
-Apple's "enhancing live video with TrueDepth" techniques earn their
-keep, as an enhancer rather than a requirement.
-
 ### Voice isolation for the phone mic — P2, small
 The mic features send the raw microphone feed; iOS's built-in
 voice-processing pipeline (echo cancellation + noise suppression, the
 FaceTime mic sound) is nearly free to enable. An Options toggle in the
 Microphone group, applied to the send-phone-mic path. *Makes the
 "phone as wireless mic" feature genuinely usable in untreated rooms.*
-
-### Apple Log capture — P3, small (gated on 10-bit HEVC)
-On iPhone 15 Pro and later the camera can capture in Apple Log
-(`AVCaptureColorSpace.appleLog`); streamers grade it with a LUT in OBS.
-Once the 10-bit path exists this is mostly a capture-format toggle plus
-correct colour tagging, gated to devices that report support. Nothing
-else in this market offers it. *Trigger: 10-bit HEVC shipping.*
 
 ### Two lenses at once (multicam) — P3, large
 `AVCaptureMultiCamSession` (iOS 13+) can run the front and a rear
@@ -152,17 +120,6 @@ users actually hitting the situations it solves; the adaptive path
 covers most of them today.*
 
 ## Control & workflow
-
-### Tally light on the phone — P1, small
-Pro rigs treat tally as table stakes, and no phone-webcam app has it.
-The plugin already tracks per-source visibility (it drives "Disconnect
-when this source isn't shown anywhere") and can read program/preview
-state from the frontend API; send it to the app as a new CONTROL
-command (`{"cmd":"tally","state":"live|preview|idle"}` — old apps
-ignore unknown commands, so it's compatible) and surface it on the
-Live screen. UI_DESIGN.md §2 needs a tally state added to the status
-vocabulary. For multi-phone scenes this removes the "which camera am I
-on?" guesswork. *The best payoff-per-line on this list.*
 
 ### Digital pan/tilt + crop — reframe without touching the rig — P2, medium
 Zoom today is the camera's own, always center-locked. An adjustable

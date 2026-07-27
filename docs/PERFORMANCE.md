@@ -230,3 +230,16 @@ Deliberate divergences (don't "fix" these without reading this):
 - **Rotation is sensor-native** (`.landscapeRight`, an effective 0°).
   The AVCaptureConnection docs warn per-frame rotation costs; we never
   rotate the stream, only the on-phone preview.
+- **Green screen OFF is free, ON pays exactly once.** With the toggle
+  off, the capture→encode path is the pre-feature code verbatim — no
+  compositor branch on the hot path, no depth output attached. On, the
+  budget is: Vision person segmentation per frame (`.fast` above
+  30 fps, `.balanced` at 30 — the dominant cost), one Metal compute
+  pass writing green into a pool buffer (that pass *is* the single
+  copy; the camera's own buffer is never written in place — it races
+  the encoder's async read), and depth at ~15 Hz when assist is
+  active. Depth delivery deactivates Center Stage and the system video
+  effects by iOS policy, and overload sheds frames via the existing
+  drop-don't-queue capture behaviour. On-device bench + thermal-soak
+  numbers for green-screen-ON are still to be captured and pasted
+  here; the OFF run must show the zero-cost claim holds.

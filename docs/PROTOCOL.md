@@ -123,6 +123,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
 { "cmd": "mic", "id": "builtin:2" }
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
+{ "cmd": "green_screen", "on": true, "maxDistance": 2.5 }
 ```
 
 `set_format` switches the capture format mid-stream; any subset of its
@@ -173,6 +174,18 @@ serving as source audio (type 10). An older app ignores the command and
 streams continuously, which the plugin handles fine; a plugin that never
 sends it gets today's always-on behaviour.
 
+`green_screen` toggles the virtual green screen and its depth cutoff;
+either field may appear alone. `on` arms/disarms the segmentation +
+green composite (the compositing happens **on the phone, before
+encoding** — the wire carries ordinary video whose background happens
+to be chroma green, so receivers need no new decode behaviour).
+`maxDistance` (metres; `0` = no cutoff, otherwise 0.5–5.0) drives the
+depth-assisted subject cutoff and is meaningful only while depth
+assist is active — the app clamps and ignores as needed. Green screen
+is SDR-only: arming it forces the Standard colour pipeline, and the
+STATE fields below keep every surface honest about what's running.
+Camera connections only; screen mirror ignores it.
+
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
 
@@ -215,6 +228,16 @@ While a 10-bit colour pipeline is active the snapshot says so —
 H.264 through the ordinary `set_format` validation. Both fields are
 absent on SDR streams, whose snapshots are unchanged from before
 colour modes existed.
+
+Green screen state rides the snapshot the same way:
+`"supportsGreenScreen": true` advertises the feature (remote UIs gate
+their row on it), `"greenScreen": true` appears while it is armed,
+`"greenScreenDepth": true` while depth assist is actually running
+(TrueDepth front / LiDAR rear Main lens, and a depth-capable format
+matched), and `"greenScreenMaxDistance"` carries the cutoff in metres
+when one is set. The plugin also reacts to `"greenScreen": true` on a
+camera source by auto-adding a pre-configured chroma-key filter —
+once, by name, respecting a user's later deletion of it.
 
 While the phone mic streams as the source's audio (packet type 10), the
 snapshot additionally carries `micEnabled: true`, the selected `mic` id,
