@@ -23,6 +23,14 @@ struct DocumentationView: View {
             }
 
             Section {
+                Text("**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks.")
+                Text("**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects.")
+                Text("**Subject distance** appears on the Live screen while depth assist runs: anything farther than the distance becomes background — the way to drop a passer-by behind you. Tap the readout to go back to **All** (no limit).")
+            } header: {
+                Text("Green screen")
+            }
+
+            Section {
                 Text("**Send phone mic** makes this phone the camera's audio in OBS — a wireless mic.")
                 Text("**Auto lip-sync** sends the mic only as a timing reference for aligning your real microphone; it's never heard.")
                 Text("One mic, one role — turning one on turns the other off.")

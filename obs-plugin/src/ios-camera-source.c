@@ -62,6 +62,13 @@ static void gpu_pipeline_free(struct ios_camera_source *s);
 /* Built-in OBS "Video Delay (Async)" filter. */
 #define ASYNC_DELAY_FILTER_ID "async_delay_filter"
 #define ASYNC_DELAY_FILTER_NAME "LensLink auto lip-sync delay"
+
+/* Built-in OBS "Chroma Key" filter (v2), auto-added once when the app
+ * reports its virtual green screen active. The persisted flag remembers
+ * the add so a user's deletion of the filter is respected forever. */
+#define CHROMA_KEY_FILTER_ID "chroma_key_filter_v2"
+#define CHROMA_KEY_FILTER_NAME "LensLink green screen key"
+#define S_GS_FILTER_ADDED "gs_filter_added"
 #define MODE_DIAL "dial"
 #define MODE_USB "usb"
 #define T_(s) obs_module_text(s)
@@ -193,8 +200,10 @@ struct ios_camera_source {
 	int control_count;
 
 	/* Latest camera-state JSON reported by the app (for remote UIs).
-	 * Guarded by status_mutex. */
-	char device_state[1024];
+	 * Guarded by status_mutex. Sized well past today's biggest snapshot
+	 * (mics/resolutions/lens lists + green screen): silent truncation
+	 * here breaks the web panel's JSON.parse. */
+	char device_state[2048];
 
 	/* Health mirrors for the frontend UI (the live counters belong to
 	 * the dial thread's client_state; these are 1 Hz copies). Guarded
@@ -803,6 +812,59 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 		obs_source_filter_add(s->source, filter);
 		obs_source_release(filter);
 	}
+	obs_data_release(settings);
+}
+
+/*
+ * The app reports its virtual green screen active: make sure a chroma-key
+ * filter is keying the synthetic green background. Runs on the dial-loop
+ * thread — filter work from here is the set_video_delay precedent above
+ * (OBS guards the filter list internally). The filter is added ONCE per
+ * source, pre-configured for the app's uniform chroma green (#00B140,
+ * softened only by 4:2:0 encoding — tighter similarity than the stock
+ * defaults). After that it's the user's: an existing filter is never
+ * retuned or re-enabled, and the persisted "added once" flag means a
+ * deleted filter stays deleted, forever.
+ */
+static void ensure_chroma_key_filter(struct ios_camera_source *s)
+{
+	obs_source_t *existing = obs_source_get_filter_by_name(
+		s->source, CHROMA_KEY_FILTER_NAME);
+	if (existing) {
+		obs_source_release(existing);
+		return;
+	}
+
+	obs_data_t *settings = obs_source_get_settings(s->source);
+	if (obs_data_get_bool(settings, S_GS_FILTER_ADDED)) {
+		/* Flag set + filter absent = the user deleted it. */
+		obs_data_release(settings);
+		return;
+	}
+
+	obs_data_t *fs = obs_data_create();
+	obs_data_set_string(fs, "key_color_type", "green");
+	obs_data_set_int(fs, "similarity", 300);
+	obs_data_set_int(fs, "smoothness", 70);
+	obs_data_set_int(fs, "spill", 100);
+	/* NB: "opacity" is a double in v2 (0.0–1.0) — leave its default. */
+	obs_source_t *filter = obs_source_create_private(
+		CHROMA_KEY_FILTER_ID, CHROMA_KEY_FILTER_NAME, fs);
+	if (filter) {
+		obs_source_filter_add(s->source, filter);
+		obs_source_release(filter);
+		blog(LOG_INFO,
+		     "[lenslink] green screen active — added a "
+		     "pre-configured chroma-key filter");
+		/* Remember the add on the source's live settings object.
+		 * Deliberately NO obs_source_update: from this thread it
+		 * would re-enter ios_camera_update synchronously (and
+		 * pthread_join this very thread if connection settings had
+		 * changed). The settings object is shared with the source,
+		 * so the flag persists in the scene collection anyway. */
+		obs_data_set_bool(settings, S_GS_FILTER_ADDED, true);
+	}
+	obs_data_release(fs);
 	obs_data_release(settings);
 }
 
@@ -1590,19 +1652,23 @@ static void extract_json_string(const char *json, const char *key, char *out,
 }
 
 /* True only for a bare-boolean "key": true (same best-effort spirit as
- * extract_json_string). Absent key or any other value reads as false. */
+ * extract_json_string). Absent key or any other value reads as false.
+ * The pattern includes the ADJACENT colon: user-controlled string
+ * values in the snapshot (Bluetooth mic names, say) can contain the
+ * literal key text, and scanning to the *next* colon from a value hit
+ * would read some other key's value. Quote+key+quote+colon cannot occur
+ * inside JSON string content (an embedded quote is always escaped), so
+ * this anchors to real keys only. JSONSerialization emits compact
+ * "key":value with no space before the colon. */
 static bool extract_json_bool(const char *json, const char *key)
 {
 	char pattern[64];
-	snprintf(pattern, sizeof(pattern), "\"%s\"", key);
+	snprintf(pattern, sizeof(pattern), "\"%s\":", key);
 
 	const char *p = strstr(json, pattern);
 	if (!p)
 		return false;
-	p = strchr(p + strlen(pattern), ':');
-	if (!p)
-		return false;
-	p++;
+	p += strlen(pattern);
 	while (*p == ' ' || *p == '\t')
 		p++;
 	return strncmp(p, "true", 4) == 0;
@@ -1953,7 +2019,18 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				   : sizeof(s->device_state) - 1;
 		memcpy(s->device_state, payload, n);
 		s->device_state[n] = 0;
+		bool green_screen =
+			extract_json_bool(s->device_state, "greenScreen");
+		/* Green screen is SDR-only; the snapshot carries "hdr" (HLG)
+		 * or "color" (Apple Log) only while a 10-bit pipeline runs.
+		 * The app enforces the exclusivity — this is belt and braces
+		 * so a keyed filter is never added over a stream whose green
+		 * isn't chroma green. */
+		bool ten_bit = extract_json_bool(s->device_state, "hdr") ||
+			       strstr(s->device_state, "\"color\":") != NULL;
 		pthread_mutex_unlock(&s->status_mutex);
+		if (green_screen && !ten_bit && !s->is_screen_source)
+			ensure_chroma_key_filter(s);
 		break;
 	}
 	case OBSC_PKT_TIMESYNC_RESP:
@@ -2763,6 +2840,9 @@ static void ios_camera_get_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, S_AUTO_VIDEO_DELAY, false);
 	obs_data_set_default_bool(settings, S_DEACTIVATE_HIDDEN, false);
 	obs_data_set_default_bool(settings, S_AUTO_START, true);
+	/* Bookkeeping, not a user control: set (never cleared) after the
+	 * green-screen chroma-key filter has been auto-added once. */
+	obs_data_set_default_bool(settings, S_GS_FILTER_ADDED, false);
 }
 
 static bool add_audio_source(void *data, obs_source_t *source)

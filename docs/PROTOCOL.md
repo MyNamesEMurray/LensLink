@@ -234,8 +234,12 @@ Green screen state rides the snapshot the same way:
 their row on it), `"greenScreen": true` appears while it is armed,
 `"greenScreenDepth": true` while depth assist is actually running
 (TrueDepth front / LiDAR rear Main lens, and a depth-capable format
-matched), and `"greenScreenMaxDistance"` carries the cutoff in metres
-when one is set. The plugin also reacts to `"greenScreen": true` on a
+matched — absent means segmentation-only; remote UIs key the distance
+control off truthiness), and `"greenScreenMaxDistance"` carries the
+cutoff in metres when one is set. Boolean snapshot fields are emitted
+only when true: a receiver's STATE cache has finite room (older
+plugins truncate silently past 1 KiB), so snapshot growth is real
+cost — weigh every new field against it. The plugin also reacts to `"greenScreen": true` on a
 camera source by auto-adding a pre-configured chroma-key filter —
 once, by name, respecting a user's later deletion of it.
 

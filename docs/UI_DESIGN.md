@@ -248,7 +248,7 @@ surfaces.
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
 | Dim (app)   | `moon.fill`                                | App-only battery saver |
 | Stats (app) | `gauge`                                    | App-only toggle; shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
-| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen; while live **with depth assist**, a "Subject distance" slider row (0.5–5.0 m, readout `2.5 m` monospaced, "All" at the no-cutoff position) appears on the Live panel and the web panel, same position both surfaces |
+| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen; while live **with depth assist**, a "Subject distance" slider row (0.5–5.0 m, readout `2.5 m` monospaced) appears on the Live panel and the web panel, same position both surfaces. Dragging always sets a real cutoff — full-left = tightest (0.5 m); **"All" (no cutoff) is entered by tapping the readout**, and while "All" the thumb parks at the far (5.0) end. Identical on both surfaces |
 
 ### The app icon (three appearances)
 

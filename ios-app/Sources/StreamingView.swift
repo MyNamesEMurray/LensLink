@@ -314,6 +314,8 @@ struct StreamingView: View {
 
             whiteBalanceRow
 
+            greenScreenRow
+
             micRow
 
             HStack(spacing: Theme.Space.m) {
@@ -463,6 +465,59 @@ struct StreamingView: View {
                 }
             }
         }
+    }
+
+    /// Green screen subject distance (docs/UI_DESIGN.md §5): anything
+    /// farther than this is background even where the person shape
+    /// disagrees. Shown only while the stream is composited *with*
+    /// depth assist running — without depth the cutoff can do nothing,
+    /// and screen mirror never shows this screen at all. Standard
+    /// slider-row anatomy (§4); the readout doubles as the "All"
+    /// affordance: it shows the cutoff and taps back to no-cutoff
+    /// (model value 0), while "All" itself is plain text.
+    @ViewBuilder
+    private var greenScreenRow: some View {
+        if streamer.greenScreenDepthActive {
+            HStack(spacing: Theme.Space.m) {
+                Image(systemName: "person.fill.viewfinder")
+                Slider(value: subjectDistanceBinding,
+                       in: 0.5...5.0, step: 0.1) { editing in
+                    if editing { touched() }
+                }
+                Image(systemName: "person.2.fill")
+                if streamer.greenScreenMaxDistance > 0 {
+                    Button {
+                        touched()
+                        streamer.greenScreenMaxDistance = 0
+                    } label: {
+                        Text(String(format: "%.1f m",
+                                    streamer.greenScreenMaxDistance))
+                            .font(.caption.monospacedDigit())
+                            .frame(width: 44, alignment: .trailing)
+                    }
+                } else {
+                    Text("All")
+                        .font(.caption.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
+                }
+            }
+        }
+    }
+
+    /// The slider's projection of the 0-means-All model value: while
+    /// "All", the thumb parks at the far end (everything in reach is
+    /// subject); any drag sets a real cutoff.
+    private var subjectDistanceBinding: Binding<Double> {
+        Binding(
+            get: {
+                streamer.greenScreenMaxDistance > 0
+                    ? streamer.greenScreenMaxDistance : 5.0
+            },
+            set: { value in
+                // Re-round despite the slider's step: float dust would
+                // jitter the readout and the STATE snapshot.
+                streamer.greenScreenMaxDistance = (value * 10).rounded() / 10
+            })
     }
 
     /// Mic picker: which microphone feeds OBS. Shown only while the phone
