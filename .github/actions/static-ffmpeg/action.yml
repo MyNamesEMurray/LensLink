@@ -1,0 +1,136 @@
+name: Static FFmpeg (decode-only)
+description: >-
+  Builds a minimal static FFmpeg — H.264/HEVC decode plus the platform's
+  GPU decode API, nothing else — into ffmpeg-static/ at the workspace
+  root, cached between runs. Plugin binaries link this instead of the
+  FFmpeg inside OBS: FFmpeg's library names change with its major
+  version (avcodec-61.dll, libavcodec.so.60, ...), so a plugin linked
+  against OBS's copy stops loading the moment an OBS update ships a
+  newer FFmpeg (issues #65, #91, #93). With the decoder built in, one
+  plugin release keeps working across OBS updates.
+
+inputs:
+  version:
+    description: FFmpeg release to build
+    required: false
+    default: "7.1"
+
+runs:
+  using: composite
+  steps:
+    # hashFiles of this action: editing any configure flag or build step
+    # invalidates the cache automatically — no manual key bump to forget.
+    - name: Cache static FFmpeg
+      id: cache
+      uses: actions/cache@v6
+      with:
+        path: ffmpeg-static
+        key: ffmpeg-static-${{ runner.os }}-${{ inputs.version }}-${{ hashFiles('.github/actions/static-ffmpeg/**') }}
+
+    # Unconditional (not gated on the cache): libva-dev is needed again
+    # later when the plugin links the cached static libavutil, whose
+    # VAAPI hwcontext references libva symbols.
+    - name: Install Linux build dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y nasm libva-dev libdrm-dev
+
+    # H.264/HEVC decode + VAAPI, nothing else; the only FFmpeg-related
+    # runtime needs left are libva/libva-drm, whose soname has been
+    # stable since 2017 and which every VAAPI-capable system ships.
+    - name: Build (Linux)
+      if: runner.os == 'Linux' && steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        FFMPEG_VERSION: ${{ inputs.version }}
+      run: |
+        curl -LO "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
+        tar xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
+        cd "ffmpeg-${FFMPEG_VERSION}"
+        ./configure --prefix="$GITHUB_WORKSPACE/ffmpeg-static" \
+          --disable-everything --disable-programs --disable-doc \
+          --disable-avformat --disable-avfilter --disable-swscale \
+          --disable-swresample --disable-avdevice --disable-network \
+          --disable-debug --disable-autodetect \
+          --enable-decoder=h264,hevc --enable-parser=h264,hevc \
+          --enable-vaapi --enable-hwaccel=h264_vaapi,hevc_vaapi \
+          --enable-pic --disable-shared --enable-static \
+          || { tail -n 50 ffbuild/config.log; exit 1; }
+        make -j"$(nproc)"
+        make install
+
+    # Same shape with VideoToolbox, built once per slice and merged with
+    # lipo to match the universal plugin. The linking side of this lives
+    # in CMakeLists.txt: the plugin links the CoreMedia/VideoToolbox
+    # frameworks the static hwaccel resolves against.
+    - name: Build (macOS, universal)
+      if: runner.os == 'macOS' && steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        FFMPEG_VERSION: ${{ inputs.version }}
+      run: |
+        brew install nasm
+        curl -LO "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
+        tar xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
+        # --enable-cross-compile on the native slice too: it only turns
+        # off configure-time runtime probing, and keeps both invocations
+        # identical.
+        for arch in arm64 x86_64; do
+          mkdir -p "ffmpeg-build-$arch"
+          (cd "ffmpeg-build-$arch" && \
+           "../ffmpeg-${FFMPEG_VERSION}/configure" \
+             --prefix="$GITHUB_WORKSPACE/ffmpeg-arch-$arch" \
+             --enable-cross-compile --target-os=darwin \
+             --arch="$arch" --cc="clang -arch $arch" \
+             --extra-cflags="-mmacosx-version-min=13.0" \
+             --extra-ldflags="-mmacosx-version-min=13.0" \
+             --disable-everything --disable-programs --disable-doc \
+             --disable-avformat --disable-avfilter --disable-swscale \
+             --disable-swresample --disable-avdevice --disable-network \
+             --disable-debug --disable-autodetect \
+             --enable-decoder=h264,hevc --enable-parser=h264,hevc \
+             --enable-videotoolbox \
+             --enable-hwaccel=h264_videotoolbox,hevc_videotoolbox \
+             --enable-pic --disable-shared --enable-static \
+             || { tail -n 50 ffbuild/config.log; exit 1; } && \
+           make -j"$(sysctl -n hw.ncpu)" && make install)
+        done
+        # One header set is enough: avconfig.h is identical for both
+        # slices (same endianness and word size). No pkgconfig dir on
+        # purpose — the per-arch .pc files carry the wrong prefix, and
+        # the workflows pass explicit library paths instead.
+        mkdir -p ffmpeg-static/lib
+        cp -R ffmpeg-arch-arm64/include ffmpeg-static/include
+        for lib in libavcodec libavutil; do
+          lipo -create "ffmpeg-arch-arm64/lib/$lib.a" \
+            "ffmpeg-arch-x86_64/lib/$lib.a" \
+            -output "ffmpeg-static/lib/$lib.a"
+        done
+
+    # FFmpeg's build system is a shell script, but the compiler must be
+    # MSVC (cl.exe) so the archives link into the plugin's Visual Studio
+    # build: import the vcvars64 environment into this process, then run
+    # the build under the runner's stock MSYS2 with that environment
+    # inherited (build-windows.sh).
+    - name: Build (Windows)
+      if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      env:
+        FFMPEG_VERSION: ${{ inputs.version }}
+      run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vs = & $vswhere -latest -products * `
+          -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+          -property installationPath
+        cmd /s /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" > nul 2>&1 && set" |
+          ForEach-Object {
+            $name, $value = $_ -split '=', 2
+            if ($name -and $value) { Set-Item -Path "env:$name" -Value $value }
+          }
+        $env:MSYS2_PATH_TYPE = "inherit"
+        $env:CHERE_INVOKING = "1"
+        $script = "${env:GITHUB_ACTION_PATH}\build-windows.sh" -replace '\\', '/'
+        C:\msys64\usr\bin\bash -l $script
+        if ($LASTEXITCODE -ne 0) { throw "static FFmpeg build failed" }

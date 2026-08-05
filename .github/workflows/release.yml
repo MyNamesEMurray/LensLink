@@ -36,48 +36,22 @@ jobs:
   plugin-linux:
     name: OBS plugin (Linux)
     runs-on: ubuntu-latest
-    env:
-      FFMPEG_VERSION: "7.1"
     steps:
       - uses: actions/checkout@v7
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake pkg-config libobs-dev qt6-base-dev \
-            nasm libva-dev libdrm-dev
+          sudo apt-get install -y cmake pkg-config libobs-dev qt6-base-dev
 
-      # The release tarball has to run on every distro, but linking the
-      # runner's shared FFmpeg pins an FFmpeg-major soname
-      # (libavcodec.so.60) that rolling distros no longer ship — the
-      # plugin then fails to load at all (issue #65). So releases link a
-      # minimal static FFmpeg (H.264/HEVC decode + VAAPI, nothing else);
-      # the only FFmpeg-related runtime needs left are libva/libva-drm,
-      # whose soname has been stable since 2017 and which every
-      # VAAPI-capable system already ships.
-      - name: Cache static FFmpeg
-        id: cache-ffmpeg
-        uses: actions/cache@v6
-        with:
-          path: ffmpeg-static
-          key: ffmpeg-static-${{ env.FFMPEG_VERSION }}-decode-vaapi-v1
-
-      - name: Build static FFmpeg (H.264/HEVC decode + VAAPI only)
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: |
-          curl -LO "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
-          tar xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
-          cd "ffmpeg-${FFMPEG_VERSION}"
-          ./configure --prefix="$GITHUB_WORKSPACE/ffmpeg-static" \
-            --disable-everything --disable-programs --disable-doc \
-            --disable-avformat --disable-avfilter --disable-swscale \
-            --disable-swresample --disable-avdevice --disable-network \
-            --disable-debug --disable-autodetect \
-            --enable-decoder=h264,hevc --enable-parser=h264,hevc \
-            --enable-vaapi --enable-hwaccel=h264_vaapi,hevc_vaapi \
-            --enable-pic --disable-shared --enable-static
-          make -j"$(nproc)"
-          make install
+      # The release tarball has to run on every distro, but linking a
+      # shared FFmpeg pins an FFmpeg-major soname (libavcodec.so.60)
+      # that rolling distros no longer ship — the plugin then fails to
+      # load at all (issue #65; the same failure hit Windows as #91/#93
+      # when an OBS update moved its bundled FFmpeg). So all release
+      # builds link the minimal static FFmpeg this action builds.
+      - name: Build static FFmpeg (H.264/HEVC decode only)
+        uses: ./.github/actions/static-ffmpeg
 
       # The grep guard: the status-bar/dock UI degrades *silently* when Qt6
       # or obs-frontend-api.h is missing (that's how releases shipped
@@ -102,10 +76,16 @@ jobs:
 
       # Fail the release if the binary regressed to soname-coupled shared
       # FFmpeg (the exact breakage of issue #65), or lost its VAAPI link.
+      # Plain `if grep`, not `! grep`: a `!` line that isn't the last
+      # command is non-fatal under the runner's bash -e, so the old
+      # negated form could never fail the step.
       - name: Verify FFmpeg linked statically
         run: |
           readelf -d obs-plugin/build/lenslink.so | tee needed.log
-          ! grep -E "NEEDED.*(libavcodec|libavutil)" needed.log
+          if grep -E "NEEDED.*(libavcodec|libavutil)" needed.log; then
+            echo "::error::lenslink.so links shared FFmpeg (issue #65)"
+            exit 1
+          fi
           grep -qE "NEEDED.*libva\.so" needed.log
 
       - name: Package (extract into ~/.config/obs-studio/plugins)
@@ -124,6 +104,9 @@ jobs:
     name: OBS plugin (Windows)
     runs-on: windows-2022
     env:
+      # libobs + Qt6 pins only — FFmpeg is linked statically (see the
+      # static-ffmpeg action step), so these no longer have to track the
+      # FFmpeg inside the OBS release users run (issues #91, #93).
       OBS_REF: "32.1.2"
       DEPS_TAG: "2025-08-23"
     steps:
@@ -139,7 +122,7 @@ jobs:
           ref: ${{ env.OBS_REF }}
           path: obs-studio
 
-      - name: Download OBS prebuilt dependencies (FFmpeg, Qt6)
+      - name: Download OBS prebuilt dependencies (for libobs; Qt6)
         run: |
           curl -L -o deps.zip "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/windows-deps-${{ env.DEPS_TAG }}-x64.zip"
           7z x deps.zip -oobs-deps
@@ -147,6 +130,9 @@ jobs:
           # plugin's status-bar/dock UI — keep in sync with build.yml.
           curl -L -o deps-qt6.zip "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/windows-deps-qt6-${{ env.DEPS_TAG }}-x64.zip"
           7z x -y deps-qt6.zip -oobs-deps
+
+      - name: Build static FFmpeg (H.264/HEVC decode only)
+        uses: ./.github/actions/static-ffmpeg
 
       - name: Cache libobs build
         id: cache-libobs
@@ -169,6 +155,8 @@ jobs:
       # The Select-String guard: the status-bar/dock UI degrades *silently*
       # when Qt6 or obs-frontend-api.h is missing (that's how releases
       # shipped without it once) — a release build must fail instead.
+      # DISABLE_FIND_PACKAGE_PkgConfig + the static FFmpeg paths: keep in
+      # sync with build.yml (see the note there).
       - name: Build plugin
         run: |
           $version = "${{ inputs.tag_name || github.ref_name }}".TrimStart("v")
@@ -178,14 +166,34 @@ jobs:
             -DLIBOBS_INCLUDE_DIR="${{ github.workspace }}\obs-studio\libobs;${{ github.workspace }}\obs-build\config;${{ github.workspace }}\obs-studio\deps\w32-pthreads" `
             -DLIBOBS_LIBRARY="${{ github.workspace }}\obs-build\libobs\Release\obs.lib;${{ github.workspace }}\obs-build\deps\w32-pthreads\Release\w32-pthreads.lib" `
             -DOBS_FRONTEND_API_HINT="${{ github.workspace }}\obs-studio\frontend\api;${{ github.workspace }}\obs-studio\UI\obs-frontend-api" `
-            -DFFMPEG_INCLUDE_DIR="${{ github.workspace }}\obs-deps\include" `
-            -DAVCODEC_LIBRARY="${{ github.workspace }}\obs-deps\lib\avcodec.lib" `
-            -DAVUTIL_LIBRARY="${{ github.workspace }}\obs-deps\lib\avutil.lib" `
+            -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON `
+            -DFFMPEG_INCLUDE_DIR="${{ github.workspace }}\ffmpeg-static\include" `
+            -DAVCODEC_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avcodec.lib" `
+            -DAVUTIL_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avutil.lib" `
             | Tee-Object -FilePath configure.log
           if (-not (Select-String -Quiet -SimpleMatch "frontend UI enabled" -Path configure.log)) {
             throw "status-bar/dock UI missing from this release build (Qt6/obs-frontend-api not found)"
           }
           cmake --build plugin-build --config Release
+
+      # A release DLL importing avcodec-NN.dll/avutil-NN.dll only loads
+      # while OBS ships that exact FFmpeg major — the next OBS update
+      # breaks it with LoadLibrary error 126 (issues #91, #93). The
+      # obs.dll check keeps the negative check honest.
+      - name: Verify FFmpeg linked statically
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $dumpbin = & $vswhere -latest -products * `
+            -find "VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe" |
+            Select-Object -First 1
+          $deps = & $dumpbin /dependents plugin-build\Release\lenslink.dll | Out-String
+          Write-Host $deps
+          if ($deps -match "avcodec|avutil") {
+            throw "lenslink.dll imports OBS's FFmpeg DLLs (breaks on OBS updates)"
+          }
+          if ($deps -notmatch "obs\.dll") {
+            throw "obs.dll import missing - dependents dump looks wrong"
+          }
 
       - name: Package (extract into C:\Program Files\obs-studio)
         run: |
@@ -217,6 +225,9 @@ jobs:
     name: OBS plugin (macOS)
     runs-on: macos-15
     env:
+      # libobs + Qt6 pins only — FFmpeg is linked statically (see the
+      # static-ffmpeg action step), so these no longer have to track the
+      # FFmpeg inside the OBS release users run (issues #91, #93).
       OBS_REF: "32.1.2"
       DEPS_TAG: "2025-08-23"
     steps:
@@ -232,7 +243,7 @@ jobs:
           ref: ${{ env.OBS_REF }}
           path: obs-studio
 
-      - name: Download OBS prebuilt dependencies (FFmpeg, Qt6)
+      - name: Download OBS prebuilt dependencies (for libobs; Qt6)
         run: |
           curl -L -o deps.tar.xz "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/macos-deps-${{ env.DEPS_TAG }}-universal.tar.xz"
           mkdir obs-deps
@@ -240,6 +251,9 @@ jobs:
           # Qt6 for the status-bar/dock UI — keep in sync with build.yml.
           curl -L -o deps-qt6.tar.xz "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/macos-deps-qt6-${{ env.DEPS_TAG }}-universal.tar.xz"
           tar -xJf deps-qt6.tar.xz -C obs-deps
+
+      - name: Build static FFmpeg (H.264/HEVC decode only)
+        uses: ./.github/actions/static-ffmpeg
 
       # "macos" in the key: cache keys are not runner-scoped, and the
       # Windows job already uses libobs-<ref>-<tag> for its MSVC build.
@@ -272,6 +286,8 @@ jobs:
       # The grep guard: the status-bar/dock UI degrades *silently* when Qt6
       # or obs-frontend-api.h is missing (that's how releases shipped
       # without it once) — a release build must fail instead.
+      # DISABLE_FIND_PACKAGE_PkgConfig + the static FFmpeg paths: keep in
+      # sync with build.yml (see the note there).
       - name: Build plugin
         run: |
           set -o pipefail
@@ -285,12 +301,27 @@ jobs:
             -DOBS_FRONTEND_API_HINT="$PWD/obs-studio/frontend/api;$PWD/obs-studio/UI/obs-frontend-api" \
             -DLIBOBS_INCLUDE_DIR="$PWD/obs-studio/libobs;$PWD/obs-build/config" \
             -DLIBOBS_LIBRARY="$PWD/obs-build/libobs/Release/libobs.framework" \
-            -DFFMPEG_INCLUDE_DIR="$PWD/obs-deps/include" \
-            -DAVCODEC_LIBRARY="$PWD/obs-deps/lib/libavcodec.dylib" \
-            -DAVUTIL_LIBRARY="$PWD/obs-deps/lib/libavutil.dylib" \
+            -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON \
+            -DFFMPEG_INCLUDE_DIR="$PWD/ffmpeg-static/include" \
+            -DAVCODEC_LIBRARY="$PWD/ffmpeg-static/lib/libavcodec.a" \
+            -DAVUTIL_LIBRARY="$PWD/ffmpeg-static/lib/libavutil.a" \
             | tee configure.log
           grep -q "frontend UI enabled" configure.log
           cmake --build plugin-build
+
+      # A release binary referencing libavcodec.NN.dylib only loads while
+      # OBS ships that exact FFmpeg major — the next OBS update breaks it
+      # (the macOS twin of Windows issues #91, #93). The libobs check
+      # keeps the negative check honest. Plain `if grep`, not `! grep`:
+      # a `!` line that isn't last is non-fatal under bash -e.
+      - name: Verify FFmpeg linked statically
+        run: |
+          otool -L plugin-build/lenslink.so | tee deps.log
+          if grep -E "libav(codec|util)" deps.log; then
+            echo "::error::lenslink.so links OBS's shared FFmpeg dylibs"
+            exit 1
+          fi
+          grep -q "libobs" deps.log
 
       # Ad-hoc signature only: without an Apple Developer ID the bundle
       # can't be notarized, so users clear the quarantine flag once (the

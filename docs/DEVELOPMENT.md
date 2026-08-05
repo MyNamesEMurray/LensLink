@@ -139,14 +139,26 @@ Manual releases also work — push any `v*` tag:
 git tag v0.4.0 && git push origin v0.4.0
 ```
 
-The **Linux** release job builds its own minimal static FFmpeg
-(H.264/HEVC decode + VAAPI, cached between runs) and links it into
-`lenslink.so`, because a tarball linked against the runner's shared
-FFmpeg only loads on distros shipping that same FFmpeg major
-(issue #65 — `libavcodec.so.60` missing on Arch). The job verifies the
-binary has no `libavcodec`/`libavutil` `NEEDED` entries before
-packaging. Local/source builds are unaffected — they link the system
-FFmpeg via pkg-config, which always matches the machine they run on.
+All three plugin builds link a minimal static FFmpeg — H.264/HEVC
+decode plus the platform's GPU decode API (VAAPI / D3D11VA+DXVA2 /
+VideoToolbox), nothing else — built and cached by
+[`.github/actions/static-ffmpeg`](../.github/actions/static-ffmpeg/action.yml).
+FFmpeg's library names change with its major version
+(`libavcodec.so.60`, `avcodec-61.dll`, `libavcodec.61.dylib`), so a
+plugin linked against a shared FFmpeg stops loading the moment its host
+stops shipping that exact major: on Linux that was issue #65 (rolling
+distros moved on), on Windows issues #91/#93 (an OBS point release
+updated its bundled FFmpeg and `lenslink.dll` failed with `LoadLibrary
+… error 126`). With the decoder built in, a plugin release keeps
+loading across OBS updates — what stays dynamically linked (libobs,
+Qt6) keeps stable library names and ABI across OBS releases. Every job
+verifies the built module has no `avcodec`/`avutil` runtime dependency
+before packaging (`readelf` / `dumpbin /dependents` / `otool -L`).
+Local/source builds are unaffected — they link the system FFmpeg via
+pkg-config, which always matches the machine they run on. The
+`OBS_REF`/`DEPS_TAG` pins in the workflows now only choose the libobs
+and Qt6 the plugin builds against; they no longer have to track the
+FFmpeg inside whatever OBS release users run.
 
 ### Release notes
 
