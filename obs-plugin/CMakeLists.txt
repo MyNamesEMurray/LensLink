@@ -81,13 +81,22 @@ target_compile_definitions(${PROJECT_NAME}
 if(WIN32)
   # dxguid: gpu-frame.c references IID_ID3D11Texture2D/IID_IDXGIKeyedMutex,
   # which are extern GUIDs resolved from this static lib in C builds.
-  target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32 dxguid)
+  # bcrypt/ole32/user32: referenced by the static decode-only FFmpeg that
+  # release builds link (avutil's BCryptGenRandom RNG, DXVA2 device
+  # setup); no-ops when linking a shared FFmpeg.
+  target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32 dxguid bcrypt ole32
+                                                user32)
 endif()
 
 if(APPLE)
   # GPU pipeline: gpu-frame.c reads the decoder's CVPixelBuffers
   # (CVPixelBufferGetIOSurface & co) to bind their IOSurfaces as textures.
-  target_link_libraries(${PROJECT_NAME} PRIVATE "-framework CoreVideo")
+  # CoreFoundation/CoreMedia/VideoToolbox: resolve the VideoToolbox
+  # hwaccel of the static decode-only FFmpeg that release builds link;
+  # harmless system frameworks when linking a shared FFmpeg.
+  target_link_libraries(${PROJECT_NAME} PRIVATE "-framework CoreVideo"
+    "-framework CoreFoundation" "-framework CoreMedia"
+    "-framework VideoToolbox")
 endif()
 
 # --- frontend UI (status bar + dock; optional) -------------------------------
