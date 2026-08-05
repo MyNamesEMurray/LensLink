@@ -46,8 +46,9 @@ runs:
       env:
         FFMPEG_VERSION: ${{ inputs.version }}
       run: |
-        curl -LO "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
-        tar xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
+        # fetch-ffmpeg.sh retries and falls back to the GitHub mirror:
+        # ffmpeg.org resets from runners took out the v1.9.1 release.
+        bash "$GITHUB_ACTION_PATH/fetch-ffmpeg.sh"
         cd "ffmpeg-${FFMPEG_VERSION}"
         ./configure --prefix="$GITHUB_WORKSPACE/ffmpeg-static" \
           --disable-everything --disable-programs --disable-doc \
@@ -72,8 +73,9 @@ runs:
         FFMPEG_VERSION: ${{ inputs.version }}
       run: |
         brew install nasm
-        curl -LO "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
-        tar xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
+        # fetch-ffmpeg.sh retries and falls back to the GitHub mirror:
+        # ffmpeg.org resets from runners took out the v1.9.1 release.
+        bash "$GITHUB_ACTION_PATH/fetch-ffmpeg.sh"
         # --enable-cross-compile on the native slice too: it only turns
         # off configure-time runtime probing, and keeps both invocations
         # identical.

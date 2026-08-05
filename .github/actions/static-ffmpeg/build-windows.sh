@@ -10,8 +10,10 @@ rm -f /usr/bin/link.exe
 
 pacman -Sy --noconfirm --needed make nasm diffutils xz
 
-curl -LO "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
-tar xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
+# fetch-ffmpeg.sh retries and falls back to the GitHub mirror:
+# ffmpeg.org resets from the Windows runners took out the v1.9.1
+# release twice, an hour apart.
+bash "$(dirname "$0")/fetch-ffmpeg.sh"
 cd "ffmpeg-${FFMPEG_VERSION}"
 
 prefix="$(cygpath -u "$GITHUB_WORKSPACE")/ffmpeg-static"
