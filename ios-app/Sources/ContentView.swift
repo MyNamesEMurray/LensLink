@@ -60,9 +60,12 @@ struct ContentView: View {
             // Before this, only streamer-visible changes reset the standby
             // dim's fuse, so a minute spent in a menu that doesn't touch
             // the streamer (the tally screen, say) read as "idle" and the
-            // screen dimmed mid-use.
-            .simultaneousGesture(DragGesture(minimumDistance: 0)
-                .onChanged { _ in lastInteraction = Date() })
+            // screen dimmed mid-use. A passive UIKit sensor, NOT a SwiftUI
+            // DragGesture(minimumDistance: 0): that gesture competed for
+            // every first touch, breaking single-tap on the menu pickers
+            // (on some iOS releases) and on the broadcast picker overlay
+            // (everywhere) — #96, #97, #99.
+            .background(TouchActivitySensor { lastInteraction = Date() })
             .sheet(isPresented: $showOptions) {
                 OptionsView()
                     .environmentObject(streamer)
