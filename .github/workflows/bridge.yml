@@ -1,0 +1,145 @@
+name: Bridge
+
+# Builds the standalone driverless bridge (bridge/) and uploads runnable
+# executables. Unlike build.yml this DOES run on branch pushes: the whole
+# point is getting a testable binary out of a dev branch before there is
+# a PR, since the feature can only really be validated against a real
+# phone on a real Windows box.
+#
+# Windows artifacts are the ones that matter — driverless mode is a
+# Windows feature — but the Linux job is not decoration: it is the
+# cheapest place to catch a compile or protocol regression, and it runs
+# the same smoke test.
+on:
+  push:
+    branches:
+      - 'dev/**'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: bridge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      bridge: ${{ steps.diff.outputs.bridge }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Diff against base
+        id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || '' }}
+        run: |
+          # Branch pushes and manual dispatches always build: they exist
+          # to produce an artifact, not to gate a merge.
+          if [ -z "$BASE" ]; then
+            echo "bridge=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --depth=1 origin "$BASE"
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          # obs-plugin/src is in the set: the bridge compiles four of the
+          # plugin's own sources, so a change there can break this build.
+          if echo "$CHANGED" | \
+             grep -qE '^(bridge/|obs-plugin/src/|\.github/workflows/bridge\.yml|\.github/actions/)'; then
+            echo "bridge=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "bridge=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  bridge-linux:
+    name: Bridge (Linux)
+    needs: changes
+    if: needs.changes.outputs.bridge == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake pkg-config libavcodec-dev libavutil-dev
+
+      # -Werror matches the plugin's CI so the shared sources are held to
+      # the same bar in both builds.
+      - name: Configure
+        run: |
+          cmake -S bridge -B bridge-build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Werror" \
+            -DLENSLINK_VERSION="${GITHUB_REF_NAME}-${GITHUB_SHA::7}"
+
+      - name: Build
+        run: cmake --build bridge-build
+
+      - name: Smoke test (fake phone -> decoded frame)
+        run: python3 bridge/tools/smoke-test.py --bridge bridge-build/lenslink-bridge
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: lenslink-bridge-linux-x86_64
+          path: bridge-build/lenslink-bridge
+
+  bridge-windows:
+    name: Bridge (Windows)
+    needs: changes
+    if: needs.changes.outputs.bridge == 'true'
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same static decode-only FFmpeg the plugin links, for the same
+      # reason: no avcodec-NN.dll next to the executable, and nothing to
+      # break when a system FFmpeg changes major version.
+      - name: Build static FFmpeg (H.264/HEVC decode only)
+        uses: ./.github/actions/static-ffmpeg
+
+      - name: Build
+        run: |
+          $version = "$env:GITHUB_REF_NAME-$($env:GITHUB_SHA.Substring(0,7))"
+          cmake -S bridge -B bridge-build -G "Visual Studio 17 2022" -A x64 `
+            -DLENSLINK_VERSION="$version" `
+            -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON `
+            -DFFMPEG_INCLUDE_DIR="${{ github.workspace }}\ffmpeg-static\include" `
+            -DAVCODEC_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avcodec.lib" `
+            -DAVUTIL_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avutil.lib"
+          cmake --build bridge-build --config Release
+
+      # The executable must be self-contained: a user unzips it and runs
+      # it, with no OBS and no FFmpeg redistributable in sight.
+      - name: Verify FFmpeg linked statically
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $dumpbin = & $vswhere -latest -products * `
+            -find "VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe" |
+            Select-Object -First 1
+          $deps = & $dumpbin /dependents bridge-build\Release\lenslink-bridge.exe | Out-String
+          Write-Host $deps
+          if ($deps -match "avcodec|avutil") {
+            throw "lenslink-bridge.exe imports FFmpeg DLLs"
+          }
+          if ($deps -notmatch "(?i)KERNEL32\.dll") {
+            throw "kernel32 import missing - dependents dump looks wrong"
+          }
+
+      - name: Smoke test (fake phone -> decoded frame)
+        run: python bridge/tools/smoke-test.py --bridge bridge-build/Release/lenslink-bridge.exe
+
+      - name: Package
+        run: |
+          New-Item -ItemType Directory -Force -Path stage | Out-Null
+          Copy-Item bridge-build\Release\lenslink-bridge.exe stage\
+          Copy-Item bridge\README.md stage\
+          Copy-Item docs\DRIVERLESS.md stage\
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: lenslink-bridge-windows-x64
+          path: stage/

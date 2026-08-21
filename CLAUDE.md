@@ -14,6 +14,14 @@ Two deliverables share this repo and talk over a custom TCP wire protocol:
   captures with AVFoundation, hardware-encodes with VideoToolbox, and
   *listens* on TCP port 9979 on the device.
 
+A third deliverable is in progress:
+
+- **Bridge** (`bridge/`, plain C, CMake) — a standalone executable for
+  "driverless" mode: the phone as an ordinary webcam in Teams/Zoom with
+  no OBS. It *reuses four plugin sources unmodified* (`usbmux.c`,
+  `mdns.c`, `h264-decoder.c`, `web-control.c`) behind a small libobs
+  shim in `bridge/src/compat/`. Read `docs/DRIVERLESS.md` first.
+
 Read the matching doc before touching an area:
 
 - `docs/PROTOCOL.md` — the wire protocol. **Any protocol change must update
@@ -26,6 +34,9 @@ Read the matching doc before touching an area:
   backpressure). Performance PRs must quote benchmark numbers
   (`tools/bench-report.py`).
 - `docs/DEVELOPMENT.md` — architecture, repo layout, CI, release automation.
+- `docs/DRIVERLESS.md` — the bridge: why it exists, what it shares with
+  the plugin, and the feature list it deliberately drops (no audio, no
+  lip-sync, no zero-copy). Read before touching `bridge/`.
 - `docs/ROADMAP.md` (planned work — check before designing a feature),
   `docs/TESTFLIGHT.md` (App Store Connect / TestFlight automation),
   `docs/DEBUGGING-SCREEN-MIRROR.md` (the broadcast extension's failure
@@ -39,6 +50,9 @@ Read the matching doc before touching an area:
 | Design tokens, status vocabulary | `docs/UI_DESIGN.md` + `ios-app/Sources/DesignSystem.swift` + the inline page in `obs-plugin/src/web-control.c` |
 | Any plugin-visible string | `obs-plugin/data/locale/en-US.ini` |
 | A control the user can set from more than one place | app UI, web panel, and source properties all read the same cached STATE — add the field to STATE, not to one surface |
+| `web-control.c`'s upcalls (`web-control.h`) | both implementors: `obs-plugin/src/ios-camera-source.c` **and** `bridge/src/bridge-core.c` — the panel is compiled into both binaries |
+| The libobs surface a reused plugin source calls | `bridge/src/compat/` + `bridge/src/obs-shim.c`, or the bridge stops building |
+| Status vocabulary | `docs/UI_DESIGN.md` + `obs-plugin/data/locale/en-US.ini` + `bridge/src/bridge-strings.h` |
 
 ## Commands
 
@@ -96,6 +110,21 @@ New files under `Sources/` are picked up automatically, but anything the
 `LensLinkBroadcast.sources` in `ios-app/project.yml` (today: `Protocol.swift`,
 `StreamClient.swift`, `VideoEncoder.swift`). Details (signing, older Xcode):
 `ios-app/BUILDING.md`.
+
+### Bridge: build + smoke test (works in this Linux environment)
+
+```bash
+sudo apt install cmake pkg-config libavcodec-dev libavutil-dev
+cmake -S bridge -B bridge/build -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_C_FLAGS="-Wall -Wextra -Werror"
+cmake --build bridge/build
+python3 bridge/tools/smoke-test.py --bridge bridge/build/lenslink-bridge
+```
+
+The smoke test runs the whole pipeline against `tools/fake-phone.py` —
+a simulated phone speaking the real protocol with real H.264 — and
+asserts a decoded frame comes out with actual picture in it. It is the
+only end-to-end test in the repo; keep it passing.
 
 ### Performance measurements
 

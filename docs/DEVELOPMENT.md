@@ -9,6 +9,7 @@ Contributor and maintainer notes. End-user documentation is in the
 |-----------|------|--------------|
 | **OBS plugin** (`LensLink Camera` source) | [`obs-plugin/`](../obs-plugin/) | Connects to the phone (LAN IP or USB via usbmuxd), decodes the incoming H.264/HEVC stream with FFmpeg (GPU when available), and renders it as a normal OBS video source. |
 | **iOS app** (`LensLink`) | [`ios-app/`](../ios-app/) | Captures the camera with AVFoundation, hardware-encodes with VideoToolbox, and serves the stream to the plugin over TCP (port 9979 on the device). |
+| **Bridge** (driverless mode) | [`bridge/`](../bridge/) | Standalone executable that dials the phone the same way the plugin does — reusing four of its source files unmodified — and publishes the video as a system camera for Teams, Zoom and friends, with no OBS involved. In progress; see [`DRIVERLESS.md`](DRIVERLESS.md). |
 
 ```
 ┌────────────── iPhone ───────────────┐         ┌─────────── Computer ────────────┐
@@ -33,6 +34,12 @@ ios-app/               SwiftUI companion app (XcodeGen project)
   Sources/StreamClient.swift    Network.framework listener + framing
   Sources/AudioReference.swift  mic capture for lip-sync reference
   Sources/StreamingView.swift   full-screen streaming UI + camera controls
+bridge/                standalone driverless bridge (CMake, no libobs)
+  src/bridge-core.c    dial loop + the control panel's upcalls
+  src/nv12.c           decoded frame → NV12 for the virtual camera
+  src/vcam.h           virtual-camera backend interface
+  src/compat/          the libobs slice the reused plugin sources need
+  tools/fake-phone.py  plays the phone side of the protocol, for testing
 installer/windows/     Inno Setup script for the Windows plugin installer
 docs/PROTOCOL.md       wire protocol specification
 docs/UI_DESIGN.md      app + web-panel design system
@@ -42,6 +49,7 @@ docs/UI_DESIGN.md      app + web-panel design system
 
 - Plugin: [`obs-plugin/BUILDING.md`](../obs-plugin/BUILDING.md)
 - App: [`ios-app/BUILDING.md`](../ios-app/BUILDING.md)
+- Bridge: [`bridge/README.md`](../bridge/README.md)
 
 ## Protocol
 
@@ -58,6 +66,14 @@ Pull requests run [`.github/workflows/build.yml`](../.github/workflows/build.yml
 - **iOS app** — the Xcode project is generated with XcodeGen and compiled
   for the iOS Simulator on a macOS runner (validates the Swift; installable
   device builds must be signed).
+
+The bridge has its own workflow,
+[`.github/workflows/bridge.yml`](../.github/workflows/bridge.yml), which
+differs from the above in one deliberate way: it also runs on **pushes to
+`dev/**` branches**, so a work-in-progress branch produces runnable
+Windows executables before there is a PR. Driverless mode can only really
+be validated by pointing a real binary at a real phone, and waiting for a
+PR to get one would be the wrong trade.
 
 PRs merge automatically once the required Build checks pass (branch
 protection on `main`).
