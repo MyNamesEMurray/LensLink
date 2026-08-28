@@ -7,13 +7,17 @@
  * submits it here — so adding a backend never touches the pipeline.
  *
  * Backends today:
- *   null     everywhere. Counts frames and can write a snapshot; this
- *            is what the Linux CI build exercises and what --snapshot
- *            uses to prove the receive/decode path end to end.
+ *   directshow  Windows. Publishes frames into shared memory, where
+ *               lenslink-vcam.dll picks them up inside the app that
+ *               opened the camera (Zoom, Discord, anything 32-bit).
+ *   null        elsewhere. Counts frames and can write a snapshot; it
+ *               is what the Linux CI build exercises and what proves
+ *               the receive/decode path end to end.
  *
- * Planned (docs/DRIVERLESS.md): a DirectShow filter (Zoom, Discord,
- * 32-bit apps) and a Media Foundation virtual camera (Teams, the
- * Windows Camera app, Chromium).
+ * Planned (docs/DRIVERLESS.md): a Media Foundation virtual camera for
+ * Teams, the Windows Camera app and Chromium. It will read the same
+ * shared memory, which is why the scaling and format negotiation live
+ * in vcam-shm.c rather than in the DirectShow code.
  */
 
 #pragma once
@@ -40,9 +44,21 @@ bool vcam_submit(struct vcam_sink *sink, const uint8_t *nv12, uint32_t width,
 const char *vcam_backend_name(void);
 
 /*
+ * Whether an app currently has the camera open. This is the honest
+ * driverless substitute for the plugin's tally light: there is no scene
+ * graph out here, so "someone is watching" is the strongest true
+ * statement available (docs/DRIVERLESS.md).
+ */
+bool vcam_consumer_attached(struct vcam_sink *sink);
+
+/*
  * Writes the next submitted frame to `path` as a binary PPM. A
  * verification hook, not a feature: it is the one way to confirm from a
  * headless build that real pixels came off the phone. Pass NULL to
  * cancel a pending request.
  */
 void vcam_request_snapshot(struct vcam_sink *sink, const char *path);
+
+/* Implemented once in vcam-ppm.c for every backend. */
+void vcam_write_ppm(const char *path, const uint8_t *nv12, uint32_t width,
+		    uint32_t height);

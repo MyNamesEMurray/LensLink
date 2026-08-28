@@ -11,7 +11,6 @@
 #include <util/threading.h>
 
 #include <stdio.h>
-#include <string.h>
 
 #include "vcam.h"
 
@@ -47,6 +46,13 @@ void vcam_destroy(struct vcam_sink *sink)
 	bfree(sink);
 }
 
+/* Nothing can attach to a backend that publishes nowhere. */
+bool vcam_consumer_attached(struct vcam_sink *sink)
+{
+	(void)sink;
+	return false;
+}
+
 void vcam_request_snapshot(struct vcam_sink *sink, const char *path)
 {
 	if (!sink)
@@ -55,51 +61,6 @@ void vcam_request_snapshot(struct vcam_sink *sink, const char *path)
 	snprintf(sink->snapshot_path, sizeof(sink->snapshot_path), "%s",
 		 path ? path : "");
 	pthread_mutex_unlock(&sink->mutex);
-}
-
-/* BT.601 limited-range YCbCr -> RGB, enough for an eyeball check. */
-static void nv12_to_rgb_row(const uint8_t *y_row, const uint8_t *uv_row,
-			    uint8_t *rgb, uint32_t width)
-{
-	for (uint32_t x = 0; x < width; x++) {
-		int y = (int)y_row[x] - 16;
-		int u = (int)uv_row[(x / 2) * 2] - 128;
-		int v = (int)uv_row[(x / 2) * 2 + 1] - 128;
-
-		int r = (298 * y + 409 * v + 128) >> 8;
-		int g = (298 * y - 100 * u - 208 * v + 128) >> 8;
-		int b = (298 * y + 516 * u + 128) >> 8;
-
-		rgb[x * 3 + 0] = (uint8_t)(r < 0 ? 0 : r > 255 ? 255 : r);
-		rgb[x * 3 + 1] = (uint8_t)(g < 0 ? 0 : g > 255 ? 255 : g);
-		rgb[x * 3 + 2] = (uint8_t)(b < 0 ? 0 : b > 255 ? 255 : b);
-	}
-}
-
-static void write_ppm(const char *path, const uint8_t *nv12, uint32_t width,
-		      uint32_t height)
-{
-	FILE *f = fopen(path, "wb");
-	if (!f) {
-		blog(LOG_WARNING, "[lenslink] cannot write snapshot to %s",
-		     path);
-		return;
-	}
-
-	fprintf(f, "P6\n%u %u\n255\n", width, height);
-
-	const uint8_t *uv = nv12 + (size_t)width * height;
-	uint8_t *rgb = bmalloc((size_t)width * 3);
-	for (uint32_t row = 0; row < height; row++) {
-		nv12_to_rgb_row(nv12 + (size_t)row * width,
-				uv + (size_t)(row / 2) * width, rgb, width);
-		fwrite(rgb, 1, (size_t)width * 3, f);
-	}
-	bfree(rgb);
-
-	fclose(f);
-	blog(LOG_INFO, "[lenslink] wrote %ux%u snapshot to %s", width, height,
-	     path);
 }
 
 bool vcam_submit(struct vcam_sink *sink, const uint8_t *nv12, uint32_t width,
@@ -118,7 +79,7 @@ bool vcam_submit(struct vcam_sink *sink, const uint8_t *nv12, uint32_t width,
 	pthread_mutex_unlock(&sink->mutex);
 
 	if (path[0])
-		write_ppm(path, nv12, width, height);
+		vcam_write_ppm(path, nv12, width, height);
 
 	return true;
 }

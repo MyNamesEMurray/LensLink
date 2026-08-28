@@ -21,6 +21,19 @@
 
 #else
 
+/*
+ * winsock2.h before windows.h, always. This header is included by
+ * translation units that also include net-compat.h, and windows.h drags
+ * in the original winsock.h, which then collides with winsock2.h in a
+ * spray of redefinition errors. Getting the order right here fixes it
+ * for every includer instead of relying on each one to remember — and
+ * on WIN32_LEAN_AND_MEAN being defined, which is a build-flag away from
+ * not being true.
+ */
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
 #include <windows.h>
 
 typedef HANDLE pthread_t;

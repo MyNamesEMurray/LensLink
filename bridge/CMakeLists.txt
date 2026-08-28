@@ -35,14 +35,23 @@ set(BRIDGE_SOURCES
   src/bridge-settings.c
   src/frame-queue.c
   src/nv12.c
+  src/nv12-scale.c
   src/obs-shim.c
+  src/vcam-ppm.c
 )
 
-# One virtual-camera backend per platform. The Windows backends
-# (DirectShow, Media Foundation) land next; until then every platform
-# builds the null backend, which is what makes the pipeline testable on
-# a CI runner with no camera stack.
-list(APPEND BRIDGE_SOURCES src/vcam-null.c)
+# One virtual-camera backend per platform.
+#
+# Windows publishes frames into shared memory, where lenslink-vcam.dll
+# picks them up inside whichever app opened the camera. Everywhere else
+# there is no camera stack to publish to, so the null backend counts
+# frames and can write a snapshot — which is what keeps the whole
+# receive/decode path testable on a plain Linux CI runner.
+if(WIN32)
+  list(APPEND BRIDGE_SOURCES src/vcam-shm.c src/frame-shm.c)
+else()
+  list(APPEND BRIDGE_SOURCES src/vcam-null.c)
+endif()
 
 add_executable(lenslink-bridge ${BRIDGE_SOURCES} ${SHARED_SOURCES})
 

@@ -4,16 +4,27 @@ Use an iPhone running LensLink as a webcam **without OBS**. Design,
 scope and the list of what this mode deliberately drops:
 [`docs/DRIVERLESS.md`](../docs/DRIVERLESS.md).
 
-> **Stage 1.** The bridge connects, decodes and serves the control
-> panel. The virtual-camera backends that put the phone in Teams' and
-> Zoom's camera dropdowns are the next stages; today the frames go to a
-> `null` backend that counts them and can write one out as an image.
+> **Stages 1-2.** The bridge connects and decodes, and the DirectShow
+> camera puts the phone in Zoom, Discord and other DirectShow apps.
+> Teams and the Windows Camera app use Media Foundation and need the
+> next backend.
 
 ## Get a build
 
 Every push to a `dev/**` branch produces executables: **Actions → Bridge
 → the run for your commit → Artifacts**, `lenslink-bridge-windows-x64`.
-No install, no OBS, no FFmpeg DLLs — unzip and run.
+No OBS, no FFmpeg DLLs.
+
+```
+lenslink-bridge.exe      run this, pointed at your phone
+install-camera.bat       registers the camera with Windows (admin, once)
+uninstall-camera.bat     removes it -- run BEFORE deleting the folder
+x64\, x86\               the filter itself, one per architecture
+```
+
+Right-click `install-camera.bat` → Run as administrator, then start
+`lenslink-bridge.exe` and pick **LensLink Camera** in Zoom. Apps that
+were already running need a restart before they see a new camera.
 
 ## Build it yourself
 
@@ -104,7 +115,12 @@ documents how.
 | `src/bridge-core.c` | dial loop, packet handling, the control-panel upcalls |
 | `src/nv12.c` | decoded frame → NV12 (no swscale; the static FFmpeg has none) |
 | `src/frame-queue.c` | decode → sink hand-off, newest-wins |
-| `src/vcam.h`, `src/vcam-null.c` | virtual-camera backend interface |
+| `src/vcam.h` | virtual-camera backend interface |
+| `src/vcam-shm.c` | Windows backend: negotiate, scale, publish to shared memory |
+| `src/vcam-null.c` | everywhere else: count frames, write snapshots |
+| `src/frame-shm.c` | the cross-process mapping, shared with the DLL |
+| `src/nv12-scale.c` | letterbox scaling to the camera's negotiated size |
+| `vcam-dshow/` | `lenslink-vcam.dll` — the DirectShow filter itself |
 | `src/bridge-config.c` | the INI file |
 | `src/compat/`, `src/obs-shim.c` | the libobs slice the reused plugin sources need |
 | `tools/` | fake phone, smoke test, fixture generator |

@@ -1,0 +1,8 @@
+; COM servers export these four by name; a .def keeps the names
+; undecorated under both MSVC and MinGW, and on x86 as well as x64.
+LIBRARY lenslink-vcam
+EXPORTS
+    DllGetClassObject   PRIVATE
+    DllCanUnloadNow     PRIVATE
+    DllRegisterServer   PRIVATE
+    DllUnregisterServer PRIVATE

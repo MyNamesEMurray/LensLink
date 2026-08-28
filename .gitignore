@@ -1,6 +1,7 @@
 # Build output
 obs-plugin/build*/
 bridge/build*/
+bridge/vcam-dshow/build*/
 
 # Xcode / XcodeGen
 ios-app/*.xcodeproj

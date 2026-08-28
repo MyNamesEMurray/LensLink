@@ -131,10 +131,50 @@ jobs:
       - name: Smoke test (fake phone -> decoded frame)
         run: python bridge/tools/smoke-test.py --bridge bridge-build/Release/lenslink-bridge.exe
 
+      # Both architectures: a 32-bit app can only load a 32-bit
+      # DirectShow filter, and plenty of conferencing software still is
+      # one. The DLL has no FFmpeg in it — it only reads shared memory —
+      # so neither build needs the static FFmpeg above.
+      - name: Build virtual camera filter (x64)
+        run: |
+          cmake -S bridge/vcam-dshow -B vcam-x64 -G "Visual Studio 17 2022" -A x64
+          cmake --build vcam-x64 --config Release
+
+      - name: Build virtual camera filter (x86)
+        run: |
+          cmake -S bridge/vcam-dshow -B vcam-x86 -G "Visual Studio 17 2022" -A Win32
+          cmake --build vcam-x86 --config Release
+
+      # A COM server that does not export these four is registrable but
+      # dead: regsvr32 succeeds and the camera never instantiates.
+      - name: Verify the filter's COM exports
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $dumpbin = & $vswhere -latest -products * `
+            -find "VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe" |
+            Select-Object -First 1
+          foreach ($arch in @("x64", "x86")) {
+            $dll = "vcam-$arch\Release\lenslink-vcam.dll"
+            $exports = & $dumpbin /exports $dll | Out-String
+            Write-Host "--- $arch ---"
+            foreach ($fn in @("DllGetClassObject", "DllCanUnloadNow",
+                              "DllRegisterServer", "DllUnregisterServer")) {
+              if ($exports -notmatch $fn) {
+                throw "$dll does not export $fn"
+              }
+            }
+            Write-Host "$dll exports all four COM entry points"
+          }
+
       - name: Package
         run: |
-          New-Item -ItemType Directory -Force -Path stage | Out-Null
+          New-Item -ItemType Directory -Force -Path stage\x64 | Out-Null
+          New-Item -ItemType Directory -Force -Path stage\x86 | Out-Null
           Copy-Item bridge-build\Release\lenslink-bridge.exe stage\
+          Copy-Item vcam-x64\Release\lenslink-vcam.dll stage\x64\
+          Copy-Item vcam-x86\Release\lenslink-vcam.dll stage\x86\
+          Copy-Item bridge\vcam-dshow\install-camera.bat stage\
+          Copy-Item bridge\vcam-dshow\uninstall-camera.bat stage\
           Copy-Item bridge\README.md stage\
           Copy-Item docs\DRIVERLESS.md stage\
 

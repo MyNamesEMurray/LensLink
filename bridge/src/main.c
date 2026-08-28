@@ -310,6 +310,8 @@ int main(int argc, char **argv)
 
 	struct frame_queue *queue = frame_queue_create();
 	struct vcam_sink *sink = vcam_create(first->name);
+	blog(LOG_INFO, "[lenslink] virtual camera backend: %s",
+	     vcam_backend_name());
 	if (snapshot_path)
 		vcam_request_snapshot(sink, snapshot_path);
 
@@ -370,11 +372,15 @@ int main(int argc, char **argv)
 		if (width)
 			blog(LOG_INFO,
 			     "[lenslink] %ux%u | ~%u ms | %llu decoded, "
-			     "%llu to the camera, %llu dropped | %s",
+			     "%llu to the camera, %llu dropped | camera %s "
+			     "| %s",
 			     width, height, latency_ms,
 			     (unsigned long long)frames,
 			     (unsigned long long)pump.delivered,
-			     (unsigned long long)overwritten, status);
+			     (unsigned long long)overwritten,
+			     vcam_consumer_attached(sink) ? "in use"
+							  : "idle",
+			     status);
 		else
 			blog(LOG_INFO, "[lenslink] %s", status);
 	}

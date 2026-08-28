@@ -1,8 +1,10 @@
 # Driverless mode — the phone as a plain webcam
 
-**Status: in progress.** The bridge (stage 1) is built and testable. The
-virtual-camera backends that make the phone appear in Teams and Zoom are
-stages 2 and 3 — see [Where this stands](#where-this-stands).
+**Status: in progress.** The bridge and the DirectShow camera (stages 1
+and 2) are built; the phone appears in Zoom, Discord and other
+DirectShow apps. Teams and the Windows Camera app need the Media
+Foundation backend, which is stage 3 — see
+[Where this stands](#where-this-stands).
 
 Today LensLink needs OBS. That is a large ask for someone who only wants
 their iPhone to be the camera in a Teams call. Driverless mode removes
@@ -144,14 +146,15 @@ API.
 | Stage | What | State |
 |-------|------|-------|
 | 1 | Bridge: dial, decode, NV12, control panel, CI artifacts | **done** |
-| 2 | DirectShow backend (Zoom, Discord, 32-bit apps) | next |
-| 3 | Media Foundation backend (Teams, Camera app, Chromium) | after 2 |
+| 2 | DirectShow backend (Zoom, Discord, 32-bit apps) | **done** |
+| 3 | Media Foundation backend (Teams, Camera app, Chromium) | next |
 | 4 | Tray UI, installer, autostart | after 3 |
 | 5 | `lenslink-core` extraction; plugin and bridge share one dial loop | follows |
 
-Stage 1 is testable on its own: it proves the phone connects, the stream
-decodes, the control panel works and the frames are real pixels. What it
-cannot yet do is appear in a camera dropdown — that is stage 2.
+Stage 3 is a second reader of the same shared memory: the negotiation
+and scaling already live on the bridge side (`vcam-shm.c`), so the
+Media Foundation work is a media source implementation and its
+registration, not another pipeline.
 
 Two things worth deciding before stage 4:
 
@@ -163,6 +166,49 @@ Two things worth deciding before stage 4:
 - **Multiple phones.** The config file and the control panel are already
   multi-device; the virtual-camera backends need to decide whether that
   means a fixed pair of registered cameras or dynamic registration.
+
+## How the DirectShow camera works
+
+A DirectShow filter is a COM object the *consuming* app loads into its
+own process — Zoom instantiates `lenslink-vcam.dll` inside Zoom. So the
+thing that dials the phone and the thing that feeds the camera cannot be
+the same process, and frames have to cross:
+
+```
+lenslink-bridge.exe                    Zoom / Discord / OBS / ...
+  decode → NV12 → scale                  └── lenslink-vcam.dll
+        └── shared memory  ────────────────────▶ CLensLinkFilter
+            "Local\LensLinkVCam_v1"                  └── pushes samples
+```
+
+The mapping (`frame-shm.h`) holds a small header and two 1080p NV12
+slots, synchronised with a seqlock rather than a mutex: the writer must
+never block on a reader (`docs/PERFORMANCE.md`'s drop-don't-queue rule),
+and a reader that crashes mid-read cannot wedge the bridge — which a
+shared mutex would allow.
+
+Points worth knowing:
+
+- **The filter never fails to open.** With no bridge running it emits
+  black frames, so starting the bridge mid-call fixes itself and the
+  user never has to reselect the camera.
+- **The bridge does the scaling.** The pin publishes its negotiated size
+  into the mapping and the bridge letterboxes to it (`nv12-scale.c`),
+  so one scaler serves both backends and the filter stays a thin reader.
+- **Merit is `MERIT_DO_NOT_USE`**, which keeps a graph builder from
+  silently selecting this camera when an app asks for "any" video
+  source. Picking it by name — the only way anyone should land on it —
+  works normally.
+- **Registration needs administrator rights, once.** A DirectShow
+  filter lives in the machine-wide COM registry; that is the whole of
+  what "not driverless" would have meant, and it is one `regsvr32`.
+- **Both architectures are shipped.** A 32-bit app can only load a
+  32-bit filter.
+
+`install-camera.bat` registers both; `uninstall-camera.bat` removes
+them. Run the uninstaller *before* deleting the folder — once the DLL is
+gone Windows cannot unregister it, and the camera lingers as a broken
+entry in every app's list.
 
 ## Building and testing
 
