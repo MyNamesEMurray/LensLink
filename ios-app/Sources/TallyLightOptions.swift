@@ -9,6 +9,7 @@ enum TallyStatus: String, Codable, CaseIterable {
     case connectionLost
     case calibrating
     case syncLocked
+    case lowBattery
 
     var displayName: String {
         switch self {
@@ -17,6 +18,7 @@ enum TallyStatus: String, Codable, CaseIterable {
         case .connectionLost: return "Connection lost"
         case .calibrating: return "Calibrating lip-sync"
         case .syncLocked: return "Lip-sync locked"
+        case .lowBattery: return "Low battery"
         }
     }
 
@@ -96,13 +98,33 @@ enum TallyColor: String, Codable, CaseIterable {
     }
 }
 
-/// One row of the tally configuration: a status and the colour it shows.
-/// Array order IS the priority order — first matching row with a colour
-/// wins.
+/// One row of the tally configuration: a status, the colour it shows, and
+/// whether it pulses rather than holding steady. Array order IS the
+/// priority order — first matching row with a colour wins.
 struct TallyEntry: Codable, Equatable, Identifiable {
     var status: TallyStatus
     var color: TallyColor
+    /// Breathe between full and dim instead of holding solid. Motion
+    /// catches peripheral vision, which is the point for something like a
+    /// low battery you are meant to notice without watching for it.
+    var pulse: Bool = false
     var id: String { status.rawValue }
+
+    init(status: TallyStatus, color: TallyColor, pulse: Bool = false) {
+        self.status = status
+        self.color = color
+        self.pulse = pulse
+    }
+
+    /// Hand-written so a config saved before pulses existed still decodes
+    /// — the synthesized initializer treats the missing key as corruption
+    /// and would reset every row to its default.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        status = try c.decode(TallyStatus.self, forKey: .status)
+        color = try c.decode(TallyColor.self, forKey: .color)
+        pulse = try c.decodeIfPresent(Bool.self, forKey: .pulse) ?? false
+    }
 }
 
 /// Persistent tally-light configuration. The defaults reproduce the
@@ -121,6 +143,7 @@ final class TallySettings: ObservableObject {
         TallyEntry(status: .connectionLost, color: .none),
         TallyEntry(status: .calibrating, color: .none),
         TallyEntry(status: .syncLocked, color: .none),
+        TallyEntry(status: .lowBattery, color: .none),
     ]
 
     @Published var entries: [TallyEntry] {
@@ -151,14 +174,15 @@ final class TallySettings: ObservableObject {
         entries = loaded
     }
 
-    /// The border colour for the current conditions: the first (highest
-    /// priority) entry whose status is active and isn't "Off". Also
-    /// reports the winning status, for width decisions.
+    /// The border light for the current conditions: the first (highest
+    /// priority) entry whose status is active and isn't "Off". The whole
+    /// entry comes back — the caller needs its status for the stroke width
+    /// and its pulse flag for the animation.
     func activeLight(for active: Set<TallyStatus>)
-        -> (status: TallyStatus, color: Color)? {
+        -> (entry: TallyEntry, color: Color)? {
         for entry in entries where active.contains(entry.status) {
             if let color = entry.color.color {
-                return (entry.status, color)
+                return (entry, color)
             }
         }
         return nil
@@ -189,6 +213,27 @@ struct TallyLightOptionsView: View {
                         .pickerStyle(.menu)
                         .labelsHidden()
                         .fixedSize()
+
+                        // Only where there is a border to animate: a
+                        // pulse switch on an Off row controls nothing.
+                        if entry.color != .none {
+                            Button {
+                                entry.pulse.toggle()
+                            } label: {
+                                // One glyph, state in the colour — the
+                                // Live screen's active-chip language. An
+                                // icon that swaps to a dash would read as
+                                // "remove" in a swipe-to-delete list.
+                                Image(systemName: "waveform.path")
+                                    .frame(width: Theme.controlButton,
+                                           height: Theme.controlButton)
+                            }
+                            .buttonStyle(.borderless)
+                            .foregroundColor(entry.pulse
+                                             ? Theme.accent : .secondary)
+                            .accessibilityLabel("Pulse")
+                            .accessibilityValue(entry.pulse ? "On" : "Off")
+                        }
                     }
                 }
                 .onMove { from, to in

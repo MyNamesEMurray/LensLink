@@ -23,6 +23,9 @@ struct StreamingView: View {
     /// turns it on is debugging and wants it next stream too. The streamer
     /// reads the same key to decide whether to sample health at all.
     @AppStorage(StreamerDefaults.showHealth) private var showHealth = false
+    /// Battery level for the dim readout and the low-battery tally.
+    /// Monitoring runs only while this screen is up (see .task below).
+    @ObservedObject private var battery = BatteryMonitor.shared
 
     private static let idleAfterSeconds: TimeInterval = 10
 
@@ -67,6 +70,9 @@ struct StreamingView: View {
                     // status is worse than none.
                     if syncLabel != nil {
                         syncPill
+                    }
+                    if streamer.canResumePresets {
+                        presetsPausedPill
                     }
                 }
                 // Survives the clean feed when Stats is on: numbers are a
@@ -127,7 +133,11 @@ struct StreamingView: View {
         // future remote command) must not strand the screen dark or
         // control-less in a mode that no longer applies.
         .onChange(of: streamer.idleAppearance) { _ in wake() }
+        // Battery monitoring is a device-wide flag, so it is held only
+        // while this screen exists — the Setup screen has nothing to show.
+        .onAppear { battery.retain() }
         .onDisappear {
+            battery.release()
             restoreBrightness()
         }
     }
@@ -189,10 +199,56 @@ struct StreamingView: View {
                 Text("Streaming — tap to wake")
                     .font(.footnote)
                     .foregroundColor(.gray)
+                batteryReadout
             }
         }
         .contentShape(Rectangle())
         .onTapGesture { wake() }
+    }
+
+    /// "Do I need to plug this in?" answered without waking the screen —
+    /// the whole point of a phone that dims itself on a stand for an hour.
+    /// Charging shows a bolt; low (Low Power Mode, or 20% and falling)
+    /// turns it red. Monospaced digits so a 5% step doesn't shuffle the
+    /// row. Nothing renders where iOS won't report a level, rather than a
+    /// placeholder that looks like a fault.
+    @ViewBuilder private var batteryReadout: some View {
+        if let percent = battery.percent {
+            HStack(spacing: Theme.Space.xs) {
+                Image(systemName: batterySymbol(percent))
+                Text("\(percent)%")
+                    .font(.footnote.monospacedDigit())
+                if battery.isCharging {
+                    Image(systemName: "bolt.fill")
+                        .font(.caption2)
+                }
+            }
+            .foregroundColor(batteryTint)
+        }
+    }
+
+    /// Red means low, amber means the OS is throttling, grey means fine —
+    /// the palette's own reading of each (docs/UI_DESIGN.md §2). Splitting
+    /// them matters: Low Power Mode can be switched on at 80%, and a red
+    /// readout there would be a lie you learn to ignore.
+    private var batteryTint: Color {
+        guard !battery.isCharging else { return .gray }
+        if let percent = battery.percent, percent <= 20 {
+            return Theme.errorRed
+        }
+        return battery.lowPowerMode ? Theme.connectAmber : .gray
+    }
+
+    /// The system battery glyph nearest the real level, so the icon reads
+    /// at a glance from across the room even before the number does.
+    private func batterySymbol(_ percent: Int) -> String {
+        switch percent {
+        case ..<13: return "battery.0"
+        case ..<38: return "battery.25"
+        case ..<63: return "battery.50"
+        case ..<88: return "battery.75"
+        default: return "battery.100"
+        }
     }
 
     /// Tally: a border round the whole screen, readable at arm's length
@@ -228,6 +284,13 @@ struct StreamingView: View {
         case .locked: active.insert(.syncLocked)
         case .off: break
         }
+        // The stream outliving the battery is a production failure like
+        // any other, and the phone is usually out of reach when it starts
+        // going wrong — so it gets the same border vocabulary, off by
+        // default like every other informational status.
+        if battery.isLow {
+            active.insert(.lowBattery)
+        }
         return active
     }
 
@@ -236,7 +299,9 @@ struct StreamingView: View {
             // On air keeps the heaviest stroke; everything informational
             // stays lighter so live remains the most emphatic state even
             // in user-chosen colours.
-            tallyEdge(light.color, width: light.status == .onAir ? 6 : 4)
+            tallyEdge(light.color,
+                      width: light.entry.status == .onAir ? 6 : 4,
+                      pulse: light.entry.pulse)
         } else {
             EmptyView()
         }
@@ -257,16 +322,10 @@ struct StreamingView: View {
         return bottomInset > 0 ? 58 : 0
     }()
 
-    private func tallyEdge(_ colour: Color, width: CGFloat) -> some View {
-        // allowsHitTesting(false): the border sits over the preview, and
-        // tap-to-focus near the screen edge must still reach it.
-        RoundedRectangle(cornerRadius: Self.tallyCornerRadius,
-                         style: .continuous)
-            .strokeBorder(colour, lineWidth: width)
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-            .transition(.opacity)
-            .animation(.easeInOut(duration: 0.15), value: colour)
+    private func tallyEdge(_ colour: Color, width: CGFloat,
+                           pulse: Bool) -> some View {
+        TallyEdge(colour: colour, width: width, pulse: pulse,
+                  cornerRadius: Self.tallyCornerRadius)
     }
 
     private var statusBar: some View {
@@ -353,6 +412,35 @@ struct StreamingView: View {
                 .foregroundColor(Theme.textSecondary)
             }
             .disabled(streamer.syncState != .locked)
+            Spacer()
+        }
+        .padding(.top, Theme.Space.s)
+    }
+
+    /// Auto-apply went on hold because a setting was changed by hand, and
+    /// this camera has a preset that would otherwise be running. Tapping
+    /// re-arms it and applies that preset now — mid-stream, no restart,
+    /// which is the whole point (#107). Same pill anatomy as the sync
+    /// row's, because it is the same kind of thing: a state you can act on.
+    private var presetsPausedPill: some View {
+        HStack {
+            Button {
+                touched()
+                streamer.resumePresets()
+            } label: {
+                HStack(spacing: Theme.Space.s) {
+                    Circle()
+                        .fill(Theme.connectAmber)
+                        .frame(width: 8, height: 8)
+                    Text("Presets paused")
+                        .font(.caption)
+                        .lineLimit(1)
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption2)
+                }
+                .glassPill()
+                .foregroundColor(Theme.textSecondary)
+            }
             Spacer()
         }
         .padding(.top, Theme.Space.s)
@@ -694,5 +782,47 @@ struct StreamingView: View {
     private func floatBinding(_ source: Binding<Float>) -> Binding<CGFloat> {
         Binding(get: { CGFloat(source.wrappedValue) },
                 set: { source.wrappedValue = Float($0) })
+    }
+}
+
+/// The tally border itself. A view of its own, not a function, because a
+/// pulse needs somewhere to keep its phase — and re-deriving that phase on
+/// every parent re-render (the Live screen redraws on any published
+/// change) would restart the animation several times a second.
+private struct TallyEdge: View {
+    let colour: Color
+    let width: CGFloat
+    let pulse: Bool
+    let cornerRadius: CGFloat
+
+    /// Honour the system's motion setting: someone who asked for less
+    /// animation gets a steady border in their chosen colour rather than
+    /// no warning at all.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var dimmedPhase = false
+
+    private var pulsing: Bool { pulse && !reduceMotion }
+
+    var body: some View {
+        // allowsHitTesting(false): the border sits over the preview, and
+        // tap-to-focus near the screen edge must still reach it.
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(colour, lineWidth: width)
+            // Never all the way out: a border that vanishes on the dark
+            // half of its cycle reads as "no tally" to anyone glancing at
+            // the wrong moment.
+            .opacity(dimmedPhase ? 0.3 : 1)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.15), value: colour)
+            .animation(pulsing
+                       ? .easeInOut(duration: 0.9).repeatForever(
+                            autoreverses: true)
+                       : .easeInOut(duration: 0.2),
+                       value: dimmedPhase)
+            .onAppear { dimmedPhase = pulsing }
+            .onChange(of: pulsing) { on in dimmedPhase = on }
     }
 }
