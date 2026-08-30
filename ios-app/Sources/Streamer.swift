@@ -163,6 +163,12 @@ final class Streamer: ObservableObject {
             wireCameraToEncoder(encoder, color: color)
         }
 
+        // Re-dress the camera: this path runs for a lens switch (the
+        // "launch the front camera and it comes up configured" case) and
+        // for any live format/colour change, all of which have just reset
+        // the controls above. The preset overrides that reset.
+        autoApplyPreset()
+
         encoder?.requestKeyframe()
         scheduleStateSend()
     }
@@ -457,12 +463,14 @@ final class Streamer: ObservableObject {
     @Published var zoom: CGFloat = 1 {
         didSet {
             camera.setZoom(zoom)
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
     @Published var exposureBias: Float = 0 {
         didSet {
             camera.setExposureBias(exposureBias)
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
@@ -473,12 +481,14 @@ final class Streamer: ObservableObject {
     @Published var focusSetting: FocusSetting = .auto {
         didSet {
             applyFocus()
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
     @Published var lensPosition: Float = 0.5 {
         didSet {
             if focusSetting == .locked { applyFocus() }
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
@@ -495,6 +505,7 @@ final class Streamer: ObservableObject {
     @Published var whiteBalanceSetting: WhiteBalanceSetting = .auto {
         didSet {
             applyWhiteBalance()
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
@@ -502,6 +513,7 @@ final class Streamer: ObservableObject {
     @Published var whiteBalanceTemperature: Float = 5000 {
         didSet {
             if whiteBalanceSetting == .locked { applyWhiteBalance() }
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
@@ -512,20 +524,121 @@ final class Streamer: ObservableObject {
     @Published var exposureSetting: ExposureSetting = .auto {
         didSet {
             applyExposure()
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
     @Published var iso: Float = 200 {
         didSet {
             if exposureSetting == .manual { applyExposure() }
+            noteManualCameraChange()
             scheduleStateSend()
         }
     }
     @Published var shutterSeconds: Double = 1.0 / 60 {
         didSet {
             if exposureSetting == .manual { applyExposure() }
+            noteManualCameraChange()
             scheduleStateSend()
         }
+    }
+
+    // MARK: - Camera presets (#107)
+
+    /// Auto-apply is on hold because a setting was changed by hand — from
+    /// the Live screen or a remote CONTROL command, which reach the same
+    /// properties and are the same intent: whoever just dialled this in
+    /// meant it, and a preset must not overwrite it a moment later.
+    /// Runtime-only: a fresh launch starts armed. Turning the feature off
+    /// entirely is the persisted switch in PresetManager.
+    @Published private(set) var presetsPaused = false
+
+    /// Depth counter, not a Bool: applying a preset writes several
+    /// properties, and `resetCameraControls` can run inside that. A Bool
+    /// would be cleared by the inner scope while the outer one still has
+    /// writes to make, and those writes would disarm presets.
+    private var presetWritesInFlight = 0
+
+    /// Called from every preset-covered control's didSet.
+    private func noteManualCameraChange() {
+        guard presetWritesInFlight == 0,
+              PresetManager.shared.autoApplyEnabled else { return }
+        presetsPaused = true
+    }
+
+    /// Writes a preset's values onto the camera. Only the groups it
+    /// carries are touched — everything else keeps whatever it had.
+    func apply(_ preset: CameraPreset) {
+        presetWritesInFlight += 1
+        defer { presetWritesInFlight -= 1 }
+
+        if let exposure = preset.exposure {
+            // Values before the mode: the mode's didSet is what pushes
+            // them to the device, so setting it last applies the pair in
+            // one go instead of briefly running the old ISO.
+            exposureBias = exposure.bias
+            iso = exposure.iso
+            shutterSeconds = exposure.shutterSeconds
+            exposureSetting = exposure.manual ? .manual : .auto
+        }
+        if let whiteBalance = preset.whiteBalance {
+            whiteBalanceTemperature = whiteBalance.temperature
+            whiteBalanceSetting = whiteBalance.locked ? .locked : .auto
+        }
+        if let zoomValue = preset.zoom {
+            zoom = min(max(CGFloat(zoomValue), 1), camera.maxZoomFactor)
+        }
+        if let focus = preset.focus {
+            lensPosition = focus.lensPosition
+            focusSetting = focus.locked ? .locked : .auto
+        }
+        scheduleStateSend()
+    }
+
+    /// Applies whatever the current camera should be wearing — its own
+    /// preset, or the default. Called at stream start and after a live
+    /// lens switch; silent when auto-apply is off, paused, or nothing
+    /// matches.
+    private func autoApplyPreset() {
+        let manager = PresetManager.shared
+        guard manager.autoApplyEnabled, !presetsPaused,
+              let preset = manager.preset(forLens: selectedLens.id) else {
+            return
+        }
+        apply(preset)
+    }
+
+    /// Re-arms auto-apply after a manual change put it on hold, and
+    /// applies the matching preset straight away so the tap does
+    /// something visible. Mid-stream, no restart — this is what the
+    /// "Presets paused" pill on the Live screen calls.
+    func resumePresets() {
+        presetsPaused = false
+        autoApplyPreset()
+    }
+
+    /// Whether the Live screen should offer the resume pill: only where
+    /// re-arming would actually do something.
+    var canResumePresets: Bool {
+        let manager = PresetManager.shared
+        return presetsPaused && manager.autoApplyEnabled
+            && manager.preset(forLens: selectedLens.id) != nil
+    }
+
+    /// The current camera values, for "save these as a preset".
+    func currentPresetValues() -> (exposure: CameraPreset.Exposure,
+                                   whiteBalance: CameraPreset.WhiteBalance,
+                                   zoom: Double,
+                                   focus: CameraPreset.Focus) {
+        (CameraPreset.Exposure(manual: exposureSetting == .manual,
+                               bias: exposureBias,
+                               iso: iso,
+                               shutterSeconds: shutterSeconds),
+         CameraPreset.WhiteBalance(locked: whiteBalanceSetting == .locked,
+                                   temperature: whiteBalanceTemperature),
+         Double(zoom),
+         CameraPreset.Focus(locked: focusSetting == .locked,
+                            lensPosition: lensPosition))
     }
 
     private func applyWhiteBalance() {
@@ -700,6 +813,11 @@ final class Streamer: ObservableObject {
     }
 
     private func resetCameraControls() {
+        // Not a manual change: this is the app rebuilding the camera, and
+        // letting it trip the pause would disarm presets on every lens
+        // switch — including the switch that is about to apply one.
+        presetWritesInFlight += 1
+        defer { presetWritesInFlight -= 1 }
         zoom = 1
         exposureBias = 0
         focusSetting = .auto
@@ -1260,6 +1378,10 @@ final class Streamer: ObservableObject {
 
         camera.start()
         resetCameraControls()
+        // Fresh stream, fresh arming: whatever was dialled in by hand last
+        // session shouldn't keep presets on hold forever.
+        presetsPaused = false
+        autoApplyPreset()
         healthDroppedBaseline = client.statsSnapshot().framesDropped
         startAdaptiveBitrate(target: resolution.bitrate(for: activeCodec,
                                                         color: encoder.color))

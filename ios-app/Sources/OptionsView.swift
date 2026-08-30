@@ -36,6 +36,9 @@ struct OptionsView: View {
                     NavigationLink(destination: TallyLightOptionsView()) {
                         Text("Tally light")
                     }
+                    NavigationLink(destination: PresetsView()) {
+                        Text("Presets")
+                    }
                 }
 
                 Section {

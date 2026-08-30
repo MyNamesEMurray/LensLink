@@ -312,7 +312,8 @@ most a sentence or two, so the form stays close to one screenful.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short: **Remote start from OBS**, **Idle view**
-(Standard / Clean feed / Dim screen), and a **Microphone** group (**Send phone mic to OBS** /
+(Standard / Clean feed / Dim screen), pushed screens for **Tally light**
+and **Presets**, and a **Microphone** group (**Send phone mic to OBS** /
 **Auto lip-sync reference** — mutually exclusive; turning one on turns the
 other off). Each toggle sits in its own section with a short footer
 directly beneath it — never one combined wall-of-text footer for all of
@@ -355,6 +356,27 @@ Full-screen black; camera preview `resizeAspect`; content over it:
     answer. Nothing renders where iOS reports no level (Simulator). The
     only idle view that also applies to the Setup screen, which dims a
     minute into remote-start standby.
+
+### 6.2.1 Presets
+
+Saved camera looks (Options → Presets): a name, any subset of
+**Exposure / White balance / Zoom / Focus**, and optionally a camera it
+belongs to. A group left out is not stored, so it can never be applied by
+mistake — "not included" and "included but unchanged" are the same thing
+to the user and must be the same thing in the model.
+
+- A preset applies when its camera starts (stream start, or a live lens
+  switch); the **default** covers any camera without one of its own.
+- Changing a covered setting **by hand pauses auto-apply** — from the Live
+  screen or a remote `CONTROL` command, which are the same intent. A
+  **Presets paused** pill (amber dot, `arrow.clockwise`, the sync pill's
+  anatomy) appears on the Live screen and resumes on tap, applying the
+  matching preset immediately. Never a restart, never stopping the stream.
+- The pill appears only where resuming would do something: paused, the
+  master switch on, and a preset that matches this camera.
+- Presets are phone-local. They move the same properties the Live screen
+  and `CONTROL` do, so the `STATE` snapshot follows for free — no
+  protocol change.
 
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):

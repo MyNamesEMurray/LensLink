@@ -13,7 +13,11 @@ import UIKit
 ///
 /// Monitoring is refcounted rather than left on for the app's life: it is
 /// a device-wide flag, and only the Live screen has anything to show.
-@MainActor
+///
+/// Not @MainActor, for the same reason as `TallySettings`: it is reached
+/// from a view property initializer, which isn't isolated. Every mutation
+/// still happens on the main queue — the observers below are registered
+/// with `queue: .main` and nothing else writes.
 final class BatteryMonitor: ObservableObject {
     static let shared = BatteryMonitor()
 
@@ -53,12 +57,11 @@ final class BatteryMonitor: ObservableObject {
             UIDevice.batteryStateDidChangeNotification,
             .NSProcessInfoPowerStateDidChange,
         ] {
+            // queue: .main is what keeps the @Published writes on the
+            // main queue — battery notifications are not posted there.
             observers.append(center.addObserver(
                 forName: name, object: nil, queue: .main) { [weak self] _ in
-                // The notifications are posted on the main queue, but
-                // `self` is main-actor isolated and the closure isn't, so
-                // hop explicitly rather than assert.
-                Task { @MainActor [weak self] in self?.read() }
+                self?.read()
             })
         }
     }

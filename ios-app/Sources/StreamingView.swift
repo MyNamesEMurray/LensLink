@@ -71,6 +71,9 @@ struct StreamingView: View {
                     if syncLabel != nil {
                         syncPill
                     }
+                    if streamer.canResumePresets {
+                        presetsPausedPill
+                    }
                 }
                 // Survives the clean feed when Stats is on: numbers are a
                 // readout, not a control, and the Stats button is exactly
@@ -397,6 +400,35 @@ struct StreamingView: View {
                 .foregroundColor(Theme.textSecondary)
             }
             .disabled(streamer.syncState != .locked)
+            Spacer()
+        }
+        .padding(.top, Theme.Space.s)
+    }
+
+    /// Auto-apply went on hold because a setting was changed by hand, and
+    /// this camera has a preset that would otherwise be running. Tapping
+    /// re-arms it and applies that preset now — mid-stream, no restart,
+    /// which is the whole point (#107). Same pill anatomy as the sync
+    /// row's, because it is the same kind of thing: a state you can act on.
+    private var presetsPausedPill: some View {
+        HStack {
+            Button {
+                touched()
+                streamer.resumePresets()
+            } label: {
+                HStack(spacing: Theme.Space.s) {
+                    Circle()
+                        .fill(Theme.connectAmber)
+                        .frame(width: 8, height: 8)
+                    Text("Presets paused")
+                        .font(.caption)
+                        .lineLimit(1)
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption2)
+                }
+                .glassPill()
+                .foregroundColor(Theme.textSecondary)
+            }
             Spacer()
         }
         .padding(.top, Theme.Space.s)
