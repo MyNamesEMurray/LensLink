@@ -137,6 +137,38 @@ jobs:
 
           tag="v$major.$minor.$patch"
 
+          # An in-flight beta line outranks a lower computed version.
+          #
+          # Betas lead up to the stable they are a beta *of*, and merging
+          # without the trailer is documented to cut it. That holds by
+          # itself only for a patch beta: v1.8.1 -> v1.8.2-beta.1 -> a
+          # plain merge computes v1.8.2 and lands on it. A beta created
+          # with a bump trailer does not — v1.9.0 + minor + beta gives
+          # v1.10.0-beta.1, and the next plain merge computes v1.9.1,
+          # BELOW the beta line. That shipped: v1.10.0-beta.2 was public
+          # and on TestFlight when v1.9.2 was cut underneath it, so
+          # testers watched the version go backwards.
+          #
+          # So: take the highest version any pre-release is a beta of, and
+          # if the computed tag is below it, cut that version instead. The
+          # bases are compared with sort -V after stripping the suffix —
+          # comparing the suffixed tags directly is what git's version sort
+          # gets wrong (see the stable-only filter above). Self-limiting:
+          # once a line is cut, the stable tag seeds the next number and
+          # every later version is already above it, so this never fires
+          # twice for the same line, and it can only ever move the version
+          # UP.
+          pre_base=$(git tag --list 'v*-beta.*' \
+                     | grep -xE 'v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+' \
+                     | sed -E 's/-beta\.[0-9]+$//' | sort -uV | tail -1)
+          if [ -n "$pre_base" ] && [ "$pre_base" != "$tag" ] \
+             && [ "$(printf '%s\n%s\n' "$tag" "$pre_base" \
+                     | sort -V | tail -1)" = "$pre_base" ]; then
+            echo "::notice::$tag would land below the in-flight" \
+                 "$pre_base beta line; releasing $pre_base instead."
+            tag="$pre_base"
+          fi
+
           # Beta: same version, suffixed, counting up within it. Probing for
           # the first free suffix (rather than counting existing ones) keeps
           # numbering right even if a beta tag was deleted by hand.

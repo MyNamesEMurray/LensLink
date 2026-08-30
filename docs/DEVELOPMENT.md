@@ -105,6 +105,18 @@ v1.8.2                    merge without it — the beta becomes the release
 Combine it with a bump trailer to beta a bigger version:
 `Release-Bump: minor` + `Release-Beta: true` → `v1.9.0-beta.1`.
 
+A beta line made that way needs no second bump trailer to land. "Merge
+without it and the beta becomes the release" used to be true only for a
+*patch* beta, where the plain merge happens to compute the same number.
+A bumped line sat above what the next plain merge would compute, so the
+stable was cut **underneath** it — `v1.10.0-beta.2` was public and on
+TestFlight when `v1.9.2` was cut, and testers watched the version go
+backwards. Now the highest version any pre-release is a beta of is
+treated as a floor: a computed version below it is replaced by it, and
+that line gets cut as documented. It can only move a version up, and it
+goes quiet once the line is cut, since the new stable tag then seeds
+everything after it.
+
 A `-beta.` tag publishes as a pre-release however it was created, so a
 hand-pushed `v1.8.0-beta.1` doesn't become a stable release just because
 it arrived without the flag set. (A hand-pushed tag still won't upload to
@@ -115,7 +127,10 @@ Dispatch `testflight.yml` with the tag if you need that.)
 Two details worth knowing. The next version is computed from **stable tags
 only** — git's version sort puts `v1.9.0-beta.2` *above* `v1.9.0`, and the
 patch field would read `0-beta.2`, which the shell can't add 1 to, so an
-unfiltered list would fail the next stable release outright. And the
+unfiltered list would fail the next stable release outright. (Pre-releases
+still get a say afterwards, as the floor described above; they are read by
+stripping the suffix and comparing with `sort -V`, never by asking git to
+order the suffixed tags.) And the
 TestFlight "What to Test" notes are looked up **by tag**, because the
 `/releases/latest` endpoint is defined as the newest non-pre-release and
 would otherwise hand testers the previous stable release's changelog with
