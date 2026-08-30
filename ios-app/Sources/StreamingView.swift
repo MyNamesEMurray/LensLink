@@ -2,21 +2,29 @@ import SwiftUI
 import AVFoundation
 
 /// Full-screen live view shown while streaming: camera preview with
-/// tap-to-focus and pinch-to-zoom, camera controls, and optional
-/// battery-saving dimming.
+/// tap-to-focus and pinch-to-zoom, camera controls, and — once the idle
+/// fuse burns down — whichever idle view the user picked (Options →
+/// Idle view): controls left up, a clean feed, or a dimmed screen.
 struct StreamingView: View {
     @EnvironmentObject private var streamer: Streamer
 
-    @State private var dimmed = false
+    /// The idle view is engaged: the fuse burned down (or the idle
+    /// button was tapped) and `idleAppearance` is doing whatever it does.
+    /// Never true for `.standard`, which has no idle view.
+    @State private var idle = false
     @State private var lastInteraction = Date()
     @State private var pinchBaseZoom: CGFloat = 1
     @State private var previousBrightness: CGFloat = UIScreen.main.brightness
+    /// Whether `previousBrightness` is a level we still owe the system.
+    /// Tracked rather than derived from the current mode: the mode can
+    /// change while the screen is dimmed, and the restore must survive it.
+    @State private var brightnessLowered = false
     /// Stream health pill (fps · Mb/s · dropped). Persisted: someone who
     /// turns it on is debugging and wants it next stream too. The streamer
     /// reads the same key to decide whether to sample health at all.
     @AppStorage(StreamerDefaults.showHealth) private var showHealth = false
 
-    private static let dimAfterSeconds: TimeInterval = 10
+    private static let idleAfterSeconds: TimeInterval = 10
 
     var body: some View {
         ZStack {
@@ -52,23 +60,50 @@ struct StreamingView: View {
             .ignoresSafeArea()
 
             VStack {
-                statusBar
-                // Its own row: sharing the top bar with three buttons
-                // truncated the words ("Sync lo…"), and an unreadable
-                // status is worse than none.
-                if syncLabel != nil {
-                    syncPill
+                if showsControls {
+                    statusBar
+                    // Its own row: sharing the top bar with three buttons
+                    // truncated the words ("Sync lo…"), and an unreadable
+                    // status is worse than none.
+                    if syncLabel != nil {
+                        syncPill
+                    }
                 }
-                if showHealth, let health = streamer.health {
+                // Survives the clean feed when Stats is on: numbers are a
+                // readout, not a control, and the Stats button is exactly
+                // the "optionally, with health" switch (docs/UI_DESIGN.md
+                // §6.2). Hidden under the dim overlay, which covers it.
+                if showHealth, !dimmed, let health = streamer.health {
                     healthPill(health)
                 }
                 Spacer()
-                controlPanel
+                if showsControls {
+                    controlPanel
+                }
             }
             .padding()
+            .animation(.easeInOut(duration: 0.2), value: showsControls)
 
             if dimmed {
                 dimOverlay
+            }
+            if cleanFeed {
+                // Invisible tap catcher over the whole clean feed: the
+                // first tap only brings the controls back, so waking is
+                // never also a focus pull at wherever your thumb landed
+                // — and the letterbox bars, which the preview's own
+                // recognizer never sees, wake it too.
+                Color.clear
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    // Touch-down, not tap: a pinch starting on the clean
+                    // feed must wake it too, and a tap gesture fails the
+                    // moment the fingers move. Safe here where a drag
+                    // would not be on the settings form (#96/#97) — this
+                    // layer covers no controls and is gone the instant
+                    // it fires.
+                    .gesture(DragGesture(minimumDistance: 0)
+                        .onChanged { _ in touched() })
             }
 
             // Above the dim overlay on purpose: a phone mounted out of
@@ -80,33 +115,67 @@ struct StreamingView: View {
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
-                if streamer.dimWhileStreaming && !dimmed &&
-                    Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
-                    dim()
+                if streamer.idleAppearance != .standard && !idle &&
+                    Date().timeIntervalSince(lastInteraction)
+                        > Self.idleAfterSeconds {
+                    goIdle()
                 }
             }
         }
+        // The preference is only reachable from the Setup screen today,
+        // but a change arriving under a live idle view (an App Intent, a
+        // future remote command) must not strand the screen dark or
+        // control-less in a mode that no longer applies.
+        .onChange(of: streamer.idleAppearance) { _ in wake() }
         .onDisappear {
-            if dimmed {
-                UIScreen.main.brightness = previousBrightness
-            }
+            restoreBrightness()
         }
     }
 
+    /// True while the controls are on screen: always in Standard, and in
+    /// the other modes until the fuse burns down.
+    private var showsControls: Bool { !idle }
+
+    /// The clean feed is up — preview (plus tally, plus the health pill
+    /// if Stats is on) and nothing else.
+    private var cleanFeed: Bool { idle && streamer.idleAppearance == .clean }
+
+    /// The dim overlay is up.
+    private var dimmed: Bool { idle && streamer.idleAppearance == .dim }
+
+    /// Any interaction restarts the fuse and, if an idle view is up,
+    /// brings the controls back.
     private func touched() {
+        lastInteraction = Date()
+        if idle { wake() }
+    }
+
+    /// Engages the chosen idle view. Standard has none, so this is a
+    /// no-op there (its idle button isn't drawn either).
+    private func goIdle() {
+        guard streamer.idleAppearance != .standard else { return }
+        if streamer.idleAppearance == .dim && !brightnessLowered {
+            previousBrightness = UIScreen.main.brightness
+            brightnessLowered = true
+            UIScreen.main.brightness = 0.05
+        }
+        withAnimation { idle = true }
+    }
+
+    /// Back to the controls.
+    private func wake() {
+        restoreBrightness()
+        withAnimation { idle = false }
         lastInteraction = Date()
     }
 
-    private func dim() {
-        previousBrightness = UIScreen.main.brightness
-        UIScreen.main.brightness = 0.05
-        withAnimation { dimmed = true }
-    }
-
-    private func undim() {
+    /// Puts the brightness back exactly once, and only if we lowered it —
+    /// writing a stale level over one the user (or iOS auto-brightness)
+    /// has since changed is its own bug.
+    private func restoreBrightness() {
+        guard brightnessLowered else { return }
+        brightnessLowered = false
         UIScreen.main.brightness = previousBrightness
-        withAnimation { dimmed = false }
-        touched()
     }
 
     private var dimOverlay: some View {
@@ -123,7 +192,7 @@ struct StreamingView: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { undim() }
+        .onTapGesture { wake() }
     }
 
     /// Tally: a border round the whole screen, readable at arm's length
@@ -219,9 +288,13 @@ struct StreamingView: View {
                 showHealth.toggle()
             }
 
-            ControlButton(systemImage: "moon.fill") {
-                touched()
-                dim()
+            // Skip the fuse and go idle now. Absent in Standard, which
+            // has no idle view to go to.
+            if streamer.idleAppearance != .standard {
+                ControlButton(systemImage: streamer.idleAppearance == .clean
+                                ? "eye.slash" : "moon.fill") {
+                    goIdle()
+                }
             }
 
             Button {

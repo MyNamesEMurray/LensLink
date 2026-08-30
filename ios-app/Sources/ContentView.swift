@@ -114,11 +114,14 @@ struct ContentView: View {
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
-                // Gated on the dim setting (one switch governs both dims)
-                // and on no sheet being up: the overlay would sit behind
-                // the sheet with its tap-to-wake unreachable, leaving the
-                // screen dark with no visible way back.
-                if streamer.standbyActive && streamer.dimWhileStreaming &&
+                // Gated on the idle view being Dim screen — Clean feed
+                // has nothing to mean on a settings form, so only the
+                // dimming choice reaches this screen — and on no sheet
+                // being up: the overlay would sit behind the sheet with
+                // its tap-to-wake unreachable, leaving the screen dark
+                // with no visible way back.
+                if streamer.standbyActive
+                    && streamer.idleAppearance == .dim &&
                     !showOptions && !showDocs && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
