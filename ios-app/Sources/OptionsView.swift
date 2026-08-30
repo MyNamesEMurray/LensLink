@@ -19,8 +19,15 @@ struct OptionsView: View {
                 Section {
                     Toggle("Remote start from OBS",
                            isOn: $streamer.remoteStartEnabled)
-                    Toggle("Dim screen to save battery",
-                           isOn: $streamer.dimWhileStreaming)
+                    // What the Live screen becomes 10 seconds after you
+                    // stop touching it. Inline picker: three short labels
+                    // that fit one row and read as one choice, where a
+                    // pushed screen would hide two of the three.
+                    Picker("Idle view", selection: $streamer.idleAppearance) {
+                        ForEach(Streamer.IdleAppearance.allCases) { view in
+                            Text(view.displayName).tag(view)
+                        }
+                    }
                     Toggle("Allow system video effects",
                            isOn: $streamer.allowVideoEffects)
                 }

@@ -302,8 +302,8 @@ Long explanations don't belong on this screen: each module's footer is at
 most a sentence or two, so the form stays close to one screenful.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
-so the main screen stays short: **Remote start from OBS**, **Dim screen
-while streaming**, and a **Microphone** group (**Send phone mic to OBS** /
+so the main screen stays short: **Remote start from OBS**, **Idle view**
+(Standard / Clean feed / Dim screen), and a **Microphone** group (**Send phone mic to OBS** /
 **Auto lip-sync reference** — mutually exclusive; turning one on turns the
 other off). Each toggle sits in its own section with a short footer
 directly beneath it — never one combined wall-of-text footer for all of
@@ -312,9 +312,12 @@ them.
 ### 6.2 App — Live screen
 Full-screen black; camera preview `resizeAspect`; content over it:
 
-- **Top bar:** status pill (dot + word, left) · Stats button · Dim button ·
+- **Top bar:** status pill (dot + word, left) · Stats button · Idle button ·
   Stop button (red). Glass chips. With Stats on, a health pill (fps ·
-  Mb/s · dropped) sits under the bar, leading-aligned.
+  Mb/s · dropped) sits under the bar, leading-aligned. The Idle button
+  engages the idle view now instead of waiting out the fuse, and carries
+  that view's icon (`eye.slash` for Clean feed, `moon.fill` for Dim
+  screen); in Standard, which has no idle view, it isn't drawn.
 - **Bottom panel** (`glassPanel`, radius 16): zoom row, exposure rows
   (AE/Manual segmented sharing the bias-slider row; ISO + Shutter rows in
   Manual), white-balance row (AWB/Lock + temperature slider), then a
@@ -323,9 +326,21 @@ Full-screen black; camera preview `resizeAspect`; content over it:
 - **Gestures:** pinch anywhere = zoom; tap = focus/expose at point. In
   **AF** the focus row carries no inline label — tap-to-focus is a gesture,
   not on-screen text (a label there crowded the row and wrapped badly).
-- **Dim overlay:** after 10 s idle (if enabled) the screen goes near-black
-  with a small "Streaming — tap to wake" hint and lowered brightness; any
-  tap restores.
+- **Idle view:** what the screen becomes 10 s after the last touch, the
+  user's choice in Options → Idle view. Any tap brings the controls back
+  and restarts the fuse.
+  - **Standard** — nothing happens; the controls stay up all stream.
+  - **Clean feed** — the preview alone: status pill, sync pill and control
+    panel fade out over 0.2 s. Two things deliberately stay, because
+    neither is a control: the tally border, and the health pill when Stats
+    is on — the Stats button *is* the "clean, but keep the numbers" switch,
+    so no second setting exists for it. A transparent tap catcher covers
+    the screen, so the waking tap is only a wake (never also a focus pull)
+    and the letterbox bars wake it too.
+  - **Dim screen** — near-black overlay with a small "Streaming — tap to
+    wake" hint, brightness at 5%, and preview rendering stopped. The only
+    idle view that also applies to the Setup screen, which dims a minute
+    into remote-start standby.
 
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):

@@ -49,9 +49,52 @@ final class Streamer: ObservableObject {
         }
     }
 
+    /// What the Live screen shows once the 10 s idle fuse burns down —
+    /// the phone is mounted and nobody is touching it, so the screen can
+    /// stop being a control panel. Any touch brings the controls back and
+    /// restarts the fuse.
+    enum IdleAppearance: String, CaseIterable, Identifiable {
+        /// Nothing happens: the controls stay up for the whole stream.
+        case standard
+        /// Clean feed — the preview alone, no chips, panel or hints, so
+        /// the mounted phone reads as a monitor. The tally border stays
+        /// (knowing you're on air is not a control), and the health pill
+        /// stays if Stats is on, which is how you keep numbers on a
+        /// clean screen.
+        case clean
+        /// Near-black tap-to-wake overlay with the brightness dropped —
+        /// the battery saver.
+        case dim
+
+        var id: String { rawValue }
+
+        /// UI label, American English per docs/UI_DESIGN.md.
+        var displayName: String {
+            switch self {
+            case .standard: return "Standard"
+            case .clean: return "Clean feed"
+            case .dim: return "Dim screen"
+            }
+        }
+    }
+
     /// Shared instance: the SwiftUI scene, the Siri App Intents, and the
     /// lenslink:// URL handler must all drive the same streamer.
     static let shared = Streamer()
+
+    /// Reads the idle-view preference, migrating the "dimWhileStreaming"
+    /// switch this setting replaced: it was on by default, so an absent
+    /// value means `.dim` too, and only someone who had turned it off
+    /// lands on `.standard`.
+    private static func storedIdleAppearance(
+        _ defaults: UserDefaults) -> IdleAppearance {
+        if let raw = defaults.string(forKey: "idleAppearance"),
+           let stored = IdleAppearance(rawValue: raw) {
+            return stored
+        }
+        let dimmed = defaults.object(forKey: "dimWhileStreaming") as? Bool
+        return (dimmed ?? true) ? .dim : .standard
+    }
 
     // Settings (persisted to UserDefaults)
     @Published var resolution: CameraManager.Resolution {
@@ -319,12 +362,14 @@ final class Streamer: ObservableObject {
         }
         return colorSetting
     }
-    /// "Dim screen to save battery": governs both the Live screen's 10 s
-    /// dim and the Setup screen's standby dim. The name and stored key
-    /// predate the standby dim being brought under it — the key stays so
-    /// nobody's preference resets.
-    @Published var dimWhileStreaming: Bool {
-        didSet { UserDefaults.standard.set(dimWhileStreaming, forKey: "dimWhileStreaming") }
+    /// What the Live screen becomes once you stop touching it, and
+    /// whether the Setup screen's standby dim runs at all (only `.dim`
+    /// does — a form has no feed to keep clean).
+    @Published var idleAppearance: IdleAppearance {
+        didSet {
+            UserDefaults.standard.set(idleAppearance.rawValue,
+                                      forKey: "idleAppearance")
+        }
     }
     /// Experiment: leave the max frame duration unlocked so iOS may lower
     /// the rate on its own — which the Control Center video effects appear
@@ -818,7 +863,7 @@ final class Streamer: ObservableObject {
         let storedDistance = defaults.double(forKey: "greenScreenMaxDistance")
         greenScreenMaxDistance =
             (0.5...5.0).contains(storedDistance) ? storedDistance : 0
-        dimWhileStreaming = defaults.object(forKey: "dimWhileStreaming") as? Bool ?? true
+        idleAppearance = Streamer.storedIdleAppearance(defaults)
         allowVideoEffects = defaults.bool(forKey: "allowVideoEffects")
         sendAudioReference = defaults.bool(forKey: "sendAudioReference")
         // didSet doesn't run during init; enforce the exclusivity here.
