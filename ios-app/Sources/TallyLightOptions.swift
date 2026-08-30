@@ -220,15 +220,19 @@ struct TallyLightOptionsView: View {
                             Button {
                                 entry.pulse.toggle()
                             } label: {
-                                Image(systemName: entry.pulse
-                                        ? "waveform.path" : "minus")
-                                    .frame(width: 28, height: 28)
+                                // One glyph, state in the colour — the
+                                // Live screen's active-chip language. An
+                                // icon that swaps to a dash would read as
+                                // "remove" in a swipe-to-delete list.
+                                Image(systemName: "waveform.path")
+                                    .frame(width: Theme.controlButton,
+                                           height: Theme.controlButton)
                             }
                             .buttonStyle(.borderless)
                             .foregroundColor(entry.pulse
                                              ? Theme.accent : .secondary)
-                            .accessibilityLabel(
-                                entry.pulse ? "Pulsing" : "Steady")
+                            .accessibilityLabel("Pulse")
+                            .accessibilityValue(entry.pulse ? "On" : "Off")
                         }
                     }
                 }
@@ -238,7 +242,7 @@ struct TallyLightOptionsView: View {
             } header: {
                 Text("Statuses, highest priority first")
             } footer: {
-                Text("The highest status here that's currently true sets the border color; Off skips it. The button beside a color switches that status between a steady border and a pulsing one. Tap Edit to reorder.")
+                Text("The highest status here that's currently true sets the border color; Off skips it. Tap Edit to reorder.")
             }
 
             Section {

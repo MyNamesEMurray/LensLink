@@ -54,14 +54,14 @@ struct DocumentationView: View {
 
             Section {
                 Text("A **preset** saves the camera settings you re-dial every session — exposure, white balance, zoom, focus — and you choose which of those it carries. Everything it leaves out stays where it is.")
-                Text("Give a preset a **camera** and it applies whenever that camera starts; mark one as the **default** and it covers any camera without its own. Options → Presets, where you can also apply one by hand.")
+                Text("Give a preset a **camera** and it applies whenever that camera starts; mark one as the **default** and it covers any camera without its own. Options → Presets.")
                 Text("Changing any of those settings by hand pauses automatic presets, so one can never overwrite an adjustment you just made — a **Presets paused** pill appears on the Live screen, and tapping it resumes and re-applies without stopping the stream.")
             } header: {
                 Text("Presets")
             }
 
             Section {
-                Text("The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light, and any status can pulse instead of holding steady.")
+                Text("The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it.")
                 Text("**Low battery** is one of the statuses you can light: it turns on with iOS Low Power Mode, or at 20% and below, and clears the moment you plug in. While the screen is dimmed the battery level also shows as a percentage under the wake hint — so a phone across the room can be checked without touching it.")
             } header: {
                 Text("Tally light")

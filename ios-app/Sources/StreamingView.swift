@@ -223,8 +223,20 @@ struct StreamingView: View {
                         .font(.caption2)
                 }
             }
-            .foregroundColor(battery.isLow ? Theme.errorRed : .gray)
+            .foregroundColor(batteryTint)
         }
+    }
+
+    /// Red means low, amber means the OS is throttling, grey means fine —
+    /// the palette's own reading of each (docs/UI_DESIGN.md §2). Splitting
+    /// them matters: Low Power Mode can be switched on at 80%, and a red
+    /// readout there would be a lie you learn to ignore.
+    private var batteryTint: Color {
+        guard !battery.isCharging else { return .gray }
+        if let percent = battery.percent, percent <= 20 {
+            return Theme.errorRed
+        }
+        return battery.lowPowerMode ? Theme.connectAmber : .gray
     }
 
     /// The system battery glyph nearest the real level, so the icon reads

@@ -13,8 +13,6 @@ struct PresetsView: View {
             Section {
                 Toggle("Apply presets automatically",
                        isOn: $manager.autoApplyEnabled)
-            } footer: {
-                Text("A preset applies when its camera starts, and the default applies to any camera without one. Changing a setting by hand pauses this until you resume it from the Live screen.")
             }
 
             Section {
@@ -36,26 +34,11 @@ struct PresetsView: View {
                 }
 
                 Button("New preset") {
-                    editing = CameraPreset(name: "", lensID: streamer.selectedLens.id)
+                    editing = CameraPreset(name: "",
+                                           lensID: streamer.selectedLens.id)
                 }
             } header: {
                 Text("Presets")
-            }
-
-            if !manager.presets.isEmpty {
-                Section {
-                    // Applying by hand works whatever the master switch
-                    // says — it is an explicit act, not an automatic one.
-                    ForEach(manager.presets) { preset in
-                        Button("Apply \(preset.name)") {
-                            streamer.apply(preset)
-                        }
-                    }
-                } header: {
-                    Text("Apply now")
-                } footer: {
-                    Text("Applies to the running camera immediately.")
-                }
             }
         }
         .navigationTitle("Presets")
@@ -67,14 +50,14 @@ struct PresetsView: View {
     }
 
     private func row(_ preset: CameraPreset) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Theme.Space.xs) {
             HStack {
                 Text(preset.name)
                 if preset.id == manager.defaultPresetID {
                     Text("Default")
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .font(.caption)
+                        .padding(.horizontal, Theme.Space.s)
+                        .padding(.vertical, Theme.Space.xs)
                         .background(Theme.accent.opacity(0.2), in: Capsule())
                 }
             }
@@ -129,23 +112,23 @@ struct PresetEditorView: View {
                 Section {
                     Toggle("Exposure", isOn: exposureIncluded)
                     if let exposure = draft.exposure {
-                        Picker("Mode", selection: exposureMode) {
-                            Text("Auto").tag(false)
+                        Picker("Exposure", selection: exposureMode) {
+                            Text("AE").tag(false)
                             Text("Manual").tag(true)
                         }
                         .pickerStyle(.segmented)
                         if exposure.manual {
-                            slider("ISO", value: isoBinding,
-                                   range: isoRange,
-                                   readout: "\(Int(draft.exposure?.iso ?? 0))")
-                            slider("Shutter", value: shutterBinding,
-                                   range: 0...1,
-                                   readout: shutterReadout)
+                            sliderRow("dial.min", "dial.max",
+                                      value: isoBinding, range: isoRange,
+                                      readout: "\(Int(draft.exposure?.iso ?? 0))")
+                            sliderRow("tortoise", "hare",
+                                      value: shutterBinding, range: 0...1,
+                                      readout: shutterReadout)
                         } else {
-                            slider("Bias", value: biasBinding,
-                                   range: biasRange,
-                                   readout: String(format: "%+.1f",
-                                                   exposure.bias))
+                            sliderRow("sun.min", "sun.max",
+                                      value: biasBinding, range: biasRange,
+                                      readout: String(format: "%+.1f",
+                                                      exposure.bias))
                         }
                     }
                 } header: {
@@ -155,15 +138,18 @@ struct PresetEditorView: View {
                 Section {
                     Toggle("White balance", isOn: whiteBalanceIncluded)
                     if let wb = draft.whiteBalance {
-                        Picker("Mode", selection: whiteBalanceMode) {
-                            Text("Auto").tag(false)
-                            Text("Locked").tag(true)
+                        Picker("White balance", selection: whiteBalanceMode) {
+                            Text("AWB").tag(false)
+                            Text("Lock").tag(true)
                         }
                         .pickerStyle(.segmented)
                         if wb.locked {
-                            slider("Temperature", value: temperatureBinding,
-                                   range: 2500...8000,
-                                   readout: "\(Int(wb.temperature))K")
+                            // No icons, exactly as on the Live screen:
+                            // the segmented control above names the row.
+                            sliderRow(nil, nil,
+                                      value: temperatureBinding,
+                                      range: 2500...8000,
+                                      readout: "\(Int(wb.temperature))K")
                         }
                     }
                 }
@@ -171,27 +157,31 @@ struct PresetEditorView: View {
                 Section {
                     Toggle("Zoom", isOn: zoomIncluded)
                     if draft.zoom != nil {
-                        slider("Zoom", value: zoomBinding,
-                               range: 1...max(streamer.camera.maxZoomFactor,
-                                              1.1),
-                               readout: String(format: "%.1f×",
-                                               draft.zoom ?? 1))
+                        sliderRow("minus.magnifyingglass",
+                                  "plus.magnifyingglass",
+                                  value: zoomBinding,
+                                  range: 1...max(
+                                    Double(streamer.camera.maxZoomFactor),
+                                    1.1),
+                                  readout: String(format: "%.1f×",
+                                                  draft.zoom ?? 1))
                     }
                 }
 
                 Section {
                     Toggle("Focus", isOn: focusIncluded)
                     if let focus = draft.focus {
-                        Picker("Mode", selection: focusMode) {
-                            Text("Auto").tag(false)
-                            Text("Locked").tag(true)
+                        Picker("Focus", selection: focusMode) {
+                            Text("AF").tag(false)
+                            Text("Lock").tag(true)
                         }
                         .pickerStyle(.segmented)
                         if focus.locked {
-                            slider("Position", value: lensPositionBinding,
-                                   range: 0...1,
-                                   readout: String(format: "%.2f",
-                                                   focus.lensPosition))
+                            sliderRow(nil, nil,
+                                      value: lensPositionBinding,
+                                      range: 0...1,
+                                      readout: String(format: "%.2f",
+                                                      focus.lensPosition))
                         }
                     }
                 }
@@ -362,20 +352,27 @@ struct PresetEditorView: View {
         return Double(range.lowerBound)...Double(range.upperBound)
     }
 
-    /// Form-shaped slider row: label, slider, monospaced readout — the
-    /// Live screen's anatomy (docs/UI_DESIGN.md §4) minus the icons,
-    /// which have no room in a Form row.
-    private func slider(_ label: String, value: Binding<Double>,
-                        range: ClosedRange<Double>,
-                        readout: String) -> some View {
-        HStack {
-            Text(label)
-                .frame(width: 92, alignment: .leading)
+    /// The product's slider row (docs/UI_DESIGN.md §4): leading icon ·
+    /// slider · trailing icon · monospaced readout in a fixed 44 pt
+    /// column. Same icons as the Live screen's rows, so a preset's
+    /// exposure looks like the exposure you set live — the icons are
+    /// dropped for white balance and focus, which have none there either.
+    private func sliderRow(_ minIcon: String?, _ maxIcon: String?,
+                           value: Binding<Double>,
+                           range: ClosedRange<Double>,
+                           readout: String) -> some View {
+        HStack(spacing: Theme.Space.m) {
+            if let minIcon {
+                Image(systemName: minIcon).foregroundColor(.secondary)
+            }
             Slider(value: value, in: range)
+            if let maxIcon {
+                Image(systemName: maxIcon).foregroundColor(.secondary)
+            }
             Text(readout)
                 .font(.caption.monospacedDigit())
                 .foregroundColor(.secondary)
-                .frame(width: 56, alignment: .trailing)
+                .frame(width: 44, alignment: .trailing)
         }
     }
 }

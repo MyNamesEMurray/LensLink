@@ -65,11 +65,11 @@ While remote start is armed the phone holds its idle timer (auto-lock
 would suspend the listener and kill remote start), so the Setup screen
 reuses the Live screen's near-black tap-to-wake dim overlay — on a
 60-second fuse instead of 10, with the icon in `connectAmber` rather
-than `liveGreen` (armed, not live). Both dims answer to the one "Dim
-screen to save battery" toggle, and the standby dim never fires while
-the user is interacting: any touch resets the fuse, and it can't trigger
-while a sheet is open (the overlay would sit behind the sheet with its
-tap-to-wake unreachable).
+than `liveGreen` (armed, not live). The standby dim runs only when the
+idle view is **Dim screen** (§6.2 — a clean feed means nothing on a
+settings form), and it never fires while the user is interacting: any
+touch resets the fuse, and it can't trigger while a sheet is open (the
+overlay would sit behind the sheet with its tap-to-wake unreachable).
 
 The status **word and colour are defined once** (`Streamer.Status.displayName`
 / `.tint` in the app) and reused by every view; the web panel maps the
@@ -97,9 +97,11 @@ defaults reproduce the pre-customization behaviour exactly. On air keeps
 the heaviest stroke (6 pt vs 4 pt) whatever its colour, so live stays
 the most emphatic state.
 
-Any lit status can also **pulse** instead of holding steady (the button
-beside its colour): a 0.9 s ease between full and 30% opacity — never to
-zero, so a glance during the dark half still finds a border. Motion is
+Any lit status can also **pulse** instead of holding steady — off by
+default on every status, so the calm-by-default principle holds until
+somebody asks for motion (the button beside its colour): a 0.9 s ease
+between full and 30% opacity — never to zero, so a glance during the
+dark half still finds a border. Motion is
 for a status you are meant to notice without watching for it, low battery
 being the case it was added for. `accessibilityReduceMotion` turns every
 pulse into a steady border of the same colour: less motion, never less
@@ -255,7 +257,8 @@ surfaces.
 | Lens        | `camera.aperture` menu                     | Menu of the device's real lenses; check on the active one |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
-| Dim (app)   | `moon.fill`                                | App-only battery saver |
+| Idle (app)  | `moon.fill` (Dim screen) / `eye.slash` (Clean feed) | App-only; engages the chosen idle view now instead of waiting out the 10 s fuse. Absent in Standard |
+| Pulse (app) | `waveform.path`                            | App-only, in Options → Tally light: one glyph, `accent` when that status pulses and secondary when steady — the active-chip language, not a swapped icon |
 | Stats (app) | `gauge`                                    | App-only toggle; shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
 | Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen; while live **with depth assist**, a "Subject distance" slider row (0.5–5.0 m, readout `2.5 m` monospaced) appears on the Live panel and the web panel, same position both surfaces. Dragging always sets a real cutoff — full-left = tightest (0.5 m); **"All" (no cutoff) is entered by tapping the readout**, and while "All" the thumb parks at the far (5.0) end. Identical on both surfaces |
 
@@ -315,15 +318,15 @@ so the main screen stays short: **Remote start from OBS**, **Idle view**
 (Standard / Clean feed / Dim screen), pushed screens for **Tally light**
 and **Presets**, and a **Microphone** group (**Send phone mic to OBS** /
 **Auto lip-sync reference** — mutually exclusive; turning one on turns the
-other off). Each toggle sits in its own section with a short footer
-directly beneath it — never one combined wall-of-text footer for all of
-them.
+other off). Pure controls, no footers: every explanation lives in the
+Documentation screen (§3), which is also why the pushed screens carry
+none.
 
 ### 6.2 App — Live screen
 Full-screen black; camera preview `resizeAspect`; content over it:
 
-- **Top bar:** status pill (dot + word, left) · Stats button · Idle button ·
-  Stop button (red). Glass chips. With Stats on, a health pill (fps ·
+- **Top bar:** status pill (dot + word, left) · Stats button · Idle
+  button · Stop button (red). Glass chips. With Stats on, a health pill (fps ·
   Mb/s · dropped) sits under the bar, leading-aligned. The Idle button
   engages the idle view now instead of waiting out the fuse, and carries
   that view's icon (`eye.slash` for Clean feed, `moon.fill` for Dim
@@ -350,12 +353,15 @@ Full-screen black; camera preview `resizeAspect`; content over it:
   - **Dim screen** — near-black overlay with a small "Streaming — tap to
     wake" hint, brightness at 5%, and preview rendering stopped. Under the
     hint sits a **battery readout** (level glyph + monospaced percentage,
-    a bolt while charging), grey normally and `errorRed` when low — the
-    answer to "do I need to plug this in?" without waking the screen,
-    which is the one question a dimmed phone on a stand can't otherwise
-    answer. Nothing renders where iOS reports no level (Simulator). The
-    only idle view that also applies to the Setup screen, which dims a
-    minute into remote-start standby.
+    a bolt while charging). It answers "do I need to plug this in?"
+    without waking the screen — the one question a dimmed phone on a
+    stand cannot otherwise answer. Grey normally, `connectAmber` in Low
+    Power Mode, `errorRed` at 20% or below, and grey again whenever
+    charging: Low Power Mode can be switched on at 80%, and one colour
+    for both would be a warning you learn to ignore. Nothing renders
+    where iOS reports no level (Simulator). This is the only idle view
+    that also applies to the Setup screen, which dims a minute into
+    remote-start standby.
 
 ### 6.2.1 Presets
 
@@ -374,6 +380,16 @@ to the user and must be the same thing in the model.
   matching preset immediately. Never a restart, never stopping the stream.
 - The pill appears only where resuming would do something: paused, the
   master switch on, and a preset that matches this camera.
+- **Options → Presets** is a plain list — the master switch, the presets,
+  and New preset — with no hand-apply action: the screen is reachable
+  only from Setup, where no camera is running, so an "apply now" button
+  could never do anything visible.
+- The **editor** builds each group out of the same segmented controls and
+  slider rows as the Live screen (AE/Manual, AWB/Lock, AF/Lock; the same
+  icons, the same 44 pt monospaced readout), so the preset you are
+  writing looks like the panel it will drive. Its ranges come from the
+  running camera where there is one and from the format-independent
+  fallbacks otherwise; values are clamped again on apply.
 - Presets are phone-local. They move the same properties the Live screen
   and `CONTROL` do, so the `STATE` snapshot follows for free — no
   protocol change.
