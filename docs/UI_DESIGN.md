@@ -89,12 +89,21 @@ in the list that is currently true and has a colour lights the border.
 | Connection lost | Off | streaming, link to OBS dropped |
 | Calibrating lip-sync | Off | measuring / re-measuring |
 | Lip-sync locked | Off | calibration locked on |
+| Low battery | Off | Low Power Mode, or ≤ 20%, while unplugged |
 
 Assignable colours: Red `#FF3B30`, Amber `#FF9F0A`, Green `#30D158`,
 Blue `#3D7BFF`, Purple `tallyPurple` `#BF5AF2`, White, or Off. The
 defaults reproduce the pre-customization behaviour exactly. On air keeps
 the heaviest stroke (6 pt vs 4 pt) whatever its colour, so live stays
 the most emphatic state.
+
+Any lit status can also **pulse** instead of holding steady (the button
+beside its colour): a 0.9 s ease between full and 30% opacity — never to
+zero, so a glance during the dark half still finds a border. Motion is
+for a status you are meant to notice without watching for it, low battery
+being the case it was added for. `accessibilityReduceMotion` turns every
+pulse into a steady border of the same colour: less motion, never less
+warning.
 
 The tally's core answer — *am I on air?* — must never be ambiguous, so
 it is **its own indicator**, not a mode of the status dot. It's a border
@@ -338,9 +347,14 @@ Full-screen black; camera preview `resizeAspect`; content over it:
     the screen, so the waking tap is only a wake (never also a focus pull)
     and the letterbox bars wake it too.
   - **Dim screen** — near-black overlay with a small "Streaming — tap to
-    wake" hint, brightness at 5%, and preview rendering stopped. The only
-    idle view that also applies to the Setup screen, which dims a minute
-    into remote-start standby.
+    wake" hint, brightness at 5%, and preview rendering stopped. Under the
+    hint sits a **battery readout** (level glyph + monospaced percentage,
+    a bolt while charging), grey normally and `errorRed` when low — the
+    answer to "do I need to plug this in?" without waking the screen,
+    which is the one question a dimmed phone on a stand can't otherwise
+    answer. Nothing renders where iOS reports no level (Simulator). The
+    only idle view that also applies to the Setup screen, which dims a
+    minute into remote-start standby.
 
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):

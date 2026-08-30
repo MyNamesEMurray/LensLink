@@ -53,7 +53,8 @@ struct DocumentationView: View {
             }
 
             Section {
-                Text("The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light.")
+                Text("The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light, and any status can pulse instead of holding steady.")
+                Text("**Low battery** is one of the statuses you can light: it turns on with iOS Low Power Mode, or at 20% and below, and clears the moment you plug in. While the screen is dimmed the battery level also shows as a percentage under the wake hint — so a phone across the room can be checked without touching it.")
             } header: {
                 Text("Tally light")
             }
