@@ -3,75 +3,67 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 ---
 <h1>Browser control panel</h1>
 <p class="lede">
-  The plugin serves a small control panel at
-  <a href="http://localhost:9980"><code>http://localhost:9980</code></a>: the
-  same camera controls the app's Live screen has, in a browser window you can
-  park beside OBS. It is the operator's vantage point — nobody has to touch the
-  phone.
+  The plugin serves the Live screen's camera controls at
+  <a href="http://localhost:9980"><code>http://localhost:9980</code></a>, in a
+  browser window you can park beside OBS. Nobody has to touch the phone.
 </p>
 
 <h2>Opening it</h2>
-<ol>
-  <li>Make sure the panel is enabled: <strong>Tools → LensLink Settings → Browser control panel</strong>. It is on by default.</li>
-  <li>Open <code>http://localhost:9980</code> in any browser on the same computer.</li>
-</ol>
+<p>
+  Open <code>http://localhost:9980</code> on the computer running OBS. The panel
+  is on by default; the switch is <strong>Tools → LensLink Settings → Browser
+  control panel</strong>.
+</p>
 <div class="callout">
-  <p><strong>It listens on loopback only.</strong> The panel binds to
-  <code>127.0.0.1</code>, so it is reachable from the computer running OBS and
-  from nowhere else — not from your phone, not from the network. That is
-  deliberate: it can start cameras and change settings, and it has no
-  authentication.</p>
+  <p><strong>Loopback only.</strong> The panel binds to <code>127.0.0.1</code>,
+  so nothing on the network can reach it — deliberate, since it can start
+  cameras and has no authentication.</p>
 </div>
 <p>
-  The port is a plugin-wide setting (<strong>Panel port</strong>, default
-  <code>9980</code>). Change it if something else on your machine already uses
-  that port.
+  <strong>Panel port</strong> (default <code>9980</code>) is a plugin-wide
+  setting if something else already has that port.
 </p>
 
 <h2>What is on it</h2>
-<p>
-  The controls appear in the same order as the app's Live panel, because they
-  are the same controls:
-</p>
+<p>Same controls as the app's Live panel, in the same order:</p>
 <ul>
-  <li><strong>Header</strong> — the LensLink title and a status pill with the dot, word and latency, in the shared palette. When lip-sync auto-calibration is running, a second pill shows its stage and offers <strong>Recalibrate</strong> while locked.</li>
-  <li><strong>Source tabs</strong> — only when more than one camera source is live. Every request carries the selected source, so one page controls every phone.</li>
-  <li><strong>Zoom</strong>, <strong>exposure</strong> (AE bias, or manual ISO and shutter), <strong>focus</strong> (AF or Lock with a lens-position slider), <strong>white balance</strong> (AWB or Lock with a temperature slider).</li>
-  <li><strong>A chip row</strong>: Flashlight, Lens, Flip.</li>
-  <li><strong>Mid-stream format changes</strong> — resolution, frame rate, codec and microphone.</li>
-  <li><strong>Subject distance</strong>, while the green screen is running with depth assist.</li>
-  <li><strong>Start camera</strong> when the app is connected but idle, and a red <strong>Stop camera</strong> while live, each with an <strong>Auto-start</strong> toggle beside it.</li>
+  <li><strong>Status pill</strong> with dot, word and latency. A second pill appears while lip-sync calibration runs, and offers <strong>Recalibrate</strong> once locked.</li>
+  <li><strong>Source tabs</strong>, when more than one camera source is live — one page controls every phone.</li>
+  <li><strong>Zoom</strong>, <strong>exposure</strong> (AE bias, or manual ISO and shutter), <strong>focus</strong>, <strong>white balance</strong>.</li>
+  <li><strong>Flashlight, Lens, Flip.</strong></li>
+  <li><strong>Format changes mid-stream</strong>: resolution, frame rate, codec, microphone.</li>
+  <li><strong>Subject distance</strong>, while the green screen runs with depth assist.</li>
+  <li><strong>Start camera</strong> while idle, red <strong>Stop camera</strong> while live, each with an <strong>Auto-start</strong> toggle.</li>
 </ul>
 <p>
-  The panel polls the plugin and mirrors changes made on the phone, pausing
-  while you are dragging something so it never fights your hand. A
-  <strong>LensLink Screen</strong> source has no camera controls, and the panel
-  says so rather than showing dead sliders.
+  It mirrors changes made on the phone, pausing while you drag so it never
+  fights your hand. A <strong>LensLink Screen</strong> source has no camera
+  controls, and the panel says so rather than showing dead sliders.
 </p>
 
 <h2>The HTTP API</h2>
 <p>
-  The panel is just a client of a small HTTP API on the same port, and so can
-  anything else be — a stream deck, a script, a scene-switching automation.
-  Every endpoint takes an optional <code>?src=&lt;id&gt;</code> naming the
-  source; without it, the plugin picks the first suitable one.
+  The panel is one client of a small HTTP API on the same port; a stream deck or
+  a script can be another. Every endpoint takes an optional
+  <code>?src=&lt;id&gt;</code>; without it the plugin picks the first suitable
+  source.
 </p>
 
 <h3>Reading state</h3>
 <table>
   <thead><tr><th>Request</th><th>Returns</th></tr></thead>
   <tbody>
-    <tr><td><code>GET /api/sources</code></td><td>Every LensLink source: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>screen</code>.</td></tr>
-    <tr><td><code>GET /api/status</code></td><td>The plugin's own view: <code>status</code> text, plus <code>screen</code>, <code>standby</code>, <code>connected</code>, <code>autoStart</code> and the lip-sync <code>sync</code> stage.</td></tr>
-    <tr><td><code>GET /api/state</code></td><td>The phone's last camera-state snapshot — the lens list, current zoom, exposure, focus, white balance, supported formats and so on. This is the same cache the source properties read, which is how all three surfaces stay in lock-step.</td></tr>
+    <tr><td><code>GET /api/sources</code></td><td>Every source: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>screen</code>.</td></tr>
+    <tr><td><code>GET /api/status</code></td><td><code>status</code> text, plus <code>screen</code>, <code>standby</code>, <code>connected</code>, <code>autoStart</code> and the lip-sync <code>sync</code> stage.</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>The phone's last camera-state snapshot: lenses, zoom, exposure, focus, white balance, supported formats. The same cache the source properties read, which is how the three surfaces stay in step.</td></tr>
   </tbody>
 </table>
 
 <h3>Sending commands</h3>
 <p>
-  <code>POST /api/control</code> takes one JSON command per request and forwards
-  it to the phone. Unknown commands are ignored by design, so a newer panel and
-  an older app degrade rather than break.
+  <code>POST /api/control</code> takes one JSON command per request. Unknown
+  commands are ignored by design, so a newer panel and an older app degrade
+  rather than break.
 </p>
 <pre><code>POST /api/control
 { "cmd": "zoom",          "value": 2.0 }
@@ -92,7 +84,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 <table>
   <thead><tr><th>Request</th><th>Effect</th></tr></thead>
   <tbody>
-    <tr><td><code>POST /api/autostart</code></td><td>Body <code>{"on":true}</code> or <code>{"on":false}</code> — the same property the source's auto-start checkbox edits. An empty body is rejected rather than read as "false".</td></tr>
+    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code> — the same property the auto-start checkbox edits. An empty body is rejected, not read as false.</td></tr>
     <tr><td><code>POST /api/recalibrate</code></td><td>No body. Starts a fresh lip-sync measurement.</td></tr>
   </tbody>
 </table>
@@ -109,7 +101,6 @@ curl -s http://localhost:9980/api/sources</code></pre>
 
 <h2>Turning it off</h2>
 <p>
-  <strong>Tools → LensLink Settings</strong> → clear <strong>Browser control
-  panel</strong>. The port closes immediately; the app and the source keep
-  working exactly as before.
+  Clear <strong>Browser control panel</strong> in <strong>Tools → LensLink
+  Settings</strong>. The port closes immediately; everything else is unaffected.
 </p>

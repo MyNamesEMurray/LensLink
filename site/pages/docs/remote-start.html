@@ -3,24 +3,21 @@ description: Start and stop the phone's camera from OBS, a browser button, Siri,
 ---
 <h1>Remote start</h1>
 <p class="lede">
-  A phone clamped behind a monitor or on a rig should not have to come down just
-  so somebody can tap Start. While LensLink is open and idle, OBS can start the
-  camera for you.
+  A phone clamped behind a monitor shouldn't have to come down for someone to
+  tap Start. While the app is open and idle, OBS can start the camera itself.
 </p>
 
 <h2>Why the app has to be open</h2>
 <p>
-  iOS only runs the camera — and LensLink's listener — while the app is on
-  screen. A backgrounded app cannot capture video, and a suspended one cannot
-  answer the network. That single platform rule is the reason all the machinery
-  below exists: the app announces itself as <strong>standby</strong> when it is
-  open and idle, and OBS takes it from there.
+  iOS runs the camera and LensLink's listener only while the app is on screen.
+  Everything below exists because of that: the app announces
+  <strong>standby</strong> when it's open and idle, and OBS takes it from there.
 </p>
 <p>
-  It is also why the Siri and Shortcuts paths <em>open the app</em> first, and
-  why the phone holds its idle timer while standby is armed — auto-lock would
-  suspend the listener and end remote start. The Setup screen dims a minute in,
-  in amber rather than green, to say "armed, not live".
+  It's also why the Siri and Shortcuts paths open the app first, and why the
+  phone holds off auto-lock while standby is armed — locking would suspend the
+  listener. The Setup screen dims after a minute, in amber rather than green:
+  armed, not live.
 </p>
 <div class="callout">
   <p>Remote start is on by default. Turn it off with <strong>Remote start from
@@ -31,83 +28,72 @@ description: Start and stop the phone's camera from OBS, a browser button, Siri,
 
 <h3>Automatically, when the source connects</h3>
 <p>
-  The LensLink Camera source's <strong>Start the phone's camera automatically
-  when it's ready</strong> option is on by default. Open the app — by hand, with
-  Siri, or from a Shortcuts automation — and the video appears in OBS with no
-  further input.
-</p>
-<p>
-  It will not ping-pong with you: OBS auto-starts only when the app has just
-  become reachable, not after you deliberately pressed Stop.
+  <strong>Start the phone's camera automatically when it's ready</strong> is on
+  by default: open the app and video appears, with no further input. It won't
+  ping-pong with you either — OBS auto-starts only when the app has just become
+  reachable, not after you pressed Stop.
 </p>
 
 <h3>From OBS</h3>
 <p>
-  The source's properties have <strong>Start camera on the phone</strong> and
-  <strong>Stop camera on the phone</strong> buttons, which work whenever the app
-  is connected.
+  <strong>Start camera on the phone</strong> and <strong>Stop camera on the
+  phone</strong> in the source properties, whenever the app is connected.
 </p>
 
 <h3>From the browser panel</h3>
 <p>
   <a href="/docs/web-panel/">The panel</a> at
-  <code>http://localhost:9980</code> shows a <strong>Start camera</strong>
-  button whenever the app is connected but idle, and a red <strong>Stop
-  camera</strong> button while it is live. Beside each is an
-  <strong>Auto-start</strong> toggle that flips the same setting as the
-  properties checkbox.
+  <code>http://localhost:9980</code> shows <strong>Start camera</strong> while
+  the app is idle and a red <strong>Stop camera</strong> while it's live, each
+  with an <strong>Auto-start</strong> toggle beside it.
 </p>
 
 <h3>From Siri, Shortcuts or a URL</h3>
 <ul>
-  <li><strong>Siri (iOS 16+):</strong> <em>"Hey Siri, start streaming with LensLink"</em> opens the app and starts the camera.</li>
-  <li><strong>Shortcuts:</strong> the <strong>Start Camera Stream</strong> and <strong>Stop Camera Stream</strong> actions are available for automations — for example, starting the stream when the phone connects to a specific charger.</li>
-  <li><strong>URL scheme:</strong> <code>lenslink://start</code> and <code>lenslink://stop</code>, from an "Open URL" action. This is the iOS 15 path, and it works on every version.</li>
+  <li><strong>Siri (iOS 16+):</strong> <em>"Hey Siri, start streaming with LensLink."</em></li>
+  <li><strong>Shortcuts:</strong> <strong>Start Camera Stream</strong> and <strong>Stop Camera Stream</strong> actions — useful in automations, such as starting when the phone connects to a particular charger.</li>
+  <li><strong>URL scheme:</strong> <code>lenslink://start</code> and <code>lenslink://stop</code>. The iOS 15 path, and it works everywhere.</li>
 </ul>
 <div class="callout warn">
-  <p><strong>Siri phrases and sideloading do not mix.</strong> Re-signing tools
-  rewrite the app's bundle ID for free Apple IDs, which orphans the compiled
-  phrase data — Siri answers with a generic refusal even though the same action
-  works from the Shortcuts app. Use the TestFlight build for working phrases, or
-  drive it with <code>lenslink://start</code>, which works everywhere. Also make
-  sure the app has been launched at least once and that "Use with Siri" is on in
-  <strong>Settings → Siri &amp; Search → LensLink</strong>.</p>
+  <p><strong>Siri phrases and sideloading don't mix.</strong> Re-signing rewrites
+  the bundle ID, which orphans the compiled phrase data — Siri refuses even
+  though the same action works from Shortcuts. Use TestFlight, or
+  <code>lenslink://start</code>. Also check the app has launched at least once
+  and that "Use with Siri" is on in <strong>Settings → Siri &amp; Search →
+  LensLink</strong>.</p>
 </div>
 
 <h2>Scene switching starts and stops it too</h2>
 <p>
-  Enable <strong>Disconnect when this source isn't shown anywhere</strong> in
-  the source properties and hiding the source stops the phone's camera
-  entirely, while showing it starts the camera again — automatic power
-  management that follows your scene switches. Combined with auto-start it means
-  the phone only ever encodes while it is actually on screen somewhere.
+  With <strong>Disconnect when this source isn't shown anywhere</strong>, hiding
+  the source stops the phone's camera and showing it starts it again. Combined
+  with auto-start, the phone only encodes while it's on screen somewhere.
 </p>
 
 <h2>Scripting it</h2>
-<p>The panel's endpoint is a plain HTTP POST, so anything can drive it:</p>
+<p>The panel's endpoint is a plain HTTP POST:</p>
 <pre><code>curl -X POST http://localhost:9980/api/control \
      -d '{"cmd":"start_stream"}'
 
 curl -X POST http://localhost:9980/api/control \
      -d '{"cmd":"stop_stream"}'</code></pre>
 <p>
-  With more than one phone connected, add the source id from
-  <code>/api/sources</code> as a <code>?src=</code> parameter. The full API is
-  documented on the <a href="/docs/web-panel/#the-http-api">browser panel
-  page</a>.
+  With more than one phone, add the source id from <code>/api/sources</code> as
+  <code>?src=</code>. Full API:
+  <a href="/docs/web-panel/#the-http-api">browser panel</a>.
 </p>
 
 <h2>What to expect on the phone</h2>
 <table>
   <tbody>
     <tr><td>App open, OBS not connected</td><td>Grey dot, "Not connected".</td></tr>
-    <tr><td>App open, OBS connected, camera idle</td><td>Amber dot, "OBS connected — ready". This is standby: remote start is armed.</td></tr>
-    <tr><td>Standby, untouched for a minute</td><td>The Setup screen dims to save battery, with an amber wake icon. Any tap wakes it; the listener keeps running throughout.</td></tr>
-    <tr><td>Started</td><td>The Live screen, green dot, "Live".</td></tr>
+    <tr><td>App open, OBS connected, camera idle</td><td>Amber dot, "OBS connected — ready". Standby: remote start armed.</td></tr>
+    <tr><td>Standby, untouched for a minute</td><td>The screen dims with an amber wake icon. Any tap wakes it; the listener never stops.</td></tr>
+    <tr><td>Started</td><td>Live screen, green dot, "Live".</td></tr>
   </tbody>
 </table>
 <p>
-  Standby dimming only happens when your <strong>Idle view</strong> is
-  <strong>Dim screen</strong>, and never while you are interacting with the
-  screen or have a sheet open.
+  Standby dimming happens only when <strong>Idle view</strong> is <strong>Dim
+  screen</strong>, and never while you're touching the screen or have a sheet
+  open.
 </p>

@@ -3,142 +3,129 @@ description: Symptom-by-symptom fixes for LensLink — the plugin not loading, U
 ---
 <h1>Troubleshooting</h1>
 <p class="lede">
-  Find your symptom below. Two things make almost any report solvable: the OBS
-  log (<strong>Help → Log Files → View Current Log</strong>) and the app's
-  <strong>Options → Camera diagnostics</strong> table.
+  Find your symptom. Two attachments make almost any report solvable: the OBS
+  log (<strong>Help → Log Files → View Current Log</strong>) and
+  <strong>Options → Camera diagnostics</strong> from the app.
 </p>
 
 <h2>The sources do not appear in OBS</h2>
 <ul>
-  <li><strong>Did you restart OBS?</strong> Plugins load once at startup.</li>
-  <li><strong>Is OBS 32 or newer?</strong> Check <strong>Help → About</strong>.</li>
-  <li><strong>Linux, log says <code>libavcodec.so.60: cannot open shared object file</code>:</strong> release tarballs up to v1.7.x linked the build machine's FFmpeg, so they only loaded on distros shipping that exact major version. Update to a current release, whose tarball bundles the decoder, or <a href="/docs/install/#building-the-plugin-from-source">build from source</a> — a local build links your own FFmpeg and always matches.</li>
-  <li><strong>macOS, extracted from the zip:</strong> clear the download quarantine flag, or OBS silently refuses to load the plugin.</li>
+  <li><strong>Restart OBS</strong> — plugins load once, at startup.</li>
+  <li><strong>Check OBS is 32 or newer</strong> (<strong>Help → About</strong>).</li>
+  <li><strong>Linux, log says <code>libavcodec.so.60: cannot open shared object file</code>:</strong> tarballs up to v1.7.x linked the build machine's FFmpeg, so they loaded only on distros with that exact major. Update, or <a href="/docs/install/#from-source">build from source</a>, which links your own.</li>
+  <li><strong>macOS, from the zip:</strong> clear the quarantine flag, or OBS refuses to load it silently.</li>
 </ul>
 
 <h2>The source is called "iOS Camera", or updates do not seem to apply</h2>
 <p>
-  An old pre-1.0 copy of the plugin (<code>ios-camera-source.dll</code>) is still
-  installed and wins over the current one. The OBS log gives it away:
-  <em>"Source 'ios_camera_source' already exists"</em>.
+  A pre-1.0 copy (<code>ios-camera-source.dll</code>) is still installed and
+  wins over the current one — the log says <em>"Source 'ios_camera_source'
+  already exists"</em>. Delete both of these and restart:
 </p>
-<p>Delete both of these from your OBS folder and restart:</p>
 <pre><code>obs-plugins\64bit\ios-camera-source.dll
 data\obs-plugins\ios-camera-source\</code></pre>
 <p>The current installer removes it automatically.</p>
 
 <h2>USB device not found (Windows)</h2>
 <ul>
-  <li><strong>Install iTunes.</strong> It provides the Apple device driver the plugin needs. There is no way around this on Windows.</li>
-  <li><strong>Tap Trust on the phone</strong> when prompted, with the phone unlocked.</li>
-  <li><strong>Use a data cable.</strong> Charge-only cables carry no data, and nothing in the interface can tell you that.</li>
+  <li><strong>Install iTunes</strong> — it provides Apple's device driver. There's no way around this on Windows.</li>
+  <li><strong>Tap Trust</strong>, with the phone unlocked.</li>
+  <li><strong>Use a data cable.</strong> Nothing in the interface can tell a charge-only cable from a data one.</li>
 </ul>
 <p>
-  If the status says <em>"Device found, but the LensLink app isn't reachable"</em>,
-  the cable and driver are fine — the app is not in the foreground, or the phone
-  is locked.
+  <em>"Device found, but the LensLink app isn't reachable"</em> means the cable
+  and driver are fine: the app isn't in the foreground, or the phone is locked.
 </p>
 
 <h2>The phone does not appear in the Phone dropdown</h2>
 <p>
   iOS requires the <strong>Local Network</strong> permission for the name
-  broadcast. Allow it when the app asks, or turn it on in
-  <strong>Settings → Privacy &amp; Security → Local Network → LensLink</strong>.
-  Typing the phone's IP address works regardless.
+  broadcast: allow it when asked, or in <strong>Settings → Privacy &amp;
+  Security → Local Network → LensLink</strong>. Typing the IP works regardless.
 </p>
 <p>
-  Also check that both devices are on the same network, and that it is not a
-  guest network or one with client isolation enabled.
+  Also check both devices are on the same network, and that it isn't a guest
+  network or one with client isolation.
 </p>
 
 <h2>The app stops working after a week (sideloaded only)</h2>
 <p>
-  Free Apple IDs expire sideloaded apps every 7 days. Re-install with Sideloadly
-  to refresh it — your settings are kept — or switch to the
-  <a href="{{TESTFLIGHT}}">TestFlight build</a>, which does not have the problem.
+  Free Apple IDs expire sideloaded apps every 7 days. Re-install to refresh
+  (settings are kept), or switch to the
+  <a href="{{TESTFLIGHT}}">TestFlight build</a>, which doesn't expire.
 </p>
 
 <h2>"Hey Siri, start streaming with LensLink" is not recognized (sideloaded only)</h2>
 <p>
-  Re-signing tools rewrite the app's bundle ID for free Apple IDs, which orphans
-  the compiled Siri phrase data: Siri answers with a generic refusal even though
-  the same action works from the Shortcuts app. Use the TestFlight build for
-  working phrases, or drive it through a Shortcuts automation —
-  <code>lenslink://start</code> works everywhere.
-</p>
-<p>
-  Also make sure the app has been launched at least once and that "Use with
-  Siri" is on in <strong>Settings → Siri &amp; Search → LensLink</strong>.
+  Re-signing rewrites the bundle ID, orphaning the compiled phrase data: Siri
+  refuses even though the same action works from Shortcuts. Use TestFlight, or a
+  Shortcut with <code>lenslink://start</code>. Also check the app has launched
+  once and that "Use with Siri" is on in <strong>Settings → Siri &amp; Search →
+  LensLink</strong>.
 </p>
 
 <h2>Control Center video effects are missing or greyed out</h2>
 <p>
-  Portrait, Studio Light and the rest are iOS effects you toggle in Control
-  Center while an app uses the camera — but iOS only offers them on certain
-  cameras and capture formats, typically the front camera at moderate settings
-  (nothing above 1920×1440). On many iPhones the rear cameras offer none at all,
-  while newer hardware extends more effects to more cameras.
+  These are iOS effects, toggled in Control Center while an app uses the camera.
+  iOS offers them only on certain cameras and formats — typically the front
+  camera, nothing above 1920×1440 — and on many iPhones the rear cameras get
+  none.
 </p>
 <ul>
-  <li><strong>Options → Camera diagnostics</strong> shows exactly what your device offers, per camera and format.</li>
-  <li>LensLink already picks an effect-capable format whenever your resolution and frame-rate choice allows one.</li>
-  <li>If a toggle appears but greys out, drop the frame rate — effects can cap the capture rate — and turn on <strong>Options → Allow system video effects</strong>, which lets iOS vary it.</li>
-  <li>Versions before 1.8.1 never showed the panel at all: iOS only populates it for apps that declare each effect in their <code>Info.plist</code>, which LensLink now does.</li>
+  <li><strong>Options → Camera diagnostics</strong> shows what your device offers, per camera and format.</li>
+  <li>LensLink already picks an effect-capable format when your settings allow one.</li>
+  <li>A toggle that greys out means the frame rate is too high: drop it, and turn on <strong>Options → Allow system video effects</strong>.</li>
+  <li>Before 1.8.1 the panel never appeared at all — iOS populates it only for apps that declare each effect in <code>Info.plist</code>, which LensLink now does.</li>
 </ul>
 <p>
-  Apple's Camera-app filters and Photographic Styles are not available to any
-  third-party camera app. For creative looks, add filters to the source in OBS
-  (right-click → <strong>Filters</strong>).
+  Apple's Camera-app filters and Photographic Styles aren't available to any
+  third-party app. Use OBS filters instead (right-click → <strong>Filters</strong>).
 </p>
 
 <h2>The screen broadcast will not connect</h2>
 <ul>
-  <li>In the app, open <strong>Screen mirror tools → Check broadcast link</strong> <em>while a broadcast is running</em>. It verifies the extension is alive on the device, independent of OBS.</li>
-  <li><strong>Sideloaded builds:</strong> re-signing can silently break the broadcast extension. TestFlight builds are unaffected.</li>
-  <li>Make sure the source in OBS is a <strong>LensLink Screen</strong> source. A Camera source fed a broadcast says so in its Status field.</li>
+  <li><strong>Screen mirror tools → Check broadcast link</strong>, <em>while broadcasting</em>: it verifies the extension independently of OBS.</li>
+  <li><strong>Sideloaded builds:</strong> re-signing can silently break the extension. TestFlight builds are unaffected.</li>
+  <li>Check the source is a <strong>LensLink Screen</strong> source — a Camera source fed a broadcast says so in its Status field.</li>
 </ul>
 
 <h2>No audio, or audio you cannot hear</h2>
 <ul>
-  <li><strong>Screen mirror, DRM apps are silent:</strong> iOS mutes DRM-protected audio (Apple Music, Spotify, Netflix) during any screen broadcast. Game, app and browser audio comes through fine.</li>
-  <li><strong>You can record it but not hear it:</strong> set the source's <strong>Audio Monitoring</strong> to <strong>Monitor and Output</strong> in OBS's <strong>Advanced Audio Properties</strong>.</li>
-  <li><strong>The phone's mic is not in OBS:</strong> turn on <strong>Send phone mic to OBS</strong> in the app's Options. If <strong>Auto lip-sync reference</strong> is on, it is off — one microphone has one role.</li>
+  <li><strong>DRM apps are silent during a broadcast:</strong> iOS mutes Apple Music, Spotify and Netflix. Game, app and browser audio is fine.</li>
+  <li><strong>Recorded but not audible:</strong> set <strong>Audio Monitoring</strong> to <strong>Monitor and Output</strong> in OBS's Advanced Audio Properties.</li>
+  <li><strong>No phone mic in OBS:</strong> turn on <strong>Send phone mic to OBS</strong>. If <strong>Auto lip-sync reference</strong> is on, it isn't — one mic, one role.</li>
 </ul>
 
 <h2>Two sources, one phone</h2>
 <p>
-  A phone can feed one source at a time; a second source aimed at it reports that
-  it is already in use. The exception: with <strong>Disconnect when this source
-  isn't shown anywhere</strong> enabled, a hidden source releases the phone, so a
-  Camera source in one scene and a Screen source in another can share it.
+  A phone feeds one source at a time; a second says the device is in use. The
+  exception is <strong>Disconnect when this source isn't shown anywhere</strong>:
+  a hidden source releases the phone, so sources in different scenes can share
+  it.
 </p>
 
 <h2>Latency spikes on Wi-Fi when zoomed in</h2>
 <p>
-  Heavy digital zoom magnifies sensor noise, which is expensive to compress and
-  produces bitrate spikes. Use the Telephoto lens for clean magnification, or
-  switch to USB.
+  Digital zoom magnifies sensor noise, which compresses badly and spikes the
+  bitrate. Use the Telephoto lens, or switch to USB.
 </p>
 
 <h2>"Connected, but this OBS build can't decode the stream"</h2>
 <p>
-  That build has no HEVC decoder. Switch the app's codec to <strong>H.264</strong>.
-  Everything else works identically; the stream simply uses more bandwidth for
-  the same picture.
+  That build has no HEVC decoder. Switch the app to <strong>H.264</strong> — the
+  same picture, more bandwidth.
 </p>
 
 <h2>The picture freezes or goes black when I switch apps on the phone</h2>
 <p>
-  Expected. iOS suspends camera capture for apps that are not on screen, so the
-  camera source blanks whenever LensLink is backgrounded or the phone is locked.
-  A screen <em>broadcast</em> is the exception — it keeps running across apps by
-  design.
+  Expected: iOS suspends camera capture for apps that aren't on screen. A screen
+  <em>broadcast</em> is the exception and keeps running across apps.
 </p>
 
 <h2>Nothing here matches</h2>
 <p>Open an issue on <a href="{{REPO}}/issues">GitHub</a> and include:</p>
 <ul>
-  <li>The OBS log from the session (<strong>Help → Log Files → View Current Log</strong>). Turn on <strong>Verbose diagnostics</strong> in <strong>Tools → LensLink Settings</strong> first and reproduce the problem once.</li>
-  <li>The app's <strong>Options → Camera diagnostics</strong> table.</li>
-  <li>Device and iOS version, OBS version, plugin version (the app's version line is under the Setup screen's tail), and whether you are on Wi-Fi or USB.</li>
+  <li>The OBS log, with <strong>Verbose diagnostics</strong> (Tools → LensLink Settings) on while you reproduce it once.</li>
+  <li><strong>Options → Camera diagnostics</strong>.</li>
+  <li>Device and iOS version, OBS and plugin versions, and Wi-Fi or USB.</li>
 </ul>

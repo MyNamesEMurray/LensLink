@@ -3,80 +3,71 @@ description: Every LensLink setting in one place — the OBS source properties, 
 ---
 <h1>Settings reference</h1>
 <p class="lede">
-  Three places hold settings, and each holds a different kind. Per-source
-  properties live on the source; anything with one value for the whole plugin
-  lives under Tools; anything about the phone lives in the app.
+  Per-source properties live on the source, plugin-wide settings under Tools,
+  and anything about the phone in the app.
 </p>
 
 <h2>Source properties (LensLink Camera)</h2>
-<p>Right-click the source → <strong>Properties</strong>, or double-click it.</p>
+<p>Right-click the source → <strong>Properties</strong>.</p>
 <table>
   <thead><tr><th>Property</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td>Status</td><td>Read-only. The current stage, and while connected, the device, format and measured latency. See <a href="/docs/connect/#reading-the-status-field">the status table</a>.</td></tr>
+    <tr><td>Status</td><td>Read-only: the current stage, plus device, format and measured latency while connected. <a href="/docs/connect/#reading-the-status-field">Status table</a>.</td></tr>
     <tr><td>Connection</td><td><strong>Wi-Fi — enter the phone's IP</strong> or <strong>USB cable</strong>.</td></tr>
-    <tr><td>Phone</td><td>Wi-Fi only. Pick a phone found on the network by name, or type its IP.</td></tr>
-    <tr><td>USB device</td><td>USB only. <strong>Auto (first available)</strong>, or a specific device so the same phone always feeds this source.</td></tr>
-    <tr><td>Low latency mode</td><td>Render the newest frame immediately instead of smoothing. On by default.</td></tr>
+    <tr><td>Phone</td><td>Wi-Fi only. Pick a phone by name, or type its IP.</td></tr>
+    <tr><td>USB device</td><td>USB only. <strong>Auto</strong>, or a specific device so the same phone always feeds this source.</td></tr>
+    <tr><td>Low latency mode</td><td>Render the newest frame immediately rather than smoothing. On by default.</td></tr>
     <tr><td>Hardware decoding (GPU)</td><td>Decode on the GPU, falling back to software automatically. On by default.</td></tr>
-    <tr><td>Disconnect when this source isn't shown anywhere</td><td>When the source is hidden — eye off, or in no visible scene, preview or projector — disconnect so the phone stops encoding. Saves battery and frees the phone for another source. Reconnects when shown. With auto-start on, it also stops and starts the phone's camera.</td></tr>
-    <tr><td>Start the phone's camera automatically when it's ready</td><td>Remote start: when the app is open and idle, this source starts the camera by itself. On by default.</td></tr>
-    <tr><td>Start / Stop camera on the phone</td><td>Buttons. Do it now, once.</td></tr>
-    <tr><td>Lip-sync audio source</td><td>Your real microphone, the one to be aligned with the video.</td></tr>
+    <tr><td>Disconnect when this source isn't shown anywhere</td><td>Hidden (eye off, or in no visible scene, preview or projector) means disconnected, so the phone stops encoding — saving battery and freeing it for another source. Reconnects when shown; with auto-start on, it also stops and starts the camera.</td></tr>
+    <tr><td>Start the phone's camera automatically when it's ready</td><td>Remote start, when the app is open and idle. On by default.</td></tr>
+    <tr><td>Start / Stop camera on the phone</td><td>Buttons: do it now, once.</td></tr>
+    <tr><td>Lip-sync audio source</td><td>Your real microphone — the one to align.</td></tr>
     <tr><td>Automatically delay that audio source…</td><td>Applies the measured camera latency to that audio source.</td></tr>
-    <tr><td>Auto-calibrate</td><td>Measure the offset from the phone's mic reference instead of assuming it. Needs <strong>Auto lip-sync reference</strong> on in the app, and ignores the manual latency below.</td></tr>
-    <tr><td>Auto video delay for slow mics</td><td>Delays the video instead, for microphones slower than the stream.</td></tr>
+    <tr><td>Auto-calibrate</td><td>Measure the offset from the phone's mic reference. Needs <strong>Auto lip-sync reference</strong> on in the app; ignores the manual latency below.</td></tr>
+    <tr><td>Auto video delay for slow mics</td><td>Delays the video instead, for mics slower than the stream.</td></tr>
     <tr><td>Audio device's own latency</td><td>Manual mode only. Subtracted from the delay.</td></tr>
   </tbody>
 </table>
 <p>
   A <strong>LensLink Screen</strong> source has the connection, decoding and
-  diagnostics properties only — there is no camera to control and no lip sync to
-  measure.
+  diagnostics properties only.
 </p>
 
 <h2>Plugin settings (Tools → LensLink Settings)</h2>
-<p>
-  Anything with one value for the whole plugin lives here, and is never
-  duplicated in a source's properties.
-</p>
+<p>One value for the whole plugin, never duplicated per source.</p>
 <table>
   <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td>GPU decode pipeline (beta)</td><td>Keeps decoded video on the graphics card instead of routing it through system memory. Applies to all LensLink sources <strong>after OBS restarts</strong>. Falls back per source automatically where textures cannot be shared. See <a href="/docs/performance/#the-gpu-decode-pipeline-beta">Latency and performance</a>.</td></tr>
-    <tr><td>Browser control panel</td><td>Serves the <a href="/docs/web-panel/">control panel</a> on loopback. On by default.</td></tr>
+    <tr><td>GPU decode pipeline (beta)</td><td>Keeps decoded video on the graphics card. All sources, <strong>after an OBS restart</strong>; falls back per source where textures can't be shared. <a href="/docs/performance/#the-gpu-decode-pipeline-beta">Details</a>.</td></tr>
+    <tr><td>Browser control panel</td><td>Serves the <a href="/docs/web-panel/">panel</a> on loopback. On by default.</td></tr>
     <tr><td>Panel port</td><td>Default <code>9980</code>.</td></tr>
-    <tr><td>Verbose diagnostics in the OBS log</td><td>Much more detail per connection. Turn on before reproducing a bug, off afterwards.</td></tr>
-    <tr><td>Dump received video to disk</td><td>Troubleshooting only: writes the raw received stream so a decode problem can be reproduced off-device.</td></tr>
-    <tr><td>Record pipeline benchmark</td><td>Logs a summary every 5 seconds and writes one CSV sample per second into the plugin's config folder, for before/after comparisons.</td></tr>
+    <tr><td>Verbose diagnostics in the OBS log</td><td>Much more per-connection detail. On to reproduce a bug, off afterwards.</td></tr>
+    <tr><td>Dump received video to disk</td><td>Writes the raw stream so a decode problem can be reproduced off-device.</td></tr>
+    <tr><td>Record pipeline benchmark</td><td>A log summary every 5 seconds and one CSV sample per second, in the plugin's config folder.</td></tr>
   </tbody>
 </table>
 
 <h2>App options</h2>
-<p>
-  On the phone: the <strong>Options</strong> row at the bottom of the Setup
-  screen.
-</p>
+<p>The <strong>Options</strong> row at the bottom of the Setup screen.</p>
 <table>
   <thead><tr><th>Option</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td>Remote start from OBS</td><td>Lets OBS start the camera while the app is open and idle. The phone stays awake while it waits; locking it or leaving the app ends standby.</td></tr>
-    <tr><td>Idle view</td><td>What the Live screen becomes 10 seconds after your last touch. <strong>Standard</strong> leaves the controls up. <strong>Clean feed</strong> hides everything but the picture. <strong>Dim screen</strong> blanks the screen, drops the brightness and shows the battery level — and is the only one that also dims remote-start standby, a minute in. Any tap brings the controls back.</td></tr>
-    <tr><td>Allow system video effects</td><td>Experimental. Lets iOS lower the capture frame rate on its own, which the Control Center video effects may require. Takes effect when the camera next starts.</td></tr>
-    <tr><td>Tally light</td><td>A pushed screen: the colors, the priority order, per-status off switches, and which statuses pulse. See below.</td></tr>
-    <tr><td>Presets</td><td>Saved camera looks, and the master switch for applying them. See <a href="/docs/camera/#presets">Presets</a>.</td></tr>
-    <tr><td>Send phone mic to OBS</td><td>Makes this phone the camera source's audio in OBS — a wireless mic.</td></tr>
-    <tr><td>Auto lip-sync reference</td><td>Sends the mic only as a timing reference for aligning your real microphone; it is never heard. Mutually exclusive with the option above.</td></tr>
-    <tr><td>Camera diagnostics</td><td>The device's formats: which support the Control Center video effects, which are 10-bit HDR or Apple Log capable. Paste it into a bug report.</td></tr>
-    <tr><td>Check broadcast link</td><td>Verifies the screen-mirror extension is alive on the device, independent of OBS. Run it while a broadcast is active.</td></tr>
+    <tr><td>Remote start from OBS</td><td>Lets OBS start the camera while the app is open and idle. The phone stays awake waiting; locking it or leaving the app ends standby.</td></tr>
+    <tr><td>Idle view</td><td>What the Live screen becomes 10 seconds after your last touch. <strong>Standard</strong> keeps the controls; <strong>Clean feed</strong> shows only the picture; <strong>Dim screen</strong> blanks it, drops the brightness and shows the battery level — and alone also dims remote-start standby, a minute in. Any tap restores the controls.</td></tr>
+    <tr><td>Allow system video effects</td><td>Experimental: lets iOS lower the capture frame rate, which Control Center's effects may require. Applies when the camera next starts.</td></tr>
+    <tr><td>Tally light</td><td>Colors, priority order, per-status off switches, and which statuses pulse. See below.</td></tr>
+    <tr><td>Presets</td><td>Saved camera looks and the switch for applying them. <a href="/docs/camera/#presets">Presets</a>.</td></tr>
+    <tr><td>Send phone mic to OBS</td><td>Makes the phone the camera source's audio — a wireless mic.</td></tr>
+    <tr><td>Auto lip-sync reference</td><td>Sends the mic as a timing reference only; never heard. Mutually exclusive with the row above.</td></tr>
+    <tr><td>Camera diagnostics</td><td>Every format this device has, and which support Control Center effects, 10-bit HDR or Apple Log. Paste it into a bug report.</td></tr>
+    <tr><td>Check broadcast link</td><td>Verifies the screen-mirror extension is alive, independent of OBS. Run it while broadcasting.</td></tr>
   </tbody>
 </table>
 
 <h3>Tally light</h3>
 <p>
-  The colored border around the Live screen. A user-ordered priority list decides
-  what it shows: the highest status that is currently true and has a color lights
-  the border, and setting a status to <strong>Off</strong> lets lower ones show
+  The colored border around the Live screen. The highest status that is true and
+  has a color wins; setting one to <strong>Off</strong> lets lower ones show
   through.
 </p>
 <table>
@@ -91,16 +82,15 @@ description: Every LensLink setting in one place — the OBS source properties, 
   </tbody>
 </table>
 <p>
-  Assignable colors are red, amber, green, blue, purple, white or off. On air
-  keeps the heaviest stroke whatever its color, so live stays the most emphatic
-  state. Any lit status can pulse instead of holding steady — off by default on
-  every status, and iOS's Reduce Motion setting turns every pulse into a steady
-  border of the same color: less motion, never less warning.
+  Colors: red, amber, green, blue, purple, white, off. On air keeps the heaviest
+  stroke whatever its color. Any lit status can pulse instead of holding steady
+  (off by default), and Reduce Motion turns every pulse into a steady border of
+  the same color — less motion, never less warning.
 </p>
 
 <h2>Where a setting is not</h2>
 <ul>
-  <li><strong>Resolution, frame rate, codec and color</strong> are on the phone, because only the phone knows what its cameras can do. The browser panel and the source properties can change them mid-stream, but the app owns the list.</li>
-  <li><strong>Global switches</strong> are never repeated in source properties. If you cannot find something on a source, it is under <strong>Tools → LensLink Settings</strong>.</li>
-  <li><strong>A control you can set from more than one place</strong> always reads the same cached state, so the app, the panel and the properties never disagree about what is currently true.</li>
+  <li><strong>Resolution, frame rate, codec and color</strong> live on the phone, since only it knows what its cameras can do. Other surfaces can change them mid-stream, but the app owns the list.</li>
+  <li><strong>Global switches</strong> are never repeated per source. If it isn't on the source, it's under <strong>Tools → LensLink Settings</strong>.</li>
+  <li><strong>Anything settable from more than one place</strong> reads the same cached state, so the three surfaces never disagree.</li>
 </ul>

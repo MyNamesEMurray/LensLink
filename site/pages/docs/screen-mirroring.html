@@ -3,51 +3,48 @@ description: Mirror your whole iPhone or iPad screen into OBS with its audio, us
 ---
 <h1>Screen mirroring</h1>
 <p class="lede">
-  A second source type, <strong>LensLink Screen</strong>, receives an iOS screen
-  broadcast: your whole phone or tablet screen with the app's audio, from any
-  app on the device. It is encoded in HEVC, so it stays bandwidth-friendly even
-  at a tablet's resolution.
+  <strong>LensLink Screen</strong> receives an iOS screen broadcast — the whole
+  screen with its audio, from any app — encoded in HEVC.
 </p>
 
 <h2>Setting it up</h2>
 <ol class="walk">
   <li>
     <strong>Add the source in OBS</strong>
-    <p><strong>Sources → + → LensLink Screen</strong>, then point it at the phone exactly like a camera source: pick it in the <strong>Phone</strong> dropdown, type its IP, or set <strong>Connection</strong> to <strong>USB cable</strong>.</p>
+    <p><strong>Sources → + → LensLink Screen</strong>, then point it at the phone exactly as you would a camera source.</p>
   </li>
   <li>
     <strong>Start the broadcast on the phone</strong>
-    <p>In the app's <strong>Screen mirror</strong> section, tap <strong>Start screen broadcast</strong>, choose <strong>LensLink Screen</strong> in the picker, and tap <strong>Start Broadcast</strong>. The system picker is required — iOS will not start a broadcast any other way.</p>
+    <p><strong>Screen mirror → Start screen broadcast</strong>, choose <strong>LensLink Screen</strong>, tap <strong>Start Broadcast</strong>. iOS requires its own picker here.</p>
   </li>
   <li>
-    <strong>Leave the app if you like</strong>
-    <p>Unlike the camera, a broadcast keeps running when you switch apps — that is the whole point. Go play the game or open the app you are demonstrating.</p>
+    <strong>Leave the app</strong>
+    <p>Unlike the camera, a broadcast keeps running across apps — that's the point of it.</p>
   </li>
 </ol>
 
 <div class="callout">
-  <p><strong>Camera and screen are different sources.</strong> Each type accepts
-  only its own stream. A Screen source fed a camera stream says so in its Status
-  field and tells you which source to switch to, rather than showing nothing.</p>
+  <p>Each source type accepts only its own stream. Mismatch one and the Status
+  field says which source to switch to, rather than showing nothing.</p>
 </div>
 
 <h2>Audio</h2>
 <ul>
-  <li><strong>App and system audio comes through</strong> as the source's audio. Game sound, browser video, app effects.</li>
-  <li><strong>DRM-protected audio is muted by iOS</strong> during any screen broadcast — Apple Music, Spotify, Netflix. That is an iOS rule applied to every broadcast extension on the platform, not something LensLink can opt out of.</li>
-  <li><strong>Your microphone is not sent.</strong> Mic yourself in OBS as usual. (The camera source can carry the phone's microphone; the screen source deliberately does not.)</li>
+  <li><strong>App and system audio comes through</strong> — game sound, browser video, app effects.</li>
+  <li><strong>DRM-protected audio is muted by iOS</strong> during any broadcast (Apple Music, Spotify, Netflix). That applies to every broadcast extension on the platform; LensLink can't opt out.</li>
+  <li><strong>Your microphone is not sent.</strong> Mic yourself in OBS. (The camera source can carry the phone's mic; this one deliberately doesn't.)</li>
 </ul>
 <p>
-  To <em>hear</em> the audio on the computer rather than only record or stream
-  it, set the source's <strong>Audio Monitoring</strong> to <strong>Monitor and
-  Output</strong> in OBS's <strong>Advanced Audio Properties</strong>.
+  To <em>hear</em> it rather than only record it, set the source's
+  <strong>Audio Monitoring</strong> to <strong>Monitor and Output</strong> in
+  OBS's Advanced Audio Properties.
 </p>
 
 <h2>Locking the source size</h2>
 <p>
-  A screen mirror reports whatever resolution iOS is broadcasting, and that
-  changes between apps and orientations — so the OBS source can resize when you
-  switch apps, disturbing your layout. Pin it to a fixed box instead:
+  A mirror reports whatever resolution iOS is broadcasting, and that changes
+  between apps and orientations — so the source can resize mid-stream and
+  disturb your layout. Pin it to a fixed box:
 </p>
 <ol>
   <li>Right-click the source → <strong>Transform</strong> → <strong>Edit Transform…</strong></li>
@@ -59,28 +56,26 @@ description: Mirror your whole iPhone or iPad screen into OBS with its audio, us
   <figcaption>OBS then scales each incoming size to fit your box instead of resizing your layout.</figcaption>
 </figure>
 
-<h2>What the Screen source does not have</h2>
+<h2>What the Screen source doesn't have</h2>
 <p>
-  No camera controls, and no browser panel — there is nothing to zoom or focus.
-  Its properties are just the connection, the decoding options and the
-  diagnostics.
+  No camera controls and no browser panel — there's nothing to zoom or focus.
+  Its properties are the connection, decoding and diagnostics.
 </p>
 
 <h2>Sharing one phone between two sources</h2>
 <p>
-  A phone can feed one source at a time. If you want a Camera source in one
-  scene and a Screen source in another, enable <strong>Disconnect when this
-  source isn't shown anywhere</strong> on both: a hidden source releases the
-  phone, so switching scenes hands the device from one to the other.
+  A phone feeds one source at a time. Enable <strong>Disconnect when this
+  source isn't shown anywhere</strong> on both and a hidden source releases the
+  phone, so switching scenes hands the device over.
 </p>
 
 <h2>When the broadcast will not connect</h2>
 <p>
-  The broadcast extension is a separate process from the app, which makes its
-  failures hard to see. The app has a built-in check for exactly this:
+  The broadcast extension is a separate process, so its failures are hard to
+  see. The app checks it directly:
 </p>
 <ul>
-  <li>Open <strong>Screen mirror tools → Check broadcast link</strong> <em>while a broadcast is running</em>. It verifies the extension is alive on the device, independent of OBS.</li>
-  <li>If the check fails on a <strong>sideloaded</strong> build, re-signing has most likely broken the extension — this is a known consequence of rewriting bundle IDs. The TestFlight build does not have the problem.</li>
-  <li>If the check passes but OBS shows nothing, the problem is the connection, not the extension: see <a href="/docs/connect/#reading-the-status-field">Reading the Status field</a>.</li>
+  <li><strong>Screen mirror tools → Check broadcast link</strong>, <em>while a broadcast is running</em>: it verifies the extension is alive, independent of OBS.</li>
+  <li>Failing on a <strong>sideloaded</strong> build usually means re-signing broke the extension — a known consequence of rewriting bundle IDs. TestFlight builds are unaffected.</li>
+  <li>Passing while OBS shows nothing means the connection is at fault: see <a href="/docs/connect/#reading-the-status-field">Reading the Status field</a>.</li>
 </ul>
