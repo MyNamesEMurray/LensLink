@@ -3,109 +3,98 @@ description: Use the phone as a wireless microphone, or send its mic as a timing
 ---
 <h1>Audio and lip sync</h1>
 <p class="lede">
-  The phone's microphone has two possible jobs, and it can only do one of them
-  at a time: it can be <strong>the audio you hear</strong>, or it can be a
-  <strong>timing reference</strong> used to align the microphone you actually
-  use. Turning one on turns the other off.
+  The phone's microphone has two possible jobs and can only do one: be
+  <strong>the audio you hear</strong>, or be a <strong>timing reference</strong>
+  that aligns the microphone you actually use. Turning one on turns the other
+  off.
 </p>
 
 <h2>The phone as a microphone</h2>
 <p>
-  Turn on <strong>Send phone mic to OBS</strong> in the app's
-  <strong>Options</strong> and the camera source carries the phone's microphone
-  as its audio — the phone doubles as a wireless mic. It is off by default,
-  because most streamers use their own microphone and line it up instead.
+  <strong>Options → Send phone mic to OBS</strong> makes the camera source carry
+  the phone's microphone — a wireless mic, in effect. Off by default, since most
+  streamers use their own mic and align it instead.
 </p>
-<p>
-  A <strong>mic row</strong> on the Live screen and in the browser panel picks
-  which microphone:
-</p>
+<p>A mic row on the Live screen and in the browser panel picks which one:</p>
 <table>
   <thead><tr><th>Choice</th><th>What you get</th></tr></thead>
   <tbody>
-    <tr><td>Auto</td><td>iOS's default input routing — normally the <em>Bottom</em> mic, regardless of which camera is active, since iOS does not tie the mic to the camera. A connected headset or Bluetooth mic takes over automatically.</td></tr>
-    <tr><td>Front</td><td>The front-facing mic array, aimed roughly where the front camera looks.</td></tr>
-    <tr><td>Back</td><td>The rear mic, aimed at whatever the rear camera sees.</td></tr>
+    <tr><td>Auto</td><td>iOS's default routing — normally the <em>Bottom</em> mic whatever camera is active, since iOS doesn't tie the two together. A headset or Bluetooth mic takes over automatically.</td></tr>
+    <tr><td>Front</td><td>The front array, aimed roughly where the front camera looks.</td></tr>
+    <tr><td>Back</td><td>The rear mic, aimed at what the rear camera sees.</td></tr>
   </tbody>
 </table>
-<p>The switch is live — no restart, no dropped stream.</p>
+<p>The switch is live.</p>
 
 <h2>Automatic lip sync</h2>
 <p>
-  Any camera over any link arrives a little late. If your voice comes from a
-  separate microphone, that microphone is early relative to the picture, and
-  you get the classic dubbed-film effect. The usual fix is to guess a delay
-  value in OBS and nudge it until it looks right. LensLink measures it instead.
+  Video always arrives a little late, so a separate microphone runs early
+  against it — the dubbed-film effect. The usual fix is to guess a delay in OBS
+  and nudge it. LensLink measures it instead.
 </p>
 
 <h3>Setting it up</h3>
 <ol class="walk">
   <li>
-    <strong>In the LensLink Camera source properties</strong>
-    <p>Pick your real microphone under <strong>Lip-sync audio source</strong>.</p>
-    <p>Enable <strong>Automatically delay that audio source to match the camera latency</strong>, and enable <strong>Auto-calibrate</strong>.</p>
+    <strong>In the source properties</strong>
+    <p>Pick your real microphone under <strong>Lip-sync audio source</strong>, then enable <strong>Automatically delay that audio source…</strong> and <strong>Auto-calibrate</strong>.</p>
   </li>
   <li>
     <strong>In the app's Options</strong>
-    <p>Turn on <strong>Auto lip-sync reference</strong>. The phone now sends its microphone purely as a timing signal — it is never played, never recorded, and never reaches your stream.</p>
+    <p>Turn on <strong>Auto lip-sync reference</strong>. The phone's mic is now a timing signal only — never played, never recorded, never on your stream.</p>
   </li>
   <li>
     <strong>Talk for about fifteen seconds</strong>
-    <p>The plugin compares the two audio streams, measures the exact offset, and corrects it. The Live screen and the browser panel show the stage: <strong>Measuring sync</strong> in blue, then <strong>Sync locked</strong> in green.</p>
+    <p>The plugin compares the two streams, measures the offset and corrects it. The Live screen and browser panel show the stage: <strong>Measuring sync</strong>, then <strong>Sync locked</strong>.</p>
   </li>
 </ol>
 
 <h3>Once it is locked</h3>
 <p>
-  Your microphone's own delay is now a known quantity, so the correction keeps
-  following the camera's latency by itself — through silence, and straight
-  after a reconnect — instead of waiting for you to speak again. It re-checks
-  periodically and recalibrates on its own if you change audio gear mid-stream.
+  Your microphone's own delay is now known, so the correction keeps tracking the
+  camera's latency by itself — through silence and straight after a reconnect —
+  and recalibrates if you change audio gear mid-stream.
 </p>
 <p>
-  To force a fresh measurement, use <strong>Recalibrate</strong>: tap the sync
-  pill on the phone's Live screen, or press the small button inside the pill in
-  the browser panel. Both are only offered while locked, because that is the one
-  state where recalibrating does anything.
+  To force a fresh measurement, tap <strong>Recalibrate</strong> in the sync
+  pill, on the phone or in the browser panel. It's offered only while locked,
+  the one state where it does anything.
 </p>
 <table>
   <thead><tr><th>Readout</th><th>Meaning</th></tr></thead>
   <tbody>
-    <tr><td>Nothing shown</td><td>Auto-calibrate is not running. Nothing to learn, nothing to ignore.</td></tr>
-    <tr><td>Measuring sync</td><td>Working on it. Keep talking.</td></tr>
-    <tr><td>Sync locked</td><td>Done. The offset is applied and tracked.</td></tr>
-    <tr><td>Recalibrating</td><td>Re-measuring after a change — transitional, not an error.</td></tr>
+    <tr><td>Nothing shown</td><td>Auto-calibrate isn't running.</td></tr>
+    <tr><td>Measuring sync</td><td>Keep talking.</td></tr>
+    <tr><td>Sync locked</td><td>Offset applied and tracked.</td></tr>
+    <tr><td>Recalibrating</td><td>Re-measuring after a change. Not an error.</td></tr>
   </tbody>
 </table>
 
 <h3>When your microphone is the slow one</h3>
 <p>
-  Some USB audio interfaces add enough latency of their own that the microphone
-  arrives <em>after</em> the video. Delaying it further cannot help. Enable
-  <strong>Auto video delay for slow mics</strong> and the plugin delays the
-  video to match instead.
+  Some USB interfaces add enough latency that the mic arrives <em>after</em> the
+  video, where delaying it further can't help. <strong>Auto video delay for slow
+  mics</strong> delays the video instead.
 </p>
 
 <h3>A fixed correction, without auto-calibrate</h3>
 <p>
-  Leave <strong>Auto-calibrate</strong> off and the delay checkbox alone shifts
-  your microphone by the measured camera latency. If your audio device adds a
-  known delay of its own, enter it under <strong>Audio device's own
-  latency</strong> and it is subtracted from the correction.
+  With <strong>Auto-calibrate</strong> off, the delay checkbox alone shifts your
+  mic by the measured camera latency. A known device delay goes in
+  <strong>Audio device's own latency</strong> and is subtracted.
 </p>
 
 <div class="callout">
-  <p><strong>Why not just set a number in OBS?</strong> Because the camera's
-  latency is not a constant — it moves with resolution, codec, link type and
-  network conditions. A measured offset that tracks those changes stays right
-  after you switch from 1080p60 Wi-Fi to 4K30 USB; a typed one does not.</p>
+  <p><strong>Why not just type a number in OBS?</strong> Camera latency isn't a
+  constant — it moves with resolution, codec, link and network. A measured
+  offset survives switching from 1080p60 Wi-Fi to 4K30 USB. A typed one
+  doesn't.</p>
 </div>
 
 <h2>Screen-mirror audio</h2>
 <p>
-  The <strong>LensLink Screen</strong> source carries the phone's app and system
-  audio, which is genuine, playable audio — not a timing reference. iOS mutes
-  DRM-protected apps during any broadcast, and your microphone is not included.
-  Details are on the <a href="/docs/screen-mirroring/#audio">screen mirroring
-  page</a>.
+  The <strong>LensLink Screen</strong> source carries real, playable app and
+  system audio — not a timing reference. iOS mutes DRM apps during a broadcast,
+  and your microphone isn't included:
+  <a href="/docs/screen-mirroring/#audio">screen mirroring</a>.
 </p>

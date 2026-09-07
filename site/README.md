@@ -67,34 +67,32 @@ key", and OBS's own names for OBS things.
 
 ## Deploying (Cloudflare Pages, free)
 
-Cloudflare Pages serves unlimited static requests on the free plan, and
-the domain is already on Cloudflare, so hosting costs nothing.
+The site is live on Cloudflare Pages, connected to this repository. Pages
+serves unlimited static requests on the free plan and the zone is already
+in the account, so hosting costs nothing.
 
-### One-time setup
+Build settings, if the project ever has to be recreated:
 
-1. **Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to
-   Git**, and pick this repository.
-2. Build settings:
+| Field | Value |
+|---|---|
+| Production branch | `main` |
+| Framework preset | None |
+| Build command | `python3 build.py` |
+| Build output directory | `dist` |
+| Root directory | `site` |
 
-   | Field | Value |
-   |---|---|
-   | Production branch | `main` |
-   | Framework preset | None |
-   | Build command | `python3 build.py` |
-   | Build output directory | `dist` |
-   | Root directory | `site` |
+Custom domains (`lenslink.cam`, `www.lenslink.cam`) are added under the
+project's **Custom domains** tab; the DNS records and certificate are
+created automatically because the zone is in the same account.
 
-3. **Save and Deploy.** The first build publishes to
-   `<project>.pages.dev`.
-4. **Custom domains → Set up a custom domain** → `lenslink.cam`, then
-   repeat for `www.lenslink.cam`. Because the zone is already in this
-   Cloudflare account, the DNS records are created for you (a proxied
-   `CNAME`; the apex uses CNAME flattening). TLS is issued automatically.
-5. Optional: **Rules → Redirect Rules** to send `www.lenslink.cam` to the
-   apex, so one hostname is canonical.
+Every push to `main` rebuilds and deploys; every pull request gets a
+preview URL. The build image ships Python 3, and the generator imports
+nothing outside the standard library, so there is no install step.
 
-Every push to `main` then rebuilds and deploys, and every pull request
-gets its own preview URL.
+Note that Cloudflare's newer **Workers** import flow is a different
+product: it asks for a deploy command as well, and needs a
+`wrangler.jsonc` declaring `dist/` as an assets directory. This project
+does not carry one — it is deployed as Pages.
 
 ### What is already configured in the repo
 
