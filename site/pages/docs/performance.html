@@ -1,0 +1,118 @@
+title: Latency and performance
+description: What LensLink's latency is made of, how to measure it, how to lower it, and what the GPU decode pipeline changes.
+---
+<h1>Latency and performance</h1>
+<p class="lede">
+  Over USB, expect roughly <strong>60 ms</strong> from camera to OBS at 1080p or
+  4K. Wi-Fi is a little higher and more variable. The plugin measures the figure
+  continuously rather than estimating it, and shows it in the source's Status
+  field, in OBS's status bar and in the log.
+</p>
+
+<h2>Where the delay comes from</h2>
+<table>
+  <thead><tr><th>Stage</th><th>Roughly</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Capture and exposure</td><td>One frame</td><td>Brighter scenes let the camera expose faster, which really does show up here.</td></tr>
+    <tr><td>Hardware encode</td><td>A few ms</td><td>VideoToolbox on the phone. Not much to tune.</td></tr>
+    <tr><td>The link</td><td>USB: small and steady. Wi-Fi: variable</td><td>This is the stage that separates a good setup from a frustrating one.</td></tr>
+    <tr><td>Decode</td><td>A few ms</td><td>GPU decoding by default, with automatic software fallback.</td></tr>
+    <tr><td>Into your scene</td><td>Sub-millisecond with the GPU pipeline</td><td>Otherwise a copy out of GPU memory and back in.</td></tr>
+  </tbody>
+</table>
+
+<h2>Lowering it</h2>
+<ol>
+  <li><strong>Use USB.</strong> It is the most consistent and is immune to Wi-Fi congestion — and it charges the phone while it encodes.</li>
+  <li><strong>Light the scene.</strong> A camera in a dark room lengthens its exposure, and that lands directly in your latency budget.</li>
+  <li><strong>Leave the defaults on.</strong> <strong>Low latency mode</strong> and <strong>Hardware decoding</strong> are both on out of the box.</li>
+  <li><strong>Do not over-specify.</strong> 4K60 is a lot of pixels to encode, move and decode. If the shot is a talking head at 1000 px wide in your scene, 1080p is not a compromise.</li>
+  <li><strong>Prefer the telephoto lens over heavy digital zoom.</strong> Zoomed, noisy video is harder to compress, which shows up as bitrate spikes and Wi-Fi latency spikes.</li>
+</ol>
+<div class="callout">
+  <p><strong>Congestion is handled, not queued.</strong> When the link stalls,
+  LensLink drops frames rather than piling up a backlog you have to wait out,
+  and the app briefly lowers quality and recovers. Latency stays roughly
+  constant instead of drifting upward through a stream.</p>
+</div>
+
+<h2>Watching the numbers</h2>
+<ul>
+  <li><strong>OBS status bar:</strong> <code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>, one entry per live source, next to OBS's own stats. It disappears when nothing is connected.</li>
+  <li><strong>The LensLink dock</strong> (<strong>View → Docks → LensLink</strong>): one row per source with its device, status and rates.</li>
+  <li><strong>On the phone:</strong> the gauge button on the Live screen shows the same health line — frame rate, bitrate and dropped frames. With <strong>Clean feed</strong> as your idle view, that readout deliberately stays visible when the controls fade.</li>
+  <li><strong>The source's Status field</strong> carries the measured capture-to-decode latency while connected.</li>
+</ul>
+<p>
+  The latency figure is real, not a guess: the app and the plugin run an
+  NTP-style clock-offset exchange once a second, which is also what makes
+  automatic lip sync possible.
+</p>
+
+<h2>The GPU decode pipeline (beta)</h2>
+<p>
+  Normally, even with hardware decoding, each decoded frame is downloaded from
+  the GPU into system memory, handed to OBS, and uploaded straight back to the
+  GPU for compositing. At 4K60 that detour moves around 2 GB/s of pixels for
+  nothing. The beta pipeline hands OBS the decoded frame as a texture instead
+  and skips the round trip.
+</p>
+<p>
+  Enable it in <strong>Tools → LensLink Settings</strong>. All LensLink sources
+  switch together, and it takes effect after OBS restarts.
+</p>
+
+<h3>Measured results</h3>
+<p>
+  Twelve configurations, about 25 seconds of live video each, same PC and same
+  iPhone over Wi-Fi. Pixel copies read 0.00 MB/s on every GPU-pipeline run —
+  the zero-copy path engaged in all twelve.
+</p>
+<table>
+  <thead><tr><th>Config</th><th>Cost per frame (ms)</th><th>Pixel copies (MB/s)</th><th>OBS CPU</th></tr></thead>
+  <tbody>
+    <tr><td>720p 60 HEVC</td><td>0.81 → 0.09</td><td>163 → 0</td><td>2.2% → 1.4%</td></tr>
+    <tr><td>1080p 60 H.264</td><td>2.11 → 0.10</td><td>370 → 0</td><td>2.3% → 1.6%</td></tr>
+    <tr><td>1080p 60 HEVC</td><td>1.42 → 0.09</td><td>373 → 0</td><td>2.6% → 1.4%</td></tr>
+    <tr><td>4K 30 HEVC</td><td>4.96 → 0.14</td><td>721 → 0</td><td>2.9% → 1.5%</td></tr>
+    <tr><td>4K 60 H.264</td><td>7.54 → 0.10</td><td>1221 → 0</td><td>4.1% → 1.8%</td></tr>
+    <tr><td>4K 60 HEVC</td><td>4.75 → 0.10</td><td>1439 → 0</td><td>4.1% → 1.6%</td></tr>
+  </tbody>
+</table>
+<p>
+  Per-frame video-path cost drops by 89–99% and the win scales with resolution.
+  At 4K60 HEVC the standard pipeline was pushing about 1.4 GB/s of decoded video
+  through system memory, which the GPU pipeline eliminates outright — roughly
+  halving OBS's process CPU. Capture-to-decode latency and decoded frame rate are
+  measured before the two pipelines diverge and showed no systematic difference:
+  those are set by the network and the phone's encoder, not by the render path.
+</p>
+
+<h3>Platform notes</h3>
+<table>
+  <tbody>
+    <tr><td>Windows</td><td>Any OBS 32-supported system (Windows 10 1909+), using shared D3D11 textures.</td></tr>
+    <tr><td>macOS</td><td>Any OBS 32-supported system (macOS 13+), via IOSurface.</td></tr>
+    <tr><td>Linux</td><td>Needs OBS rendering through <strong>EGL</strong> — the default on Wayland and on current X11 builds — and a <strong>VAAPI</strong> driver. Mesa has one built in for Intel and AMD; NVIDIA needs <code>nvidia-vaapi-driver</code>.</td></tr>
+    <tr><td>Multi-GPU</td><td>If decoding and OBS rendering land on different GPUs, textures cannot be shared and the source falls back automatically.</td></tr>
+  </tbody>
+</table>
+<p>
+  The fallback is per source and automatic in every case: worst case is exactly
+  the standard pipeline's behavior, with a log line saying why. If you try the
+  beta, the OBS log and the status-bar health readout are the places to watch.
+</p>
+
+<h2>Measuring it yourself</h2>
+<p>
+  Turn on <strong>Record pipeline benchmark</strong> in <strong>Tools → LensLink
+  Settings</strong> and the plugin writes one CSV row per second of live video
+  into its config folder (the path is printed in the OBS log), plus a summary
+  line every five seconds. Stream about ten seconds on each configuration, then
+  compare a pair:
+</p>
+<pre><code>python3 tools/bench-report.py BEFORE.csv AFTER.csv</code></pre>
+<p>
+  It produces a statistical before-and-after report. Any performance change
+  proposed to LensLink is expected to quote one.
+</p>

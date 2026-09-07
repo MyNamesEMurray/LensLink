@@ -1,0 +1,148 @@
+title: Camera, lenses and image
+description: Lenses, resolutions, frame rates and codecs; manual exposure and white balance; HDR and Apple Log; the virtual green screen; and camera presets.
+---
+<h1>Camera, lenses and image</h1>
+<p class="lede">
+  Everything about the picture is decided on the phone, before the video is
+  encoded. The plugin decodes what it is sent and otherwise keeps its hands off
+  the image.
+</p>
+
+<h2>Choosing lens, resolution, frame rate and codec</h2>
+<p>
+  These four pickers sit on the app's Setup screen, in the <strong>Camera</strong>
+  section, and each is filtered to what the selected lens can actually do.
+  A combination that does not appear is one the hardware does not offer.
+</p>
+<table>
+  <thead><tr><th>Setting</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Lens</td><td>Main, Ultra Wide, Telephoto or Front, depending on the device. Switchable live while streaming, from the phone or the browser panel.</td></tr>
+    <tr><td>Resolution</td><td>Up to 3840×2160 where the lens supports it. Higher is not automatically better: 1080p60 looks better than 4K30 for most talking-head use.</td></tr>
+    <tr><td>Frame rate</td><td>Typically 30 or 60 fps. Match it to your OBS canvas frame rate.</td></tr>
+    <tr><td>Codec</td><td>H.264 or HEVC. HEVC looks the same at roughly 40% less data — use it unless your OBS build cannot decode it.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>Which codec?</strong> HEVC, on any modern build. If the source says
+  <em>"Connected, but this OBS build can't decode the stream"</em>, that build
+  lacks an HEVC decoder — switch the app to H.264 and everything else stays the
+  same.</p>
+</div>
+
+<h3>Changing settings mid-stream</h3>
+<p>
+  The browser panel and the source properties can change lens, resolution, frame
+  rate and codec while the stream is live — the phone reconfigures the capture
+  session and keeps going. A lens change is instant; a format change takes a
+  moment while the camera restarts.
+</p>
+
+<h2>Live camera controls</h2>
+<p>
+  The same controls exist in three places — the app's Live screen, the
+  <a href="/docs/web-panel/">browser panel</a> on the computer, and (for a
+  subset) the source properties. They appear in the same order everywhere, and
+  whichever one you touch, the other two follow within a beat.
+</p>
+<table>
+  <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td>Zoom</td><td>1× up to the lens maximum. Pinch anywhere on the Live screen, or drag the slider. The readout is monospaced so it does not jitter while you drag.</td></tr>
+    <tr><td>Exposure</td><td><strong>AE</strong> with a bias slider, or <strong>Manual</strong>, which replaces the bias with ISO and shutter rows. Hidden on cameras that do not support manual exposure.</td></tr>
+    <tr><td>Focus</td><td><strong>AF</strong>, or <strong>Lock</strong> with a lens-position slider (near to far). In AF, tapping the preview focuses and exposes at that point.</td></tr>
+    <tr><td>White balance</td><td><strong>AWB</strong>, or <strong>Lock</strong> with a color-temperature slider from 2500 K to 8000 K.</td></tr>
+    <tr><td>Flashlight</td><td>On or off, where the device has one. Useful as a hard fill at close range, not much else.</td></tr>
+    <tr><td>Lens</td><td>A menu of the device's real lenses, with a check on the active one.</td></tr>
+    <tr><td>Flip</td><td>Quick swap between front and back.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>Lock what you can before you go live.</strong> Autofocus and auto
+  exposure hunt when someone walks past or a light changes, and that hunt is
+  visible on stream. Locking focus and white balance once the shot is set is the
+  single biggest quality improvement available here.</p>
+</div>
+
+<h2>Color: HDR and Apple Log</h2>
+<p>
+  The <strong>Color</strong> row on the Setup screen offers only what this phone
+  can capture. Both options below are HEVC-only, and both take effect when the
+  camera next starts.
+</p>
+<h3>HDR (HLG)</h3>
+<p>
+  Captures and streams 10-bit HLG. OBS tone-maps it for an SDR canvas, and an
+  HDR canvas gets the real thing. It is off by default — SDR remains the
+  standard path.
+</p>
+<h3>Apple Log</h3>
+<p>
+  On Pro iPhones running iOS 17 or later, LensLink can stream a flat 10-bit
+  Apple Log image intended for grading. Add an <strong>Apply LUT</strong> filter
+  to the source in OBS and load an Apple Log LUT. The plugin decodes the stream
+  faithfully and applies nothing of its own.
+</p>
+<div class="callout warn">
+  <p>Log footage looks washed out until it is graded. That is the point of it —
+  if you are not going to add a LUT, use Standard.</p>
+</div>
+
+<h2>Virtual green screen</h2>
+<p>
+  Green screen keeps you in the picture and paints everything else solid green
+  <em>before</em> the video leaves the phone. Turning it on sets Color to
+  Standard. The <strong>LensLink Camera</strong> source in OBS then adds a
+  ready-tuned chroma-key filter — added once, so deleting or re-tuning it in OBS
+  sticks.
+</p>
+<ul>
+  <li><strong>Depth assist</strong> sharpens the cutout with real depth data: the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. Depth assist also turns off Center Stage and the other system video effects.</li>
+  <li><strong>Subject distance</strong> appears on the Live screen and the browser panel while depth assist is running: anything farther away than the distance becomes background, which is how you drop a person walking past behind you. Drag for a real cutoff between 0.5 m and 5.0 m; tap the readout to go back to <strong>All</strong>, meaning no limit.</li>
+</ul>
+<p>
+  It is called <strong>Green screen</strong> everywhere in the product — never
+  "chroma key" or "background removal" — because the thing you are turning on is
+  a green screen the phone paints for you.
+</p>
+
+<h2>Presets</h2>
+<p>
+  A preset saves the settings you re-dial every session — <strong>exposure,
+  white balance, zoom, focus</strong> — and you choose which of those it
+  carries. Anything it leaves out is not stored, so it can never be applied by
+  mistake.
+</p>
+<ul>
+  <li>Give a preset a <strong>camera</strong> and it applies whenever that camera starts, at stream start or on a live lens switch. Mark one as the <strong>default</strong> and it covers any camera without its own.</li>
+  <li>Changing a covered setting by hand — on the Live screen or from OBS — <strong>pauses automatic presets</strong>, so a preset can never overwrite an adjustment you just made. A <strong>Presets paused</strong> pill appears on the Live screen; tapping it resumes and re-applies immediately, without stopping the stream.</li>
+  <li>Presets live on the phone. They move the same properties the Live screen and the browser panel do, so nothing else needs to know about them.</li>
+</ul>
+<p>Edit them in <strong>Options → Presets</strong>.</p>
+
+<h2>Control Center video effects</h2>
+<p>
+  Portrait, Studio Light and the other system video effects are iOS features you
+  toggle in Control Center while an app is using the camera. iOS only offers
+  them on certain cameras and capture formats — typically the front camera at
+  moderate settings, nothing above 1920×1440 — and on many iPhones the rear
+  cameras offer none at all.
+</p>
+<ul>
+  <li><strong>Options → Camera diagnostics</strong> lists exactly what your device offers, per camera and per format.</li>
+  <li>LensLink picks an effect-capable format whenever your resolution and frame rate allow one.</li>
+  <li>If a toggle appears but is greyed out, drop the frame rate — effects can cap the capture rate — and turn on <strong>Options → Allow system video effects</strong>, which lets iOS vary it.</li>
+</ul>
+<p>
+  Apple's own Camera-app filters and Photographic Styles are not available to
+  any third-party camera app. For creative looks, add filters to the source in
+  OBS instead: right-click the source → <strong>Filters</strong>.
+</p>
+
+<h2>Holding the phone</h2>
+<p>
+  The app's interface follows the phone's rotation unless rotation lock is on,
+  and the live view stays fullscreen and upright in any orientation. The video
+  sent to OBS is always steady sensor-native landscape, so rotating the phone
+  never resizes or disturbs the source in your scene.
+</p>

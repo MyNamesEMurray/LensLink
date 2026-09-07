@@ -1,0 +1,129 @@
+title: Frequently asked questions
+description: Cost, privacy, supported devices, Android, virtual camera use, battery, and how LensLink compares with a capture card or a USB webcam.
+---
+<h1>Frequently asked questions</h1>
+
+<h2>Is it really free?</h2>
+<p>
+  Yes. LensLink is free software under the
+  <a href="{{REPO}}/blob/main/LICENSE">GNU GPL, version 2 or later</a> — the same
+  license as OBS Studio. There is no account, no watermark, no resolution cap and
+  no paid tier. The source for both halves is on
+  <a href="{{REPO}}">GitHub</a>.
+</p>
+
+<h2>Does my video go through the internet?</h2>
+<p>
+  No. The app listens on your phone and the plugin dials it directly, over your
+  local network or the USB cable. There is no relay, no cloud service and no
+  telemetry. On a local network the stream is unencrypted, so it is designed for
+  trusted home and studio networks rather than shared public Wi-Fi.
+</p>
+
+<h2>Which devices work?</h2>
+<p>
+  Any iPhone or iPad on <strong>iOS or iPadOS 15 or later</strong>, and OBS
+  Studio <strong>32 or newer</strong> on Windows, macOS or Linux. Newer phones
+  give you more lenses and more capture formats, but the feature set is the same.
+</p>
+
+<h2>Is there an Android version?</h2>
+<p>
+  No. The app is built on AVFoundation and VideoToolbox, which are Apple
+  frameworks, and the USB path uses Apple's own device service. An Android app
+  would be a separate program sharing only the wire protocol.
+</p>
+
+<h2>Wi-Fi or USB — which should I use?</h2>
+<p>
+  USB, whenever the cable is not in the way. It needs no network, holds the
+  lowest and steadiest latency, is immune to Wi-Fi congestion, and charges the
+  phone while it encodes. Wi-Fi is the right answer when the phone has to be
+  somewhere a cable cannot reach.
+</p>
+
+<h2>Can I use it as a webcam in Zoom, Teams or Discord?</h2>
+<p>
+  Not directly — LensLink is an OBS source, not a virtual-camera driver. But OBS
+  has a virtual camera built in: add the LensLink source to a scene, press
+  <strong>Start Virtual Camera</strong>, and select the OBS Virtual Camera in
+  whatever app you like. That path also gives you scenes, filters and overlays
+  on the way through.
+</p>
+
+<h2>How many phones can I use at once?</h2>
+<p>
+  As many as your machine can decode. Add one LensLink Camera source per phone;
+  each connects, is controlled and reports its health independently, and the
+  browser panel grows a tab per source. The
+  <a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPU decode
+  pipeline</a> is what makes several 4K sources comfortable.
+</p>
+
+<h2>Will it drain my battery?</h2>
+<p>
+  Capturing and encoding video is demanding, so yes — plan for a cable on a long
+  stream. USB solves it outright by charging while streaming. Otherwise the
+  <strong>Dim screen</strong> idle view drops the brightness and stops preview
+  rendering ten seconds after your last touch (showing the battery percentage
+  under the wake hint), and <strong>Disconnect when this source isn't shown
+  anywhere</strong> stops encoding whenever the source is hidden in OBS.
+</p>
+
+<h2>Does the phone have to stay unlocked and on screen?</h2>
+<p>
+  For the camera, yes: iOS only runs camera capture while the app is in the
+  foreground. That is a platform rule, and it is exactly why
+  <a href="/docs/remote-start/">remote start</a> exists — the phone can sit
+  mounted and idle, and OBS starts the camera when it needs it. A screen
+  <em>broadcast</em> is different: it keeps running while you use other apps.
+</p>
+
+<h2>Can I record in Apple Log or HDR?</h2>
+<p>
+  You can stream both, on hardware that supports them, and record the result in
+  OBS like any other source. Apple Log needs a Pro iPhone on iOS 17 or later and
+  a LUT applied in OBS; HDR uses HLG over HEVC. Both are in beta and off by
+  default. See <a href="/docs/camera/#color-hdr-and-apple-log">Color</a>.
+</p>
+
+<h2>How is this different from a capture card and an HDMI adapter?</h2>
+<p>
+  A capture card gives you a clean feed with no app involved and no latency
+  surprises, at the cost of an adapter, a cable, a card and about two hundred
+  dollars. LensLink costs nothing, adds camera controls you can drive from the
+  computer, and measures its own latency so your microphone can be aligned
+  automatically. Over USB the delay is in the same neighborhood as a cheap
+  capture card.
+</p>
+
+<h2>What about the built-in Continuity Camera on macOS?</h2>
+<p>
+  Continuity Camera is excellent and needs nothing installed, but it is macOS
+  only, offers no manual control from the computer, and gives you what Apple
+  decides to give you. LensLink works on Windows and Linux too, exposes the
+  camera controls, lets you pick codec and format, and does automatic lip sync.
+</p>
+
+<h2>Can I control the camera without touching the phone?</h2>
+<p>
+  Yes — that is what the <a href="/docs/web-panel/">browser panel</a> at
+  <code>localhost:9980</code> is for, and everything it does is available over
+  a small HTTP API for stream decks and scripts.
+</p>
+
+<h2>How do I report a bug or ask for a feature?</h2>
+<p>
+  Open an issue on <a href="{{REPO}}/issues">GitHub</a>. For bugs, the OBS log
+  and the app's <strong>Options → Camera diagnostics</strong> table are the two
+  attachments that make a report actionable — see
+  <a href="/docs/troubleshooting/#nothing-here-matches">Troubleshooting</a>.
+</p>
+
+<h2>Can I contribute?</h2>
+<p>
+  Yes. The repository has
+  <a href="{{REPO}}/blob/main/CONTRIBUTING.md">contribution guidelines</a>,
+  an architecture guide, a documented wire protocol, and a roadmap of planned
+  work.
+</p>

@@ -14,6 +14,12 @@ Two deliverables share this repo and talk over a custom TCP wire protocol:
   captures with AVFoundation, hardware-encodes with VideoToolbox, and
   *listens* on TCP port 9979 on the device.
 
+A third, non-shipping deliverable lives in `site/`: **lenslink.cam**, the
+marketing and documentation site — a standard-library-only static
+generator published on Cloudflare Pages. It restates what the app and the
+plugin do, so user-visible behaviour changes belong there too
+(`site/README.md` lists what goes stale with what).
+
 Read the matching doc before touching an area:
 
 - `docs/PROTOCOL.md` — the wire protocol. **Any protocol change must update
@@ -38,6 +44,7 @@ Read the matching doc before touching an area:
 | Wire protocol | `docs/PROTOCOL.md` + `obs-plugin/src/protocol.h` + `ios-app/Sources/Protocol.swift` (the constants/enums are hand-mirrored, not generated) |
 | Design tokens, status vocabulary | `docs/UI_DESIGN.md` + `ios-app/Sources/DesignSystem.swift` + the inline page in `obs-plugin/src/web-control.c` |
 | Any plugin-visible string | `obs-plugin/data/locale/en-US.ini` |
+| User-visible behaviour, a setting, or a release asset's file name | the matching page under `site/pages/` (the site documents all three surfaces; `site/README.md` has the map) |
 | A control the user can set from more than one place | app UI, web panel, and source properties all read the same cached STATE — add the field to STATE, not to one surface |
 
 ## Commands

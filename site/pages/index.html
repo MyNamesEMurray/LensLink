@@ -1,0 +1,215 @@
+title: LensLink — your iPhone as a camera in OBS Studio
+description: LensLink turns an iPhone or iPad into a high-quality camera source inside OBS Studio, over Wi-Fi or USB. Up to 4K60 in H.264 or HEVC, live camera controls, automatic lip sync. Free and open source.
+nav: home
+---
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Free and open source · GPL-2.0-or-later</span>
+      <h1>Your iPhone is already the best camera you own. <em>Put it in OBS.</em></h1>
+      <p class="lede">
+        LensLink adds two sources to OBS Studio — a camera and a screen mirror —
+        and connects them straight to your iPhone or iPad over Wi-Fi or a USB
+        cable. No virtual-camera driver, no RTMP server, no subscription.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="/download/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          Download
+        </a>
+        <a class="btn ghost" href="/docs/">Read the documentation</a>
+      </div>
+      <p class="meta">
+        <span>OBS Studio 32+</span><span>Windows, macOS, Linux</span><span>iOS/iPadOS 15+</span>
+      </p>
+    </div>
+
+    <div>
+      <!-- The app's Live screen, rebuilt from the same design tokens the
+           app and the plugin's browser panel use. -->
+      <div class="device">
+        <div class="screen">
+          <div class="topgroup">
+            <div class="toprow">
+            <span class="pill"><span class="dot live"></span>Live</span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/><path d="M12 12 8 8"/><circle cx="12" cy="12" r="9"/></svg></span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9"/></svg></span>
+            <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
+            </div>
+            <span class="pill health">60 fps · 11.9 Mb/s · 0 dropped</span>
+          </div>
+          <div class="panelmock">
+            <div class="row">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M8 11h6"/></svg>
+              <span class="track"><i style="width:38%"></i></span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M8 11h6M11 8v6"/></svg>
+              <span class="ro">2.4×</span>
+            </div>
+            <div class="row">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
+              <span class="track"><i style="width:58%"></i></span>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M19.4 4.6l-2.1 2.1M6.7 17.3l-2.1 2.1"/></svg>
+              <span class="ro">+0.3</span>
+            </div>
+            <div class="row">
+              <span class="seg"><span class="on">AF</span><span>Lock</span></span>
+              <span class="chips">
+                <span class="chip on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3.6 8h16.8M3.6 16h16.8"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h11l-2-2M20 16H9l2 2"/><circle cx="12" cy="12" r="2"/></svg></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">The app's Live screen. The red border is the tally light: this source is on air in OBS. Every control here also appears in your browser on the computer.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Setup</p>
+      <h2>Three steps, about three minutes</h2>
+      <p>Install the plugin on the computer, install the app on the phone, and add a source. Nothing to configure on a router, no account to create.</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>Install the OBS plugin</h3>
+        <p>An installer for Windows and macOS, a tarball for Linux. It drops into your existing OBS Studio installation and adds two sources.</p>
+      </li>
+      <li>
+        <h3>Install the iPhone app</h3>
+        <p>Join the TestFlight beta and install like any other app. Prefer not to use TestFlight? Sideload the unsigned build, or compile it yourself.</p>
+      </li>
+      <li>
+        <h3>Add the source in OBS</h3>
+        <p>Sources → + → <strong>LensLink Camera</strong>, then pick your phone from the dropdown or plug in the cable. Video appears within a second or two.</p>
+      </li>
+    </ol>
+    <div class="cta">
+      <a class="btn ghost small" href="/docs/install/">Full install guide</a>
+      <a class="btn ghost small" href="/docs/connect/">Connecting over Wi-Fi or USB</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">What you get</p>
+      <h2>A real camera source, not a webcam workaround</h2>
+      <p>The phone encodes in hardware and sends video straight to the plugin, which decodes it on your GPU and hands OBS the frames. One connection, no intermediaries.</p>
+    </div>
+    <div class="grid three">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="m17 12 5-3v9l-5-3z"/></svg>
+        <h3>Up to 4K at 60 fps</h3>
+        <p>H.264 or HEVC, with only the resolution and frame-rate combinations your specific camera actually supports offered in the picker.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/><path d="M2 9a15 15 0 0 1 20 0"/></svg>
+        <h3>Wi-Fi or USB</h3>
+        <p>USB needs no network at all, holds the lowest and steadiest latency, and charges the phone while you stream. Wi-Fi frees you from the cable.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        <h3>Control it from the computer</h3>
+        <p>Zoom, exposure, manual ISO and shutter, focus, white balance, flashlight, lens and flip — from the phone, from a browser panel, or from the source properties.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h2l2-5 3 10 3-13 3 16 2-8h3"/></svg>
+        <h3>Automatic lip sync</h3>
+        <p>The plugin measures the camera's real latency and lines your own microphone up with the picture. It settles in about fifteen seconds and holds.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>
+        <h3>Screen mirroring</h3>
+        <p>A second source type mirrors the whole phone screen with its audio, using iOS's own broadcast — good for mobile games and app demos.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v9"/><path d="M7.5 6.5a7 7 0 1 0 9 0"/></svg>
+        <h3>Remote start</h3>
+        <p>A phone mounted behind a monitor never has to come down: OBS can start the camera itself, and Siri or a Shortcut can open the app for it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Going further</p>
+      <h2>Things a webcam cannot do</h2>
+      <p>The phone's camera stack is the point. These are opt-in — the standard path stays a plain SDR camera source.</p>
+    </div>
+    <div class="grid two">
+      <div>
+        <h3>Apple Log (beta)</h3>
+        <p>On Pro iPhones running iOS 17 or later, stream a flat 10-bit Apple Log image and grade it yourself with OBS's Apply LUT filter. The plugin decodes it faithfully and otherwise keeps its hands off the picture.</p>
+      </div>
+      <div>
+        <h3>HDR in HLG (beta)</h3>
+        <p>On cameras that support it, capture and stream 10-bit HLG over HEVC. OBS renders it correctly on both SDR and HDR canvases.</p>
+      </div>
+      <div>
+        <h3>Virtual green screen (beta)</h3>
+        <p>Remove your background without a green screen: the phone segments you, composites the background to chroma green before encoding, and the plugin adds a pre-configured chroma-key filter. With Face ID or LiDAR depth, a subject-distance cutoff drops people walking past behind you.</p>
+      </div>
+      <div>
+        <h3>Every lens, switchable live</h3>
+        <p>Main, Ultra Wide, Telephoto or Front — changed mid-stream from the phone or the browser panel, without dropping the OBS source.</p>
+      </div>
+      <div>
+        <h3>GPU decode pipeline (beta)</h3>
+        <p>Keep decoded video on the graphics card the whole way into your scene instead of round-tripping through system memory. Lower CPU use and latency, with the gains growing toward 4K.</p>
+      </div>
+      <div>
+        <h3>Health you can see</h3>
+        <p>A live readout in OBS's own status bar and a dockable panel: decoded frame rate, wire bitrate and measured capture-to-decode latency, per phone, updated every second.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">At a glance</p>
+      <h2>Specifications</h2>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr><td>Video</td><td>Up to <span class="num">3840×2160</span> at <span class="num">60 fps</span>, H.264 or HEVC. HDR (HLG) and Apple Log in beta on supported cameras.</td></tr>
+        <tr><td>Latency</td><td>Roughly <span class="num">60 ms</span> camera to OBS over USB at 1080p or 4K. Wi-Fi is a little higher and more variable.</td></tr>
+        <tr><td>Transport</td><td>USB (through Apple's own device service) or Wi-Fi on your local network. One TCP connection, no cloud relay.</td></tr>
+        <tr><td>Audio</td><td>Optional phone microphone as the source's audio, a separate timing reference for automatic lip sync, and system audio with screen mirroring.</td></tr>
+        <tr><td>Computer</td><td>OBS Studio 32 or newer on Windows, macOS or Linux. USB on Windows needs iTunes installed for Apple's driver.</td></tr>
+        <tr><td>Phone</td><td>iPhone or iPad on iOS/iPadOS 15 or later.</td></tr>
+        <tr><td>Cameras</td><td>Several at once — one source per phone, each independently controlled.</td></tr>
+        <tr><td>Price</td><td>Free, GPL-2.0-or-later, no account, no watermark, no upgrade tier.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Documentation</p>
+      <h2>Written to actually answer the question</h2>
+      <p>Every screen, setting and failure mode is documented — including the awkward ones, like why iOS mutes DRM audio during a screen broadcast and what to do when USB devices do not show up on Windows.</p>
+    </div>
+    <ul class="doccards">
+      <li><a href="/docs/install/"><strong>Install</strong><span>Plugin and app, on every platform, including building from source.</span></a></li>
+      <li><a href="/docs/connect/"><strong>Connect</strong><span>Wi-Fi, USB, multiple phones, and what to do when the phone does not appear.</span></a></li>
+      <li><a href="/docs/camera/"><strong>Camera and image</strong><span>Lenses, resolutions, codecs, manual exposure, HDR, Apple Log, green screen, presets.</span></a></li>
+      <li><a href="/docs/troubleshooting/"><strong>Troubleshooting</strong><span>Symptom by symptom, with the log lines and settings to check.</span></a></li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="/download/">Download LensLink</a>
+      <a class="btn ghost" href="/docs/">Browse all documentation</a>
+    </div>
+  </div>
+</section>

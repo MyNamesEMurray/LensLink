@@ -32,6 +32,7 @@ jobs:
     outputs:
       plugin: ${{ steps.diff.outputs.plugin }}
       ios: ${{ steps.diff.outputs.ios }}
+      site: ${{ steps.diff.outputs.site }}
       workflows: ${{ steps.diff.outputs.workflows }}
     steps:
       - uses: actions/checkout@v7
@@ -45,6 +46,7 @@ jobs:
             # workflow_dispatch: build everything
             echo "plugin=true" >> "$GITHUB_OUTPUT"
             echo "ios=true" >> "$GITHUB_OUTPUT"
+            echo "site=true" >> "$GITHUB_OUTPUT"
             echo "workflows=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -64,6 +66,12 @@ jobs:
             echo "ios=true" >> "$GITHUB_OUTPUT"
           else
             echo "ios=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$CHANGED" | \
+             grep -qE '^(site/|\.github/workflows/build\.yml)'; then
+            echo "site=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "site=false" >> "$GITHUB_OUTPUT"
           fi
           if echo "$CHANGED" | grep -qE '^\.github/workflows/'; then
             echo "workflows=true" >> "$GITHUB_OUTPUT"
@@ -96,6 +104,25 @@ jobs:
           # which kill the whole file at validation with no PR-visible
           # error — is actionlint's own check and stays fully on.
           ./actionlint -color -shellcheck= .github/workflows/*.yml
+  # The marketing/documentation site (site/) is a stdlib-only static
+  # generator, so this job is seconds: build it and fail the PR on a
+  # broken internal link or anchor before Cloudflare Pages publishes it.
+  site:
+    name: Website
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build
+        run: python3 build.py
+        working-directory: site
+
+      - name: Check internal links
+        run: python3 check-links.py
+        working-directory: site
+
   obs-plugin-linux:
     name: OBS plugin (Linux)
     needs: changes
