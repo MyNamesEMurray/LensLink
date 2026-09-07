@@ -1,0 +1,29 @@
+// Deploy configuration for lenslink.cam.
+//
+// The site is served by Workers static assets: no Worker script (no
+// "main" field, no assets binding — there is nothing to render on
+// demand), just the files build.py writes into dist/. Cloudflare's
+// Workers Builds runs `python3 build.py` and then `npx wrangler deploy`,
+// which uploads that directory.
+//
+//   not_found_handling  serves dist/404.html for an unknown path, with a
+//                       404 status, instead of an empty response.
+//   html_handling       the default; folder index files (docs/install/
+//                       index.html) are served at their trailing-slash
+//                       URL, which is what build.py emits.
+//
+// static/_headers and static/_redirects are copied into dist/ by the
+// build and are honoured natively here, exactly as they are on Pages.
+{
+	"$schema": "https://developers.cloudflare.com/workers/wrangler-schema.json",
+	"name": "lenslink-site",
+	"compatibility_date": "2026-09-07",
+	"assets": {
+		"directory": "./dist/",
+		"not_found_handling": "404-page",
+		"html_handling": "auto-trailing-slash"
+	},
+	"observability": {
+		"enabled": true
+	}
+}
