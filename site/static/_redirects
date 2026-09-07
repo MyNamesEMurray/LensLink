@@ -1,0 +1,16 @@
+# Short links people are likely to type or share.
+/download/latest    https://github.com/MyNamesEMurray/LensLink/releases/latest   302
+/testflight         https://testflight.apple.com/join/N7Rth6m3                   302
+/github             https://github.com/MyNamesEMurray/LensLink                   302
+/issues             https://github.com/MyNamesEMurray/LensLink/issues            302
+/releases           https://github.com/MyNamesEMurray/LensLink/releases          302
+
+# Older / guessable paths.
+/docs/getting-started   /docs/            301
+/docs/installation      /docs/install/    301
+/docs/usb               /docs/connect/    301
+/docs/wifi              /docs/connect/    301
+/docs/lip-sync          /docs/audio/      301
+/docs/screen            /docs/screen-mirroring/   301
+/support                /docs/troubleshooting/    301
+/help                   /docs/            301

@@ -1,0 +1,146 @@
+title: Connect OBS to your phone
+description: Connect the LensLink Camera source to your iPhone over Wi-Fi or USB, use several phones at once, and read every status message the source can show.
+---
+<h1>Connect OBS to your phone</h1>
+<p class="lede">
+  One TCP connection does everything: video, camera controls, clock sync and
+  status. It runs over your local network, or over the USB cable through
+  Apple's own device service. Nothing goes through the internet.
+</p>
+
+<h2>The short version</h2>
+<ol class="walk">
+  <li>
+    <strong>On the phone, open LensLink</strong>
+    <p>Pick your lens, resolution, frame rate and codec, then tap <strong>Start camera stream</strong>. The Setup screen shows the phone's Wi-Fi address next to the status dot — tap it to copy.</p>
+    <p>With <strong>Remote start from OBS</strong> on (the default), you can skip the tap: just leaving the app open and idle is enough, and OBS starts the camera itself.</p>
+  </li>
+  <li>
+    <strong>In OBS, add the source</strong>
+    <p><strong>Sources → + → LensLink Camera</strong>. Give it a name — one source per phone.</p>
+  </li>
+  <li>
+    <strong>Point it at the phone</strong>
+    <p><strong>Wi-Fi:</strong> open the <strong>Phone</strong> dropdown and pick your device, or type the IP the app is showing.</p>
+    <p><strong>USB:</strong> plug the cable in and set <strong>Connection</strong> to <strong>USB cable</strong>.</p>
+  </li>
+</ol>
+<p>Video appears within a second or two. Closing or backgrounding the app blanks the source — iOS suspends camera capture for apps that are not on screen.</p>
+
+<h2>Wi-Fi</h2>
+<p>
+  The phone and the computer must be on the same network, and that network must
+  not block device-to-device traffic. Guest networks, "client isolation" on an
+  access point, and some university or office networks do block it; a phone
+  hotspot with the computer joined to it does not.
+</p>
+
+<h3>Finding the phone by name</h3>
+<p>
+  While the app is open it advertises itself over Bonjour, and the source's
+  <strong>Phone</strong> dropdown lists whatever it finds. If your phone is
+  missing from that list but you can still type its IP, the app is almost
+  certainly missing the <strong>Local Network</strong> permission, which iOS
+  requires for the name broadcast:
+</p>
+<ul>
+  <li>Allow it when the app asks, or</li>
+  <li>Turn it on in <strong>Settings → Privacy &amp; Security → Local Network → LensLink</strong>.</li>
+</ul>
+<p>Typing the IP address works regardless of that permission.</p>
+
+<h3>When the address changes</h3>
+<p>
+  Phones get a new DHCP lease from time to time, which is why picking the phone
+  by name is worth the permission prompt. If you type addresses instead,
+  reserve one for the phone in your router, or check the app's Setup screen
+  again after a reconnect.
+</p>
+
+<h2>USB</h2>
+<p>
+  USB is the recommended connection for anything that matters. It needs no
+  network at all, holds the lowest and steadiest latency, and charges the phone
+  while it streams — which matters, because encoding video is one of the more
+  demanding things a phone can do.
+</p>
+<ol class="walk">
+  <li>
+    <strong>Windows only: install iTunes</strong>
+    <p>It provides Apple's device driver. Without it the source reports no device on USB, no matter what cable you use.</p>
+  </li>
+  <li>
+    <strong>Plug the phone in and tap Trust</strong>
+    <p>The phone must be unlocked for the prompt to appear. A charge-only cable will not do — it has to be a data cable.</p>
+  </li>
+  <li>
+    <strong>Set Connection to "USB cable"</strong>
+    <p>Leave <strong>USB device</strong> on <strong>Auto (first available)</strong> unless you run more than one phone.</p>
+  </li>
+</ol>
+
+<h3>Pinning a phone to a source</h3>
+<p>
+  With several phones plugged in, set each source's <strong>USB device</strong>
+  to a specific device instead of Auto. The same phone then always feeds the
+  same source, whatever order things were connected in. A source pinned to a
+  device that is not plugged in waits for it and says so.
+</p>
+
+<h2>Several phones at once</h2>
+<p>
+  Add one <strong>LensLink Camera</strong> source per phone. Each has its own
+  connection, its own controls and its own health readout, and the browser panel
+  grows a tab per source so one page controls them all.
+</p>
+<div class="callout">
+  <p><strong>One phone feeds one source at a time.</strong> A second source aimed
+  at the same device reports that the device is already in use. The exception is
+  <strong>Disconnect when this source isn't shown anywhere</strong>: a hidden
+  source releases the phone, so a Camera source in one scene and a Screen source
+  in another can share a single device.</p>
+</div>
+
+<h2>Reading the Status field</h2>
+<p>
+  Every LensLink source has a <strong>Status</strong> line at the top of its
+  properties. It is the fastest diagnostic in the product — it names the exact
+  stage that is failing.
+</p>
+<table>
+  <thead><tr><th>Status</th><th>What it means</th></tr></thead>
+  <tbody>
+    <tr><td>Connected: …</td><td>Streaming. The line carries the device, resolution, frame rate and measured latency.</td></tr>
+    <tr><td>Connected — the camera is idle</td><td>Standby: the app is open and reachable but not capturing. Start it with the button below, from the browser panel, or on the phone.</td></tr>
+    <tr><td>Starting the phone's camera…</td><td>A remote start was sent and the app is bringing the camera up.</td></tr>
+    <tr><td>Trying to reach the phone at …</td><td>Dialing. The address is wrong or unreachable, or the app is not in the foreground.</td></tr>
+    <tr><td>Enter the phone's IP address</td><td>No host set yet on a Wi-Fi source.</td></tr>
+    <tr><td>No device detected on USB</td><td>Check the cable and tap Trust on the phone. On Windows, check that iTunes is installed.</td></tr>
+    <tr><td>Device found, but the LensLink app isn't reachable</td><td>The cable is fine. Unlock the phone and bring the app to the foreground.</td></tr>
+    <tr><td>Waiting for the selected USB device</td><td>The source is pinned to a device that is not currently connected.</td></tr>
+    <tr><td>This device is already used by another LensLink source</td><td>Two sources, one phone. See above.</td></tr>
+    <tr><td>Disconnected — reconnecting</td><td>The link dropped; the source is redialing on its own.</td></tr>
+    <tr><td>Paused — source is hidden</td><td><strong>Disconnect when this source isn't shown anywhere</strong> is on and the source is not visible anywhere.</td></tr>
+    <tr><td>Phone is sending a screen broadcast</td><td>Wrong source type: use a <strong>LensLink Screen</strong> source for a broadcast (and a Camera source for the camera).</td></tr>
+    <tr><td>Connected, but this OBS build can't decode the stream</td><td>Your OBS build has no HEVC decoder. Switch the app's codec to H.264.</td></tr>
+  </tbody>
+</table>
+
+<h2>Keeping the connection healthy</h2>
+<ul>
+  <li><strong>Watch the numbers.</strong> OBS's status bar shows a live line per phone: <code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>. <strong>View → Docks → LensLink</strong> gives the same thing as a panel with one row per source.</li>
+  <li><strong>Congestion is handled for you.</strong> If Wi-Fi congests, the app briefly lowers quality and recovers, rather than piling up latency you then have to wait out.</li>
+  <li><strong>Save the phone's battery.</strong> Turn on <strong>Disconnect when this source isn't shown anywhere</strong> and the phone stops encoding whenever the source is hidden, reconnecting when it is shown again.</li>
+  <li><strong>The stream is unencrypted</strong> on your local network. It is designed for trusted home and studio networks, not for a shared public one.</li>
+</ul>
+
+<h2>If it will not connect</h2>
+<p>Work down this list before anything else:</p>
+<ol>
+  <li>Is the app <strong>on screen</strong> on the phone? iOS suspends its listener otherwise.</li>
+  <li>Is the phone unlocked?</li>
+  <li>Wi-Fi: are both devices on the <strong>same</strong> network — not one on 5 GHz guest and one on the main SSID?</li>
+  <li>USB: is it a data cable, and did you tap <strong>Trust</strong>?</li>
+  <li>Does the Status field name a stage above? Follow that row.</li>
+</ol>
+<p>Still stuck: <a href="/docs/troubleshooting/">Troubleshooting</a> goes symptom by symptom.</p>

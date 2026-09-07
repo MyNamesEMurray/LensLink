@@ -1,0 +1,138 @@
+title: Install LensLink
+description: Install the LensLink plugin into OBS Studio on Windows, macOS or Linux, and the LensLink app on your iPhone or iPad through TestFlight, sideloading or Xcode.
+---
+<h1>Install</h1>
+<p class="lede">
+  You need both halves: the plugin in OBS Studio, and the app on the phone.
+  Install the plugin first — it is the half that needs OBS restarted.
+</p>
+
+<h2>Before you start</h2>
+<ul>
+  <li><strong>OBS Studio 32 or newer.</strong> Check <strong>Help → About</strong>. Older versions will not load the plugin at all.</li>
+  <li><strong>iOS or iPadOS 15 or later</strong> on the phone or tablet.</li>
+  <li><strong>For USB on Windows:</strong> iTunes, which supplies Apple's device driver. Wi-Fi does not need it. macOS and Linux need nothing extra.</li>
+</ul>
+<p><a class="btn small ghost" href="/download/">Go to the download page</a></p>
+
+<h2>The plugin, on Windows</h2>
+<ol class="walk">
+  <li>
+    <strong>Run the installer</strong>
+    <p>Download <code>LensLink-installer-windows-x64.exe</code> and run it. It finds your OBS Studio folder on its own and removes any pre-1.0 copy of the plugin it finds.</p>
+  </li>
+  <li>
+    <strong>Restart OBS Studio</strong>
+    <p>Plugins are loaded once at startup. Until you restart, the new sources will not be in the list.</p>
+  </li>
+  <li>
+    <strong>Check it loaded</strong>
+    <p><strong>Sources → +</strong> should now offer <strong>LensLink Camera</strong> and <strong>LensLink Screen</strong>.</p>
+  </li>
+</ol>
+<p><strong>Prefer to do it by hand?</strong> Unzip <code>lenslink-windows-x64.zip</code> into
+<code>C:\Program Files\obs-studio\</code>, merging the <code>obs-plugins</code> and
+<code>data</code> folders with the ones already there.</p>
+
+<h2>The plugin, on macOS</h2>
+<ol class="walk">
+  <li>
+    <strong>Open the package</strong>
+    <p>Download <code>LensLink-installer-macos-universal.pkg</code>. The package is not notarized, so the first time you must <strong>right-click → Open</strong> rather than double-click, then confirm at the Gatekeeper prompt.</p>
+  </li>
+  <li>
+    <strong>Restart OBS Studio</strong>
+  </li>
+</ol>
+<p><strong>Prefer the zip?</strong> Extract
+<code>lenslink-macos-universal.zip</code> into
+<code>~/Library/Application Support/obs-studio/plugins/</code>, then clear the
+download quarantine flag or OBS will refuse to load it:</p>
+<pre><code>xattr -dr com.apple.quarantine \
+  ~/Library/Application\ Support/obs-studio/plugins/lenslink.plugin</code></pre>
+<div class="callout">
+  <p>The build is universal — it runs natively on both Apple silicon and Intel Macs.</p>
+</div>
+
+<h2>The plugin, on Linux</h2>
+<p>Extract the tarball into your OBS plugin directory:</p>
+<pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+<p>
+  Then restart OBS. If the plugin does not appear and the log mentions
+  <code>libavcodec.so.60: cannot open shared object file</code>, you are on a
+  release before 1.8 whose tarball linked the build machine's FFmpeg — update,
+  or build from source, which links your own system's libraries.
+</p>
+
+<h2>Building the plugin from source</h2>
+<p>The full instructions are in
+<a href="{{REPO}}/blob/main/obs-plugin/BUILDING.md"><code>obs-plugin/BUILDING.md</code></a>.
+The short version on a Debian-family system:</p>
+<pre><code>sudo apt install cmake build-essential pkg-config \
+     libobs-dev libavcodec-dev libavutil-dev qt6-base-dev
+
+cd obs-plugin
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build</code></pre>
+<p>
+  <code>qt6-base-dev</code> is optional: it enables the OBS status-bar readout
+  and the dockable LensLink panel. Everything else builds and runs without Qt.
+</p>
+
+<h2>The app on your iPhone or iPad</h2>
+<p>Three routes, in the order most people should prefer them.</p>
+
+<h3>TestFlight — recommended</h3>
+<p>
+  Join the beta at <a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a>
+  and install from Apple's TestFlight app. Updates arrive automatically, Siri
+  phrases work, and no computer is involved.
+</p>
+
+<h3>Sideloading the unsigned build</h3>
+<p>
+  Download <code>LensLink-unsigned.ipa</code> from the
+  <a href="{{REPO}}/releases/latest">latest release</a> and install it with a
+  tool such as <a href="https://sideloadly.io">Sideloadly</a> and your Apple ID.
+</p>
+<div class="callout warn">
+  <p><strong>Two limits come from Apple, not from LensLink.</strong></p>
+  <p>A free Apple ID expires sideloaded apps after <strong>7 days</strong> — re-install
+  to refresh it; your settings are kept.</p>
+  <p>Re-signing rewrites the app's bundle ID, which orphans the compiled Siri
+  phrase data: <em>"Hey Siri, start streaming with LensLink"</em> gets a generic
+  refusal even though the same action works from the Shortcuts app. Use
+  <code>lenslink://start</code> in a Shortcut instead, or use TestFlight.</p>
+</div>
+
+<h3>Building it in Xcode</h3>
+<p>
+  No <code>.xcodeproj</code> is checked in; the project is generated by XcodeGen
+  so the file list never conflicts in review.
+</p>
+<pre><code>brew install xcodegen
+cd ios-app && xcodegen generate && open LensLink.xcodeproj</code></pre>
+<p>Signing details and older-Xcode notes are in
+<a href="{{REPO}}/blob/main/ios-app/BUILDING.md"><code>ios-app/BUILDING.md</code></a>.</p>
+
+<h2>Updating</h2>
+<table>
+  <tbody>
+    <tr><td>Plugin</td><td>Run the new installer over the old one, or replace the extracted files. Restart OBS.</td></tr>
+    <tr><td>App, TestFlight</td><td>Automatic, or from the TestFlight app's Update button.</td></tr>
+    <tr><td>App, sideloaded</td><td>Re-install the new <code>.ipa</code> the same way you installed the first one.</td></tr>
+  </tbody>
+</table>
+<p>
+  The two halves negotiate a protocol version when they connect, so a
+  slightly-older app and a newer plugin keep working. If a release ever
+  requires both sides, its release notes say so.
+</p>
+
+<h2>Uninstalling</h2>
+<ul>
+  <li><strong>Windows:</strong> use the installer's uninstall entry, or delete <code>obs-plugins\64bit\lenslink.dll</code> and <code>data\obs-plugins\lenslink\</code>.</li>
+  <li><strong>macOS:</strong> delete <code>~/Library/Application Support/obs-studio/plugins/lenslink.plugin</code>.</li>
+  <li><strong>Linux:</strong> delete the extracted files from <code>~/.config/obs-studio/plugins/</code>.</li>
+  <li><strong>App:</strong> remove it from the home screen as usual. Nothing is left on the computer.</li>
+</ul>

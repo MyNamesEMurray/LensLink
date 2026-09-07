@@ -34,8 +34,13 @@ ios-app/               SwiftUI companion app (XcodeGen project)
   Sources/AudioReference.swift  mic capture for lip-sync reference
   Sources/StreamingView.swift   full-screen streaming UI + camera controls
 installer/windows/     Inno Setup script for the Windows plugin installer
+site/                  lenslink.cam — static site generator (stdlib only)
+  build.py             renders pages/ into dist/; DOC_ORDER drives the docs nav
+  pages/               one HTML fragment per page, with front matter
+  static/              css, js, Cloudflare _headers and _redirects
 docs/PROTOCOL.md       wire protocol specification
 docs/UI_DESIGN.md      app + web-panel design system
+site/README.md         how the site is built and deployed (Cloudflare Pages)
 ```
 
 ## Building

@@ -6,6 +6,9 @@
 [![Latest release](https://img.shields.io/github/v/release/MyNamesEMurray/LensLink)](../../releases/latest)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](LICENSE)
 
+**[lenslink.cam](https://lenslink.cam)** — downloads, setup guides and full
+documentation.
+
 Use your iPhone or iPad as a high-quality camera **directly inside OBS
 Studio** — over Wi-Fi or a USB cable. No virtual-camera drivers, no RTMP
 server, no monthly subscription.
