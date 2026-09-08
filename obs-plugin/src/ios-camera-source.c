@@ -141,6 +141,14 @@ struct ios_camera_source {
 	volatile bool auto_start;
 	bool auto_start_armed;
 	int dial_failures;
+	/* Why the last dial failed, for the diagnostics report: the UI can
+	 * only say "not reachable", but EPERM (macOS Local Network denied)
+	 * and ECONNREFUSED (app closed) are different problems. */
+	int last_dial_error;
+	/* The app's virtual green screen, as last reported in STATE. A
+	 * green picture is this feature working correctly far more often
+	 * than it is a fault, so the status has to say when it is on. */
+	volatile bool green_screen;
 
 	/* Which registered source type this instance is: "LensLink Screen"
 	 * (true) or "LensLink Camera" (false). Set once at create from the
@@ -229,6 +237,13 @@ struct ios_camera_source {
 	uint64_t stat_frames;
 	uint64_t stat_bytes;
 	char stat_device[64];
+	/* Mirrored once a second for the diagnostics report; see health.h
+	 * for why the counters travel together. */
+	uint64_t stat_packets;
+	uint64_t stat_keyframes;
+	uint64_t stat_decode_errors;
+	int stat_hw_retries;
+	char stat_decoder[32];
 
 	/* The current connection is a screen mirror (no camera controls).
 	 * Guarded by status_mutex; lets the web panel hide dead controls. */
@@ -371,11 +386,21 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		h->standby = s->standby;
 		h->frames = s->stat_frames;
 		h->bytes = s->stat_bytes;
+		h->video_packets = s->stat_packets;
+		h->keyframes = s->stat_keyframes;
+		h->decode_errors = s->stat_decode_errors;
+		h->hw_retries = s->stat_hw_retries;
+		snprintf(h->decoder, sizeof(h->decoder), "%s", s->stat_decoder);
 		h->latency_ms = (int)(s->last_video_latency_ns / 1000000);
 		snprintf(h->device, sizeof(h->device), "%s", s->stat_device);
 		snprintf(h->status, sizeof(h->status), "%s",
 			 s->status.array ? s->status.array : "");
 		pthread_mutex_unlock(&s->status_mutex);
+		snprintf(h->transport, sizeof(h->transport), "%s",
+			 s->conn_mode == CONN_DIAL_USB ? "USB" : "Wi-Fi");
+		h->gpu_pipeline = g_gpu_pipeline_mode;
+		h->green_screen = s->green_screen;
+		h->last_dial_error = s->last_dial_error;
 	}
 	pthread_mutex_unlock(&g_health_mutex);
 	return n;
@@ -828,6 +853,29 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 		obs_source_release(filter);
 	}
 	obs_data_release(settings);
+}
+
+/*
+ * What to append to a connected status line when the phone is painting its
+ * background chroma green. Without this, a solid green picture looks like
+ * a broken plugin: the setting lives on the phone, survives restarts of
+ * both ends, and nothing in OBS mentions it. If the keying filter is gone
+ * — deleted by the user, which is respected forever — say that too, since
+ * that is the difference between "green, as designed" and "green, and
+ * nothing is removing it".
+ */
+static const char *green_screen_suffix(struct ios_camera_source *s)
+{
+	if (!s->green_screen)
+		return "";
+
+	obs_source_t *filter = obs_source_get_filter_by_name(
+		s->source, CHROMA_KEY_FILTER_NAME);
+	if (filter) {
+		obs_source_release(filter);
+		return T_("Status.GreenScreen");
+	}
+	return T_("Status.GreenScreen.NoFilter");
 }
 
 /*
@@ -1463,8 +1511,9 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		     "[lenslink] capture->decode latency: avg %u ms "
 		     "(min %u / max %u), link rtt %u ms, %u frames",
 		     avg_ms, min_ms, max_ms, rtt_ms, (unsigned)t->count);
-		set_status(s, "%s %s — ~%u ms", T_("Status.Connected"),
-			   c->name[0] ? c->name : "iOS device", avg_ms);
+		set_status(s, "%s %s — ~%u ms%s", T_("Status.Connected"),
+			   c->name[0] ? c->name : "iOS device", avg_ms,
+			   green_screen_suffix(s));
 
 		/* Only steer audio sync from stable measurements: a
 		 * congested link makes latency oscillate wildly, and
@@ -1556,6 +1605,12 @@ static void stats_tick(struct ios_camera_source *s, struct client_state *c)
 	s->stat_connected = true;
 	s->stat_frames = c->frames_output;
 	s->stat_bytes = c->video_bytes;
+	s->stat_packets = c->video_packets;
+	s->stat_keyframes = c->keyframes_seen;
+	s->stat_decode_errors = c->decode_errors;
+	s->stat_hw_retries = c->hw_retry;
+	snprintf(s->stat_decoder, sizeof(s->stat_decoder), "%.31s",
+		 c->decoder ? h264_decoder_hw_name(c->decoder) : "none");
 	snprintf(s->stat_device, sizeof(s->stat_device), "%.63s", c->name);
 	int latency_ms = (int)(s->last_video_latency_ns / 1000000);
 	pthread_mutex_unlock(&s->status_mutex);
@@ -1774,8 +1829,9 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			}
 			break;
 		}
-		set_status(s, "%s %s", T_("Status.Connected"),
-			   c->name[0] ? c->name : "iOS device");
+		set_status(s, "%s %s%s", T_("Status.Connected"),
+			   c->name[0] ? c->name : "iOS device",
+			   green_screen_suffix(s));
 		break;
 	}
 	case OBSC_PKT_VIDEO_CONFIG: {
@@ -2044,6 +2100,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		bool ten_bit = extract_json_bool(s->device_state, "hdr") ||
 			       strstr(s->device_state, "\"color\":") != NULL;
 		pthread_mutex_unlock(&s->status_mutex);
+		s->green_screen = green_screen && !s->is_screen_source;
 		if (green_screen && !ten_bit && !s->is_screen_source)
 			ensure_chroma_key_filter(s);
 		break;
@@ -2195,7 +2252,7 @@ static bool client_read(struct ios_camera_source *s, struct client_state *c)
 /* TCP connect with a 3-second timeout; returns a non-blocking socket.
  * Checks `stop` so destroying the source (which joins this thread) isn't
  * stuck behind the full connect wait. */
-static socket_t tcp_dial(const char *host, uint16_t port,
+static socket_t tcp_dial(int *out_err, const char *host, uint16_t port,
 			 volatile bool *stop)
 {
 	struct sockaddr_in addr = {0};
@@ -2220,8 +2277,11 @@ static socket_t tcp_dial(const char *host, uint16_t port,
 	}
 
 	socket_t s = socket(AF_INET, SOCK_STREAM, 0);
-	if (s == OBSC_INVALID_SOCKET)
+	if (s == OBSC_INVALID_SOCKET) {
+		if (out_err)
+			*out_err = net_last_error();
 		return OBSC_INVALID_SOCKET;
+	}
 
 	net_set_nonblocking(s);
 	int ret = connect(s, (struct sockaddr *)&addr, sizeof(addr));
@@ -2252,16 +2312,23 @@ static socket_t tcp_dial(const char *host, uint16_t port,
 		int err = 0;
 		socklen_t len = sizeof(err);
 		getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&err, &len);
-		if (err != 0)
+		if (err != 0) {
+			if (out_err)
+				*out_err = err;
 			goto fail;
+		}
 	}
 
 	int yes = 1;
 	setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char *)&yes,
 		   sizeof(yes));
+	if (out_err)
+		*out_err = 0;
 	return s;
 
 fail:
+	if (out_err && *out_err == 0)
+		*out_err = net_last_error();
 	net_close(s);
 	return OBSC_INVALID_SOCKET;
 }
@@ -2455,7 +2522,9 @@ static void dial_loop(struct ios_camera_source *s)
 					 k);
 			}
 			set_status(s, "%s %s", T_("Status.Dialing"), s->host);
-			sock = tcp_dial(s->host, OBSC_USB_PORT, &s->stop);
+			s->last_dial_error = 0;
+			sock = tcp_dial(&s->last_dial_error, s->host,
+					OBSC_USB_PORT, &s->stop);
 		}
 
 		if (sock == OBSC_INVALID_SOCKET) {

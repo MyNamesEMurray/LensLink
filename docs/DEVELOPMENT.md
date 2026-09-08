@@ -27,6 +27,7 @@ obs-plugin/            C plugin for OBS Studio (CMake)
   src/h264-decoder.c   libavcodec H.264/HEVC → obs_source_frame (GPU-capable)
   src/usbmux.c         usbmuxd client (USB transport)
   src/web-control.c    browser control panel (http://localhost:9980)
+  src/diagnostics.c    the pasteable diagnostics report (Tools menu, /api/diagnostics)
   src/lipsync.c        audio cross-correlation for lip-sync calibration
 ios-app/               SwiftUI companion app (XcodeGen project)
   Sources/VideoEncoder.swift    VideoToolbox encode + AVCC→Annex B

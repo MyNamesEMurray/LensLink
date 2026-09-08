@@ -55,6 +55,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <tbody>
     <tr><td><code>GET /api/sources</code></td><td>Every source: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>screen</code>.</td></tr>
     <tr><td><code>GET /api/status</code></td><td><code>status</code> text, plus <code>screen</code>, <code>standby</code>, <code>connected</code>, <code>autoStart</code> and the lip-sync <code>sync</code> stage.</td></tr>
+    <tr><td><code>GET /api/diagnostics</code></td><td>The whole diagnostics report as plain text — versions, hardware, settings and per-source state. Same content as the button in Tools → LensLink Settings.</td></tr>
     <tr><td><code>GET /api/state</code></td><td>The phone's last camera-state snapshot: lenses, zoom, exposure, focus, white balance, supported formats. The same cache the source properties read, which is how the three surfaces stay in step.</td></tr>
   </tbody>
 </table>

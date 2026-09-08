@@ -116,6 +116,26 @@ data\obs-plugins\ios-camera-source\</code></pre>
   same picture, more bandwidth.
 </p>
 
+<h2>The picture is solid green</h2>
+<p>
+  Almost always the <a href="/docs/camera/#virtual-green-screen">virtual green
+  screen</a> working as designed on a subject it can no longer find: the phone
+  paints everything that isn't you chroma green, so if segmentation loses you —
+  you left the frame, or <strong>subject distance</strong> is set too tight —
+  the whole frame is background. It survives restarting OBS <em>and</em> the
+  phone, because the setting lives on the phone.
+</p>
+<p>
+  Turn <strong>Green screen</strong> off in the app to confirm. If you want it
+  on, check that a chroma-key filter is still on the source — the plugin adds
+  one the first time and never re-adds a filter you delete. The source's
+  <strong>Status</strong> line says which case you're in.
+</p>
+<p>
+  It also costs the phone real work per frame, so a device that lags while
+  streaming is worth testing with the green screen off.
+</p>
+
 <h2>The picture freezes or goes black when I switch apps on the phone</h2>
 <p>
   Expected: iOS suspends camera capture for apps that aren't on screen. A screen
@@ -123,9 +143,22 @@ data\obs-plugins\ios-camera-source\</code></pre>
 </p>
 
 <h2>Nothing here matches</h2>
-<p>Open an issue on <a href="{{REPO}}/issues">GitHub</a> and include:</p>
-<ul>
-  <li>The OBS log, with <strong>Verbose diagnostics</strong> (Tools → LensLink Settings) on while you reproduce it once.</li>
-  <li><strong>Options → Camera diagnostics</strong>.</li>
-  <li>Device and iOS version, OBS and plugin versions, and Wi-Fi or USB.</li>
-</ul>
+<p>
+  <strong>Tools → LensLink Settings → Copy a diagnostics report</strong>, then
+  paste it into an issue on <a href="{{REPO}}/issues">GitHub</a>. It collects
+  the versions, hardware, graphics device, settings and per-source connection
+  state — including the last socket error, which distinguishes "the app wasn't
+  running" from "the OS refused the connection". No video, audio or personal
+  data.
+</p>
+<p>
+  Without the Qt UI, or from a script:
+  <code>curl localhost:9980/api/diagnostics</code>. The report also goes to the
+  OBS log, so <strong>Help → Log Files → Upload Current Log File</strong>
+  carries it.
+</p>
+<p>
+  Worth adding: <strong>Options → Camera diagnostics</strong> from the app, and
+  the OBS log with <strong>Verbose diagnostics</strong> on while you reproduce
+  the problem once.
+</p>
