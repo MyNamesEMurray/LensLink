@@ -17,6 +17,7 @@ Run from this directory:
     python3 build.py --serve    # writes dist/ and serves it on :8000
 """
 
+import hashlib
 import html
 import os
 import re
@@ -257,6 +258,31 @@ def shell(meta, body, page_path, toc):
     return "\n".join(head + header + main + footer)
 
 
+# Stylesheets and scripts are copied out under a content-hashed name, and
+# every reference to them is rewritten to match. Cloudflare caches these for
+# hours at the edge and in the browser, so a fixed name means a CSS change
+# can be deployed and still not reach anyone until the old copy expires. A
+# hashed name changes with the content, so a deploy is picked up immediately
+# and the old URL is never requested again.
+FINGERPRINT = ["css/site.css", "js/site.js", "js/download.js"]
+
+
+def fingerprint_assets():
+    """Rename the built assets to <name>.<hash>.<ext>; return {old: new}."""
+    mapping = {}
+    for rel in FINGERPRINT:
+        path = os.path.join(DIST, rel)
+        if not os.path.exists(path):
+            continue
+        with open(path, "rb") as fh:
+            digest = hashlib.sha256(fh.read()).hexdigest()[:10]
+        stem, ext = os.path.splitext(rel)
+        hashed = "%s.%s%s" % (stem, digest, ext)
+        os.rename(path, os.path.join(DIST, hashed))
+        mapping["/" + rel] = "/" + hashed
+    return mapping
+
+
 def collect_pages():
     found = []
     for dirpath, _, filenames in os.walk(PAGES):
@@ -289,6 +315,8 @@ def build():
                      ("assets/screen-fit-transform.png", "screen-fit-transform.png")]:
         shutil.copyfile(os.path.join(REPO, src), os.path.join(img, dst))
 
+    assets = fingerprint_assets()
+
     urls = []
     for rel in collect_pages():
         meta, body = read_page(os.path.join(PAGES, rel))
@@ -296,6 +324,8 @@ def build():
         body = (body.replace("{{TESTFLIGHT}}", TESTFLIGHT_URL)
                     .replace("{{REPO}}", REPO_URL))
         out = shell(meta, body, rel, toc)
+        for old, new in assets.items():
+            out = out.replace(old, new)
         target = url_for(rel)
         if rel == "404.html":
             write(os.path.join(DIST, "404.html"), out)

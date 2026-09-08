@@ -5,11 +5,14 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
   Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' https://api.github.com; form-action 'none'; frame-ancestors 'none'; base-uri 'self'
 
+# Stylesheets and scripts carry a content hash in their filename (see
+# fingerprint_assets in build.py), so a given URL's bytes never change and
+# these can be cached hard and forever. A deploy publishes new filenames.
 /css/*
-  Cache-Control: public, max-age=3600, must-revalidate
+  Cache-Control: public, max-age=31536000, immutable
 
 /js/*
-  Cache-Control: public, max-age=3600, must-revalidate
+  Cache-Control: public, max-age=31536000, immutable
 
 /img/*
   Cache-Control: public, max-age=604800
