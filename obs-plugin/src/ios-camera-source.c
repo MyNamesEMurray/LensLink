@@ -19,6 +19,21 @@
 #include <time.h>
 
 #include "net-compat.h"
+
+/* "No device on USB" has a different fix on each platform, because the
+ * usbmuxd protocol the transport speaks comes from somewhere different on
+ * each: the Apple Mobile Device Service (installed with iTunes) on Windows,
+ * the usbmuxd daemon on Linux, and the OS itself on macOS — where there is
+ * nothing to install and so nothing to suggest. Naming the wrong one, or
+ * none, leaves the reader with a dead end at exactly the moment they need
+ * the answer. */
+#ifdef _WIN32
+#define WAITING_USB_KEY "Status.WaitingUSB.Windows"
+#elif defined(__linux__)
+#define WAITING_USB_KEY "Status.WaitingUSB.Linux"
+#else
+#define WAITING_USB_KEY "Status.WaitingUSB"
+#endif
 #include "protocol.h"
 #include "h264-decoder.h"
 #include "usbmux.h"
@@ -2406,7 +2421,7 @@ static void dial_loop(struct ios_camera_source *s)
 				const char *why =
 					pinned[0] ? T_("Status.WaitingPinned")
 					: n > 0	  ? T_("Status.DeviceBusy")
-						  : T_("Status.WaitingUSB");
+						  : T_(WAITING_USB_KEY);
 				set_status(s, "%s", why);
 				/* Phone not reachable: re-arm auto-start so
 				 * it fires when the app comes (back) up. */
