@@ -27,18 +27,19 @@
 		return out;
 	}
 
-	/* What the chosen setup requires, beyond the obvious. */
+	/* What the chosen setup requires, beyond the obvious. One line: it is a
+	   packing list, not a section. */
 	function needs(a) {
-		var list = ["OBS Studio 32 or newer", "An iPhone or iPad on iOS 15 or later"];
+		var list = ["OBS 32+", "an iPhone or iPad on iOS 15+"];
 		if (a.link === "usb") {
-			list.push("A USB data cable — not a charge-only one");
-			if (a.os === "windows") list.push("iTunes, for Apple's device driver");
-			if (a.os === "linux") list.push("The usbmuxd daemon, which most desktops already ship");
+			list.push("a USB data cable");
+			if (a.os === "windows") list.push("iTunes");
+			if (a.os === "linux") list.push("usbmuxd");
 		} else {
-			list.push("Both devices on the same network, without client isolation");
+			list.push("both devices on one network");
 		}
-		if (a.app === "sideload") list.push("Sideloadly and an Apple ID — re-install weekly");
-		if (a.app === "xcode") list.push("A Mac with Xcode and XcodeGen");
+		if (a.app === "sideload") list.push("Sideloadly and an Apple ID");
+		if (a.app === "xcode") list.push("Xcode and XcodeGen");
 		return list;
 	}
 
@@ -74,16 +75,15 @@
 		});
 
 		var box = document.getElementById("needs");
-		var list = document.getElementById("needs-list");
-		if (box && list) {
-			list.textContent = "";
-			needs(a).forEach(function (text) {
-				var li = document.createElement("li");
-				li.textContent = text;
-				list.appendChild(li);
-			});
+		if (box) {
+			box.textContent = "You'll need " + needs(a).join(", ") + ".";
 			box.hidden = false;
 		}
+
+		/* Once the steps are filtered every one of them matches, so the
+		   condition tags are restating the questions above. They exist for
+		   the unfiltered, no-JavaScript view. */
+		guide.classList.add("filtered");
 
 		if (push && window.history && window.history.replaceState) {
 			var q = FACETS.map(function (f) { return f + "=" + picked[f]; }).join("&");

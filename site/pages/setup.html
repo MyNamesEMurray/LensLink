@@ -6,11 +6,8 @@ script: /js/setup.js
 <section class="dl-hero">
   <div class="wrap">
     <h1>Set up LensLink</h1>
-    <p>
-      Four questions, then the steps for <em>your</em> setup — and none of the
-      ones that do not apply. Every answer is also in the address bar, so you
-      can send someone a link to exactly this configuration.
-    </p>
+    <p>Four questions, then only the steps that apply to you. Your answers are
+    in the address bar, so this configuration is a link you can send.</p>
   </div>
 </section>
 
@@ -59,32 +56,27 @@ script: /js/setup.js
     </form>
 
     <p class="nojs" id="nojs">
-      Every step below is shown, each tagged with the setup it belongs to.
-      Turn on JavaScript and the questions above will hide the ones that
-      do not apply to you.
+      Every step is shown below, tagged with the setup it belongs to. Turn on
+      JavaScript to filter them.
     </p>
 
-    <div class="needs" id="needs" hidden>
-      <p>What you'll need</p>
-      <ul id="needs-list"></ul>
-    </div>
+    <p class="needs" id="needs" hidden></p>
 
     <ol class="guide" id="guide">
 
       <li>
-        <h2>Check your OBS version</h2>
-        <p><strong>Help → About</strong>. LensLink needs <strong>OBS Studio 32 or newer</strong> — older versions won't load the plugin at all.</p>
+        <h2>Check OBS is 32 or newer</h2>
+        <p>Help → About.</p>
       </li>
 
       <li data-os="windows">
         <h2>Install the plugin <span class="tag">Windows</span></h2>
-        <p>Download and run <code>LensLink-installer-windows-x64.exe</code> from the <a href="/download/">download page</a>. It finds your OBS folder and clears out any pre-1.0 copy.</p>
-        <p class="alt">Prefer it by hand? Unzip <code>lenslink-windows-x64.zip</code> into <code>C:\Program Files\obs-studio\</code>, merging the <code>obs-plugins</code> and <code>data</code> folders.</p>
+        <p>Run <code>LensLink-installer-windows-x64.exe</code> from the <a href="/download/">download page</a>.</p>
       </li>
 
       <li data-os="macos">
         <h2>Install the plugin <span class="tag">macOS</span></h2>
-        <p>Download <code>LensLink-installer-macos-universal.pkg</code> from the <a href="/download/">download page</a> and open it with <strong>right-click → Open</strong> — the package isn't notarized, so a double-click is refused the first time.</p>
+        <p>Open <code>LensLink-installer-macos-universal.pkg</code> from the <a href="/download/">download page</a> with <strong>right-click → Open</strong>. It isn't notarized, so a double-click is refused.</p>
       </li>
 
       <li data-os="linux">
@@ -94,112 +86,104 @@ script: /js/setup.js
 
       <li>
         <h2>Restart OBS</h2>
-        <p><strong>Sources → +</strong> should now list <strong>LensLink Camera</strong> and <strong>LensLink Screen</strong>. If it doesn't, see <a href="/docs/troubleshooting/#the-sources-do-not-appear-in-obs">the sources don't appear</a>.</p>
+        <p><strong>Sources → +</strong> now lists LensLink Camera and LensLink Screen.</p>
       </li>
 
       <li data-app="testflight">
         <h2>Install the app <span class="tag">TestFlight</span></h2>
-        <p>Join the beta at <a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a> and install from Apple's TestFlight app. Updates then arrive on their own.</p>
+        <p><a href="{{TESTFLIGHT}}">Join the beta</a>, then install from TestFlight.</p>
       </li>
 
       <li data-app="sideload">
         <h2>Install the app <span class="tag">Sideload</span></h2>
-        <p>Download <code>LensLink-unsigned.ipa</code> from the <a href="{{REPO}}/releases/latest">latest release</a> and install it with <a href="https://sideloadly.io">Sideloadly</a>.</p>
-        <p class="warn"><strong>Two Apple limits come with this route.</strong> A free Apple ID expires the app after <strong>7 days</strong> — re-install to refresh, your settings are kept. Re-signing also breaks the Siri phrases; use <code>lenslink://start</code> in a Shortcut instead.</p>
+        <p><code>LensLink-unsigned.ipa</code> from the <a href="{{REPO}}/releases/latest">latest release</a>, via <a href="https://sideloadly.io">Sideloadly</a>.</p>
+        <p class="warn">A free Apple ID expires it after 7 days, and re-signing breaks the Siri phrases — use <code>lenslink://start</code> in a Shortcut.</p>
       </li>
 
       <li data-app="xcode">
         <h2>Build the app <span class="tag">Xcode</span></h2>
         <pre><code>brew install xcodegen
 cd ios-app &amp;&amp; xcodegen generate &amp;&amp; open LensLink.xcodeproj</code></pre>
-        <p>Signing details are in <a href="{{REPO}}/blob/main/ios-app/BUILDING.md"><code>ios-app/BUILDING.md</code></a>.</p>
       </li>
 
       <li data-link="usb" data-os="windows">
         <h2>Install iTunes <span class="tag">Windows</span> <span class="tag">USB</span></h2>
-        <p>Apple's device driver ships with iTunes, and the plugin needs it to see the phone over USB. There's no way around this on Windows. (Wi-Fi doesn't need it.)</p>
+        <p>It supplies Apple's device driver. USB can't see the phone without it.</p>
       </li>
 
       <li data-link="usb" data-os="linux">
         <h2>Check usbmuxd is installed <span class="tag">Linux</span> <span class="tag">USB</span></h2>
-        <p>The plugin talks to the phone through the <code>usbmuxd</code> daemon at <code>/var/run/usbmuxd</code>. Most desktop distributions ship it for phone access already; if the source reports no device, install the <code>usbmuxd</code> package.</p>
+        <p>The plugin connects to <code>/var/run/usbmuxd</code>. Most desktops ship it; install the <code>usbmuxd</code> package if not.</p>
       </li>
 
       <li data-link="usb">
         <h2>Plug in and tap Trust <span class="tag">USB</span></h2>
-        <p>Unlock the phone first, or the prompt never appears. It must be a <strong>data</strong> cable — nothing in the interface can tell you a charge-only one apart.</p>
+        <p>Unlock the phone first, and use a data cable.</p>
       </li>
 
       <li data-link="wifi">
-        <h2>Put both devices on the same network <span class="tag">Wi-Fi</span></h2>
-        <p>It has to allow device-to-device traffic: guest networks and access points with client isolation block it. A phone hotspot with the computer joined to it works fine.</p>
+        <h2>Put both on the same network <span class="tag">Wi-Fi</span></h2>
+        <p>Guest networks and client isolation block it.</p>
       </li>
 
       <li>
         <h2>Open LensLink on the phone</h2>
-        <p data-mode="camera">Choose your lens, resolution, frame rate and codec. The pickers only offer combinations your camera really supports.</p>
-        <p data-mode="screen">You'll start the broadcast in a moment — leave the app open for now.</p>
-        <p data-link="wifi">The Setup screen shows the phone's Wi-Fi address next to the status dot. Tap it to copy.</p>
+        <p data-mode="camera">Pick lens, resolution, frame rate and codec.</p>
+        <p data-link="wifi">The Setup screen shows its address — tap to copy.</p>
       </li>
 
       <li data-link="wifi">
         <h2>Allow the Local Network permission <span class="tag">Wi-Fi</span></h2>
-        <p>iOS needs it for the phone to appear by name in OBS. Allow it when asked, or turn it on in <strong>Settings → Privacy &amp; Security → Local Network → LensLink</strong>. Typing the IP address works either way.</p>
+        <p>Needed for the phone to appear by name. Typing its IP works without it.</p>
       </li>
 
       <li data-mode="camera">
-        <h2>Add the source in OBS <span class="tag">Camera</span></h2>
-        <p><strong>Sources → + → LensLink Camera</strong>. One source per phone.</p>
+        <h2>Add the source <span class="tag">Camera</span></h2>
+        <p><strong>Sources → + → LensLink Camera</strong>. One per phone.</p>
       </li>
 
       <li data-mode="screen">
-        <h2>Add the source in OBS <span class="tag">Screen</span></h2>
-        <p><strong>Sources → + → LensLink Screen</strong>. A Screen source only accepts a broadcast, and a Camera source only accepts the camera — each says so if it's fed the other.</p>
+        <h2>Add the source <span class="tag">Screen</span></h2>
+        <p><strong>Sources → + → LensLink Screen</strong>.</p>
       </li>
 
       <li data-link="usb">
         <h2>Point it at the phone <span class="tag">USB</span></h2>
-        <p>Set <strong>Connection</strong> to <strong>USB cable</strong>. Leave <strong>USB device</strong> on <strong>Auto</strong> unless you're running more than one phone.</p>
+        <p>Set <strong>Connection</strong> to <strong>USB cable</strong>.</p>
       </li>
 
       <li data-link="wifi">
         <h2>Point it at the phone <span class="tag">Wi-Fi</span></h2>
-        <p>Open the <strong>Phone</strong> dropdown and pick your device, or type the IP the app is showing.</p>
+        <p>Pick it in the <strong>Phone</strong> dropdown, or type the IP.</p>
       </li>
 
       <li data-mode="camera">
         <h2>Start the camera <span class="tag">Camera</span></h2>
-        <p>Tap <strong>Start camera stream</strong> on the phone — or don't: with <strong>Remote start from OBS</strong> on (the default), leaving the app open and idle is enough and OBS starts it for you. Video appears in a second or two.</p>
+        <p>Tap <strong>Start camera stream</strong> — or leave the app open and OBS starts it for you.</p>
       </li>
 
       <li data-mode="screen">
         <h2>Start the broadcast <span class="tag">Screen</span></h2>
-        <p>In the app, tap <strong>Start screen broadcast</strong>, choose <strong>LensLink Screen</strong> in the system picker, then <strong>Start Broadcast</strong>. You can leave the app afterwards — a broadcast keeps running across apps.</p>
+        <p><strong>Start screen broadcast</strong> → <strong>LensLink Screen</strong> → <strong>Start Broadcast</strong>. You can leave the app afterwards.</p>
       </li>
 
       <li data-mode="screen">
         <h2>Pin the source size <span class="tag">Screen</span></h2>
-        <p>A mirror reports whatever resolution iOS is broadcasting, which changes between apps. Right-click the source → <strong>Transform → Edit Transform…</strong> and set <strong>Bounding Box Type</strong> to <strong>Scale to inner bounds</strong>, so switching apps can't resize your layout.</p>
+        <p>Right-click → <strong>Transform → Edit Transform…</strong>, set <strong>Bounding Box Type</strong> to <strong>Scale to inner bounds</strong>, so switching apps can't resize your layout.</p>
       </li>
 
       <li data-mode="camera">
         <h2>Line up your microphone <span class="tag">Camera</span></h2>
-        <p>Optional, and worth it if you use your own mic. In the source properties pick it under <strong>Lip-sync audio source</strong>, enable the delay and <strong>Auto-calibrate</strong>, then turn on <strong>Auto lip-sync reference</strong> in the app's Options and talk for fifteen seconds. Full detail: <a href="/docs/audio/">audio and lip sync</a>.</p>
-      </li>
-
-      <li>
-        <h2>You're set</h2>
-        <p data-mode="camera">Control the camera from the computer at <a href="http://localhost:9980"><code>localhost:9980</code></a>, or read up on <a href="/docs/camera/">lenses, formats and image settings</a>.</p>
-        <p data-mode="screen">More on broadcasts, audio and DRM: <a href="/docs/screen-mirroring/">screen mirroring</a>.</p>
-        <p>If something's wrong, the source's <strong>Status</strong> line names the stage that's failing — <a href="/docs/connect/#reading-the-status-field">what each message means</a>.</p>
+        <p>Optional: pick it under <strong>Lip-sync audio source</strong>, enable the delay and <strong>Auto-calibrate</strong>, turn on <strong>Auto lip-sync reference</strong> in the app, and talk for fifteen seconds. <a href="/docs/audio/">Detail</a>.</p>
       </li>
 
     </ol>
 
     <p class="guide-foot">
-      This is the same material as the <a href="/docs/install/">install</a> and
-      <a href="/docs/connect/">connect</a> pages, narrowed to your answers.
-      Those pages carry the parts a guide has to leave out.
+      Stuck? The source's <strong>Status</strong> line names the stage that's
+      failing — <a href="/docs/connect/#reading-the-status-field">what each one
+      means</a>. Fuller versions of all of this:
+      <a href="/docs/install/">install</a> and <a href="/docs/connect/">connect</a>.
     </p>
   </div>
 </section>
