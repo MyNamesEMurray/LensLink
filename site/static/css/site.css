@@ -533,7 +533,13 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 
 /* ----------------------------------------------------------- setup guide */
 
-.wizard { border: 0; padding: 0; margin: 0 0 40px; display: grid; gap: 24px; }
+/* One section, not a hero plus a section: the title introduces the
+   questions, so stacking two sets of section padding between them left a
+   139px hole and a divider line across the middle of one idea. */
+.setup { padding: 48px 0 80px; }
+.setup h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); margin: 0 0 32px; }
+
+.wizard { border: 0; padding: 0; margin: 0 0 32px; display: grid; gap: 24px; }
 .wizard fieldset { border: 0; margin: 0; padding: 0; }
 .wizard legend {
 	padding: 0; margin-bottom: 10px; font-size: 13px; font-weight: 600;
@@ -585,34 +591,27 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 
 .nojs { color: var(--txt3); font-size: 14.5px; margin: 0 0 32px; }
 
-.needs {
-	background: var(--bg-raised); border: 1px solid var(--hair);
-	border-radius: var(--r-panel); padding: 20px 24px; margin: 0 0 40px;
-}
-.needs > p {
-	margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
-	text-transform: uppercase; color: var(--txt3);
-}
-.needs ul { margin: 0; padding-left: 20px; color: var(--txt2); font-size: 15.5px; }
-.needs li { margin: 5px 0; }
+.needs { color: var(--txt2); font-size: 15px; margin: 0 0 32px; }
 
 /* Steps renumber themselves: a hidden <li> takes no counter, so filtering
    never leaves a gap in the sequence. */
 .guide { counter-reset: step; list-style: none; padding: 0; margin: 0; }
 .guide > li {
 	counter-increment: step; position: relative;
-	padding: 0 0 32px 52px; border-left: 1px solid var(--hair); margin-left: 15px;
+	padding: 0 0 22px 46px; border-left: 1px solid var(--hair); margin-left: 15px;
 }
 .guide > li:last-child { border-left-color: transparent; padding-bottom: 0; }
 .guide > li::before {
-	content: counter(step); position: absolute; left: -16px; top: -4px;
-	width: 31px; height: 31px; border-radius: 50%;
+	content: counter(step); position: absolute; left: -14px; top: -3px;
+	width: 27px; height: 27px; border-radius: 50%;
 	background: var(--bg-raised); border: 1px solid var(--hair);
 	color: var(--accent-light); font-family: var(--mono); font-size: 14px;
 	display: flex; align-items: center; justify-content: center;
 }
-.guide h2 { font-size: 1.05rem; margin: 0 0 8px; font-weight: 600; }
-.guide p { margin: 8px 0; color: rgba(235, 235, 245, 0.78); font-size: 16px; }
+.guide h2 { font-size: 1rem; margin: 0 0 4px; font-weight: 600; }
+.guide p { margin: 4px 0; color: rgba(235, 235, 245, 0.78); font-size: 15.5px; }
+/* Filtered, every step matches the answers, so its tags say nothing new. */
+.guide.filtered .tag { display: none; }
 .guide pre { margin: 12px 0; font-size: 13.5px; }
 .guide .alt { color: var(--txt3); font-size: 14.5px; }
 .guide .warn {
@@ -626,7 +625,7 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 	border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px;
 }
 
-.guide-foot { color: var(--txt3); font-size: 14.5px; margin: 40px 0 0; }
+.guide-foot { color: var(--txt3); font-size: 14.5px; margin: 32px 0 0; }
 
 @media (max-width: 560px) {
 	.seg-choice { display: flex; width: 100%; }
