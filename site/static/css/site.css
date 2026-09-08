@@ -552,11 +552,16 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
    with JavaScript off. */
 .seg-choice { display: inline-flex; flex-wrap: wrap; gap: 4px; background: rgba(255, 255, 255, 0.06);
 	border: 1px solid var(--hair); border-radius: 14px; padding: 4px; }
-.seg-choice label { position: relative; }
+.seg-choice label { position: relative; display: flex; }
 .seg-choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+/* The recommendation sits on its own line under the label — flex-basis
+   pushes it there — so the options stay the same shape whether or not one
+   of them carries it. Spans fill their label so every pill in a row
+   matches height. */
 .seg-choice span {
-	display: flex; align-items: center; gap: 9px;
-	padding: 9px 16px; border-radius: 10px; font-size: 15px;
+	display: flex; flex: 1; flex-wrap: wrap;
+	align-items: center; justify-content: center; text-align: center;
+	gap: 2px 9px; padding: 8px 16px; border-radius: 10px; font-size: 15px;
 	color: var(--txt2); transition: background .15s ease, color .15s ease;
 }
 /* Icons only where they carry meaning — a cable, a Wi-Fi fan, a lens. The
@@ -565,17 +570,15 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 .opt-ic { width: 17px; height: 17px; flex: none; opacity: 0.85; }
 
 /* "Recommended" is a claim the docs make in prose; here it is a quiet
-   marker, not a second accent competing with the selected state. It has to
-   stay legible both on the panel and on the accent fill. */
+   marker, not a second accent competing with the selected state, and not a
+   pill inside a pill. It has to stay legible both on the panel and on the
+   accent fill. */
 .rec {
-	font-style: normal; font-size: 10.5px; font-weight: 600;
-	letter-spacing: 0.05em; text-transform: uppercase;
-	color: var(--accent-light); background: rgba(61, 123, 255, 0.14);
-	border-radius: 999px; padding: 2px 7px; margin-left: 1px; white-space: nowrap;
+	flex-basis: 100%; font-style: normal; font-size: 9.5px; font-weight: 600;
+	letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap;
+	color: var(--accent-light); opacity: 0.9;
 }
-.seg-choice input:checked + span .rec {
-	color: #fff; background: rgba(255, 255, 255, 0.22);
-}
+.seg-choice input:checked + span .rec { color: #fff; opacity: 0.85; }
 .seg-choice input:checked + span { background: var(--accent); color: #fff; font-weight: 600; }
 .seg-choice input:focus-visible + span { outline: 2px solid var(--accent-light); outline-offset: 2px; }
 .seg-choice label:hover input:not(:checked) + span { background: rgba(255, 255, 255, 0.08); color: var(--txt); }
@@ -628,15 +631,7 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 @media (max-width: 560px) {
 	.seg-choice { display: flex; width: 100%; }
 	.seg-choice label { flex: 1; }
-	.seg-choice span { justify-content: center; padding: 9px 8px; font-size: 14px; gap: 6px; }
-	/* Three options plus a badge cannot share a phone's width. The
-	   recommendation survives as the accent dot the badge collapses to,
-	   with the word still there for a screen reader. */
-	.rec {
-		width: 6px; height: 6px; padding: 0; margin: 0; border-radius: 50%;
-		background: var(--accent-light); overflow: hidden; text-indent: -99em;
-	}
-	.seg-choice input:checked + span .rec { background: #fff; }
+	.seg-choice span { padding: 8px 8px; font-size: 14px; gap: 2px 6px; }
 }
 
 /* On a phone the icons are what push a label onto a second line — three
