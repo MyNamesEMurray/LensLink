@@ -119,7 +119,13 @@ kbd {
 
 /* ------------------------------------------------------------------ hero */
 
-.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--hair-soft); }
+/* The hero is a <section>, but it owns its vertical rhythm through
+   .hero .wrap below — without this reset it inherits the generic section
+   padding as well and the two stack into a ~176px void above the eyebrow. */
+.hero {
+	position: relative; overflow: hidden; padding: 0;
+	border-bottom: 1px solid var(--hair-soft);
+}
 .hero::before {
 	content: ""; position: absolute; inset: -30% 0 auto -10%;
 	height: 720px; pointer-events: none;
