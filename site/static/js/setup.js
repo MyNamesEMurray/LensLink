@@ -33,6 +33,7 @@
 		if (a.link === "usb") {
 			list.push("A USB data cable — not a charge-only one");
 			if (a.os === "windows") list.push("iTunes, for Apple's device driver");
+			if (a.os === "linux") list.push("The usbmuxd daemon, which most desktops already ship");
 		} else {
 			list.push("Both devices on the same network, without client isolation");
 		}

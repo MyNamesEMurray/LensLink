@@ -11,7 +11,7 @@ description: Install the LensLink plugin into OBS Studio on Windows, macOS or Li
 <ul>
   <li><strong>OBS Studio 32 or newer</strong> (<strong>Help → About</strong>). Older versions will not load the plugin.</li>
   <li><strong>iOS or iPadOS 15 or later.</strong></li>
-  <li><strong>iTunes, for USB on Windows only</strong> — it supplies Apple's device driver. Wi-Fi doesn't need it; macOS and Linux need nothing.</li>
+  <li><strong>For USB:</strong> iTunes on Windows (it supplies Apple's device driver), or the <code>usbmuxd</code> daemon on Linux. macOS has it built in, and Wi-Fi needs none of it.</li>
 </ul>
 <p><a class="btn small ghost" href="/download/">Download page</a></p>
 
@@ -95,6 +95,47 @@ cmake --build build</code></pre>
 cd ios-app && xcodegen generate && open LensLink.xcodeproj</code></pre>
 <p>Signing and older-Xcode notes:
 <a href="{{REPO}}/blob/main/ios-app/BUILDING.md"><code>ios-app/BUILDING.md</code></a>.</p>
+
+<h2>What differs by operating system</h2>
+<p>
+  The app, the protocol and every camera feature are identical wherever OBS
+  runs. What changes is how the plugin reaches the phone over USB and how it
+  gets decoded frames onto the GPU.
+</p>
+<table>
+  <thead><tr><th></th><th>Windows</th><th>macOS</th><th>Linux</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>USB needs</td>
+      <td>iTunes, for the Apple Mobile Device Service</td>
+      <td>Nothing — built into the OS</td>
+      <td>The <code>usbmuxd</code> daemon. Most desktop distributions ship it for phone access; install the <code>usbmuxd</code> package if the source reports no device.</td>
+    </tr>
+    <tr>
+      <td>Hardware decoding</td>
+      <td>D3D11VA, then DXVA2</td>
+      <td>VideoToolbox</td>
+      <td>VAAPI, then VDPAU</td>
+    </tr>
+    <tr>
+      <td><a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPU pipeline</a> needs</td>
+      <td>Windows 10 1909+</td>
+      <td>macOS 13+</td>
+      <td>OBS on EGL, plus a VAAPI driver</td>
+    </tr>
+    <tr>
+      <td>10-bit on the GPU pipeline</td>
+      <td>Yes, as P010</td>
+      <td>No — VideoToolbox converts to 8-bit itself, so HDR renders through the standard path</td>
+      <td>Yes, as P010</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+  Everything else — resolutions, codecs, HDR and Apple Log capture, the green
+  screen, lip sync, remote start, the browser panel — is decided on the phone
+  or in shared code, and behaves the same on all three.
+</p>
 
 <h2>Updating</h2>
 <p>

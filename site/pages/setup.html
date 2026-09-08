@@ -120,6 +120,11 @@ cd ios-app &amp;&amp; xcodegen generate &amp;&amp; open LensLink.xcodeproj</code
         <p>Apple's device driver ships with iTunes, and the plugin needs it to see the phone over USB. There's no way around this on Windows. (Wi-Fi doesn't need it.)</p>
       </li>
 
+      <li data-link="usb" data-os="linux">
+        <h2>Check usbmuxd is installed <span class="tag">Linux</span> <span class="tag">USB</span></h2>
+        <p>The plugin talks to the phone through the <code>usbmuxd</code> daemon at <code>/var/run/usbmuxd</code>. Most desktop distributions ship it for phone access already; if the source reports no device, install the <code>usbmuxd</code> package.</p>
+      </li>
+
       <li data-link="usb">
         <h2>Plug in and tap Trust <span class="tag">USB</span></h2>
         <p>Unlock the phone first, or the prompt never appears. It must be a <strong>data</strong> cable — nothing in the interface can tell you a charge-only one apart.</p>

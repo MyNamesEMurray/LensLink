@@ -86,7 +86,7 @@ description: What LensLink's latency is made of, how to measure it, how to lower
 <table>
   <tbody>
     <tr><td>Windows</td><td>Any OBS 32-supported system (Windows 10 1909+), using shared D3D11 textures.</td></tr>
-    <tr><td>macOS</td><td>Any OBS 32-supported system (macOS 13+), via IOSurface.</td></tr>
+    <tr><td>macOS</td><td>Any OBS 32-supported system (macOS 13+), via IOSurface. 10-bit streams are the exception: VideoToolbox converts them to 8-bit itself, so HDR and Apple Log render through the standard path rather than this one.</td></tr>
     <tr><td>Linux</td><td>Needs OBS on <strong>EGL</strong> (the default on Wayland and current X11 builds) and a <strong>VAAPI</strong> driver — built into Mesa for Intel and AMD; NVIDIA needs <code>nvidia-vaapi-driver</code>.</td></tr>
     <tr><td>Multi-GPU</td><td>Decoding and rendering on different GPUs can't share textures; the source falls back automatically.</td></tr>
   </tbody>
