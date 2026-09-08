@@ -11,6 +11,7 @@
 #include "net-compat.h"
 #include "web-control.h"
 #include "plugin-settings.h"
+#include "diagnostics.h"
 
 #define MAX_REQUEST (16 * 1024)
 #define MAX_CONTROL_BODY 512
@@ -661,6 +662,15 @@ static void handle_client(socket_t client)
 	if (strncmp(request, "GET / ", 6) == 0) {
 		respond(client, "200 OK", "text/html; charset=utf-8",
 			control_page);
+		return;
+	}
+
+	/* Plain text, so "curl localhost:9980/api/diagnostics" is a
+	 * complete bug report without a Qt build or a mouse. */
+	if (strncmp(request, "GET /api/diagnostics", 20) == 0) {
+		char *report = lenslink_diagnostics_report();
+		respond(client, "200 OK", "text/plain; charset=utf-8", report);
+		bfree(report);
 		return;
 	}
 

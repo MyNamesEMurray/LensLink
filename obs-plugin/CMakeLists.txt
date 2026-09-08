@@ -59,6 +59,7 @@ add_library(${PROJECT_NAME} MODULE
   src/h264-decoder.c
   src/usbmux.c
   src/web-control.c
+  src/diagnostics.c
   src/lipsync.c
   src/mdns.c
   src/plugin-settings.c

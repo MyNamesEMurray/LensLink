@@ -23,11 +23,14 @@
 #include <util/platform.h>
 
 #include <QCheckBox>
+#include <QClipboard>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QGuiApplication>
 #include <QLabel>
 #include <QMainWindow>
+#include <QPushButton>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStringList>
@@ -38,6 +41,7 @@
 #include <unordered_map>
 
 extern "C" {
+#include "diagnostics.h"
 #include "health.h"
 #include "plugin-settings.h"
 void lenslink_frontend_init(void);
@@ -302,6 +306,27 @@ void show_settings_dialog(void *)
 		QStringLiteral("color: gray; font-size: 11px;"));
 	layout->addSpacing(8);
 	layout->addWidget(version);
+
+	/* Diagnostics is an action, not a setting, so it applies whether or
+	 * not the dialog is accepted: the report describes the state the
+	 * reporter is in right now. */
+	auto *diagbtn = new QPushButton(
+		obs_module_text("Settings.CopyDiagnostics"), &dialog);
+	auto *diagnote = new QLabel(&dialog);
+	diagnote->setWordWrap(true);
+	diagnote->setStyleSheet(QStringLiteral("color: gray;"));
+	QObject::connect(diagbtn, &QPushButton::clicked, [diagnote]() {
+		char *report = lenslink_diagnostics_report();
+		QGuiApplication::clipboard()->setText(
+			QString::fromUtf8(report));
+		bfree(report);
+		lenslink_diagnostics_log();
+		diagnote->setText(
+			obs_module_text("Settings.CopyDiagnostics.Done"));
+	});
+	layout->addSpacing(12);
+	layout->addWidget(diagbtn);
+	layout->addWidget(diagnote);
 
 	auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok |
 						     QDialogButtonBox::Cancel,

@@ -141,6 +141,10 @@ struct ios_camera_source {
 	volatile bool auto_start;
 	bool auto_start_armed;
 	int dial_failures;
+	/* Why the last dial failed, for the diagnostics report: the UI can
+	 * only say "not reachable", but EPERM (macOS Local Network denied)
+	 * and ECONNREFUSED (app closed) are different problems. */
+	int last_dial_error;
 
 	/* Which registered source type this instance is: "LensLink Screen"
 	 * (true) or "LensLink Camera" (false). Set once at create from the
@@ -376,6 +380,10 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		snprintf(h->status, sizeof(h->status), "%s",
 			 s->status.array ? s->status.array : "");
 		pthread_mutex_unlock(&s->status_mutex);
+		snprintf(h->transport, sizeof(h->transport), "%s",
+			 s->conn_mode == CONN_DIAL_USB ? "USB" : "Wi-Fi");
+		h->gpu_pipeline = g_gpu_pipeline_mode;
+		h->last_dial_error = s->last_dial_error;
 	}
 	pthread_mutex_unlock(&g_health_mutex);
 	return n;
@@ -2195,7 +2203,7 @@ static bool client_read(struct ios_camera_source *s, struct client_state *c)
 /* TCP connect with a 3-second timeout; returns a non-blocking socket.
  * Checks `stop` so destroying the source (which joins this thread) isn't
  * stuck behind the full connect wait. */
-static socket_t tcp_dial(const char *host, uint16_t port,
+static socket_t tcp_dial(int *out_err, const char *host, uint16_t port,
 			 volatile bool *stop)
 {
 	struct sockaddr_in addr = {0};
@@ -2220,8 +2228,11 @@ static socket_t tcp_dial(const char *host, uint16_t port,
 	}
 
 	socket_t s = socket(AF_INET, SOCK_STREAM, 0);
-	if (s == OBSC_INVALID_SOCKET)
+	if (s == OBSC_INVALID_SOCKET) {
+		if (out_err)
+			*out_err = net_last_error();
 		return OBSC_INVALID_SOCKET;
+	}
 
 	net_set_nonblocking(s);
 	int ret = connect(s, (struct sockaddr *)&addr, sizeof(addr));
@@ -2252,16 +2263,23 @@ static socket_t tcp_dial(const char *host, uint16_t port,
 		int err = 0;
 		socklen_t len = sizeof(err);
 		getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&err, &len);
-		if (err != 0)
+		if (err != 0) {
+			if (out_err)
+				*out_err = err;
 			goto fail;
+		}
 	}
 
 	int yes = 1;
 	setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char *)&yes,
 		   sizeof(yes));
+	if (out_err)
+		*out_err = 0;
 	return s;
 
 fail:
+	if (out_err && *out_err == 0)
+		*out_err = net_last_error();
 	net_close(s);
 	return OBSC_INVALID_SOCKET;
 }
@@ -2455,7 +2473,9 @@ static void dial_loop(struct ios_camera_source *s)
 					 k);
 			}
 			set_status(s, "%s %s", T_("Status.Dialing"), s->host);
-			sock = tcp_dial(s->host, OBSC_USB_PORT, &s->stop);
+			s->last_dial_error = 0;
+			sock = tcp_dial(&s->last_dial_error, s->host,
+					OBSC_USB_PORT, &s->stop);
 		}
 
 		if (sock == OBSC_INVALID_SOCKET) {

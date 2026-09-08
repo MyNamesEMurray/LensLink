@@ -371,6 +371,16 @@ are the places to watch.
 - The stream is unencrypted on your local network — intended for trusted
   home/studio networks.
 
+## Reporting a problem
+
+**Tools → LensLink Settings → Copy a diagnostics report** collects the
+versions, hardware, graphics device, plugin settings and per-source
+connection state — including the last socket error, which separates "the
+app wasn't running" from "the OS refused the connection". No video, audio
+or personal data. Paste it into a
+[GitHub issue](../../issues). Without the Qt UI, or from a script:
+`curl localhost:9980/api/diagnostics`.
+
 ## Contributing
 
 Start with [`CONTRIBUTING.md`](CONTRIBUTING.md). Architecture, the wire

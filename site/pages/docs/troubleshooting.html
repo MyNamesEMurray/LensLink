@@ -123,9 +123,22 @@ data\obs-plugins\ios-camera-source\</code></pre>
 </p>
 
 <h2>Nothing here matches</h2>
-<p>Open an issue on <a href="{{REPO}}/issues">GitHub</a> and include:</p>
-<ul>
-  <li>The OBS log, with <strong>Verbose diagnostics</strong> (Tools → LensLink Settings) on while you reproduce it once.</li>
-  <li><strong>Options → Camera diagnostics</strong>.</li>
-  <li>Device and iOS version, OBS and plugin versions, and Wi-Fi or USB.</li>
-</ul>
+<p>
+  <strong>Tools → LensLink Settings → Copy a diagnostics report</strong>, then
+  paste it into an issue on <a href="{{REPO}}/issues">GitHub</a>. It collects
+  the versions, hardware, graphics device, settings and per-source connection
+  state — including the last socket error, which distinguishes "the app wasn't
+  running" from "the OS refused the connection". No video, audio or personal
+  data.
+</p>
+<p>
+  Without the Qt UI, or from a script:
+  <code>curl localhost:9980/api/diagnostics</code>. The report also goes to the
+  OBS log, so <strong>Help → Log Files → Upload Current Log File</strong>
+  carries it.
+</p>
+<p>
+  Worth adding: <strong>Options → Camera diagnostics</strong> from the app, and
+  the OBS log with <strong>Verbose diagnostics</strong> on while you reproduce
+  the problem once.
+</p>
