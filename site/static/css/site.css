@@ -200,13 +200,33 @@ kbd {
 	   the controls need there, and this box hides its overflow. */
 	aspect-ratio: 16 / 10;
 	display: flex; flex-direction: column; justify-content: space-between;
-	/* A defocused scene rather than a fake screenshot: soft light where a
-	   window would be, warmth on the subject side. */
-	background-image:
+	background-position: center; background-size: cover;
+}
+
+/* The camera feed behind the controls, exactly as the app draws them over
+   live video. build.py adds `has-feed` only when the file is actually
+   present (see FEED_IMAGE), so a missing photo costs no failed request —
+   the panel just falls back to the tinted glow below. */
+.device .screen.has-feed { background-image: var(--feed); }
+
+/* Without a photo: a defocused scene rather than a fake screenshot — soft
+   light where a window would be, warmth on the subject side. With one, the
+   same layer becomes the scrim that keeps white controls legible over
+   whatever the photo happens to be doing. */
+.device .screen::before {
+	content: ""; position: absolute; inset: 0; pointer-events: none;
+	background:
 		radial-gradient(60% 55% at 74% 22%, rgba(143, 180, 255, 0.20), transparent 70%),
 		radial-gradient(45% 40% at 30% 74%, rgba(255, 176, 120, 0.10), transparent 70%),
 		radial-gradient(120% 100% at 50% 50%, rgba(61, 123, 255, 0.10), transparent 75%);
 }
+.device .screen.has-feed::before {
+	background:
+		linear-gradient(180deg, rgba(6, 7, 10, 0.45), rgba(6, 7, 10, 0.30) 45%, rgba(6, 7, 10, 0.60));
+}
+
+/* Both the control panel and the pills sit above the scrim. */
+.device .topgroup, .device .panelmock { position: relative; z-index: 1; }
 .device .screen::after {
 	/* Tally: on air, the app's heaviest state. */
 	content: ""; position: absolute; inset: 0; border: 3px solid #FF3B30;

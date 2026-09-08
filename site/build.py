@@ -36,6 +36,13 @@ SITE_URL = "https://lenslink.cam"
 REPO_URL = "https://github.com/MyNamesEMurray/LensLink"
 TESTFLIGHT_URL = "https://testflight.apple.com/join/N7Rth6m3"
 
+# A still from a real LensLink camera, shown behind the home page's control
+# panel the way the app draws its controls over live video. Optional: with no
+# such file the panel keeps its tinted-glow background, and the page asks the
+# browser for nothing that isn't there. Any web image format works — name it
+# to match.
+FEED_IMAGE = "img/hero-feed.jpg"
+
 # Documentation order. The sidebar, the previous/next footer links and
 # the sitemap all read this one list, so a new page is added once.
 DOC_ORDER = [
@@ -317,12 +324,22 @@ def build():
 
     assets = fingerprint_assets()
 
+    # The optional camera still behind the hero panel.
+    feed = os.path.join(DIST, FEED_IMAGE)
+    if os.path.exists(feed):
+        feed_class = " has-feed"
+        feed_style = " style=\"--feed:url('/%s')\"" % FEED_IMAGE
+    else:
+        feed_class = feed_style = ""
+
     urls = []
     for rel in collect_pages():
         meta, body = read_page(os.path.join(PAGES, rel))
         body, toc = add_heading_ids(body)
         body = (body.replace("{{TESTFLIGHT}}", TESTFLIGHT_URL)
-                    .replace("{{REPO}}", REPO_URL))
+                    .replace("{{REPO}}", REPO_URL)
+                    .replace("{{FEED}}", feed_class)
+                    .replace("{{FEED_STYLE}}", feed_style))
         out = shell(meta, body, rel, toc)
         for old, new in assets.items():
             out = out.replace(old, new)
