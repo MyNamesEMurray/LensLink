@@ -204,10 +204,14 @@ kbd {
 }
 
 /* The camera feed behind the controls, exactly as the app draws them over
-   live video. build.py adds `has-feed` only when the file is actually
-   present (see FEED_IMAGE), so a missing photo costs no failed request —
-   the panel just falls back to the tinted glow below. */
-.device .screen.has-feed { background-image: var(--feed); }
+   live video. build.py adds `has-feed`, and the --feed-* properties, only
+   for files that are actually present (see FEED_STEMS), so a missing photo
+   costs no failed request — the panel falls back to the tinted glow below.
+   Landscape by default; the narrow-viewport rule further down swaps in the
+   portrait frame, and either orientation stands in for a missing one. */
+.device .screen.has-feed {
+	background-image: var(--feed-landscape, var(--feed-portrait));
+}
 
 /* Without a photo: a defocused scene rather than a fake screenshot — soft
    light where a window would be, warmth on the subject side. With one, the
@@ -280,6 +284,11 @@ kbd {
    above it, nothing changes. */
 @media (max-width: 470px) {
 	.device .screen { aspect-ratio: auto; }
+	/* Standing tall, the panel is a portrait frame's shape — and a phone
+	   held upright is what the app looks like there anyway. */
+	.device .screen.has-feed {
+		background-image: var(--feed-portrait, var(--feed-landscape));
+	}
 }
 
 .caption { color: var(--txt3); font-size: 13px; margin-top: 14px; text-align: center; }

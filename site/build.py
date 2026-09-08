@@ -17,6 +17,7 @@ Run from this directory:
     python3 build.py --serve    # writes dist/ and serves it on :8000
 """
 
+import glob
 import hashlib
 import html
 import os
@@ -36,12 +37,18 @@ SITE_URL = "https://lenslink.cam"
 REPO_URL = "https://github.com/MyNamesEMurray/LensLink"
 TESTFLIGHT_URL = "https://testflight.apple.com/join/N7Rth6m3"
 
-# A still from a real LensLink camera, shown behind the home page's control
-# panel the way the app draws its controls over live video. Optional: with no
-# such file the panel keeps its tinted-glow background, and the page asks the
-# browser for nothing that isn't there. Any web image format works — name it
-# to match.
-FEED_IMAGE = "img/hero-feed.jpg"
+# Stills from a real LensLink camera, shown behind the home page's control
+# panel the way the app draws its controls over live video. Both are
+# optional and either can stand in for the other; with neither, the panel
+# keeps its tinted-glow background and the page asks the browser for nothing
+# that isn't there. Any web image format works — match the stem, keep the
+# extension.
+#
+# Two, because the panel already changes shape: below the breakpoint in
+# site.css it drops 16:10 and stands tall, which is a portrait frame's
+# aspect, and above it it is a wide screen, which is a landscape frame's.
+FEED_STEMS = {"landscape": "img/hero-feed-landscape",
+              "portrait": "img/hero-feed-portrait"}
 
 # Documentation order. The sidebar, the previous/next footer links and
 # the sitemap all read this one list, so a new page is added once.
@@ -324,13 +331,17 @@ def build():
 
     assets = fingerprint_assets()
 
-    # The optional camera still behind the hero panel.
-    feed = os.path.join(DIST, FEED_IMAGE)
-    if os.path.exists(feed):
-        feed_class = " has-feed"
-        feed_style = " style=\"--feed:url('/%s')\"" % FEED_IMAGE
-    else:
-        feed_class = feed_style = ""
+    # The optional camera stills behind the hero panel: whichever of the two
+    # orientations exist, declared as custom properties the stylesheet picks
+    # between by viewport.
+    props = []
+    for name, stem in sorted(FEED_STEMS.items()):
+        found = glob.glob(os.path.join(DIST, stem + ".*"))
+        if found:
+            rel = os.path.relpath(found[0], DIST).replace(os.sep, "/")
+            props.append("--feed-%s:url('/%s')" % (name, rel))
+    feed_class = " has-feed" if props else ""
+    feed_style = (' style="%s"' % ";".join(props)) if props else ""
 
     urls = []
     for rel in collect_pages():
