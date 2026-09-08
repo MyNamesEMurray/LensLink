@@ -539,7 +539,6 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 	padding: 0; margin-bottom: 10px; font-size: 13px; font-weight: 600;
 	letter-spacing: 0.06em; text-transform: uppercase; color: var(--txt3);
 }
-.q-note { color: var(--txt3); font-size: 14px; margin: 10px 0 0; }
 /* Shown when the reader says they do not know: the guide has made the
    choice for them, so it says so rather than quietly picking. */
 .q-answer {

@@ -64,13 +64,8 @@
 		var picked = answers();
 		var a = resolve(picked);
 
-		/* The general note argues for USB; the answer box says the guide has
-		   already chosen it. Showing both says the same thing twice. */
-		var unsure = picked.link === "unsure";
 		var note = document.getElementById("unsure-note");
-		if (note) note.hidden = !unsure;
-		var general = document.getElementById("link-note");
-		if (general) general.hidden = unsure;
+		if (note) note.hidden = picked.link !== "unsure";
 
 		var conditional = guide.querySelectorAll("[data-os], [data-link], [data-mode], [data-app]");
 		Array.prototype.forEach.call(conditional, function (el) {
