@@ -530,3 +530,79 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 .notfound .num { font-size: 15px; color: var(--accent); letter-spacing: 0.1em; }
 .notfound h1 { font-size: clamp(2rem, 4vw, 2.6rem); margin: 12px 0 16px; }
 .notfound p { color: var(--txt2); max-width: 34em; margin: 0 auto 28px; }
+
+/* ----------------------------------------------------------- setup guide */
+
+.wizard { border: 0; padding: 0; margin: 0 0 40px; display: grid; gap: 24px; }
+.wizard fieldset { border: 0; margin: 0; padding: 0; }
+.wizard legend {
+	padding: 0; margin-bottom: 10px; font-size: 13px; font-weight: 600;
+	letter-spacing: 0.06em; text-transform: uppercase; color: var(--txt3);
+}
+.q-note { color: var(--txt3); font-size: 14px; margin: 10px 0 0; }
+
+/* Segmented control, same metaphor as the app's Live panel. Real radios
+   underneath, so it is keyboard- and screen-reader-native and still works
+   with JavaScript off. */
+.seg-choice { display: inline-flex; flex-wrap: wrap; gap: 4px; background: rgba(255, 255, 255, 0.06);
+	border: 1px solid var(--hair); border-radius: 14px; padding: 4px; }
+.seg-choice label { position: relative; }
+.seg-choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.seg-choice span {
+	display: block; padding: 9px 18px; border-radius: 10px; font-size: 15px;
+	color: var(--txt2); transition: background .15s ease, color .15s ease;
+}
+.seg-choice input:checked + span { background: var(--accent); color: #fff; font-weight: 600; }
+.seg-choice input:focus-visible + span { outline: 2px solid var(--accent-light); outline-offset: 2px; }
+.seg-choice label:hover input:not(:checked) + span { background: rgba(255, 255, 255, 0.08); color: var(--txt); }
+
+.nojs { color: var(--txt3); font-size: 14.5px; margin: 0 0 32px; }
+
+.needs {
+	background: var(--bg-raised); border: 1px solid var(--hair);
+	border-radius: var(--r-panel); padding: 20px 24px; margin: 0 0 40px;
+}
+.needs > p {
+	margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+	text-transform: uppercase; color: var(--txt3);
+}
+.needs ul { margin: 0; padding-left: 20px; color: var(--txt2); font-size: 15.5px; }
+.needs li { margin: 5px 0; }
+
+/* Steps renumber themselves: a hidden <li> takes no counter, so filtering
+   never leaves a gap in the sequence. */
+.guide { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+.guide > li {
+	counter-increment: step; position: relative;
+	padding: 0 0 32px 52px; border-left: 1px solid var(--hair); margin-left: 15px;
+}
+.guide > li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.guide > li::before {
+	content: counter(step); position: absolute; left: -16px; top: -4px;
+	width: 31px; height: 31px; border-radius: 50%;
+	background: var(--bg-raised); border: 1px solid var(--hair);
+	color: var(--accent-light); font-family: var(--mono); font-size: 14px;
+	display: flex; align-items: center; justify-content: center;
+}
+.guide h2 { font-size: 1.05rem; margin: 0 0 8px; font-weight: 600; }
+.guide p { margin: 8px 0; color: rgba(235, 235, 245, 0.78); font-size: 16px; }
+.guide pre { margin: 12px 0; font-size: 13.5px; }
+.guide .alt { color: var(--txt3); font-size: 14.5px; }
+.guide .warn {
+	border-left: 3px solid var(--amber); background: rgba(255, 159, 10, 0.06);
+	border-radius: 0 var(--r-chip) var(--r-chip) 0; padding: 12px 16px; font-size: 15px;
+}
+.guide .tag {
+	display: inline-block; vertical-align: middle; margin-left: 8px;
+	font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+	color: var(--txt2); background: rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px;
+}
+
+.guide-foot { color: var(--txt3); font-size: 14.5px; margin: 40px 0 0; }
+
+@media (max-width: 560px) {
+	.seg-choice { display: flex; width: 100%; }
+	.seg-choice label { flex: 1; }
+	.seg-choice span { text-align: center; padding: 9px 10px; font-size: 14px; }
+}

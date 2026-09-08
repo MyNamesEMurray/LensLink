@@ -110,8 +110,13 @@ def url_for(page_path):
     return "/%s/" % rel
 
 
-def add_heading_ids(body):
-    """Give every h2/h3 an id, and collect the h2s for the contents list."""
+def add_heading_ids(body, anchors=True):
+    """Give every h2/h3 an id, and collect the h2s for the contents list.
+
+    `anchors` adds the hover-revealed # link beside each heading. That earns
+    its place in the documentation, where headings are destinations people
+    link each other to; on the marketing pages the headings are copy, and a
+    stray # on hover is just noise."""
     toc = []
 
     def repl(match):
@@ -122,7 +127,8 @@ def add_heading_ids(body):
             attrs = ' id="%s"%s' % (ident, attrs)
         if level == "2":
             toc.append((ident, re.sub(r"<[^>]+>", "", text)))
-        anchor = '<a class="anchor" href="#%s" aria-label="Link to this section">#</a>' % ident
+        anchor = ('<a class="anchor" href="#%s" aria-label="Link to this section">#</a>'
+                  % ident) if anchors else ""
         return "<h%s%s>%s%s</h%s>" % (level, attrs, text, anchor, level)
 
     body = re.sub(r"<h([23])([^>]*)>(.*?)</h\1>", repl, body, flags=re.S)
@@ -132,6 +138,7 @@ def add_heading_ids(body):
 def nav_html(active):
     items = [("/", "home", "Home"),
              ("/download/", "download", "Download"),
+             ("/setup/", "setup", "Setup guide"),
              ("/docs/", "docs", "Documentation")]
     out = []
     for href, key, label in items:
@@ -191,7 +198,7 @@ def wordmark(suffix):
             % mark_svg(suffix))
 
 FOOTER_COLS = [
-    ("Product", [("/download/", "Download"), ("/docs/install/", "Install guide"),
+    ("Product", [("/download/", "Download"), ("/setup/", "Setup guide"),
                  ("/docs/connect/", "Connect"), ("/docs/faq/", "FAQ")]),
     ("Documentation", [("/docs/camera/", "Camera and image"),
                        ("/docs/screen-mirroring/", "Screen mirroring"),
@@ -278,7 +285,7 @@ def shell(meta, body, page_path, toc):
 # can be deployed and still not reach anyone until the old copy expires. A
 # hashed name changes with the content, so a deploy is picked up immediately
 # and the old URL is never requested again.
-FINGERPRINT = ["css/site.css", "js/site.js", "js/download.js"]
+FINGERPRINT = ["css/site.css", "js/site.js", "js/download.js", "js/setup.js"]
 
 
 def fingerprint_assets():
@@ -346,7 +353,7 @@ def build():
     urls = []
     for rel in collect_pages():
         meta, body = read_page(os.path.join(PAGES, rel))
-        body, toc = add_heading_ids(body)
+        body, toc = add_heading_ids(body, anchors=rel.startswith("docs/"))
         body = (body.replace("{{TESTFLIGHT}}", TESTFLIGHT_URL)
                     .replace("{{REPO}}", REPO_URL)
                     .replace("{{FEED}}", feed_class)
