@@ -233,6 +233,13 @@ struct ios_camera_source {
 	uint64_t stat_frames;
 	uint64_t stat_bytes;
 	char stat_device[64];
+	/* Mirrored once a second for the diagnostics report; see health.h
+	 * for why the counters travel together. */
+	uint64_t stat_packets;
+	uint64_t stat_keyframes;
+	uint64_t stat_decode_errors;
+	int stat_hw_retries;
+	char stat_decoder[32];
 
 	/* The current connection is a screen mirror (no camera controls).
 	 * Guarded by status_mutex; lets the web panel hide dead controls. */
@@ -375,6 +382,11 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		h->standby = s->standby;
 		h->frames = s->stat_frames;
 		h->bytes = s->stat_bytes;
+		h->video_packets = s->stat_packets;
+		h->keyframes = s->stat_keyframes;
+		h->decode_errors = s->stat_decode_errors;
+		h->hw_retries = s->stat_hw_retries;
+		snprintf(h->decoder, sizeof(h->decoder), "%s", s->stat_decoder);
 		h->latency_ms = (int)(s->last_video_latency_ns / 1000000);
 		snprintf(h->device, sizeof(h->device), "%s", s->stat_device);
 		snprintf(h->status, sizeof(h->status), "%s",
@@ -1564,6 +1576,12 @@ static void stats_tick(struct ios_camera_source *s, struct client_state *c)
 	s->stat_connected = true;
 	s->stat_frames = c->frames_output;
 	s->stat_bytes = c->video_bytes;
+	s->stat_packets = c->video_packets;
+	s->stat_keyframes = c->keyframes_seen;
+	s->stat_decode_errors = c->decode_errors;
+	s->stat_hw_retries = c->hw_retry;
+	snprintf(s->stat_decoder, sizeof(s->stat_decoder), "%.31s",
+		 c->decoder ? h264_decoder_hw_name(c->decoder) : "none");
 	snprintf(s->stat_device, sizeof(s->stat_device), "%.63s", c->name);
 	int latency_ms = (int)(s->last_video_latency_ns / 1000000);
 	pthread_mutex_unlock(&s->status_mutex);

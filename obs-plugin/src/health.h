@@ -31,6 +31,16 @@ struct lenslink_health {
 	char transport[16];    /* "USB" / "Wi-Fi"; "" when not dialling */
 	bool gpu_pipeline;     /* this source is on the zero-copy path */
 	int last_dial_error;   /* errno/WSA code of the last failed dial */
+
+	/* Per-connection decode counters, mirrored from the server thread
+	 * once a second. Their *relationship* is the diagnosis: packets
+	 * climbing while frames_output sits still is a stalled decoder, and
+	 * a picture that froze or went green; both stalled is a dead link. */
+	uint64_t video_packets;
+	uint64_t keyframes;
+	uint64_t decode_errors;
+	int hw_retries;        /* hardware decode fell back this many times */
+	char decoder[32];      /* "VideoToolbox", "D3D11VA", "software", … */
 };
 
 /* Snapshots every live LensLink source (thread-safe); returns the count,

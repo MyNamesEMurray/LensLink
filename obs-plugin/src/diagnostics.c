@@ -187,13 +187,31 @@ static void append_sources(struct dstr *d)
 			  h[i].connected ? "connected" : "not connected",
 			  h[i].standby ? ", camera idle (standby)" : "");
 		if (h[i].connected) {
-			dstr_catf(d, "  decoded:   %llu frames, %llu bytes\n",
-				  (unsigned long long)h[i].frames,
+			dstr_catf(d, "  received:  %llu packets, %llu "
+				     "keyframes, %llu bytes\n",
+				  (unsigned long long)h[i].video_packets,
+				  (unsigned long long)h[i].keyframes,
 				  (unsigned long long)h[i].bytes);
+			dstr_catf(d, "  decoded:   %llu frames, %llu errors\n",
+				  (unsigned long long)h[i].frames,
+				  (unsigned long long)h[i].decode_errors);
+			dstr_catf(d, "  decoder:   %s%s\n",
+				  h[i].decoder[0] ? h[i].decoder : "none",
+				  h[i].gpu_pipeline ? ", GPU pipeline"
+						    : "");
+			if (h[i].hw_retries)
+				dstr_catf(d, "  hw retries: %d — hardware "
+					     "decode fell back\n",
+					  h[i].hw_retries);
 			dstr_catf(d, "  latency:   %d ms\n", h[i].latency_ms);
-			dstr_catf(d, "  pipeline:  %s\n",
-				  h[i].gpu_pipeline ? "GPU (zero-copy)"
-						    : "standard");
+
+			/* The one comparison worth spelling out, because it
+			 * separates a dead link from a live one whose picture
+			 * has frozen or gone green. */
+			if (h[i].video_packets > 0 && h[i].frames == 0)
+				dstr_cat(d, "  NOTE: packets arrived but "
+					    "nothing decoded — the link is "
+					    "fine, the decoder is not\n");
 		}
 		if (h[i].last_dial_error) {
 			const char *why =
@@ -222,8 +240,11 @@ char *lenslink_diagnostics_report(void)
 	append_settings(&d);
 	append_sources(&d);
 
-	dstr_cat(&d, "Also attach the OBS log: Help > Log Files > "
-		     "Upload Current Log File.\n");
+	dstr_cat(&d, "Also useful: the OBS log (Help > Log Files > Upload "
+		     "Current Log File), and — if the picture went wrong "
+		     "rather than absent — the camera's own state from\n"
+		     "curl localhost:9980/api/state, which says whether the "
+		     "green screen is on and what format was negotiated.\n");
 
 	return d.array ? d.array : bstrdup("");
 }
