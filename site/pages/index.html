@@ -17,7 +17,7 @@ nav: home
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
           Download
         </a>
-        <a class="btn ghost" href="/docs/">Read the documentation</a>
+        <a class="btn ghost" href="/setup/">Guided setup</a>
       </div>
       <p class="meta">
         <span>OBS Studio 32+</span><span>Windows, macOS, Linux</span><span>iOS/iPadOS 15+</span>
@@ -28,7 +28,7 @@ nav: home
       <!-- The app's Live screen, rebuilt from the same design tokens the
            app and the plugin's browser panel use. -->
       <div class="device">
-        <div class="screen">
+        <div class="screen{{FEED}}"{{FEED_STYLE}}>
           <div class="topgroup">
             <div class="toprow">
             <span class="pill"><span class="dot live"></span>Live</span>
@@ -89,8 +89,8 @@ nav: home
       </li>
     </ol>
     <div class="cta">
+      <a class="btn ghost small" href="/setup/">Answer four questions instead</a>
       <a class="btn ghost small" href="/docs/install/">Full install guide</a>
-      <a class="btn ghost small" href="/docs/connect/">Connecting over Wi-Fi or USB</a>
     </div>
   </div>
 </section>

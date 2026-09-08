@@ -194,21 +194,49 @@ kbd {
 }
 .device .screen {
 	position: relative; border-radius: 18px; overflow: hidden;
-	background: #06070A; aspect-ratio: 16 / 10; padding: 14px; gap: 10px;
+	background: #06070A; padding: 14px; gap: 10px;
+	/* 16:10 gives it the shape of a screen wherever there is room for one.
+	   Narrow viewports are handled below — the ratio computes shorter than
+	   the controls need there, and this box hides its overflow. */
+	aspect-ratio: 16 / 10;
 	display: flex; flex-direction: column; justify-content: space-between;
-	/* A defocused scene rather than a fake screenshot: soft light where a
-	   window would be, warmth on the subject side. */
-	background-image:
+	background-position: center; background-size: cover;
+}
+
+/* The camera feed behind the controls, exactly as the app draws them over
+   live video. build.py adds `has-feed`, and the --feed-* properties, only
+   for files that are actually present (see FEED_STEMS), so a missing photo
+   costs no failed request — the panel falls back to the tinted glow below.
+   Landscape by default; the narrow-viewport rule further down swaps in the
+   portrait frame, and either orientation stands in for a missing one. */
+.device .screen.has-feed {
+	background-image: var(--feed-landscape, var(--feed-portrait));
+}
+
+/* Without a photo: a defocused scene rather than a fake screenshot — soft
+   light where a window would be, warmth on the subject side. With one, the
+   same layer becomes the scrim that keeps white controls legible over
+   whatever the photo happens to be doing. */
+.device .screen::before {
+	content: ""; position: absolute; inset: 0; pointer-events: none;
+	background:
 		radial-gradient(60% 55% at 74% 22%, rgba(143, 180, 255, 0.20), transparent 70%),
 		radial-gradient(45% 40% at 30% 74%, rgba(255, 176, 120, 0.10), transparent 70%),
 		radial-gradient(120% 100% at 50% 50%, rgba(61, 123, 255, 0.10), transparent 75%);
 }
+.device .screen.has-feed::before {
+	background:
+		linear-gradient(180deg, rgba(6, 7, 10, 0.45), rgba(6, 7, 10, 0.30) 45%, rgba(6, 7, 10, 0.60));
+}
+
+/* Both the control panel and the pills sit above the scrim. */
+.device .topgroup, .device .panelmock { position: relative; z-index: 1; }
 .device .screen::after {
 	/* Tally: on air, the app's heaviest state. */
 	content: ""; position: absolute; inset: 0; border: 3px solid #FF3B30;
 	border-radius: 18px; pointer-events: none;
 }
-.device .topgroup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.device .topgroup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; flex: none; }
 .device .toprow { display: flex; align-items: center; gap: 8px; align-self: stretch; }
 .pill {
 	display: inline-flex; align-items: center; gap: 8px;
@@ -232,7 +260,7 @@ kbd {
 .device .toprow .chip:first-of-type { margin-left: auto; }
 
 .panelmock {
-	background: var(--glass); border: 1px solid var(--hair);
+	background: var(--glass); border: 1px solid var(--hair); flex: none;
 	border-radius: var(--r-panel); padding: 14px; backdrop-filter: blur(20px);
 }
 .panelmock .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
@@ -249,6 +277,19 @@ kbd {
 .panelmock .seg span { font-size: 12px; padding: 4px 12px; border-radius: 10px; color: var(--txt2); }
 .panelmock .seg span.on { background: var(--accent); color: #fff; }
 .panelmock .chips { display: flex; gap: 8px; margin-left: auto; }
+
+/* The control panel is a fixed ~239px stack of rows, so 16:10 is shorter
+   than the content until the screen is about 382px wide — a ~470px
+   viewport. Below that the ratio gives way rather than clip the last row;
+   above it, nothing changes. */
+@media (max-width: 470px) {
+	.device .screen { aspect-ratio: auto; }
+	/* Standing tall, the panel is a portrait frame's shape — and a phone
+	   held upright is what the app looks like there anyway. */
+	.device .screen.has-feed {
+		background-image: var(--feed-portrait, var(--feed-landscape));
+	}
+}
 
 .caption { color: var(--txt3); font-size: 13px; margin-top: 14px; text-align: center; }
 
@@ -489,3 +530,115 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 .notfound .num { font-size: 15px; color: var(--accent); letter-spacing: 0.1em; }
 .notfound h1 { font-size: clamp(2rem, 4vw, 2.6rem); margin: 12px 0 16px; }
 .notfound p { color: var(--txt2); max-width: 34em; margin: 0 auto 28px; }
+
+/* ----------------------------------------------------------- setup guide */
+
+.wizard { border: 0; padding: 0; margin: 0 0 40px; display: grid; gap: 24px; }
+.wizard fieldset { border: 0; margin: 0; padding: 0; }
+.wizard legend {
+	padding: 0; margin-bottom: 10px; font-size: 13px; font-weight: 600;
+	letter-spacing: 0.06em; text-transform: uppercase; color: var(--txt3);
+}
+/* Shown when the reader says they do not know: the guide has made the
+   choice for them, so it says so rather than quietly picking. */
+.q-answer {
+	color: var(--txt2); font-size: 14.5px; margin: 12px 0 0; max-width: 60ch;
+	border-left: 3px solid var(--accent); background: rgba(61, 123, 255, 0.06);
+	border-radius: 0 var(--r-chip) var(--r-chip) 0; padding: 12px 16px;
+}
+
+/* Segmented control, same metaphor as the app's Live panel. Real radios
+   underneath, so it is keyboard- and screen-reader-native and still works
+   with JavaScript off. */
+.seg-choice { display: inline-flex; flex-wrap: wrap; gap: 4px; background: rgba(255, 255, 255, 0.06);
+	border: 1px solid var(--hair); border-radius: 14px; padding: 4px; }
+.seg-choice label { position: relative; display: flex; }
+.seg-choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+/* The recommendation sits on its own line under the label — flex-basis
+   pushes it there — so the options stay the same shape whether or not one
+   of them carries it. Spans fill their label so every pill in a row
+   matches height. */
+.seg-choice span {
+	display: flex; flex: 1; flex-wrap: wrap;
+	align-items: center; justify-content: center; text-align: center;
+	gap: 2px 9px; padding: 8px 16px; border-radius: 10px; font-size: 15px;
+	color: var(--txt2); transition: background .15s ease, color .15s ease;
+}
+/* Icons only where they carry meaning — a cable, a Wi-Fi fan, a lens. The
+   operating systems get none: there is nothing to draw for them but
+   trademarks. */
+.opt-ic { width: 17px; height: 17px; flex: none; opacity: 0.85; }
+
+/* "Recommended" is a claim the docs make in prose; here it is a quiet
+   marker, not a second accent competing with the selected state, and not a
+   pill inside a pill. It has to stay legible both on the panel and on the
+   accent fill. */
+.rec {
+	flex-basis: 100%; font-style: normal; font-size: 9.5px; font-weight: 600;
+	letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap;
+	color: var(--accent-light); opacity: 0.9;
+}
+.seg-choice input:checked + span .rec { color: #fff; opacity: 0.85; }
+.seg-choice input:checked + span { background: var(--accent); color: #fff; font-weight: 600; }
+.seg-choice input:focus-visible + span { outline: 2px solid var(--accent-light); outline-offset: 2px; }
+.seg-choice label:hover input:not(:checked) + span { background: rgba(255, 255, 255, 0.08); color: var(--txt); }
+
+.nojs { color: var(--txt3); font-size: 14.5px; margin: 0 0 32px; }
+
+.needs {
+	background: var(--bg-raised); border: 1px solid var(--hair);
+	border-radius: var(--r-panel); padding: 20px 24px; margin: 0 0 40px;
+}
+.needs > p {
+	margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+	text-transform: uppercase; color: var(--txt3);
+}
+.needs ul { margin: 0; padding-left: 20px; color: var(--txt2); font-size: 15.5px; }
+.needs li { margin: 5px 0; }
+
+/* Steps renumber themselves: a hidden <li> takes no counter, so filtering
+   never leaves a gap in the sequence. */
+.guide { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+.guide > li {
+	counter-increment: step; position: relative;
+	padding: 0 0 32px 52px; border-left: 1px solid var(--hair); margin-left: 15px;
+}
+.guide > li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.guide > li::before {
+	content: counter(step); position: absolute; left: -16px; top: -4px;
+	width: 31px; height: 31px; border-radius: 50%;
+	background: var(--bg-raised); border: 1px solid var(--hair);
+	color: var(--accent-light); font-family: var(--mono); font-size: 14px;
+	display: flex; align-items: center; justify-content: center;
+}
+.guide h2 { font-size: 1.05rem; margin: 0 0 8px; font-weight: 600; }
+.guide p { margin: 8px 0; color: rgba(235, 235, 245, 0.78); font-size: 16px; }
+.guide pre { margin: 12px 0; font-size: 13.5px; }
+.guide .alt { color: var(--txt3); font-size: 14.5px; }
+.guide .warn {
+	border-left: 3px solid var(--amber); background: rgba(255, 159, 10, 0.06);
+	border-radius: 0 var(--r-chip) var(--r-chip) 0; padding: 12px 16px; font-size: 15px;
+}
+.guide .tag {
+	display: inline-block; vertical-align: middle; margin-left: 8px;
+	font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+	color: var(--txt2); background: rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px;
+}
+
+.guide-foot { color: var(--txt3); font-size: 14.5px; margin: 40px 0 0; }
+
+@media (max-width: 560px) {
+	.seg-choice { display: flex; width: 100%; }
+	.seg-choice label { flex: 1; }
+	.seg-choice span { padding: 8px 8px; font-size: 14px; gap: 2px 6px; }
+}
+
+/* On a phone the icons are what push a label onto a second line — three
+   options plus a cable glyph do not fit a 430px row. They are decorative,
+   the words are the control, so they go first and the recommendation dot
+   stays. */
+@media (max-width: 479px) {
+	.opt-ic { display: none; }
+	.seg-choice span { white-space: nowrap; }
+}

@@ -60,6 +60,19 @@ browser panel. Notably:
 - The home page's device panel is the app's Live screen rebuilt from those
   tokens — not a screenshot, so it can never drift out of date silently.
   If the app's control layout changes, update it here too.
+- **The camera stills behind it.** Drop either or both of
+  `static/img/hero-feed-landscape.*` and `static/img/hero-feed-portrait.*`
+  into `static/img/` and `build.py` puts them behind that panel, the way
+  the app draws its controls over live video. The stylesheet picks by
+  viewport — portrait below 470px, where the panel drops 16:10 and stands
+  tall, landscape above it — and either orientation stands in for a missing
+  one. Only the one in use is downloaded. With neither file the panel keeps
+  its tinted-glow background and the page requests nothing extra.
+
+  Ideally real frames from a LensLink camera. Keep the subject out of the
+  bottom third and the top-left corner, where the control panel and the
+  Live pill sit; a scrim is applied automatically so white controls stay
+  legible over any photo.
 
 Copy follows the same rules as the app: American English, sentence case,
 no exclamation marks, "Flashlight" not "Torch", "Green screen" not "chroma

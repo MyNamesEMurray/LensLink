@@ -1,0 +1,205 @@
+title: Set up LensLink
+description: Answer four questions and get the exact setup steps for your computer, your connection and what you want in OBS — no steps that do not apply to you.
+nav: setup
+script: /js/setup.js
+---
+<section class="dl-hero">
+  <div class="wrap">
+    <h1>Set up LensLink</h1>
+    <p>
+      Four questions, then the steps for <em>your</em> setup — and none of the
+      ones that do not apply. Every answer is also in the address bar, so you
+      can send someone a link to exactly this configuration.
+    </p>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <form class="wizard" id="wizard">
+      <fieldset>
+        <legend>Your computer</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="os" value="windows" checked><span>Windows</span></label>
+          <label><input type="radio" name="os" value="macos"><span>macOS</span></label>
+          <label><input type="radio" name="os" value="linux"><span>Linux</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>How the phone connects</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="link" value="usb" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V7"/><circle cx="12" cy="4" r="1.6"/><path d="M12 13l4-3 .8 2.4"/><path d="M12 16l-4-3v-2.2"/></svg> USB cable <em class="rec">Recommended</em></span></label>
+          <label><input type="radio" name="link" value="wifi"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5a12 12 0 0 1 16 0"/><path d="M7.5 15a7 7 0 0 1 9 0"/><circle cx="12" cy="18.6" r="1.2" fill="currentColor" stroke="none"/></svg> Wi-Fi</span></label>
+          <label><input type="radio" name="link" value="unsure"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2-2.5 3.6"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg> Not sure</span></label>
+        </div>
+        <p class="q-answer" id="unsure-note" hidden>
+          Use the cable — the steps below are the USB ones. Switch to
+          <strong>Wi-Fi</strong> if the phone has to sit somewhere a cable
+          can't reach.
+        </p>
+      </fieldset>
+
+      <fieldset>
+        <legend>What you want in OBS</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="mode" value="camera" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="M15.5 11.5l6-3.2v7.4l-6-3.2z"/></svg> Phone camera</span></label>
+          <label><input type="radio" name="mode" value="screen"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg> Phone screen</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>How you'll install the app</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="app" value="testflight" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 18.5h15"/></svg> TestFlight <em class="rec">Recommended</em></span></label>
+          <label><input type="radio" name="app" value="sideload"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12 8v6"/><path d="M9.5 11.5L12 14l2.5-2.5"/></svg> Sideload</span></label>
+          <label><input type="radio" name="app" value="xcode"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5-8.5 8.5H6v-5z"/><path d="M12.5 6.5l5 5"/></svg> Xcode</span></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <p class="nojs" id="nojs">
+      Every step below is shown, each tagged with the setup it belongs to.
+      Turn on JavaScript and the questions above will hide the ones that
+      do not apply to you.
+    </p>
+
+    <div class="needs" id="needs" hidden>
+      <p>What you'll need</p>
+      <ul id="needs-list"></ul>
+    </div>
+
+    <ol class="guide" id="guide">
+
+      <li>
+        <h2>Check your OBS version</h2>
+        <p><strong>Help → About</strong>. LensLink needs <strong>OBS Studio 32 or newer</strong> — older versions won't load the plugin at all.</p>
+      </li>
+
+      <li data-os="windows">
+        <h2>Install the plugin <span class="tag">Windows</span></h2>
+        <p>Download and run <code>LensLink-installer-windows-x64.exe</code> from the <a href="/download/">download page</a>. It finds your OBS folder and clears out any pre-1.0 copy.</p>
+        <p class="alt">Prefer it by hand? Unzip <code>lenslink-windows-x64.zip</code> into <code>C:\Program Files\obs-studio\</code>, merging the <code>obs-plugins</code> and <code>data</code> folders.</p>
+      </li>
+
+      <li data-os="macos">
+        <h2>Install the plugin <span class="tag">macOS</span></h2>
+        <p>Download <code>LensLink-installer-macos-universal.pkg</code> from the <a href="/download/">download page</a> and open it with <strong>right-click → Open</strong> — the package isn't notarized, so a double-click is refused the first time.</p>
+      </li>
+
+      <li data-os="linux">
+        <h2>Install the plugin <span class="tag">Linux</span></h2>
+        <pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+      </li>
+
+      <li>
+        <h2>Restart OBS</h2>
+        <p><strong>Sources → +</strong> should now list <strong>LensLink Camera</strong> and <strong>LensLink Screen</strong>. If it doesn't, see <a href="/docs/troubleshooting/#the-sources-do-not-appear-in-obs">the sources don't appear</a>.</p>
+      </li>
+
+      <li data-app="testflight">
+        <h2>Install the app <span class="tag">TestFlight</span></h2>
+        <p>Join the beta at <a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a> and install from Apple's TestFlight app. Updates then arrive on their own.</p>
+      </li>
+
+      <li data-app="sideload">
+        <h2>Install the app <span class="tag">Sideload</span></h2>
+        <p>Download <code>LensLink-unsigned.ipa</code> from the <a href="{{REPO}}/releases/latest">latest release</a> and install it with <a href="https://sideloadly.io">Sideloadly</a>.</p>
+        <p class="warn"><strong>Two Apple limits come with this route.</strong> A free Apple ID expires the app after <strong>7 days</strong> — re-install to refresh, your settings are kept. Re-signing also breaks the Siri phrases; use <code>lenslink://start</code> in a Shortcut instead.</p>
+      </li>
+
+      <li data-app="xcode">
+        <h2>Build the app <span class="tag">Xcode</span></h2>
+        <pre><code>brew install xcodegen
+cd ios-app &amp;&amp; xcodegen generate &amp;&amp; open LensLink.xcodeproj</code></pre>
+        <p>Signing details are in <a href="{{REPO}}/blob/main/ios-app/BUILDING.md"><code>ios-app/BUILDING.md</code></a>.</p>
+      </li>
+
+      <li data-link="usb" data-os="windows">
+        <h2>Install iTunes <span class="tag">Windows</span> <span class="tag">USB</span></h2>
+        <p>Apple's device driver ships with iTunes, and the plugin needs it to see the phone over USB. There's no way around this on Windows. (Wi-Fi doesn't need it.)</p>
+      </li>
+
+      <li data-link="usb" data-os="linux">
+        <h2>Check usbmuxd is installed <span class="tag">Linux</span> <span class="tag">USB</span></h2>
+        <p>The plugin talks to the phone through the <code>usbmuxd</code> daemon at <code>/var/run/usbmuxd</code>. Most desktop distributions ship it for phone access already; if the source reports no device, install the <code>usbmuxd</code> package.</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>Plug in and tap Trust <span class="tag">USB</span></h2>
+        <p>Unlock the phone first, or the prompt never appears. It must be a <strong>data</strong> cable — nothing in the interface can tell you a charge-only one apart.</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>Put both devices on the same network <span class="tag">Wi-Fi</span></h2>
+        <p>It has to allow device-to-device traffic: guest networks and access points with client isolation block it. A phone hotspot with the computer joined to it works fine.</p>
+      </li>
+
+      <li>
+        <h2>Open LensLink on the phone</h2>
+        <p data-mode="camera">Choose your lens, resolution, frame rate and codec. The pickers only offer combinations your camera really supports.</p>
+        <p data-mode="screen">You'll start the broadcast in a moment — leave the app open for now.</p>
+        <p data-link="wifi">The Setup screen shows the phone's Wi-Fi address next to the status dot. Tap it to copy.</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>Allow the Local Network permission <span class="tag">Wi-Fi</span></h2>
+        <p>iOS needs it for the phone to appear by name in OBS. Allow it when asked, or turn it on in <strong>Settings → Privacy &amp; Security → Local Network → LensLink</strong>. Typing the IP address works either way.</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>Add the source in OBS <span class="tag">Camera</span></h2>
+        <p><strong>Sources → + → LensLink Camera</strong>. One source per phone.</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>Add the source in OBS <span class="tag">Screen</span></h2>
+        <p><strong>Sources → + → LensLink Screen</strong>. A Screen source only accepts a broadcast, and a Camera source only accepts the camera — each says so if it's fed the other.</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>Point it at the phone <span class="tag">USB</span></h2>
+        <p>Set <strong>Connection</strong> to <strong>USB cable</strong>. Leave <strong>USB device</strong> on <strong>Auto</strong> unless you're running more than one phone.</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>Point it at the phone <span class="tag">Wi-Fi</span></h2>
+        <p>Open the <strong>Phone</strong> dropdown and pick your device, or type the IP the app is showing.</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>Start the camera <span class="tag">Camera</span></h2>
+        <p>Tap <strong>Start camera stream</strong> on the phone — or don't: with <strong>Remote start from OBS</strong> on (the default), leaving the app open and idle is enough and OBS starts it for you. Video appears in a second or two.</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>Start the broadcast <span class="tag">Screen</span></h2>
+        <p>In the app, tap <strong>Start screen broadcast</strong>, choose <strong>LensLink Screen</strong> in the system picker, then <strong>Start Broadcast</strong>. You can leave the app afterwards — a broadcast keeps running across apps.</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>Pin the source size <span class="tag">Screen</span></h2>
+        <p>A mirror reports whatever resolution iOS is broadcasting, which changes between apps. Right-click the source → <strong>Transform → Edit Transform…</strong> and set <strong>Bounding Box Type</strong> to <strong>Scale to inner bounds</strong>, so switching apps can't resize your layout.</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>Line up your microphone <span class="tag">Camera</span></h2>
+        <p>Optional, and worth it if you use your own mic. In the source properties pick it under <strong>Lip-sync audio source</strong>, enable the delay and <strong>Auto-calibrate</strong>, then turn on <strong>Auto lip-sync reference</strong> in the app's Options and talk for fifteen seconds. Full detail: <a href="/docs/audio/">audio and lip sync</a>.</p>
+      </li>
+
+      <li>
+        <h2>You're set</h2>
+        <p data-mode="camera">Control the camera from the computer at <a href="http://localhost:9980"><code>localhost:9980</code></a>, or read up on <a href="/docs/camera/">lenses, formats and image settings</a>.</p>
+        <p data-mode="screen">More on broadcasts, audio and DRM: <a href="/docs/screen-mirroring/">screen mirroring</a>.</p>
+        <p>If something's wrong, the source's <strong>Status</strong> line names the stage that's failing — <a href="/docs/connect/#reading-the-status-field">what each message means</a>.</p>
+      </li>
+
+    </ol>
+
+    <p class="guide-foot">
+      This is the same material as the <a href="/docs/install/">install</a> and
+      <a href="/docs/connect/">connect</a> pages, narrowed to your answers.
+      Those pages carry the parts a guide has to leave out.
+    </p>
+  </div>
+</section>

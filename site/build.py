@@ -17,6 +17,7 @@ Run from this directory:
     python3 build.py --serve    # writes dist/ and serves it on :8000
 """
 
+import glob
 import hashlib
 import html
 import os
@@ -35,6 +36,19 @@ DIST = os.path.join(ROOT, "dist")
 SITE_URL = "https://lenslink.cam"
 REPO_URL = "https://github.com/MyNamesEMurray/LensLink"
 TESTFLIGHT_URL = "https://testflight.apple.com/join/N7Rth6m3"
+
+# Stills from a real LensLink camera, shown behind the home page's control
+# panel the way the app draws its controls over live video. Both are
+# optional and either can stand in for the other; with neither, the panel
+# keeps its tinted-glow background and the page asks the browser for nothing
+# that isn't there. Any web image format works — match the stem, keep the
+# extension.
+#
+# Two, because the panel already changes shape: below the breakpoint in
+# site.css it drops 16:10 and stands tall, which is a portrait frame's
+# aspect, and above it it is a wide screen, which is a landscape frame's.
+FEED_STEMS = {"landscape": "img/hero-feed-landscape",
+              "portrait": "img/hero-feed-portrait"}
 
 # Documentation order. The sidebar, the previous/next footer links and
 # the sitemap all read this one list, so a new page is added once.
@@ -96,8 +110,13 @@ def url_for(page_path):
     return "/%s/" % rel
 
 
-def add_heading_ids(body):
-    """Give every h2/h3 an id, and collect the h2s for the contents list."""
+def add_heading_ids(body, anchors=True):
+    """Give every h2/h3 an id, and collect the h2s for the contents list.
+
+    `anchors` adds the hover-revealed # link beside each heading. That earns
+    its place in the documentation, where headings are destinations people
+    link each other to; on the marketing pages the headings are copy, and a
+    stray # on hover is just noise."""
     toc = []
 
     def repl(match):
@@ -108,7 +127,8 @@ def add_heading_ids(body):
             attrs = ' id="%s"%s' % (ident, attrs)
         if level == "2":
             toc.append((ident, re.sub(r"<[^>]+>", "", text)))
-        anchor = '<a class="anchor" href="#%s" aria-label="Link to this section">#</a>' % ident
+        anchor = ('<a class="anchor" href="#%s" aria-label="Link to this section">#</a>'
+                  % ident) if anchors else ""
         return "<h%s%s>%s%s</h%s>" % (level, attrs, text, anchor, level)
 
     body = re.sub(r"<h([23])([^>]*)>(.*?)</h\1>", repl, body, flags=re.S)
@@ -118,6 +138,7 @@ def add_heading_ids(body):
 def nav_html(active):
     items = [("/", "home", "Home"),
              ("/download/", "download", "Download"),
+             ("/setup/", "setup", "Setup guide"),
              ("/docs/", "docs", "Documentation")]
     out = []
     for href, key, label in items:
@@ -177,7 +198,7 @@ def wordmark(suffix):
             % mark_svg(suffix))
 
 FOOTER_COLS = [
-    ("Product", [("/download/", "Download"), ("/docs/install/", "Install guide"),
+    ("Product", [("/download/", "Download"), ("/setup/", "Setup guide"),
                  ("/docs/connect/", "Connect"), ("/docs/faq/", "FAQ")]),
     ("Documentation", [("/docs/camera/", "Camera and image"),
                        ("/docs/screen-mirroring/", "Screen mirroring"),
@@ -264,7 +285,7 @@ def shell(meta, body, page_path, toc):
 # can be deployed and still not reach anyone until the old copy expires. A
 # hashed name changes with the content, so a deploy is picked up immediately
 # and the old URL is never requested again.
-FINGERPRINT = ["css/site.css", "js/site.js", "js/download.js"]
+FINGERPRINT = ["css/site.css", "js/site.js", "js/download.js", "js/setup.js"]
 
 
 def fingerprint_assets():
@@ -317,12 +338,26 @@ def build():
 
     assets = fingerprint_assets()
 
+    # The optional camera stills behind the hero panel: whichever of the two
+    # orientations exist, declared as custom properties the stylesheet picks
+    # between by viewport.
+    props = []
+    for name, stem in sorted(FEED_STEMS.items()):
+        found = glob.glob(os.path.join(DIST, stem + ".*"))
+        if found:
+            rel = os.path.relpath(found[0], DIST).replace(os.sep, "/")
+            props.append("--feed-%s:url('/%s')" % (name, rel))
+    feed_class = " has-feed" if props else ""
+    feed_style = (' style="%s"' % ";".join(props)) if props else ""
+
     urls = []
     for rel in collect_pages():
         meta, body = read_page(os.path.join(PAGES, rel))
-        body, toc = add_heading_ids(body)
+        body, toc = add_heading_ids(body, anchors=rel.startswith("docs/"))
         body = (body.replace("{{TESTFLIGHT}}", TESTFLIGHT_URL)
-                    .replace("{{REPO}}", REPO_URL))
+                    .replace("{{REPO}}", REPO_URL)
+                    .replace("{{FEED}}", feed_class)
+                    .replace("{{FEED_STYLE}}", feed_style))
         out = shell(meta, body, rel, toc)
         for old, new in assets.items():
             out = out.replace(old, new)
