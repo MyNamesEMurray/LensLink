@@ -17,6 +17,16 @@
 	var nojs = document.getElementById("nojs");
 	if (nojs) nojs.hidden = true;
 
+	/* "Not sure" is an answer, not a missing one: it takes the USB path,
+	   which is what the documentation recommends and what needs the least
+	   from the reader's network. Everything downstream sees "usb". */
+	function resolve(a) {
+		var out = {}, k;
+		for (k in a) { if (a.hasOwnProperty(k)) out[k] = a[k]; }
+		if (out.link === "unsure") out.link = "usb";
+		return out;
+	}
+
 	/* What the chosen setup requires, beyond the obvious. */
 	function needs(a) {
 		var list = ["OBS Studio 32 or newer", "An iPhone or iPad on iOS 15 or later"];
@@ -51,7 +61,16 @@
 	}
 
 	function apply(push) {
-		var a = answers();
+		var picked = answers();
+		var a = resolve(picked);
+
+		/* The general note argues for USB; the answer box says the guide has
+		   already chosen it. Showing both says the same thing twice. */
+		var unsure = picked.link === "unsure";
+		var note = document.getElementById("unsure-note");
+		if (note) note.hidden = !unsure;
+		var general = document.getElementById("link-note");
+		if (general) general.hidden = unsure;
 
 		var conditional = guide.querySelectorAll("[data-os], [data-link], [data-mode], [data-app]");
 		Array.prototype.forEach.call(conditional, function (el) {
@@ -71,7 +90,7 @@
 		}
 
 		if (push && window.history && window.history.replaceState) {
-			var q = FACETS.map(function (f) { return f + "=" + a[f]; }).join("&");
+			var q = FACETS.map(function (f) { return f + "=" + picked[f]; }).join("&");
 			window.history.replaceState(null, "", "?" + q);
 		}
 	}
