@@ -204,6 +204,11 @@ static void append_sources(struct dstr *d)
 					     "decode fell back\n",
 					  h[i].hw_retries);
 			dstr_catf(d, "  latency:   %d ms\n", h[i].latency_ms);
+			if (h[i].green_screen)
+				dstr_cat(d, "  green screen: ON — the phone "
+					    "is painting its background green; "
+					    "a green picture may be this "
+					    "working, not a fault\n");
 
 			/* The one comparison worth spelling out, because it
 			 * separates a dead link from a live one whose picture

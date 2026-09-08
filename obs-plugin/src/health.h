@@ -41,6 +41,7 @@ struct lenslink_health {
 	uint64_t decode_errors;
 	int hw_retries;        /* hardware decode fell back this many times */
 	char decoder[32];      /* "VideoToolbox", "D3D11VA", "software", … */
+	bool green_screen;     /* the phone is painting its background green */
 };
 
 /* Snapshots every live LensLink source (thread-safe); returns the count,

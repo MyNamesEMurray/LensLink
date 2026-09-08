@@ -145,6 +145,10 @@ struct ios_camera_source {
 	 * only say "not reachable", but EPERM (macOS Local Network denied)
 	 * and ECONNREFUSED (app closed) are different problems. */
 	int last_dial_error;
+	/* The app's virtual green screen, as last reported in STATE. A
+	 * green picture is this feature working correctly far more often
+	 * than it is a fault, so the status has to say when it is on. */
+	volatile bool green_screen;
 
 	/* Which registered source type this instance is: "LensLink Screen"
 	 * (true) or "LensLink Camera" (false). Set once at create from the
@@ -395,6 +399,7 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		snprintf(h->transport, sizeof(h->transport), "%s",
 			 s->conn_mode == CONN_DIAL_USB ? "USB" : "Wi-Fi");
 		h->gpu_pipeline = g_gpu_pipeline_mode;
+		h->green_screen = s->green_screen;
 		h->last_dial_error = s->last_dial_error;
 	}
 	pthread_mutex_unlock(&g_health_mutex);
@@ -848,6 +853,29 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 		obs_source_release(filter);
 	}
 	obs_data_release(settings);
+}
+
+/*
+ * What to append to a connected status line when the phone is painting its
+ * background chroma green. Without this, a solid green picture looks like
+ * a broken plugin: the setting lives on the phone, survives restarts of
+ * both ends, and nothing in OBS mentions it. If the keying filter is gone
+ * — deleted by the user, which is respected forever — say that too, since
+ * that is the difference between "green, as designed" and "green, and
+ * nothing is removing it".
+ */
+static const char *green_screen_suffix(struct ios_camera_source *s)
+{
+	if (!s->green_screen)
+		return "";
+
+	obs_source_t *filter = obs_source_get_filter_by_name(
+		s->source, CHROMA_KEY_FILTER_NAME);
+	if (filter) {
+		obs_source_release(filter);
+		return T_("Status.GreenScreen");
+	}
+	return T_("Status.GreenScreen.NoFilter");
 }
 
 /*
@@ -1483,8 +1511,9 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		     "[lenslink] capture->decode latency: avg %u ms "
 		     "(min %u / max %u), link rtt %u ms, %u frames",
 		     avg_ms, min_ms, max_ms, rtt_ms, (unsigned)t->count);
-		set_status(s, "%s %s — ~%u ms", T_("Status.Connected"),
-			   c->name[0] ? c->name : "iOS device", avg_ms);
+		set_status(s, "%s %s — ~%u ms%s", T_("Status.Connected"),
+			   c->name[0] ? c->name : "iOS device", avg_ms,
+			   green_screen_suffix(s));
 
 		/* Only steer audio sync from stable measurements: a
 		 * congested link makes latency oscillate wildly, and
@@ -1800,8 +1829,9 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			}
 			break;
 		}
-		set_status(s, "%s %s", T_("Status.Connected"),
-			   c->name[0] ? c->name : "iOS device");
+		set_status(s, "%s %s%s", T_("Status.Connected"),
+			   c->name[0] ? c->name : "iOS device",
+			   green_screen_suffix(s));
 		break;
 	}
 	case OBSC_PKT_VIDEO_CONFIG: {
@@ -2070,6 +2100,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		bool ten_bit = extract_json_bool(s->device_state, "hdr") ||
 			       strstr(s->device_state, "\"color\":") != NULL;
 		pthread_mutex_unlock(&s->status_mutex);
+		s->green_screen = green_screen && !s->is_screen_source;
 		if (green_screen && !ten_bit && !s->is_screen_source)
 			ensure_chroma_key_filter(s);
 		break;
