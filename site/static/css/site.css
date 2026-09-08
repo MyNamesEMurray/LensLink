@@ -537,10 +537,7 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
    questions, so stacking two sets of section padding between them left a
    139px hole and a divider line across the middle of one idea. */
 .setup { padding: 48px 0 80px; }
-.setup h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); margin: 0 0 12px; }
-.setup > .wrap > .lede {
-	color: var(--txt2); font-size: 17px; max-width: 52ch; margin: 0 0 36px;
-}
+.setup h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); margin: 0 0 32px; }
 
 .wizard { border: 0; padding: 0; margin: 0 0 32px; display: grid; gap: 24px; }
 .wizard fieldset { border: 0; margin: 0; padding: 0; }
