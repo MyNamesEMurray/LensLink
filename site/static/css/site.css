@@ -194,7 +194,11 @@ kbd {
 }
 .device .screen {
 	position: relative; border-radius: 18px; overflow: hidden;
-	background: #06070A; aspect-ratio: 16 / 10; padding: 14px; gap: 10px;
+	background: #06070A; padding: 14px; gap: 10px;
+	/* 16:10 gives it the shape of a screen wherever there is room for one.
+	   Narrow viewports are handled below — the ratio computes shorter than
+	   the controls need there, and this box hides its overflow. */
+	aspect-ratio: 16 / 10;
 	display: flex; flex-direction: column; justify-content: space-between;
 	/* A defocused scene rather than a fake screenshot: soft light where a
 	   window would be, warmth on the subject side. */
@@ -208,7 +212,7 @@ kbd {
 	content: ""; position: absolute; inset: 0; border: 3px solid #FF3B30;
 	border-radius: 18px; pointer-events: none;
 }
-.device .topgroup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.device .topgroup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; flex: none; }
 .device .toprow { display: flex; align-items: center; gap: 8px; align-self: stretch; }
 .pill {
 	display: inline-flex; align-items: center; gap: 8px;
@@ -232,7 +236,7 @@ kbd {
 .device .toprow .chip:first-of-type { margin-left: auto; }
 
 .panelmock {
-	background: var(--glass); border: 1px solid var(--hair);
+	background: var(--glass); border: 1px solid var(--hair); flex: none;
 	border-radius: var(--r-panel); padding: 14px; backdrop-filter: blur(20px);
 }
 .panelmock .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
@@ -249,6 +253,14 @@ kbd {
 .panelmock .seg span { font-size: 12px; padding: 4px 12px; border-radius: 10px; color: var(--txt2); }
 .panelmock .seg span.on { background: var(--accent); color: #fff; }
 .panelmock .chips { display: flex; gap: 8px; margin-left: auto; }
+
+/* The control panel is a fixed ~239px stack of rows, so 16:10 is shorter
+   than the content until the screen is about 382px wide — a ~470px
+   viewport. Below that the ratio gives way rather than clip the last row;
+   above it, nothing changes. */
+@media (max-width: 470px) {
+	.device .screen { aspect-ratio: auto; }
+}
 
 .caption { color: var(--txt3); font-size: 13px; margin-top: 14px; text-align: center; }
 
