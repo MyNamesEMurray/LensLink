@@ -549,8 +549,26 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 .seg-choice label { position: relative; }
 .seg-choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
 .seg-choice span {
-	display: block; padding: 9px 18px; border-radius: 10px; font-size: 15px;
+	display: flex; align-items: center; gap: 9px;
+	padding: 9px 16px; border-radius: 10px; font-size: 15px;
 	color: var(--txt2); transition: background .15s ease, color .15s ease;
+}
+/* Icons only where they carry meaning — a cable, a Wi-Fi fan, a lens. The
+   operating systems get none: there is nothing to draw for them but
+   trademarks. */
+.opt-ic { width: 17px; height: 17px; flex: none; opacity: 0.85; }
+
+/* "Recommended" is a claim the docs make in prose; here it is a quiet
+   marker, not a second accent competing with the selected state. It has to
+   stay legible both on the panel and on the accent fill. */
+.rec {
+	font-style: normal; font-size: 10.5px; font-weight: 600;
+	letter-spacing: 0.05em; text-transform: uppercase;
+	color: var(--accent-light); background: rgba(61, 123, 255, 0.14);
+	border-radius: 999px; padding: 2px 7px; margin-left: 1px; white-space: nowrap;
+}
+.seg-choice input:checked + span .rec {
+	color: #fff; background: rgba(255, 255, 255, 0.22);
 }
 .seg-choice input:checked + span { background: var(--accent); color: #fff; font-weight: 600; }
 .seg-choice input:focus-visible + span { outline: 2px solid var(--accent-light); outline-offset: 2px; }
@@ -604,5 +622,21 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 @media (max-width: 560px) {
 	.seg-choice { display: flex; width: 100%; }
 	.seg-choice label { flex: 1; }
-	.seg-choice span { text-align: center; padding: 9px 10px; font-size: 14px; }
+	.seg-choice span { justify-content: center; padding: 9px 8px; font-size: 14px; gap: 6px; }
+	/* Three options plus a badge cannot share a phone's width. The
+	   recommendation survives as the accent dot the badge collapses to,
+	   with the word still there for a screen reader. */
+	.rec {
+		width: 6px; height: 6px; padding: 0; margin: 0; border-radius: 50%;
+		background: var(--accent-light); overflow: hidden; text-indent: -99em;
+	}
+	.seg-choice input:checked + span .rec { background: #fff; }
+}
+
+/* On the narrowest phones the icons are what pushes a label onto a second
+   line. They are decorative — the words are the control — so they go first
+   and the recommendation dot stays. */
+@media (max-width: 400px) {
+	.opt-ic { display: none; }
+	.seg-choice span { white-space: nowrap; }
 }
