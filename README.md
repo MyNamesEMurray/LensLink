@@ -22,8 +22,9 @@ phone.
 
 - **OBS Studio 32** or newer, on Windows, macOS, or Linux.
 - An **iPhone or iPad on iOS/iPadOS 15 or later**.
-- For **USB**: iTunes installed on Windows (it provides Apple's device
-  driver); nothing extra on macOS.
+- For **USB**: iTunes on Windows (it provides Apple's device driver), or
+  the **`usbmuxd`** daemon on Linux — most desktop distributions ship it
+  for phone access. Nothing extra on macOS, and Wi-Fi needs none of it.
 
 ## Install
 
@@ -302,9 +303,14 @@ are the places to watch.
 
 ## Tips & troubleshooting
 
-- **USB device not found (Windows):** make sure iTunes is installed — it
-  provides the driver the plugin needs — and tap **Trust** on the phone
-  when prompted.
+- **USB device not found:** tap **Trust** on the phone when prompted, and
+  use a data cable rather than a charge-only one. The plugin reaches the
+  phone through Apple's usbmuxd protocol, which comes from a different
+  place on each system: on **Windows** it is the Apple Mobile Device
+  Service, installed with iTunes; on **Linux** it is the `usbmuxd` daemon
+  at `/var/run/usbmuxd`, which most desktop distributions ship but some
+  do not (install the `usbmuxd` package); on **macOS** it is part of the
+  OS and needs nothing.
 - **Source shows as "iOS Camera" / updates don't seem to apply:** an old
   pre-1.0 copy of the plugin (`ios-camera-source.dll`) is still installed
   and wins over the current one (the OBS log shows *"Source

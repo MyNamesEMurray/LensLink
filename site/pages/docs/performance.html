@@ -96,6 +96,35 @@ description: What LensLink's latency is made of, how to measure it, how to lower
   pipeline, with a log line saying why.
 </p>
 
+<h3>Does the GPU brand matter?</h3>
+<p>
+  Less than the operating system does. Decoding is a fixed-function block on
+  every modern GPU, and the plugin asks the platform's own API for it rather
+  than anything vendor-specific.
+</p>
+<table>
+  <tbody>
+    <tr><td>Windows</td><td>Vendor-agnostic. D3D11VA on any current GPU, DXVA2 as the fallback.</td></tr>
+    <tr><td>macOS</td><td>VideoToolbox, on Apple silicon and Intel Macs alike.</td></tr>
+    <tr><td>Linux, Intel or AMD</td><td>VAAPI is in Mesa already — nothing to install.</td></tr>
+    <tr><td>Linux, NVIDIA</td><td>Needs <code>nvidia-vaapi-driver</code>; VDPAU is the fallback. This is the one place the brand decides whether the GPU pipeline engages at all.</td></tr>
+    <tr><td>Laptops with two GPUs</td><td>If decoding lands on one and OBS renders on the other, textures can't be shared and the source falls back on its own.</td></tr>
+    <tr><td>Older GPUs</td><td>A GPU with no HEVC Main10 decoder falls back to software for 10-bit streams; 8-bit is unaffected.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>Several phones at once is a decode workload, not an encode one.</strong>
+  NVIDIA's limit on simultaneous NVENC sessions doesn't apply — nothing here
+  encodes on the computer. What limits you is decode throughput and memory
+  bandwidth, which is exactly what the GPU pipeline saves.</p>
+</div>
+<p>
+  The measurements above come from one Windows machine with an NVIDIA card.
+  The pipeline is beta partly because the other combinations — macOS
+  IOSurface, Mesa VAAPI, <code>nvidia-vaapi-driver</code>, and the multi-GPU
+  fallback — want field reports more than they want more code.
+</p>
+
 <h2>Measuring it yourself</h2>
 <p>
   <strong>Tools → LensLink Settings → Record pipeline benchmark</strong> writes
