@@ -17,15 +17,14 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P1 | Thermal & low-power adaptation | Reliability & security | Medium |
 | P1 | Optional pairing & encryption | Reliability & security | Medium |
 | P1 | Graduate the GPU decode pipeline | Performance | Small |
-| P2 | Screen mirroring on ScreenCaptureKit | Reliability & security | Large |
 | P2 | Digital pan/tilt + crop | Control & workflow | Medium |
 | P2 | Voice isolation for the phone mic | Video & audio quality | Small |
 | P2 | Document the control API | Control & workflow | Small |
+| P2 | iPad and iPhone Duo: keep streaming in Split View | Control & workflow | Small |
+| P2 | iPhone Duo: cover display and dual cameras | Control & workflow | Medium |
 | P3 | Manual bitrate cap | Video & audio quality | Small |
 | P3 | Zero-copy encoder output | Performance | Medium |
-| P3 | iPad: keep streaming in Split View | Control & workflow | Small |
 | P3 | Two lenses at once (multicam) | Video & audio quality | Large |
-| P3 | Preview rotation off `RotationCoordinator` | Video & audio quality | Small |
 
 - **P1 — next up.** Protects or finishes what already ships, plus the
   one tiny-effort/large-payoff outlier. Pick from here first.
@@ -36,10 +35,11 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 Recently shipped and pruned from this file (see the release notes):
 tally light with customizable colours (v1.8.0), 10-bit HDR (HLG) with
 the zero-copy GPU path and Apple Log (v1.9.0), virtual green screen
-with depth assist and subject-distance cutoff (v1.10.0). Pairing &
-encryption was explicitly deprioritized by the maintainer in 2026-07 —
-revisit when remote start gets promoted or users stream on shared
-networks.
+with depth assist and subject-distance cutoff (v1.10.0), in-process
+screen mirroring on ScreenCaptureKit and rotation-coordinator preview
+for iOS 27. Pairing & encryption was explicitly deprioritized by the
+maintainer in 2026-07 — revisit when remote start gets promoted or
+users stream on shared networks.
 
 ## Reliability & security
 
@@ -55,28 +55,6 @@ surface the adaptation in the app status and the OBS source status
 earlier/coarser signals, resolution step-down as the last rung, and
 optionally respect Low Power Mode. *The biggest real-world win for
 long streams.*
-
-### Screen mirroring on ScreenCaptureKit — P2, large
-iOS 27 brings ScreenCaptureKit to iPhone and iPad, and deprecates the
-ReplayKit broadcast API that LensLink Screen is built on:
-`RPBroadcastSampleHandler`, `RPBroadcastController` and
-`processSampleBuffer(_:with:)` are all marked "no longer supported",
-`RPSystemBroadcastPickerView` says to use `SCContentSharingPicker`
-instead, and `RPScreenRecorder` says to use ScreenCaptureKit. Nothing is
-*removed* — the broadcast extension keeps working on iOS 27 — but the
-replacement is worth having on its merits: `SCStream` captures the whole
-display **in the app's own process**, with a `screen-capture`
-`UIBackgroundModes` entry that keeps it running while the app isn't
-frontmost. That would delete the separate upload-extension process, the
-extension's memory ceiling (most of what
-`docs/DEBUGGING-SCREEN-MIRROR.md` exists to explain), and the
-"system audio only, no mic" limitation — the system picker carries a
-microphone toggle and the returned filter reports the choice. The catch
-is that all of it is iOS 27+: the ReplayKit path has to stay for iOS
-15–26, both paths must speak the same `kind: "screen"` protocol, and
-none of it can be verified anywhere but on a device. *Trigger: iOS 27
-adoption making a 27-only path worth maintaining alongside the old one,
-or the deprecation turning into a removal.*
 
 ### Optional pairing & encryption — close the trusted-LAN caveat — P1, medium
 The README honestly says the stream is unencrypted and intended for
@@ -143,22 +121,6 @@ STATE advertises the cap so remote UIs stay in lock-step. *Trigger:
 users actually hitting the situations it solves; the adaptive path
 covers most of them today.*
 
-### Preview rotation off `RotationCoordinator` — P3, small
-The live preview still orients itself with `AVCaptureConnection`'s
-`videoOrientation`, deprecated in iOS 17 in favour of
-`AVCaptureDevice.RotationCoordinator` and its
-`videoRotationAngleForHorizonLevelPreview`. Deprecated still works
-through iOS 27, and the replacement is not a mechanical swap: the
-degrees a device reports for a given orientation are not uniform across
-models (iPhone 17 Pro reports a different set from iPhone 16 and
-earlier), so hand-mapping `interfaceOrientation` to an angle is exactly
-the bug the coordinator exists to prevent. Adopt the coordinator itself,
-gated at iOS 17, and *verify on a device in all four orientations with
-both cameras* — there is no way to catch a wrong angle in CI. The
-capture path is unaffected: it stays pinned to sensor-native landscape
-on purpose. *Trigger: the deprecation becoming a removal, or the
-rotation work being open for another reason.*
-
 ## Control & workflow
 
 ### Digital pan/tilt + crop — reframe without touching the rig — P2, medium
@@ -171,16 +133,51 @@ a normalized crop rect, STATE carries it back, web panel and Live
 screen get a drag-to-frame control. *The biggest quality-of-life gap
 for the mounted-phone use case this app is built around.*
 
-### iPad: keep streaming in Split View — P3, small
+### iPad and iPhone Duo: keep streaming in Split View — P2, small
 The app streams only while foregrounded (iOS suspends background
 camera capture), which on iPad is a real limitation — a streamer might
 want notes or chat beside the camera app. On supporting iPads,
 `AVCaptureSession.isMultitaskingCameraAccessEnabled` (iOS 16+) lets
 capture continue in Split View / Stage Manager. Gate on
 `isMultitaskingCameraAccessSupported`, keep the listener alive, and
-soften the "foregrounded only" wording where it applies. iPhone
-still suspends — this is iPad-only relief. *Trigger: iPad users
-asking; pairs naturally with the tally light for multi-window rigs.*
+soften the "foregrounded only" wording where it applies. A plain
+iPhone still suspends — but iPhone Duo's inner display reports iPad-like
+regular size classes and does iPadOS-style multitasking, so this stops
+being iPad-only relief the moment a folding iPhone is in the picture:
+half the screen on the camera, half on chat, is the obvious way to use
+that device. *Trigger: iPhone Duo shipping (23 October 2026) makes this
+worth more than it was; needs a device to gate correctly.*
+
+### iPhone Duo: cover display and dual cameras — P2, medium
+The app already *works* on iPhone Duo without special-casing: camera
+discovery goes through `AVCaptureDeviceDiscoverySession` with wide and
+ultra-wide types, which is exactly what surfaces the Duo's virtual front
+camera (it switches between the inner under-display camera and the outer
+one as the device opens and closes), the rotation coordinator now keeps
+the preview upright across display moves, and the layout is SwiftUI with
+no fixed-size assumptions. What it does not yet do is anything the
+device makes newly *possible*:
+
+- **The cover display as a second surface.** iOS 27's scene accessories
+  (`UIViewController.registerSceneAccessory(_:)`, `UISceneAccessory`) let
+  an app put non-interactive content on a second display. For a camera
+  app pointed at its operator, the obvious use is what Apple's own tech
+  talk demonstrates: a teleprompter, or a tally and status readout, on
+  the display facing the subject while the inner screen keeps the
+  controls.
+- **Choosing inner vs outer camera explicitly.** The virtual front camera
+  picks for you; a streamer with the phone folded on a desk may want to
+  pin one. Apple's Duo tech talk covers a direction coordinator that
+  reports which physical camera is facing the person, handing back a
+  sendable device descriptor rather than an `AVCaptureDevice`.
+
+*Blocked on documentation, not on effort:* those camera APIs are
+demonstrated in "Build a great camera experience for iPhone Duo" but are
+not yet in the published API reference, and this repo does not write
+code against API names read off a video. Revisit when the reference
+lands (likely with the iOS 27.1 SDK, which is also what unlocks
+edge-to-edge rendering on both Duo displays) — and with a device, since
+none of it can be verified any other way.
 
 ### Document the control API — Stream Deck without a plugin — P2, small
 The web panel's endpoints (`/api/state`, `POST /api/control`) are

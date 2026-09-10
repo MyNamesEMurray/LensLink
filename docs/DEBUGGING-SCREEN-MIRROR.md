@@ -9,12 +9,16 @@ Everything lands in **one place: the OBS log** (Help → Log Files → View
 Current Log). The phone's own counters are forwarded over the wire and
 logged there too, so you don't need to tether the phone to a Mac.
 
-> **iOS 27 note.** ReplayKit's broadcast API is deprecated in iOS 27 in
-> favour of ScreenCaptureKit, which iOS gained in the same release. It
-> still works — nothing here changes — but the eventual move would put
-> capture back inside the app process and retire most of this page's
-> failure modes. See "Screen mirroring on ScreenCaptureKit" in
-> [ROADMAP.md](ROADMAP.md).
+> **There are two capture paths now.** On **iOS 27 and later** the app
+> captures the screen *itself* with ScreenCaptureKit — no extension
+> process, so the extension-specific failures below (a missing or
+> re-signed extension, the extension's memory ceiling, the cross-process
+> port hand-off) simply don't exist there. On **iOS 15–26** the ReplayKit
+> broadcast extension is still the only way, and everything on this page
+> applies. Both paths run the identical `ScreenStreamPipeline`, so the
+> encoder, wire protocol and the counters below are the same either way —
+> the heartbeat line carries `via=screencapturekit` or `via=replaykit` so
+> a log says which one produced it.
 
 ## The main fix
 
@@ -44,8 +48,8 @@ Two heartbeat lines, one from each end, a few seconds apart:
 [lenslink][phone] vid samp=380 enc=372 kf=1 builds=1 encErr=0 h264 886x1918 aud=60 | net sent=372 kf=1 drop=0 4180KiB aud=58 inflight=1 acc=1 connected
 ```
 
-- `[lenslink][phone]` is the extension: `samp` = screen frames ReplayKit
-  handed us, `enc` = frames encoded, `net sent`/`drop` = frames handed to
+- `[lenslink][phone]` is the phone's capture path (`via=` says which):
+  `samp` = screen frames ReplayKit or ScreenCaptureKit handed us, `enc` = frames encoded, `net sent`/`drop` = frames handed to
   (or dropped before) the socket, `acc` = connections accepted, plus the
   connection state.
 - `[lenslink][diag]` is the plugin: `pkt` = video packets received, `kf` =
@@ -59,7 +63,7 @@ Watch which counters **move** between heartbeats.
 | Symptom in the log | Where it broke | Fix |
 |---|---|---|
 | No `[lenslink][phone]` lines at all | Extension never reached the plugin, or diagnostics off | Check the source points at this phone; confirm the camera stream isn't already running (one stream per device) |
-| Phone `samp=0` | ReplayKit isn't delivering frames | Broadcast didn't really start, or the picker chose the wrong target — restart the broadcast |
+| Phone `samp=0` | Capture isn't delivering frames | Broadcast/capture didn't really start, or the picker chose the wrong target — restart it |
 | Phone `enc=0` while `samp` climbs | Encoder never built / failed | Look for `encErr` > 0 or an `encoder start failed` line; unusual dimensions |
 | Phone `sent=0` while `enc` climbs | Frames encoded but nothing sent | `acc=0` → OBS never connected; otherwise the connection dropped |
 | Phone `drop` climbing fast | Network backpressure (the "collapse to 1" case) | Weak Wi-Fi — use USB, or try the HEVC toggle (below) to cut bitrate |
@@ -92,7 +96,8 @@ Screen mirroring encodes in HEVC by default — screen content compresses
 encoding (pre-A10, i.e. older than iPhone 7) fall back to H.264
 automatically, and the plugin decodes whichever codec the config
 announces. To A/B against H.264, it's a one-line switch in
-`ios-app/BroadcastExtension/SampleHandler.swift`:
+`ios-app/Sources/ScreenStreamPipeline.swift` (shared by both capture
+paths, so the switch covers each of them):
 
 ```swift
 private static let preferHEVC = true   // set false to test H.264

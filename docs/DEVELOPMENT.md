@@ -74,6 +74,27 @@ Pull requests run [`.github/workflows/build.yml`](../.github/workflows/build.yml
 PRs merge automatically once the required Build checks pass (branch
 protection on `main`).
 
+### Screen capture has two front ends
+
+`ScreenStreamPipeline` (in `ios-app/Sources/`, and listed explicitly in
+`LensLinkBroadcast.sources` because the extension needs it too) owns
+everything from `CMSampleBuffer` down: encoder, system-audio conversion,
+the `kind: "screen"` connection, the heartbeat. Above it sit two shells
+that differ only in where the buffers come from:
+
+- `BroadcastExtension/SampleHandler.swift` — ReplayKit, a separate
+  process, the only path on iOS 15–26.
+- `Sources/ScreenCaptureSession.swift` — ScreenCaptureKit in the app's
+  own process, iOS 27+, behind the `ScreenCaptureController` façade so
+  no call site needs a `#if`. The implementation is wrapped in
+  `#if canImport(ScreenCaptureKit)`: the iOS 26 SDK has no
+  ScreenCaptureKit, so under Xcode 26 it compiles away and the app falls
+  back to ReplayKit. **That also means the required CI job cannot type
+  check it** — only the advisory `xcode-27` job does.
+
+The wire protocol is untouched by this: both front ends send the same
+HELLO `kind`, so the plugin's Screen source cannot tell them apart.
+
 ### SDK versions
 
 The TestFlight upload pins the newest **Xcode 26** on the runner, because

@@ -739,12 +739,16 @@ final class CameraManager: NSObject {
         ]
 
         if let connection = output.connection(with: .video) {
-            if connection.isVideoOrientationSupported {
-                // Sensor-native landscape — the wire format LensLink has
-                // always streamed. The phone's rotation affects only the
-                // on-screen preview (CameraPreviewView), never the stream.
-                connection.videoOrientation = .landscapeRight
-            }
+            // Sensor-native landscape — the wire format LensLink has
+            // always streamed. The phone's rotation affects only the
+            // on-screen preview (CameraPreviewView), never the stream.
+            //
+            // Deliberately a fixed value rather than a rotation
+            // coordinator: the coordinator tracks gravity, and this
+            // connection must not track anything. From iOS 17 the
+            // non-deprecated spelling of "apply no rotation" is an angle
+            // of 0, which is what `.landscapeRight` has always meant here.
+            Self.pinSensorNative(connection)
             // Stabilization buffers multiple frames inside the capture
             // pipeline — a large hidden latency cost for a live feed.
             if connection.isVideoStabilizationSupported {
@@ -758,15 +762,31 @@ final class CameraManager: NSObject {
         // (when supported) so the depth map stays registered to the
         // video buffer instead of arriving rotated/flipped.
         if let depthConnection = depthOutput?.connection(with: .depthData) {
-            if depthConnection.isVideoOrientationSupported {
-                depthConnection.videoOrientation = .landscapeRight
-            }
+            Self.pinSensorNative(depthConnection)
             if position == .front,
                depthConnection.isVideoMirroringSupported {
                 depthConnection.isVideoMirrored = true
             }
         }
         return color
+    }
+
+    /// Pins a capture connection to the sensor's native landscape — no
+    /// rotation applied to the frames on their way out.
+    ///
+    /// `videoRotationAngle` (iOS 17+) states that directly: the property
+    /// is the rotation the connection *applies*, so 0 applies none. Below
+    /// 17 the same thing is spelled `.landscapeRight`, deprecated since.
+    /// Both are guarded by their support check, because a connection that
+    /// can't rotate simply arrives sensor-native already.
+    private static func pinSensorNative(_ connection: AVCaptureConnection) {
+        if #available(iOS 17.0, *) {
+            if connection.isVideoRotationAngleSupported(0) {
+                connection.videoRotationAngle = 0
+            }
+        } else if connection.isVideoOrientationSupported {
+            connection.videoOrientation = .landscapeRight
+        }
     }
 
     // MARK: - Live camera controls

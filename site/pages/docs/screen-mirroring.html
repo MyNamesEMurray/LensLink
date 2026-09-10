@@ -3,8 +3,8 @@ description: Mirror your whole iPhone or iPad screen into OBS with its audio, us
 ---
 <h1>Screen mirroring</h1>
 <p class="lede">
-  <strong>LensLink Screen</strong> receives an iOS screen broadcast — the whole
-  screen with its audio, from any app — encoded in HEVC.
+  <strong>LensLink Screen</strong> receives your whole iPhone or iPad screen
+  with its audio, from any app, encoded in HEVC.
 </p>
 
 <h2>Setting it up</h2>
@@ -14,12 +14,12 @@ description: Mirror your whole iPhone or iPad screen into OBS with its audio, us
     <p><strong>Sources → + → LensLink Screen</strong>, then point it at the phone exactly as you would a camera source.</p>
   </li>
   <li>
-    <strong>Start the broadcast on the phone</strong>
-    <p><strong>Screen mirror → Start screen broadcast</strong>, choose <strong>LensLink Screen</strong>, tap <strong>Start Broadcast</strong>. iOS requires its own picker here.</p>
+    <strong>Start mirroring on the phone</strong>
+    <p>On <strong>iOS 27 and later</strong>: <strong>Screen mirror → Start screen mirroring</strong>, then choose what to share in the system picker. On <strong>iOS 15&ndash;26</strong>: <strong>Screen mirror → Start screen broadcast</strong>, choose <strong>LensLink Screen</strong>, tap <strong>Start Broadcast</strong>. Either way iOS puts up its own picker &mdash; that part isn't ours to skip.</p>
   </li>
   <li>
     <strong>Leave the app</strong>
-    <p>Unlike the camera, a broadcast keeps running across apps — that's the point of it.</p>
+    <p>Unlike the camera, screen mirroring keeps running across apps &mdash; that's the point of it.</p>
   </li>
 </ol>
 
@@ -31,7 +31,7 @@ description: Mirror your whole iPhone or iPad screen into OBS with its audio, us
 <h2>Audio</h2>
 <ul>
   <li><strong>App and system audio comes through</strong> — game sound, browser video, app effects.</li>
-  <li><strong>DRM-protected audio is muted by iOS</strong> during any broadcast (Apple Music, Spotify, Netflix). That applies to every broadcast extension on the platform; LensLink can't opt out.</li>
+  <li><strong>DRM-protected audio is muted by iOS</strong> during any screen capture (Apple Music, Spotify, Netflix). That applies to every app on the platform; LensLink can't opt out.</li>
   <li><strong>Your microphone is not sent.</strong> Mic yourself in OBS. (The camera source can carry the phone's mic; this one deliberately doesn't.)</li>
 </ul>
 <p>
@@ -71,11 +71,12 @@ description: Mirror your whole iPhone or iPad screen into OBS with its audio, us
 
 <h2>When the broadcast will not connect</h2>
 <p>
-  The broadcast extension is a separate process, so its failures are hard to
+  On iOS 15&ndash;26 the broadcast extension is a separate process, so its failures are hard to
   see. The app checks it directly:
 </p>
 <ul>
   <li><strong>Screen mirror tools → Check broadcast link</strong>, <em>while a broadcast is running</em>: it verifies the extension is alive, independent of OBS.</li>
-  <li>Failing on a <strong>sideloaded</strong> build usually means re-signing broke the extension — a known consequence of rewriting bundle IDs. TestFlight builds are unaffected.</li>
+  <li>Failing on a <strong>sideloaded</strong> build usually means re-signing broke the extension &mdash; a known consequence of rewriting bundle IDs. TestFlight builds are unaffected.</li>
+  <li>None of this applies on <strong>iOS 27 and later</strong>, where the app captures the screen itself and there is no extension to break.</li>
   <li>Passing while OBS shows nothing means the connection is at fault: see <a href="/docs/connect/#reading-the-status-field">Reading the Status field</a>.</li>
 </ul>

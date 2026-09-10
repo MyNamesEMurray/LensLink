@@ -36,6 +36,9 @@ struct StreamingView: View {
             CameraPreviewView(
                 session: streamer.camera.session,
                 sessionQueue: streamer.camera.sessionQueue,
+                // Drives the rotation coordinator (iOS 17+); re-read on
+                // every update so a lens switch re-targets it.
+                device: streamer.camera.activeDevice,
                 videoGravity: .resizeAspect,
                 // Battery saver: while the dim overlay hides everything,
                 // stop rendering preview frames too (the stream to OBS is
@@ -315,17 +318,22 @@ struct StreamingView: View {
     /// slightly *inside* the corner rather than getting cut off. Squared
     /// devices (SE, iPads) are detected by their zero bottom safe-area
     /// inset and keep square corners.
-    private static let tallyCornerRadius: CGFloat = {
-        let bottomInset = UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.windows.first }
-            .first?.safeAreaInsets.bottom ?? 0
+    ///
+    /// Read per render rather than cached once: a window's shape is no
+    /// longer fixed for the life of the process. iOS 27 iPad windows are
+    /// continuously resizable, and a folding iPhone hands the app a
+    /// different display — with different corners — when it is opened or
+    /// closed. A value computed at first use would keep drawing the old
+    /// device's corners on the new one.
+    private var tallyCornerRadius: CGFloat {
+        let bottomInset = ActiveScreen.scene?.keyWindowSafeAreaInsets.bottom ?? 0
         return bottomInset > 0 ? 58 : 0
-    }()
+    }
 
     private func tallyEdge(_ colour: Color, width: CGFloat,
                            pulse: Bool) -> some View {
         TallyEdge(colour: colour, width: width, pulse: pulse,
-                  cornerRadius: Self.tallyCornerRadius)
+                  cornerRadius: tallyCornerRadius)
     }
 
     private var statusBar: some View {

@@ -45,6 +45,19 @@ targets:
         # out keeps a future SDK default from deciding otherwise.)
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        # Keeps the iOS 27+ in-process screen capture
+        # (ScreenCaptureSession) running once the person leaves LensLink
+        # for the app they actually want to mirror — without it the
+        # stream dies at the moment it becomes useful. Declared by
+        # Apple's own "Capturing screen content on iOS" sample for
+        # full-display capture. It does nothing on the ReplayKit path
+        # (iOS 15-26), where a separate extension process does the
+        # capturing. NOTE: this only becomes meaningful once the build
+        # moves to Xcode 27 — watch the first TestFlight upload after
+        # that move, since App Store validation is the only place an
+        # unexpected background mode would surface.
+        UIBackgroundModes:
+          - screen-capture
         # All four orientations: App Store validation requires the full set
         # for iPad multitasking (or UIRequiresFullScreen, which we'd rather
         # not force). From iOS 27 they no longer govern whether an iPad
@@ -121,6 +134,7 @@ targets:
     sources:
       - BroadcastExtension
       - path: Sources/Protocol.swift
+      - path: Sources/ScreenStreamPipeline.swift
       - path: Sources/StreamClient.swift
       - path: Sources/VideoEncoder.swift
     info:

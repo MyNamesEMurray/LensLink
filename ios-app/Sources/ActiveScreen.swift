@@ -38,11 +38,29 @@ enum ActiveScreen {
     }
 
     /// Whether the UI is being recorded, mirrored, or sent over AirPlay.
+    ///
+    /// - Note: `keyWindowSafeAreaInsets` lives on `UIWindowScene` below.
     static var isCaptured: Bool {
         if #available(iOS 17.0, *) {
             guard let scene else { return false }
             return scene.traitCollection.sceneCaptureState == .active
         }
         return screen?.isCaptured ?? false
+    }
+}
+
+extension UIWindowScene {
+    /// Safe-area insets of this scene's key window, or zero when it has
+    /// none yet.
+    ///
+    /// Read live, never cached: on a folding device the app is handed a
+    /// different display when it opens and closes, and iOS 27 iPad
+    /// windows resize continuously, so the insets a window had at launch
+    /// say nothing about the one it is in now. `windows.first` is
+    /// deliberately the fallback rather than the answer — with more than
+    /// one window in a scene it is arbitrary.
+    var keyWindowSafeAreaInsets: UIEdgeInsets {
+        let window = windows.first { $0.isKeyWindow } ?? windows.first
+        return window?.safeAreaInsets ?? .zero
     }
 }

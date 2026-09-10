@@ -203,13 +203,20 @@ has just become reachable, not after you pressed Stop.
 
 ## Screen mirroring
 
-Add a **LensLink Screen** source in OBS, then tap **Start screen broadcast**
-in the app to send your whole iPhone/iPad screen (plus the app's audio). It
-uses iOS's built-in screen broadcast, so it works from any app — pick
-**LensLink Screen** in the broadcast picker and tap **Start Broadcast**.
+Add a **LensLink Screen** source in OBS, then start screen mirroring in the
+app to send your whole iPhone/iPad screen (plus the app's audio). It keeps
+running when you leave LensLink, so it works from any app.
+
+What the button does depends on your iOS version, and nothing else changes:
+
+- **iOS 27 or later** — **Start screen mirroring** opens the system picker,
+  you choose what to share, and mirroring begins. LensLink captures it
+  itself; there's no broadcast extension in the way.
+- **iOS 15–26** — **Start screen broadcast** opens iOS's broadcast picker:
+  choose **LensLink Screen** and tap **Start Broadcast**.
 
 Note: DRM-protected audio (Apple Music, Spotify, Netflix) is muted by iOS
-during any screen broadcast — that's an iOS rule, not a LensLink limit.
+during any screen capture — that's an iOS rule, not a LensLink limit.
 Game/app/browser audio comes through fine. To *hear* the audio on the
 computer (not just record/stream it), set the source's **Audio Monitoring →
 Monitor and Output** in OBS's Advanced Audio Properties.

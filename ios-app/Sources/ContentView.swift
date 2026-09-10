@@ -357,6 +357,10 @@ struct ContentView: View {
     // MARK: - Screen mirror
 
     @State private var extensionStatus = ""
+    /// In-process screen capture (iOS 27+). A singleton because the
+    /// capture outlives this view — it keeps running while the person is
+    /// in whatever app they are mirroring.
+    @ObservedObject private var screenCapture = ScreenCaptureController.shared
 
     /// Same shape as the camera module: content, then one full-width
     /// action button. The button face is ours; the (invisible) system
@@ -364,22 +368,48 @@ struct ContentView: View {
     /// won't start a broadcast any other way.
     private var screenMirrorSection: some View {
         Section {
-            // Surface a broken extension unconditionally (sideloading can
-            // silently drop it); the healthy state and the broadcast-link
-            // probe live in Options → Diagnostics.
-            if !extensionStatus.isEmpty && !extensionStatus.hasPrefix("✓") {
-                Text(extensionStatus)
-                    .font(.caption)
-                    .foregroundColor(.red)
-            }
+            if ScreenCaptureController.isSupported {
+                // iOS 27+: capture runs in this process (ScreenCaptureKit),
+                // so this is an ordinary button — no invisible system view
+                // to tap through, and we can offer Stop in the same place.
+                if let error = screenCapture.lastError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+                Button {
+                    if screenCapture.isCapturing {
+                        screenCapture.stop()
+                    } else {
+                        screenCapture.presentPicker()
+                    }
+                } label: {
+                    ActionRowLabel(
+                        title: screenCapture.isCapturing
+                            ? "Stop screen mirroring" : "Start screen mirroring",
+                        systemImage: "rectangle.on.rectangle")
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            } else {
+                // iOS 15–26: the ReplayKit broadcast extension. Surface a
+                // broken extension unconditionally (sideloading can
+                // silently drop it); the healthy state and the
+                // broadcast-link probe live in Options → Diagnostics.
+                if !extensionStatus.isEmpty && !extensionStatus.hasPrefix("✓") {
+                    Text(extensionStatus)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
 
-            ZStack {
-                ActionRowLabel(title: "Start screen broadcast",
-                               systemImage: "rectangle.on.rectangle")
-                BroadcastPickerOverlay()
+                ZStack {
+                    ActionRowLabel(title: "Start screen broadcast",
+                                   systemImage: "rectangle.on.rectangle")
+                    BroadcastPickerOverlay()
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
         } header: {
             Text("Screen mirror")
         }
