@@ -30,10 +30,27 @@ targets:
         # App Store Connect's export-compliance question so TestFlight
         # builds are testable immediately instead of "Missing Compliance".
         ITSAppUsesNonExemptEncryption: false
+        # Also a hard requirement for anything built with the iOS 27 SDK:
+        # one of UILaunchScreen(s)/UILaunchStoryboardName(s) must be
+        # present or the App Store rejects the upload. The empty
+        # dictionary takes the system default, which is what we want.
         UILaunchScreen: {}
+        # Apps built with the iOS 27 SDK must adopt the scene-based life
+        # cycle or they fail to launch. SwiftUI's App life cycle already
+        # is scene-based, so this declares what we do rather than changes
+        # it — and pins the app to one window on purpose: iOS 27 makes
+        # every iPad app freely resizable, and a second window would put a
+        # second ContentView on the single shared Streamer/capture
+        # session. (Absent, the key already defaults to false; spelling it
+        # out keeps a future SDK default from deciding otherwise.)
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
         # All four orientations: App Store validation requires the full set
         # for iPad multitasking (or UIRequiresFullScreen, which we'd rather
-        # not force).
+        # not force). From iOS 27 they no longer govern whether an iPad
+        # window is continuously resizable — it always is — so the preview
+        # has to re-sync on resize, not just on rotation (it does: the
+        # sync hangs off layoutSubviews in CameraPreviewView).
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown

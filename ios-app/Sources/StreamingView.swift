@@ -14,7 +14,7 @@ struct StreamingView: View {
     @State private var idle = false
     @State private var lastInteraction = Date()
     @State private var pinchBaseZoom: CGFloat = 1
-    @State private var previousBrightness: CGFloat = UIScreen.main.brightness
+    @State private var previousBrightness: CGFloat = ActiveScreen.brightness
     /// Whether `previousBrightness` is a level we still owe the system.
     /// Tracked rather than derived from the current mode: the mode can
     /// change while the screen is dimmed, and the restore must survive it.
@@ -165,9 +165,9 @@ struct StreamingView: View {
     private func goIdle() {
         guard streamer.idleAppearance != .standard else { return }
         if streamer.idleAppearance == .dim && !brightnessLowered {
-            previousBrightness = UIScreen.main.brightness
+            previousBrightness = ActiveScreen.brightness
             brightnessLowered = true
-            UIScreen.main.brightness = 0.05
+            ActiveScreen.brightness = 0.05
         }
         withAnimation { idle = true }
     }
@@ -185,7 +185,7 @@ struct StreamingView: View {
     private func restoreBrightness() {
         guard brightnessLowered else { return }
         brightnessLowered = false
-        UIScreen.main.brightness = previousBrightness
+        ActiveScreen.brightness = previousBrightness
     }
 
     private var dimOverlay: some View {

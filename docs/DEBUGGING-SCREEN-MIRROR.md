@@ -9,6 +9,13 @@ Everything lands in **one place: the OBS log** (Help → Log Files → View
 Current Log). The phone's own counters are forwarded over the wire and
 logged there too, so you don't need to tether the phone to a Mac.
 
+> **iOS 27 note.** ReplayKit's broadcast API is deprecated in iOS 27 in
+> favour of ScreenCaptureKit, which iOS gained in the same release. It
+> still works — nothing here changes — but the eventual move would put
+> capture back inside the app process and retire most of this page's
+> failure modes. See "Screen mirroring on ScreenCaptureKit" in
+> [ROADMAP.md](ROADMAP.md).
+
 ## The main fix
 
 The instrumentation pinned down the most common failure: with **hardware

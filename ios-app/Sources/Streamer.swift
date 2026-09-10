@@ -1049,13 +1049,13 @@ final class Streamer: ObservableObject {
         // The broadcast extension listens on the same port; a screen
         // broadcast and the standby listener can't coexist. Release the
         // port whenever the screen is being captured.
-        screenCaptured = UIScreen.main.isCaptured
+        screenCaptured = ActiveScreen.isCaptured
         NotificationCenter.default.addObserver(
             forName: UIScreen.capturedDidChangeNotification,
             object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.screenCaptured = UIScreen.main.isCaptured
+                self.screenCaptured = ActiveScreen.isCaptured
                 self.updateStandby()
             }
         }

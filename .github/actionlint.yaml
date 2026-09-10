@@ -1,0 +1,8 @@
+# actionlint's built-in label list predates GitHub's move to one runner
+# image per major Xcode version, so `xcode-27` — a real GitHub-hosted
+# image, arm64, public preview — reads to it as an unknown label and
+# fails the workflow lint. Declaring it here is the documented escape
+# hatch; it is not a self-hosted runner despite the key's name.
+self-hosted-runner:
+  labels:
+    - xcode-27

@@ -456,3 +456,42 @@ jobs:
         with:
           name: LensLink-unsigned-ipa
           path: ios-app/LensLink-unsigned.ipa
+
+  # Early warning for the iOS 27 SDK. App Store Connect will require it
+  # from April 2027, and building against it is the only way to see the
+  # 27-SDK behaviour changes (mandatory launch screen, mandatory
+  # scene-based life cycle, always-resizable iPad windows) and the new
+  # deprecations before they are someone's rejected upload.
+  #
+  # Deliberately not a gate: the xcode-27 runner image is still a public
+  # preview (arm64 only, capacity balanced over the coming weeks), so a
+  # queue or an image bug must not block a merge. `continue-on-error`
+  # keeps it advisory — read its log, don't trust its checkmark.
+  ios-app-sdk27:
+    name: iOS app (iOS 27 SDK, advisory)
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
+    runs-on: xcode-27
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+        working-directory: ios-app
+
+      - name: Build against the iOS 27 SDK
+        run: |
+          set -o pipefail
+          xcodebuild -version
+          xcodebuild build \
+            -project LensLink.xcodeproj \
+            -scheme LensLink \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO
+        working-directory: ios-app

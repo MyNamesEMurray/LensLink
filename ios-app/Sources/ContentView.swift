@@ -27,7 +27,7 @@ struct ContentView: View {
     // because this screen is also where settings get changed.
     @State private var dimmed = false
     @State private var lastInteraction = Date()
-    @State private var previousBrightness: CGFloat = UIScreen.main.brightness
+    @State private var previousBrightness: CGFloat = ActiveScreen.brightness
 
     private static let dimAfterSeconds: TimeInterval = 60
 
@@ -134,20 +134,20 @@ struct ContentView: View {
         }
         .onDisappear {
             if dimmed {
-                UIScreen.main.brightness = previousBrightness
+                ActiveScreen.brightness = previousBrightness
                 dimmed = false
             }
         }
     }
 
     private func dim() {
-        previousBrightness = UIScreen.main.brightness
-        UIScreen.main.brightness = 0.05
+        previousBrightness = ActiveScreen.brightness
+        ActiveScreen.brightness = 0.05
         withAnimation { dimmed = true }
     }
 
     private func undim() {
-        UIScreen.main.brightness = previousBrightness
+        ActiveScreen.brightness = previousBrightness
         withAnimation { dimmed = false }
         lastInteraction = Date()
     }

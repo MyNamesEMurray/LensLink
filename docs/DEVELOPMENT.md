@@ -61,12 +61,36 @@ Pull requests run [`.github/workflows/build.yml`](../.github/workflows/build.yml
 
 - **OBS plugin** — built on Ubuntu and Windows against libobs + FFmpeg with
   `-Wall -Wextra -Werror`.
-- **iOS app** — the Xcode project is generated with XcodeGen and compiled
-  for the iOS Simulator on a macOS runner (validates the Swift; installable
-  device builds must be signed).
+- **iOS app** — the Xcode project is generated with XcodeGen and built for
+  a generic iOS device on a macOS runner, packaged as an unsigned `.ipa`
+  artifact (validates every Swift source against the real platform;
+  installing it needs a re-sign).
+- **iOS app (iOS 27 SDK, advisory)** — the same build on the `xcode-27`
+  runner image, `continue-on-error: true` so it can never block a merge.
+  It exists to surface 27-SDK behaviour and deprecations early; that
+  image is still a public preview (arm64 only), so read its log rather
+  than trusting its checkmark.
 
 PRs merge automatically once the required Build checks pass (branch
 protection on `main`).
+
+### SDK versions
+
+The TestFlight upload pins the newest **Xcode 26** on the runner, because
+App Store Connect rejects uploads built with anything older than the iOS
+26 SDK. That floor rises to the **iOS 27 SDK in April 2027**, at which
+point `testflight.yml` has to move to an Xcode 27 image — the advisory
+build above is the standing check that the app is ready when it does.
+
+Three iOS 27 SDK requirements the app already satisfies, worth not
+breaking: a launch screen key must be present (`UILaunchScreen`), the app
+must adopt the scene-based life cycle (SwiftUI's `App` is scene-based,
+and `UIApplicationSceneManifest` now says so explicitly), and iPad
+windows are continuously resizable regardless of declared orientations —
+so anything that reacts to size must hang off layout, not rotation.
+
+The deployment target stays **iOS 15**, which is exactly Xcode 27's floor
+(it errors below 15.0).
 
 ## Releases
 

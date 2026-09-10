@@ -17,6 +17,7 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P1 | Thermal & low-power adaptation | Reliability & security | Medium |
 | P1 | Optional pairing & encryption | Reliability & security | Medium |
 | P1 | Graduate the GPU decode pipeline | Performance | Small |
+| P2 | Screen mirroring on ScreenCaptureKit | Reliability & security | Large |
 | P2 | Digital pan/tilt + crop | Control & workflow | Medium |
 | P2 | Voice isolation for the phone mic | Video & audio quality | Small |
 | P2 | Document the control API | Control & workflow | Small |
@@ -24,6 +25,7 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P3 | Zero-copy encoder output | Performance | Medium |
 | P3 | iPad: keep streaming in Split View | Control & workflow | Small |
 | P3 | Two lenses at once (multicam) | Video & audio quality | Large |
+| P3 | Preview rotation off `RotationCoordinator` | Video & audio quality | Small |
 
 - **P1 — next up.** Protects or finishes what already ships, plus the
   one tiny-effort/large-payoff outlier. Pick from here first.
@@ -53,6 +55,28 @@ surface the adaptation in the app status and the OBS source status
 earlier/coarser signals, resolution step-down as the last rung, and
 optionally respect Low Power Mode. *The biggest real-world win for
 long streams.*
+
+### Screen mirroring on ScreenCaptureKit — P2, large
+iOS 27 brings ScreenCaptureKit to iPhone and iPad, and deprecates the
+ReplayKit broadcast API that LensLink Screen is built on:
+`RPBroadcastSampleHandler`, `RPBroadcastController` and
+`processSampleBuffer(_:with:)` are all marked "no longer supported",
+`RPSystemBroadcastPickerView` says to use `SCContentSharingPicker`
+instead, and `RPScreenRecorder` says to use ScreenCaptureKit. Nothing is
+*removed* — the broadcast extension keeps working on iOS 27 — but the
+replacement is worth having on its merits: `SCStream` captures the whole
+display **in the app's own process**, with a `screen-capture`
+`UIBackgroundModes` entry that keeps it running while the app isn't
+frontmost. That would delete the separate upload-extension process, the
+extension's memory ceiling (most of what
+`docs/DEBUGGING-SCREEN-MIRROR.md` exists to explain), and the
+"system audio only, no mic" limitation — the system picker carries a
+microphone toggle and the returned filter reports the choice. The catch
+is that all of it is iOS 27+: the ReplayKit path has to stay for iOS
+15–26, both paths must speak the same `kind: "screen"` protocol, and
+none of it can be verified anywhere but on a device. *Trigger: iOS 27
+adoption making a 27-only path worth maintaining alongside the old one,
+or the deprecation turning into a removal.*
 
 ### Optional pairing & encryption — close the trusted-LAN caveat — P1, medium
 The README honestly says the stream is unencrypted and intended for
@@ -118,6 +142,22 @@ set it) keeps shared/metered networks and multi-phone rigs predictable.
 STATE advertises the cap so remote UIs stay in lock-step. *Trigger:
 users actually hitting the situations it solves; the adaptive path
 covers most of them today.*
+
+### Preview rotation off `RotationCoordinator` — P3, small
+The live preview still orients itself with `AVCaptureConnection`'s
+`videoOrientation`, deprecated in iOS 17 in favour of
+`AVCaptureDevice.RotationCoordinator` and its
+`videoRotationAngleForHorizonLevelPreview`. Deprecated still works
+through iOS 27, and the replacement is not a mechanical swap: the
+degrees a device reports for a given orientation are not uniform across
+models (iPhone 17 Pro reports a different set from iPhone 16 and
+earlier), so hand-mapping `interfaceOrientation` to an angle is exactly
+the bug the coordinator exists to prevent. Adopt the coordinator itself,
+gated at iOS 17, and *verify on a device in all four orientations with
+both cameras* — there is no way to catch a wrong angle in CI. The
+capture path is unaffected: it stays pinned to sensor-native landscape
+on purpose. *Trigger: the deprecation becoming a removal, or the
+rotation work being open for another reason.*
 
 ## Control & workflow
 
