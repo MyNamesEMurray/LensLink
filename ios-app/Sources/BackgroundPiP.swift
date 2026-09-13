@@ -22,11 +22,22 @@ import UIKit
 ///   camera-access` entitlement, which is requested from Apple.
 ///
 /// Capture only *survives* backgrounding while a PiP window is up, so
-/// this controller is the mechanism, not a nicety: no PiP, no
-/// background stream. Everything here is inert where the platform says
-/// no (`isAvailable` false), and the frame path costs nothing until a
-/// window actually opens — `enqueue` returns on one boolean read while
-/// the app is inline.
+/// this controller is the mechanism, not a nicety: no PiP, no background
+/// stream. And it has to be a window iOS can *see* — parked against the
+/// screen edge it stops counting, capture is interrupted, and the stream
+/// resumes when the window is pulled back out. That one is iOS's rule,
+/// not something this code chooses.
+///
+/// **Sample-buffer content source, not the video-call one.** The
+/// video-call flavour (`AVPictureInPictureVideoCallViewController`)
+/// reads like the natural fit for a camera, and it can shape its window
+/// through `preferredContentSize` — but since iOS 16 it draws no
+/// controls at all, so a window once opened could only be escaped by
+/// force-quitting the app. This flavour hands the display layer straight
+/// to PiP and gets the standard close and restore buttons with it. The
+/// trade is that the window takes its shape from the frames themselves
+/// rather than from us, so it shows the stream the way OBS receives it:
+/// sensor-native landscape, whichever way the phone is held.
 ///
 /// Locking the phone ends PiP, and ends the stream with it. This buys
 /// "keep streaming while I use another app", never "keep streaming with
@@ -64,65 +75,14 @@ final class BackgroundPiP: NSObject {
     /// stream worth keeping alive.
     private var isStreaming = false
 
-    /// The capture dimensions, from Streamer. PiP sizes its window from
-    /// the content controller's `preferredContentSize`, and without one
-    /// it guesses from the source view — a portrait phone screen — so a
-    /// landscape stream arrived letterboxed inside a portrait box and
-    /// read as "rotated" next to the app's own upright preview. Setting
-    /// the real dimensions makes the window the shape of the picture,
-    /// which is the shape OBS receives.
-    var videoSize: CGSize = CGSize(width: 16, height: 9) {
-        didSet {
-            guard videoSize != oldValue else { return }
-            applyOrientation()
-        }
-    }
-
-    /// How the phone was being held when the window opened. The capture
-    /// buffers are sensor-native landscape — that's what goes on the wire,
-    /// deliberately (docs/ROADMAP.md) — and the Live screen's preview
-    /// already rotates that for the screen the user is holding. The PiP
-    /// window is a preview too, so it follows the same rule instead of
-    /// showing the wire orientation and reading as "flipped to landscape"
-    /// beside the app it just came from.
-    private var interfaceOrientation: UIInterfaceOrientation = .portrait
-
     private var controller: AVPictureInPictureController?
-    private var callViewController: SampleBufferCallViewController?
+    /// Holds the display layer in the view hierarchy. PiP won't adopt a
+    /// layer that isn't in a window, so the layer lives in a hairline
+    /// view behind the preview rather than nowhere at all.
+    private var hostView: UIView?
     private weak var sourceView: UIView?
 
-    /// Re-reads how the phone is held and reshapes the window to match.
-    /// Called as the app leaves the screen (the last moment the interface
-    /// orientation means anything) and again as PiP starts.
-    func refreshOrientation() {
-        let scene = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first { $0.activationState == .foregroundActive }
-            ?? UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }.first
-        guard let orientation = scene?.interfaceOrientation else { return }
-        interfaceOrientation = orientation
-        applyOrientation()
-    }
-
-    private func applyOrientation() {
-        callViewController?.setOrientation(interfaceOrientation)
-        callViewController?.preferredContentSize =
-            BackgroundPiP.windowSize(for: videoSize,
-                                     orientation: interfaceOrientation)
-    }
-
-    /// Portrait turns the picture on its side, so the window has to turn
-    /// with it or the rotated frame sits letterboxed inside a landscape
-    /// box — the same mismatch, one rotation along.
-    static func windowSize(for video: CGSize,
-                           orientation: UIInterfaceOrientation) -> CGSize {
-        orientation.isPortrait
-            ? CGSize(width: video.height, height: video.width)
-            : video
-    }
-
-    /// The inline view PiP flies out of — CameraPreviewView's, handed
+    /// The preview the window is born from — CameraPreviewView's, handed
     /// over when it appears. A different view rebuilds the controller:
     /// the content source is fixed at construction.
     func attach(sourceView view: UIView, session: AVCaptureSession) {
@@ -143,22 +103,22 @@ final class BackgroundPiP: NSObject {
         guard multitasking, sourceView !== view else { return }
         sourceView = view
 
-        let content = SampleBufferCallViewController(sink: sink)
-        content.setOrientation(interfaceOrientation)
-        content.preferredContentSize =
-            BackgroundPiP.windowSize(for: videoSize,
-                                     orientation: interfaceOrientation)
+        // One point in the corner: enough to be a layer in a window,
+        // small enough to render nothing anyone can see. What the user
+        // actually watches is the capture preview layer underneath,
+        // untouched.
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        host.isUserInteractionEnabled = false
+        sink.layer.frame = host.bounds
+        sink.layer.videoGravity = .resizeAspect
+        host.layer.addSublayer(sink.layer)
+        view.addSubview(host)
+        hostView = host
+
         let source = AVPictureInPictureController.ContentSource(
-            activeVideoCallSourceView: view,
-            contentViewController: content)
+            sampleBufferDisplayLayer: sink.layer, playbackDelegate: self)
         let controller = AVPictureInPictureController(contentSource: source)
         controller.delegate = self
-        // Deliberately NOT requiresLinearPlayback: it reads like the
-        // honest choice for a live camera (no scrubbing to offer), but it
-        // takes the window's controls away with it — including the close
-        // and restore buttons, leaving no way out of PiP but force-
-        // quitting the app.
-        callViewController = content
         self.controller = controller
         applyAutoStart()
     }
@@ -166,9 +126,7 @@ final class BackgroundPiP: NSObject {
     func detach(sourceView view: UIView) {
         guard sourceView === view else { return }
         sourceView = nil
-        controller = nil
-        callViewController = nil
-        sink.isActive = false
+        teardown()
     }
 
     /// Streaming state, from Streamer's start/stop.
@@ -187,13 +145,20 @@ final class BackgroundPiP: NSObject {
             return
         }
         stop()
-        controller?.canStartPictureInPictureAutomaticallyFromInline = false
-        controller = nil
-        callViewController = nil
         // Cleared too, or `attach` would take the next stream's preview
         // for the one it already holds and never rebuild the controller.
         sourceView = nil
+        teardown()
+    }
+
+    private func teardown() {
+        controller?.canStartPictureInPictureAutomaticallyFromInline = false
+        controller = nil
+        hostView?.removeFromSuperview()
+        hostView = nil
+        sink.layer.removeFromSuperlayer()
         sink.isActive = false
+        sink.wantsFrames = false
         sink.flush()
     }
 
@@ -208,9 +173,15 @@ final class BackgroundPiP: NSObject {
     /// away" behaviour. Automatic start is the only correct trigger: an
     /// app can't reliably start PiP itself once it is already leaving
     /// the screen.
+    ///
+    /// Frames start flowing to the layer at the same moment, and *not*
+    /// only once a window opens: PiP adopts a layer that is already
+    /// showing something, and a layer fed nothing until the hand-off has
+    /// nothing to hand over (docs/PERFORMANCE.md carries the cost note).
     private func applyAutoStart() {
-        controller?.canStartPictureInPictureAutomaticallyFromInline =
-            isEnabled && isStreaming
+        let armed = isEnabled && isStreaming
+        controller?.canStartPictureInPictureAutomaticallyFromInline = armed
+        sink.wantsFrames = armed && controller != nil
     }
 
     func stop() {
@@ -223,8 +194,8 @@ final class BackgroundPiP: NSObject {
     var isActive: Bool { sink.isActive }
 
     /// One frame for the PiP window, called on the capture queue for
-    /// every frame the encoder gets. Costs a boolean read while inline;
-    /// the display layer only ever sees frames once a window is open.
+    /// every frame the encoder gets — one boolean read while background
+    /// streaming is off or nothing is streaming.
     ///
     /// Same drop-don't-queue contract as the rest of the pipeline: a
     /// layer that isn't ready loses the frame rather than growing a
@@ -234,6 +205,49 @@ final class BackgroundPiP: NSObject {
     }
 }
 
+// MARK: - Playback delegate
+//
+// A camera has no timeline: nothing to scrub, nothing to pause to. The
+// infinite time range is what tells PiP this is live, so it draws the
+// live window — close and restore, no scrubber — instead of a player's
+// transport controls.
+extension BackgroundPiP: AVPictureInPictureSampleBufferPlaybackDelegate {
+    nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController, setPlaying playing: Bool
+    ) {
+        // Nothing to pause: the stream is whatever the camera is doing.
+    }
+
+    nonisolated func pictureInPictureControllerTimeRangeForPlayback(
+        _ controller: AVPictureInPictureController
+    ) -> CMTimeRange {
+        CMTimeRange(start: .negativeInfinity, duration: .positiveInfinity)
+    }
+
+    nonisolated func pictureInPictureControllerIsPlaybackPaused(
+        _ controller: AVPictureInPictureController
+    ) -> Bool {
+        false
+    }
+
+    nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController,
+        didTransitionToRenderSize newRenderSize: CMVideoDimensions
+    ) {
+        // The window sizes itself around the frames; nothing to do.
+    }
+
+    nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController,
+        skipByInterval skipInterval: CMTime,
+        completion completionHandler: @escaping () -> Void
+    ) {
+        completionHandler()
+    }
+}
+
+// MARK: - Window lifecycle
+
 extension BackgroundPiP: AVPictureInPictureControllerDelegate {
     nonisolated func pictureInPictureControllerDidStartPictureInPicture(
         _ controller: AVPictureInPictureController
@@ -241,37 +255,20 @@ extension BackgroundPiP: AVPictureInPictureControllerDelegate {
         Task { @MainActor in BackgroundPiP.shared.sink.isActive = true }
     }
 
-    nonisolated func pictureInPictureControllerWillStartPictureInPicture(
-        _ controller: AVPictureInPictureController
-    ) {
-        Task { @MainActor in BackgroundPiP.shared.refreshOrientation() }
-    }
-
     nonisolated func pictureInPictureControllerWillStopPictureInPicture(
         _ controller: AVPictureInPictureController
     ) {
-        Task { @MainActor in
-            let pip = BackgroundPiP.shared
-            pip.sink.isActive = false
-            pip.sink.flush()
-        }
+        Task { @MainActor in BackgroundPiP.shared.sink.isActive = false }
     }
 
     /// The window went away — closed by the user, or because the app is
     /// coming back to the front. Deliberately NOT where the stream ends:
-    /// the app is still running, and the thing that actually decides
-    /// whether a stream can continue is whether iOS left us the camera.
-    /// Streamer watches for that (a capture interruption with no window
-    /// up), which keeps a stashed window — hidden at the screen edge, but
-    /// still a window — from being mistaken for a dismissal.
+    /// the app is still running, and what actually decides whether a
+    /// stream can continue is whether iOS left us the camera.
     nonisolated func pictureInPictureControllerDidStopPictureInPicture(
         _ controller: AVPictureInPictureController
     ) {
-        Task { @MainActor in
-            let pip = BackgroundPiP.shared
-            pip.sink.isActive = false
-            pip.sink.flush()
-        }
+        Task { @MainActor in BackgroundPiP.shared.sink.isActive = false }
     }
 
     /// Tapping "return to app" on the window. LensLink is one scene with
@@ -295,10 +292,9 @@ extension BackgroundPiP: AVPictureInPictureControllerDelegate {
     }
 }
 
-/// The live picture, shared between the main actor (which builds and
-/// lays out the layer) and the capture queue (which feeds it). The
-/// layer itself is the only mutable state, and `AVSampleBufferDisplayLayer`
-/// takes enqueues from any thread.
+/// The live picture, shared between the main actor (which builds the
+/// layer and hands it to PiP) and the capture queue (which feeds it).
+/// `AVSampleBufferDisplayLayer` takes enqueues from any thread.
 private final class FrameSink: @unchecked Sendable {
     let layer = AVSampleBufferDisplayLayer()
 
@@ -307,11 +303,21 @@ private final class FrameSink: @unchecked Sendable {
         get { lock.lock(); defer { lock.unlock() }; return active }
         set { lock.lock(); active = newValue; lock.unlock() }
     }
+
+    /// Whether the layer should be fed at all: true for the life of a
+    /// stream PiP is armed for, so the layer has something to hand over
+    /// the moment the app leaves the screen.
+    var wantsFrames: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return feeding }
+        set { lock.lock(); feeding = newValue; lock.unlock() }
+    }
+
     private var active = false
+    private var feeding = false
     private let lock = NSLock()
 
     func enqueue(_ sampleBuffer: CMSampleBuffer) {
-        guard isActive else { return }
+        guard wantsFrames else { return }
         if layer.status == .failed {
             layer.flush()
         }
@@ -336,70 +342,5 @@ private final class FrameSink: @unchecked Sendable {
 
     func flush() {
         layer.flush()
-    }
-}
-
-/// The PiP window's content: the sink's layer, fed the same frames the
-/// encoder sends to OBS, so what's in the little window is what's on the
-/// wire (green screen and all) rather than a second capture path.
-private final class SampleBufferCallViewController:
-    AVPictureInPictureVideoCallViewController {
-
-    private let sink: FrameSink
-    private var rotation: CGFloat = 0
-
-    init(sink: FrameSink) {
-        self.sink = sink
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) is not used — this controller is code-only")
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .black
-        sink.layer.videoGravity = .resizeAspect
-        view.layer.addSublayer(sink.layer)
-    }
-
-    /// Which way to turn the picture so it reads the way it did on the
-    /// Live screen a moment ago. Zero for `.landscapeRight`, because that
-    /// is the orientation the capture connection is pinned to — the
-    /// buffer already agrees with the screen there.
-    func setOrientation(_ orientation: UIInterfaceOrientation) {
-        let radians: CGFloat
-        switch orientation {
-        case .portrait: radians = .pi / 2
-        case .portraitUpsideDown: radians = -.pi / 2
-        case .landscapeLeft: radians = .pi
-        default: radians = 0
-        }
-        guard radians != rotation else { return }
-        rotation = radians
-        view.setNeedsLayout()
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        // The window resizes as the user drags it between corners; no
-        // implicit animation, or every resize smears the live picture.
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        // A quarter turn swaps the axes: the layer is laid out in the
-        // box it will occupy *before* rotating, then turned into the
-        // window. Laying it out in the window's own bounds first would
-        // letterbox the picture inside its own rotation.
-        let quarterTurned = abs(abs(rotation) - .pi / 2) < 0.01
-        let size = quarterTurned
-            ? CGSize(width: view.bounds.height, height: view.bounds.width)
-            : view.bounds.size
-        sink.layer.bounds = CGRect(origin: .zero, size: size)
-        sink.layer.position = CGPoint(x: view.bounds.midX,
-                                      y: view.bounds.midY)
-        sink.layer.transform = CATransform3DMakeRotation(rotation, 0, 0, 1)
-        CATransaction.commit()
     }
 }
