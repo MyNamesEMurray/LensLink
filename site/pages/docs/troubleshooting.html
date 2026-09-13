@@ -136,6 +136,17 @@ data\obs-plugins\ios-camera-source\</code></pre>
   streaming is worth testing with the green screen off.
 </p>
 
+<h2>The OBS source shows a blurred picture with a pause symbol</h2>
+<p>
+  The stream is <strong>paused</strong>, not broken: the phone is still
+  connected and its camera is still running, but no video is going out.
+  Either someone paused it — the phone's Live screen, the web panel, or
+  the source properties all have the button — or iOS took the camera
+  from a background stream whose Picture in Picture window was parked at
+  the screen edge. Resume from any of those places; the window case
+  resumes by itself when you pull the window back out.
+</p>
+
 <h2>The picture freezes or goes black when I switch apps on the phone</h2>
 <p>
   Expected: iOS suspends camera capture for apps that aren't on screen. A screen

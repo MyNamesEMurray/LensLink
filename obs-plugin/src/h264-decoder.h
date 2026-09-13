@@ -65,5 +65,22 @@ uint64_t h264_decoder_frames_output(const struct h264_decoder *dec);
 /* Diagnostics: dimensions and pixel-format name of the most recently
  * decoded frame (all outputs are optional). Returns false if no frame has
  * been decoded yet. */
+/* A tiny luma thumbnail of the last decoded frame, kept so the source can
+ * draw a paused still without holding on to a full frame (or copying one
+ * per frame). Sampled sparsely — a few thousand reads whatever the
+ * resolution — and upscaled back to frame size when needed, which is
+ * where the blur comes from. */
+#define LENSLINK_THUMB_W 64
+#define LENSLINK_THUMB_H 36
+
+/* Copies LENSLINK_THUMB_W * LENSLINK_THUMB_H bytes into dst. False when
+ * nothing has been decoded yet, or the frames never reached system
+ * memory (the GPU pipeline keeps them in textures). */
+bool h264_decoder_thumbnail(const struct h264_decoder *dec, uint8_t *dst);
+
+/* Presentation time of the last frame handed to OBS, for anything that
+ * needs to place a frame after it on the same timeline. */
+uint64_t h264_decoder_last_pts(const struct h264_decoder *dec);
+
 bool h264_decoder_last_frame(const struct h264_decoder *dec, int *width,
 			     int *height, const char **format_name);

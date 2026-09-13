@@ -120,6 +120,8 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "exposure", "mode": "auto" }
 { "cmd": "start_stream" }
 { "cmd": "stop_stream" }
+{ "cmd": "pause_stream" }
+{ "cmd": "resume_stream" }
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
 { "cmd": "mic", "id": "builtin:2" }
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
@@ -189,6 +191,15 @@ Camera connections only; screen mirror ignores it.
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
 
+`pause_stream` / `resume_stream` **hold** a running stream instead of
+ending it: the app keeps the connection, the camera and the encoder, and
+simply stops sending VIDEO. Audio is unaffected — a phone acting as the
+wireless mic keeps carrying the show. Resuming asks the encoder for a
+keyframe, so the plugin has something self-contained to restart decoding
+on. Unlike remote start these need no **Remote start from OBS**
+permission: they can only hold a stream the user already started, never
+turn a camera on.
+
 `start_stream` / `stop_stream` are the **remote start** commands: they
 start/stop the camera itself (not just the connection) and are honoured
 only while the app's **Remote start from OBS** option is on. The plugin
@@ -228,6 +239,14 @@ While a 10-bit colour pipeline is active the snapshot says so —
 H.264 through the ordinary `set_format` validation. Both fields are
 absent on SDR streams, whose snapshots are unchanged from before
 colour modes existed.
+
+Pause rides the snapshot too: `"paused": true` while video is held, with
+`"pauseReason"` saying who held it — `"user"` for an operator pause (the
+app's Pause button, the web panel, or the source properties) or
+`"camera"` when iOS took the camera away, which happens when a PiP
+window carrying a background stream is parked at the screen edge. The
+reason is what lets a surface choose between offering a Resume button
+and explaining that the phone is waiting on iOS.
 
 Green screen state rides the snapshot the same way:
 `"supportsGreenScreen": true` advertises the feature (remote UIs gate

@@ -57,6 +57,7 @@ add_library(${PROJECT_NAME} MODULE
   src/plugin-main.c
   src/ios-camera-source.c
   src/h264-decoder.c
+  src/paused-still.c
   src/usbmux.c
   src/web-control.c
   src/diagnostics.c
