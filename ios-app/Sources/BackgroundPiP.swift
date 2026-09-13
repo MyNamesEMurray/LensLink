@@ -219,7 +219,7 @@ extension BackgroundPiP: AVPictureInPictureSampleBufferPlaybackDelegate {
     }
 
     nonisolated func pictureInPictureControllerTimeRangeForPlayback(
-        for controller: AVPictureInPictureController
+        _ controller: AVPictureInPictureController
     ) -> CMTimeRange {
         CMTimeRange(start: .negativeInfinity, duration: .positiveInfinity)
     }
