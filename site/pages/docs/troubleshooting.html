@@ -150,11 +150,14 @@ data\obs-plugins\ios-camera-source\</code></pre>
 </p>
 <p>
   Tap the window to get its buttons: one returns you to LensLink, the
-  other closes it. Pushing it off the side of the screen only parks it —
-  iOS may pause the camera while the window is tucked away, and pulling
-  it back resumes the stream. To stop without going back to the phone at
-  all, press <strong>Stop</strong> in OBS or the
-  <a href="/docs/web-panel/">web panel</a>, or ask Siri to stop streaming.
+  other closes it. Pushing it off the side of the screen parks it, and
+  iOS only lends the camera to a window it can see — so capture pauses,
+  the green camera dot goes out, and OBS holds its last frame until you
+  pull the window back, at which point the stream resumes on its own.
+  That is iOS's rule for background capture, not a LensLink setting. To
+  stop without going back to the phone at all, press <strong>Stop</strong>
+  in OBS or the <a href="/docs/web-panel/">web panel</a>, or ask Siri to
+  stop streaming.
 </p>
 <p>
   On iPad, keeping LensLink <em>on</em> screen alongside the other app —

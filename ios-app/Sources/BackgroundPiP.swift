@@ -74,13 +74,53 @@ final class BackgroundPiP: NSObject {
     var videoSize: CGSize = CGSize(width: 16, height: 9) {
         didSet {
             guard videoSize != oldValue else { return }
-            callViewController?.preferredContentSize = videoSize
+            applyOrientation()
         }
     }
+
+    /// How the phone was being held when the window opened. The capture
+    /// buffers are sensor-native landscape — that's what goes on the wire,
+    /// deliberately (docs/ROADMAP.md) — and the Live screen's preview
+    /// already rotates that for the screen the user is holding. The PiP
+    /// window is a preview too, so it follows the same rule instead of
+    /// showing the wire orientation and reading as "flipped to landscape"
+    /// beside the app it just came from.
+    private var interfaceOrientation: UIInterfaceOrientation = .portrait
 
     private var controller: AVPictureInPictureController?
     private var callViewController: SampleBufferCallViewController?
     private weak var sourceView: UIView?
+
+    /// Re-reads how the phone is held and reshapes the window to match.
+    /// Called as the app leaves the screen (the last moment the interface
+    /// orientation means anything) and again as PiP starts.
+    func refreshOrientation() {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }.first
+        guard let orientation = scene?.interfaceOrientation else { return }
+        interfaceOrientation = orientation
+        applyOrientation()
+    }
+
+    private func applyOrientation() {
+        callViewController?.setOrientation(interfaceOrientation)
+        callViewController?.preferredContentSize =
+            BackgroundPiP.windowSize(for: videoSize,
+                                     orientation: interfaceOrientation)
+    }
+
+    /// Portrait turns the picture on its side, so the window has to turn
+    /// with it or the rotated frame sits letterboxed inside a landscape
+    /// box — the same mismatch, one rotation along.
+    static func windowSize(for video: CGSize,
+                           orientation: UIInterfaceOrientation) -> CGSize {
+        orientation.isPortrait
+            ? CGSize(width: video.height, height: video.width)
+            : video
+    }
 
     /// The inline view PiP flies out of — CameraPreviewView's, handed
     /// over when it appears. A different view rebuilds the controller:
@@ -104,7 +144,10 @@ final class BackgroundPiP: NSObject {
         sourceView = view
 
         let content = SampleBufferCallViewController(sink: sink)
-        content.preferredContentSize = videoSize
+        content.setOrientation(interfaceOrientation)
+        content.preferredContentSize =
+            BackgroundPiP.windowSize(for: videoSize,
+                                     orientation: interfaceOrientation)
         let source = AVPictureInPictureController.ContentSource(
             activeVideoCallSourceView: view,
             contentViewController: content)
@@ -196,6 +239,12 @@ extension BackgroundPiP: AVPictureInPictureControllerDelegate {
         _ controller: AVPictureInPictureController
     ) {
         Task { @MainActor in BackgroundPiP.shared.sink.isActive = true }
+    }
+
+    nonisolated func pictureInPictureControllerWillStartPictureInPicture(
+        _ controller: AVPictureInPictureController
+    ) {
+        Task { @MainActor in BackgroundPiP.shared.refreshOrientation() }
     }
 
     nonisolated func pictureInPictureControllerWillStopPictureInPicture(
@@ -297,6 +346,7 @@ private final class SampleBufferCallViewController:
     AVPictureInPictureVideoCallViewController {
 
     private let sink: FrameSink
+    private var rotation: CGFloat = 0
 
     init(sink: FrameSink) {
         self.sink = sink
@@ -315,13 +365,41 @@ private final class SampleBufferCallViewController:
         view.layer.addSublayer(sink.layer)
     }
 
+    /// Which way to turn the picture so it reads the way it did on the
+    /// Live screen a moment ago. Zero for `.landscapeRight`, because that
+    /// is the orientation the capture connection is pinned to — the
+    /// buffer already agrees with the screen there.
+    func setOrientation(_ orientation: UIInterfaceOrientation) {
+        let radians: CGFloat
+        switch orientation {
+        case .portrait: radians = .pi / 2
+        case .portraitUpsideDown: radians = -.pi / 2
+        case .landscapeLeft: radians = .pi
+        default: radians = 0
+        }
+        guard radians != rotation else { return }
+        rotation = radians
+        view.setNeedsLayout()
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         // The window resizes as the user drags it between corners; no
         // implicit animation, or every resize smears the live picture.
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        sink.layer.frame = view.bounds
+        // A quarter turn swaps the axes: the layer is laid out in the
+        // box it will occupy *before* rotating, then turned into the
+        // window. Laying it out in the window's own bounds first would
+        // letterbox the picture inside its own rotation.
+        let quarterTurned = abs(abs(rotation) - .pi / 2) < 0.01
+        let size = quarterTurned
+            ? CGSize(width: view.bounds.height, height: view.bounds.width)
+            : view.bounds.size
+        sink.layer.bounds = CGRect(origin: .zero, size: size)
+        sink.layer.position = CGPoint(x: view.bounds.midX,
+                                      y: view.bounds.midY)
+        sink.layer.transform = CATransform3DMakeRotation(rotation, 0, 0, 1)
         CATransaction.commit()
     }
 }
