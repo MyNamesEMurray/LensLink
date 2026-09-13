@@ -39,12 +39,6 @@ final class BackgroundPiP: NSObject {
     /// capture queue writes to it once per frame.
     private let sink = FrameSink()
 
-    /// Called when PiP ends while the app is still off screen — the user
-    /// closed the window rather than tapping back into LensLink. The
-    /// camera is about to be taken away, so the stream has to stop
-    /// cleanly instead of freezing a frame in OBS.
-    var onClosedWhileBackgrounded: (() -> Void)?
-
     /// Whether PiP can carry the stream on this device at all: the
     /// hardware supports PiP, and the capture session was granted
     /// multitasking camera access. Both are needed — a PiP window
@@ -69,6 +63,20 @@ final class BackgroundPiP: NSObject {
     /// Streaming right now: auto-start is armed only while there's a
     /// stream worth keeping alive.
     private var isStreaming = false
+
+    /// The capture dimensions, from Streamer. PiP sizes its window from
+    /// the content controller's `preferredContentSize`, and without one
+    /// it guesses from the source view — a portrait phone screen — so a
+    /// landscape stream arrived letterboxed inside a portrait box and
+    /// read as "rotated" next to the app's own upright preview. Setting
+    /// the real dimensions makes the window the shape of the picture,
+    /// which is the shape OBS receives.
+    var videoSize: CGSize = CGSize(width: 16, height: 9) {
+        didSet {
+            guard videoSize != oldValue else { return }
+            callViewController?.preferredContentSize = videoSize
+        }
+    }
 
     private var controller: AVPictureInPictureController?
     private var callViewController: SampleBufferCallViewController?
@@ -96,13 +104,17 @@ final class BackgroundPiP: NSObject {
         sourceView = view
 
         let content = SampleBufferCallViewController(sink: sink)
+        content.preferredContentSize = videoSize
         let source = AVPictureInPictureController.ContentSource(
             activeVideoCallSourceView: view,
             contentViewController: content)
         let controller = AVPictureInPictureController(contentSource: source)
         controller.delegate = self
-        // Live camera: play, pause and scrub would all be lies.
-        controller.requiresLinearPlayback = true
+        // Deliberately NOT requiresLinearPlayback: it reads like the
+        // honest choice for a live camera (no scrubbing to offer), but it
+        // takes the window's controls away with it — including the close
+        // and restore buttons, leaving no way out of PiP but force-
+        // quitting the app.
         callViewController = content
         self.controller = controller
         applyAutoStart()
@@ -117,10 +129,36 @@ final class BackgroundPiP: NSObject {
     }
 
     /// Streaming state, from Streamer's start/stop.
+    ///
+    /// Stopping tears the controller down rather than just disarming it:
+    /// a controller that still exists can be started by the system as the
+    /// app leaves the screen, and with no stream behind it the window
+    /// opens on whatever frame the layer last held — the "PiP appears
+    /// frozen even though I never started a stream" report. No
+    /// controller, no window; the next stream builds a fresh one when its
+    /// preview appears.
     func setStreaming(_ streaming: Bool) {
         isStreaming = streaming
-        if !streaming { stop() }
-        applyAutoStart()
+        if streaming {
+            applyAutoStart()
+            return
+        }
+        stop()
+        controller?.canStartPictureInPictureAutomaticallyFromInline = false
+        controller = nil
+        callViewController = nil
+        // Cleared too, or `attach` would take the next stream's preview
+        // for the one it already holds and never rebuild the controller.
+        sourceView = nil
+        sink.isActive = false
+        sink.flush()
+    }
+
+    /// The system's own answer to "is a PiP window carrying this stream
+    /// right now", which stays true while the window is stashed against
+    /// the screen edge — unlike the frame flag, which follows rendering.
+    var hasWindow: Bool {
+        controller?.isPictureInPictureActive ?? false
     }
 
     /// Arms (or disarms) the system's own "start PiP when this app goes
@@ -170,19 +208,20 @@ extension BackgroundPiP: AVPictureInPictureControllerDelegate {
         }
     }
 
+    /// The window went away — closed by the user, or because the app is
+    /// coming back to the front. Deliberately NOT where the stream ends:
+    /// the app is still running, and the thing that actually decides
+    /// whether a stream can continue is whether iOS left us the camera.
+    /// Streamer watches for that (a capture interruption with no window
+    /// up), which keeps a stashed window — hidden at the screen edge, but
+    /// still a window — from being mistaken for a dismissal.
     nonisolated func pictureInPictureControllerDidStopPictureInPicture(
         _ controller: AVPictureInPictureController
     ) {
         Task { @MainActor in
             let pip = BackgroundPiP.shared
             pip.sink.isActive = false
-            // Stopping while the app is still off screen means the user
-            // dismissed the window: iOS is about to suspend us and take
-            // the camera, so end the stream deliberately instead of
-            // leaving OBS on a frozen frame.
-            if UIApplication.shared.applicationState != .active {
-                pip.onClosedWhileBackgrounded?()
-            }
+            pip.sink.flush()
         }
     }
 
