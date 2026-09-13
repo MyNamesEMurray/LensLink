@@ -315,7 +315,10 @@ most a sentence or two, so the form stays close to one screenful.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short: **Remote start from OBS**, **Idle view**
-(Standard / Clean feed / Dim screen), pushed screens for **Tally light**
+(Standard / Clean feed / Dim screen), **Keep streaming in the
+background** (present only where iOS grants background capture — a
+toggle that can do nothing is worse than no toggle), pushed screens for
+**Tally light**
 and **Presets**, and a **Microphone** group (**Send phone mic to OBS** /
 **Auto lip-sync reference** — mutually exclusive; turning one on turns the
 other off). Pure controls, no footers: every explanation lives in the

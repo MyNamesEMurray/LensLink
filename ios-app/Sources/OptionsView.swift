@@ -28,6 +28,13 @@ struct OptionsView: View {
                             Text(view.displayName).tag(view)
                         }
                     }
+                    // Hidden where iOS won't grant background capture at
+                    // all: a toggle that can't do anything is worse than
+                    // no toggle.
+                    if streamer.backgroundStreamingAvailable {
+                        Toggle("Keep streaming in the background",
+                               isOn: $streamer.backgroundStreaming)
+                    }
                     Toggle("Allow system video effects",
                            isOn: $streamer.allowVideoEffects)
                 }

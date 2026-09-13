@@ -49,6 +49,48 @@ site/README.md         how the site is built and deployed (Cloudflare Pages)
 - Plugin: [`obs-plugin/BUILDING.md`](../obs-plugin/BUILDING.md)
 - App: [`ios-app/BUILDING.md`](../ios-app/BUILDING.md)
 
+## Background streaming, PiP, and the `voip` background mode
+
+iOS stops camera capture for any app that isn't on screen. The only
+sanctioned exception is `AVCaptureSession.isMultitaskingCameraAccessEnabled`
+(set in `CameraManager.configure`), which iOS grants when **any** of
+these hold:
+
+1. the device is an iPad that supports Stage Manager with an extended
+   display — Split View / Slide Over / Stage Manager keep streaming with
+   nothing else required;
+2. the app links against the **iOS 18 SDK or later** *and* declares
+   **`voip`** in `UIBackgroundModes`;
+3. the app holds the `com.apple.developer.avfoundation.multitasking-camera-access`
+   entitlement, which is requested from Apple.
+
+Even then, capture survives backgrounding only while a **Picture in
+Picture** window is up, which is why `Sources/BackgroundPiP.swift`
+exists: it hands the capture buffers to an `AVSampleBufferDisplayLayer`
+inside an `AVPictureInPictureVideoCallViewController`, and arms
+`canStartPictureInPictureAutomaticallyFromInline` for the life of a
+stream so the system opens that window as the app leaves the screen. No
+window, no background stream. Locking the phone ends PiP and the stream
+with it.
+
+LensLink takes route 2 — `voip` is declared in `ios-app/project.yml`,
+alongside `audio` (the PiP window and the mic reference). **This is the
+part to think about before submitting a build.** LensLink is not a
+calling app, and App Review guideline 2.5.4 asks that background modes
+be used for their stated purpose. The argument for it is the pipeline
+the feature exists to serve: the phone feeds LensLink, LensLink feeds
+OBS, OBS feeds its virtual camera, and that virtual camera is what
+Teams, Zoom and Meet see — the phone *is* the camera in a video call,
+even though the call belongs to another app. Put that in the review
+notes rather than assuming a reviewer will infer it.
+
+If a reviewer doesn't accept it, the fix is route 3, not an appeal:
+request the multitasking-camera-access entitlement from Apple, add it to
+the target, and drop `voip` from `UIBackgroundModes`. Nothing in
+`BackgroundPiP.swift` changes — it already gates every path on what the
+session actually granted, so route 1 (iPad) keeps working throughout,
+and the Options toggle hides itself wherever the grant is absent.
+
 ## Protocol
 
 A small length-prefixed packet protocol over one TCP connection (video is

@@ -71,10 +71,13 @@ phone.
    - **USB** — connect the cable, set **Connection → USB cable**. No
      network needed, and the phone charges while streaming.
 
-The video appears within a second or two. Closing or backgrounding the app
-blanks the source. On iPads that support multitasking camera access
-(iPadOS 16+), sharing the screen doesn't count as backgrounding: the
-stream keeps running in Split View, Slide Over and Stage Manager.
+The video appears within a second or two. Leaving the app mid-stream parks
+the picture in a Picture in Picture window and keeps the camera running —
+that window is iOS's price for background capture, so closing it (or
+locking the phone) ends the stream. On iPads that support multitasking
+camera access, no window is needed: the stream keeps running in Split
+View, Slide Over and Stage Manager. Where iOS grants neither, closing or
+backgrounding the app blanks the source.
 
 ## Features
 
