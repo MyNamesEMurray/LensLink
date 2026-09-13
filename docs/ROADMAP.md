@@ -22,7 +22,6 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P2 | Document the control API | Control & workflow | Small |
 | P3 | Manual bitrate cap | Video & audio quality | Small |
 | P3 | Zero-copy encoder output | Performance | Medium |
-| P3 | iPad: keep streaming in Split View | Control & workflow | Small |
 | P3 | Two lenses at once (multicam) | Video & audio quality | Large |
 
 - **P1 — next up.** Protects or finishes what already ships, plus the
@@ -34,7 +33,9 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 Recently shipped and pruned from this file (see the release notes):
 tally light with customizable colours (v1.8.0), 10-bit HDR (HLG) with
 the zero-copy GPU path and Apple Log (v1.9.0), virtual green screen
-with depth assist and subject-distance cutoff (v1.10.0). Pairing &
+with depth assist and subject-distance cutoff (v1.10.0), iPad
+multitasking capture — streaming continues in Split View, Slide Over
+and Stage Manager on iPads that support it. Pairing &
 encryption was explicitly deprioritized by the maintainer in 2026-07 —
 revisit when remote start gets promoted or users stream on shared
 networks.
@@ -130,17 +131,6 @@ region, it reads sharper than cropping in OBS. New CONTROL command with
 a normalized crop rect, STATE carries it back, web panel and Live
 screen get a drag-to-frame control. *The biggest quality-of-life gap
 for the mounted-phone use case this app is built around.*
-
-### iPad: keep streaming in Split View — P3, small
-The app streams only while foregrounded (iOS suspends background
-camera capture), which on iPad is a real limitation — a streamer might
-want notes or chat beside the camera app. On supporting iPads,
-`AVCaptureSession.isMultitaskingCameraAccessEnabled` (iOS 16+) lets
-capture continue in Split View / Stage Manager. Gate on
-`isMultitaskingCameraAccessSupported`, keep the listener alive, and
-soften the "foregrounded only" wording where it applies. iPhone
-still suspends — this is iPad-only relief. *Trigger: iPad users
-asking; pairs naturally with the tally light for multi-window rigs.*
 
 ### Document the control API — Stream Deck without a plugin — P2, small
 The web panel's endpoints (`/api/state`, `POST /api/control`) are

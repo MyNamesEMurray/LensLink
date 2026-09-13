@@ -141,6 +141,21 @@ data\obs-plugins\ios-camera-source\</code></pre>
   Expected: iOS suspends camera capture for apps that aren't on screen. A screen
   <em>broadcast</em> is the exception and keeps running across apps.
 </p>
+<p>
+  Turn on <strong>Keep streaming in the background</strong> (Options) and
+  leaving the app instead parks the picture in a Picture in Picture
+  window, with the camera still running. If no window appears, iOS hasn't
+  granted this device background camera access and the stream stops as
+  before. Closing the window, or locking the phone, also ends the stream.
+</p>
+<p>
+  On iPad, keeping LensLink <em>on</em> screen alongside the other app —
+  Split View, Slide Over or Stage Manager — keeps the camera running on
+  models that support multitasking camera access (iPadOS 16+). Where an
+  iPad can't share the camera, the status reads
+  <strong>Camera paused — this iPad can't share the camera on
+  screen</strong>; run LensLink full screen there.
+</p>
 
 <h2>Nothing here matches</h2>
 <p>

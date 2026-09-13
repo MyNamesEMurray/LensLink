@@ -123,6 +123,16 @@ struct CameraPreviewView: UIViewRepresentable {
             }
         }
 
+        // PiP flies out of this view, and needs it before the app is
+        // ever backgrounded — the window can't be conjured on the way
+        // out. Inert where the platform refuses background capture.
+        let pipSession = session
+        Task { @MainActor [weak view] in
+            guard let view else { return }
+            BackgroundPiP.shared.attach(sourceView: view,
+                                        session: pipSession)
+        }
+
         if onTapAtDevicePoint != nil {
             let tap = UITapGestureRecognizer(
                 target: context.coordinator,
@@ -163,6 +173,10 @@ struct CameraPreviewView: UIViewRepresentable {
         let layer = uiView.previewLayer
         coordinator.parent.sessionQueue.async {
             layer.session = nil
+        }
+        Task { @MainActor [weak uiView] in
+            guard let uiView else { return }
+            BackgroundPiP.shared.detach(sourceView: uiView)
         }
     }
 }
