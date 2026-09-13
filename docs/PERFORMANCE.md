@@ -40,12 +40,16 @@ should add as close to zero as possible.
   cover (`CameraPreviewView.previewEnabled`). The outgoing stream is
   unaffected. On top of the existing OLED-black + brightness drop, this
   is the biggest saver for the "phone mounted behind the monitor" case.
-- **Background PiP costs one boolean read per frame while inline.** The
-  frame tee into the PiP window (`BackgroundPiP.enqueue`) returns on a
-  lock-guarded flag until a window is actually open, so the on-screen
-  path is unchanged; once open, the window is fed the buffers the
-  encoder already has (no second capture, no second composite) and drops
-  frames the display layer isn't ready for rather than queueing them.
+- **Background PiP feeds a 1-point layer while armed, and nothing when
+  it isn't.** `BackgroundPiP.enqueue` returns on a lock-guarded flag
+  whenever background streaming is off or nothing is streaming. While a
+  stream *is* armed for PiP the layer is fed continuously, even before a
+  window opens — PiP adopts a layer that is already showing something,
+  and a layer fed nothing has nothing to hand over — so the cost is one
+  `enqueue` into a one-point display layer per frame. The buffers are
+  the ones the encoder already has (no second capture, no second
+  composite), and frames the layer isn't ready for are dropped rather
+  than queued.
 - Idle standby listener costs nothing measurable: no timers, no camera —
   just an accepting socket and 1 Hz timesync replies while OBS is
   connected.
