@@ -157,18 +157,20 @@ data\obs-plugins\ios-camera-source\</code></pre>
   leaving the app instead parks the picture in a Picture in Picture
   window, with the camera still running. If no window appears, iOS hasn't
   granted this device background camera access and the stream stops as
-  before. Closing the window, or locking the phone, also ends the stream.
+  before. Locking the phone ends the stream.
 </p>
 <p>
-  Tap the window to get its buttons: one returns you to LensLink, the
-  other closes it. Pushing it off the side of the screen parks it, and
+  The window carries no buttons of its own — iOS stopped drawing them for
+  this kind of window after iOS 15 — so tap it to come back to LensLink.
+  Pushing it off the side of the screen parks it, and
   iOS only lends the camera to a window it can see — so capture pauses,
   the green camera dot goes out, and OBS holds its last frame until you
   pull the window back, at which point the stream resumes on its own.
   That is iOS's rule for background capture, not a LensLink setting. To
-  stop without going back to the phone at all, press <strong>Stop</strong>
-  in OBS or the <a href="/docs/web-panel/">web panel</a>, or ask Siri to
-  stop streaming.
+  stop or pause without going back to the phone at all, press
+  <strong>Stop</strong> or <strong>Pause</strong> in OBS or the
+  <a href="/docs/web-panel/">web panel</a>, or ask Siri to stop
+  streaming.
 </p>
 <p>
   On iPad, keeping LensLink <em>on</em> screen alongside the other app —
