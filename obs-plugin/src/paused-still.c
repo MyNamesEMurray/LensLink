@@ -18,6 +18,7 @@
 #include "paused-still.h"
 
 #include <obs-module.h>
+#include <media-io/video-io.h>
 #include <util/bmem.h>
 #include <util/platform.h>
 
@@ -137,6 +138,16 @@ bool lenslink_paused_still_output(obs_source_t *source, const uint8_t *thumb,
 	/* Y800 as written here is full-range grey; without this OBS
 	 * stretches 16-235 and the still comes out crushed. */
 	frame.full_range = true;
+	frame.trc = (uint8_t)VIDEO_TRC_DEFAULT;
+	/* The conversion matrix is the source's job, not libobs's: a frame
+	 * handed over with the struct's zeroed matrix converts to black.
+	 * The decoder fills this per frame (avframe_to_obs) and the still
+	 * has to do the same or it never appears — which is exactly how it
+	 * failed the first time. */
+	video_format_get_parameters_for_format(VIDEO_CS_601, VIDEO_RANGE_FULL,
+					       frame.format, frame.color_matrix,
+					       frame.color_range_min,
+					       frame.color_range_max);
 	frame.timestamp = timestamp ? timestamp : os_gettime_ns();
 
 	/* obs_source_output_video copies into its own frame cache, so the

@@ -891,22 +891,40 @@ static const char *paused_suffix(struct ios_camera_source *s)
 static void output_paused_still(struct ios_camera_source *s,
 				struct client_state *c)
 {
-	if (!c->decoder || g_gpu_pipeline_mode)
+	/* Every way out of here is logged. A still that silently doesn't
+	 * appear is indistinguishable from a frozen frame — which is how
+	 * the first version of this shipped broken. */
+	if (!c->decoder || g_gpu_pipeline_mode) {
+		blog(LOG_INFO,
+		     "[lenslink] paused still skipped: %s",
+		     g_gpu_pipeline_mode ? "GPU pipeline keeps frames in "
+					   "textures"
+					 : "no decoder");
 		return;
+	}
 
 	int width = 0, height = 0;
-	if (!h264_decoder_last_frame(c->decoder, &width, &height, NULL))
+	if (!h264_decoder_last_frame(c->decoder, &width, &height, NULL)) {
+		blog(LOG_INFO,
+		     "[lenslink] paused still skipped: nothing decoded yet");
 		return;
+	}
 
 	uint8_t thumb[LENSLINK_THUMB_W * LENSLINK_THUMB_H];
-	if (!h264_decoder_thumbnail(c->decoder, thumb))
+	if (!h264_decoder_thumbnail(c->decoder, thumb)) {
+		blog(LOG_INFO,
+		     "[lenslink] paused still skipped: no thumbnail");
 		return;
+	}
 
 	/* One frame interval past the last real one keeps the still ahead
 	 * of what OBS has already shown, on the stream's own clock. */
 	uint64_t pts = h264_decoder_last_pts(c->decoder);
-	lenslink_paused_still_output(s->source, thumb, width, height,
-				     pts ? pts + 16666667ULL : 0);
+	bool drawn = lenslink_paused_still_output(s->source, thumb, width,
+						  height,
+						  pts ? pts + 16666667ULL : 0);
+	blog(LOG_INFO, "[lenslink] paused still %s (%dx%d)",
+	     drawn ? "sent" : "failed", width, height);
 }
 
 static const char *green_screen_suffix(struct ios_camera_source *s)
@@ -1775,6 +1793,33 @@ static void extract_json_string(const char *json, const char *key, char *out,
  * inside JSON string content (an embedded quote is always escaped), so
  * this anchors to real keys only. JSONSerialization emits compact
  * "key":value with no space before the colon. */
+/* Same as extract_json_bool, but bounded by an explicit length so it can
+ * read the packet payload itself rather than the NUL-terminated copy kept
+ * for /api/state. That copy is capped, and a snapshot longer than the cap
+ * loses whatever sits past it — which is how the "paused" flag could go
+ * missing while everything else about the stream looked fine. */
+static bool extract_json_bool_n(const char *json, size_t len, const char *key)
+{
+	char pattern[64];
+	int written = snprintf(pattern, sizeof(pattern), "\"%s\":", key);
+	if (written <= 0)
+		return false;
+
+	size_t plen = (size_t)written;
+	if (len < plen)
+		return false;
+
+	for (size_t i = 0; i + plen <= len; i++) {
+		if (memcmp(json + i, pattern, plen) != 0)
+			continue;
+		size_t j = i + plen;
+		while (j < len && (json[j] == ' ' || json[j] == '\t'))
+			j++;
+		return len - j >= 4 && memcmp(json + j, "true", 4) == 0;
+	}
+	return false;
+}
+
 static bool extract_json_bool(const char *json, const char *key)
 {
 	char pattern[64];
@@ -2135,20 +2180,32 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				   : sizeof(s->device_state) - 1;
 		memcpy(s->device_state, payload, n);
 		s->device_state[n] = 0;
+		bool truncated = n < hdr->payload_size;
+		/* Parsed from the payload, not the copy above: the copy is
+		 * capped at sizeof(device_state) and a longer snapshot loses
+		 * its tail. */
+		const char *raw = (const char *)payload;
+		size_t raw_len = hdr->payload_size;
 		bool green_screen =
-			extract_json_bool(s->device_state, "greenScreen");
+			extract_json_bool_n(raw, raw_len, "greenScreen");
 		/* Held rather than ended: the phone keeps the connection but
 		 * stops sending video, so the absence of frames is a state to
 		 * show, not a stall to diagnose. */
-		bool paused = extract_json_bool(s->device_state, "paused");
+		bool paused = extract_json_bool_n(raw, raw_len, "paused");
 		/* Green screen is SDR-only; the snapshot carries "hdr" (HLG)
 		 * or "color" (Apple Log) only while a 10-bit pipeline runs.
 		 * The app enforces the exclusivity — this is belt and braces
 		 * so a keyed filter is never added over a stream whose green
 		 * isn't chroma green. */
-		bool ten_bit = extract_json_bool(s->device_state, "hdr") ||
+		bool ten_bit = extract_json_bool_n(raw, raw_len, "hdr") ||
 			       strstr(s->device_state, "\"color\":") != NULL;
 		pthread_mutex_unlock(&s->status_mutex);
+		if (truncated)
+			blog(LOG_WARNING,
+			     "[lenslink] device state truncated at %zu bytes "
+			     "(payload %u) — /api/state will be incomplete",
+			     sizeof(s->device_state) - 1,
+			     (unsigned)hdr->payload_size);
 		bool paused_changed = s->stream_paused != paused;
 		s->stream_paused = paused;
 		s->green_screen = green_screen && !s->is_screen_source;
