@@ -1167,10 +1167,6 @@ final class Streamer: ObservableObject {
         // still goes now, because a suspended app can't be remote-started
         // either way.
         if isStreaming, backgroundStreaming, BackgroundPiP.shared.isAvailable {
-            // Last moment the interface orientation means anything: the
-            // window is about to open, and it should open the way the
-            // phone is being held.
-            BackgroundPiP.shared.refreshOrientation()
             handOffToPiP()
         } else {
             // The camera can't capture in the background; stop cleanly so

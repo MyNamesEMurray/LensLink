@@ -91,16 +91,14 @@ final class BackgroundPiP: NSObject {
     private var callViewController: SampleBufferCallViewController?
     private weak var sourceView: UIView?
 
-    /// Re-reads how the phone is held and reshapes the window to match.
-    /// Called as the app leaves the screen (the last moment the interface
-    /// orientation means anything) and again as PiP starts.
-    func refreshOrientation() {
-        let scene = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first { $0.activationState == .foregroundActive }
-            ?? UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }.first
-        guard let orientation = scene?.interfaceOrientation else { return }
+    /// How the phone is being held, reported by the Live screen's preview
+    /// as it lays itself out — the only vantage point that sees this while
+    /// the app is still on screen. Asking for it at hand-off time instead
+    /// read the orientation the scene had already reverted to (the Home
+    /// screen's), which handed every stream a portrait window no matter
+    /// how the phone was held.
+    func noteInterfaceOrientation(_ orientation: UIInterfaceOrientation) {
+        guard orientation != interfaceOrientation else { return }
         interfaceOrientation = orientation
         applyOrientation()
     }
@@ -239,12 +237,6 @@ extension BackgroundPiP: AVPictureInPictureControllerDelegate {
         _ controller: AVPictureInPictureController
     ) {
         Task { @MainActor in BackgroundPiP.shared.sink.isActive = true }
-    }
-
-    nonisolated func pictureInPictureControllerWillStartPictureInPicture(
-        _ controller: AVPictureInPictureController
-    ) {
-        Task { @MainActor in BackgroundPiP.shared.refreshOrientation() }
     }
 
     nonisolated func pictureInPictureControllerWillStopPictureInPicture(
