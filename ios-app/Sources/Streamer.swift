@@ -1075,16 +1075,6 @@ final class Streamer: ObservableObject {
                 case .began(let reason):
                     self.status = .error(
                         Streamer.interruptionMessage(reason))
-                    // Off screen with no PiP window left, iOS has taken
-                    // the camera for good: end the stream so OBS gets a
-                    // clean stop instead of a frozen frame. A *stashed*
-                    // window still counts as a window — it's hidden at
-                    // the screen edge, not closed — so stashing pauses
-                    // capture at most, and the resume below picks the
-                    // stream back up where iOS allows it.
-                    if !self.isForeground, !BackgroundPiP.shared.hasWindow {
-                        self.stop()
-                    }
                 case .ended:
                     // Capture restarted; OBS needs a fresh keyframe to
                     // pick the stream back up.
@@ -1122,7 +1112,14 @@ final class Streamer: ObservableObject {
         case .videoDeviceNotAvailableWithMultipleForegroundApps:
             return "Camera paused — this iPad can't share the camera on screen"
         case .videoDeviceNotAvailableInBackground:
-            return "Camera paused — app left the screen"
+            // Off screen but a window still exists: the PiP window is
+            // parked at the screen edge, and iOS only lends the camera to
+            // a window it can see. Pulling the window back is the fix,
+            // and it resumes on its own when you do — a different thing
+            // to tell the user than "come back to the app".
+            return BackgroundPiP.shared.hasWindow
+                ? "Camera paused — pull the window back to resume"
+                : "Camera paused — app left the screen"
         case .videoDeviceNotAvailableDueToSystemPressure:
             return "Camera paused — device too hot"
         default:
@@ -1170,6 +1167,10 @@ final class Streamer: ObservableObject {
         // still goes now, because a suspended app can't be remote-started
         // either way.
         if isStreaming, backgroundStreaming, BackgroundPiP.shared.isAvailable {
+            // Last moment the interface orientation means anything: the
+            // window is about to open, and it should open the way the
+            // phone is being held.
+            BackgroundPiP.shared.refreshOrientation()
             handOffToPiP()
         } else {
             // The camera can't capture in the background; stop cleanly so
