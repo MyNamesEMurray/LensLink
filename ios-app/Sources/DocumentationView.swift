@@ -47,6 +47,7 @@ struct DocumentationView: View {
             Section {
                 Text("**Remote start from OBS**: while the app is open and idle, OBS can start the camera for you. The phone stays awake while it waits — locking it or leaving the app ends remote start. Siri: \"Start streaming with LensLink.\"")
                 Text("**Idle view** is what the Live screen becomes 10 seconds after you last touch it, for a phone that's mounted and out of reach. **Standard** leaves the controls up. **Clean feed** hides everything but the picture — turn Stats on before you stop touching it to keep the health readout. **Dim screen** blanks the screen and drops the brightness to save battery, and is the only one that also dims remote-start standby, a minute in. Any tap brings the controls back.")
+                Text("**iPad multitasking**: on iPads that support it (iPadOS 16+), the camera keeps streaming with another app beside LensLink — Split View, Slide Over or Stage Manager. Sending LensLink fully to the background still stops capture, on every device; that's an iOS rule, not a setting. Screen mirroring is the exception and keeps running across apps.")
                 Text("**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
             } header: {
                 Text("Options")
@@ -62,7 +63,7 @@ struct DocumentationView: View {
 
             Section {
                 Text("The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it.")
-                Text("**Low battery** is one of the statuses you can light: it turns on with iOS Low Power Mode, or at 20% and below, and clears the moment you plug in. While the screen is dimmed the battery level also shows as a percentage under the wake hint — so a phone across the room can be checked without touching it.")
+                Text("**Low battery** is one of the statuses you can light: it turns on with iOS Low Power Mode, or at 20% and below, and clears the moment you plug in. While the screen is dimmed the battery level also shows large under the wake hint — so a phone across the room can be read at a glance, without touching it.")
             } header: {
                 Text("Tally light")
             }

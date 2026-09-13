@@ -193,13 +193,14 @@ struct StreamingView: View {
             // Near-black overlay: real battery savings on OLED, and the
             // brightness drop covers LCDs.
             Color.black.opacity(0.96).ignoresSafeArea()
-            VStack(spacing: 8) {
+            VStack(spacing: Theme.Space.m) {
                 Image(systemName: "video.fill")
                     .foregroundColor(.green.opacity(0.6))
                 Text("Streaming — tap to wake")
                     .font(.footnote)
                     .foregroundColor(.gray)
                 batteryReadout
+                    .padding(.top, Theme.Space.s)
             }
         }
         .contentShape(Rectangle())
@@ -208,23 +209,38 @@ struct StreamingView: View {
 
     /// "Do I need to plug this in?" answered without waking the screen —
     /// the whole point of a phone that dims itself on a stand for an hour.
-    /// Charging shows a bolt; low (Low Power Mode, or 20% and falling)
-    /// turns it red. Monospaced digits so a 5% step doesn't shuffle the
-    /// row. Nothing renders where iOS won't report a level, rather than a
-    /// placeholder that looks like a fault.
+    /// Deliberately the largest thing on the dimmed screen: the phone it
+    /// answers for is across the room on a stand, so the readout has to
+    /// carry at that distance, where the footnote-sized row it replaced
+    /// did not. Charging shows a bolt; low (Low Power Mode, or 20% and
+    /// falling) turns it red. Monospaced digits so a 5% step doesn't
+    /// shuffle the row. Nothing renders where iOS won't report a level,
+    /// rather than a placeholder that looks like a fault.
     @ViewBuilder private var batteryReadout: some View {
         if let percent = battery.percent {
-            HStack(spacing: Theme.Space.xs) {
+            HStack(spacing: Theme.Space.s) {
                 Image(systemName: batterySymbol(percent))
+                    .font(.system(size: 44, weight: .regular))
                 Text("\(percent)%")
-                    .font(.footnote.monospacedDigit())
+                    .font(.system(size: 44, weight: .semibold,
+                                  design: .rounded).monospacedDigit())
                 if battery.isCharging {
                     Image(systemName: "bolt.fill")
-                        .font(.caption2)
+                        .font(.system(size: 30, weight: .semibold))
                 }
             }
             .foregroundColor(batteryTint)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(batteryAccessibilityLabel(percent))
         }
+    }
+
+    /// VoiceOver reads the level as a sentence; the glyph and the bolt are
+    /// decoration once the percentage is spoken.
+    private func batteryAccessibilityLabel(_ percent: Int) -> String {
+        battery.isCharging
+            ? "Battery \(percent) percent, charging"
+            : "Battery \(percent) percent"
     }
 
     /// Red means low, amber means the OS is throttling, grey means fine —
@@ -232,11 +248,14 @@ struct StreamingView: View {
     /// them matters: Low Power Mode can be switched on at 80%, and a red
     /// readout there would be a lie you learn to ignore.
     private var batteryTint: Color {
-        guard !battery.isCharging else { return .gray }
+        // A brighter grey than the wake hint above it: at 5% brightness
+        // under a near-black overlay, `.gray` reads as almost nothing.
+        guard !battery.isCharging else { return Color(white: 0.75) }
         if let percent = battery.percent, percent <= 20 {
             return Theme.errorRed
         }
-        return battery.lowPowerMode ? Theme.connectAmber : .gray
+        return battery.lowPowerMode ? Theme.connectAmber
+                                    : Color(white: 0.75)
     }
 
     /// The system battery glyph nearest the real level, so the icon reads

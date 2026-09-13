@@ -1030,13 +1030,14 @@ final class Streamer: ObservableObject {
                 self?.encoder?.requestKeyframe()
             }
         }
-        camera.onInterruption = { [weak self] interrupted in
+        camera.onInterruption = { [weak self] interruption in
             Task { @MainActor [weak self] in
                 guard let self, self.isStreaming else { return }
-                if interrupted {
+                switch interruption {
+                case .began(let reason):
                     self.status = .error(
-                        "Camera paused — in use by another app")
-                } else {
+                        Streamer.interruptionMessage(reason))
+                case .ended:
                     // Capture restarted; OBS needs a fresh keyframe to
                     // pick the stream back up.
                     self.status = self.lastClientState == .connected
@@ -1058,6 +1059,26 @@ final class Streamer: ObservableObject {
                 self.screenCaptured = UIScreen.main.isCaptured
                 self.updateStandby()
             }
+        }
+    }
+
+    /// Why capture stopped, in the operator's terms. The multiple-apps
+    /// reason reaches here only on iPads too old to share the camera with
+    /// a second app on screen — newer ones keep streaming, see
+    /// `isMultitaskingCameraAccessEnabled` in CameraManager — so naming
+    /// Split View tells the user exactly what to undo.
+    private static func interruptionMessage(
+        _ reason: AVCaptureSession.InterruptionReason?
+    ) -> String {
+        switch reason {
+        case .videoDeviceNotAvailableWithMultipleForegroundApps:
+            return "Camera paused — this iPad can't share the camera on screen"
+        case .videoDeviceNotAvailableInBackground:
+            return "Camera paused — app left the screen"
+        case .videoDeviceNotAvailableDueToSystemPressure:
+            return "Camera paused — device too hot"
+        default:
+            return "Camera paused — in use by another app"
         }
     }
 

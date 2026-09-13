@@ -66,9 +66,19 @@ final class CameraManager: NSObject {
     }
     private var _onDepthData: ((AVDepthData) -> Void)?
 
-    /// Capture was interrupted (phone call, Camera app, Split View) or
-    /// resumed. Delivered on the main queue.
-    var onInterruption: ((Bool) -> Void)?
+    /// Capture was interrupted (phone call, Camera app, a second app on
+    /// screen where the iPad won't share the camera) or resumed.
+    /// Delivered on the main queue.
+    var onInterruption: ((Interruption) -> Void)?
+
+    /// `began` carries iOS's reason where it gave one, so the status can
+    /// say which kind of interruption this is — "another app has the
+    /// camera" and "this iPad won't run the camera in Split View" need
+    /// different fixes from the operator.
+    enum Interruption {
+        case began(AVCaptureSession.InterruptionReason?)
+        case ended
+    }
 
     /// The device currently feeding the session; camera controls act on it.
     private(set) var activeDevice: AVCaptureDevice?
@@ -109,12 +119,15 @@ final class CameraManager: NSObject {
     }
 
     @objc private func sessionInterrupted(_ note: Notification) {
-        DispatchQueue.main.async { self.onInterruption?(true) }
+        let reason = (note.userInfo?[AVCaptureSessionInterruptionReasonKey]
+                      as? Int)
+            .flatMap(AVCaptureSession.InterruptionReason.init(rawValue:))
+        DispatchQueue.main.async { self.onInterruption?(.began(reason)) }
     }
 
     @objc private func sessionResumed(_ note: Notification) {
         start() // the session does not restart itself
-        DispatchQueue.main.async { self.onInterruption?(false) }
+        DispatchQueue.main.async { self.onInterruption?(.ended) }
     }
 
     @objc private func sessionRuntimeError(_ note: Notification) {
@@ -766,6 +779,20 @@ final class CameraManager: NSObject {
                 depthConnection.isVideoMirrored = true
             }
         }
+        // Keep capturing when LensLink isn't the only app on screen —
+        // Split View, Slide Over, Stage Manager. Without it, iPadOS
+        // interrupts the session the moment a second app comes up
+        // (.videoDeviceNotAvailableWithMultipleForegroundApps) and the
+        // stream freezes where the operator can't see it. Asked LAST, not
+        // with the other session flags: support depends on the inputs and
+        // outputs actually attached, so a detached session answers no.
+        // iPad-only relief either way — an iPhone still suspends capture
+        // the instant the app leaves the screen, which no API changes.
+        if #available(iOS 16.0, *),
+           session.isMultitaskingCameraAccessSupported {
+            session.isMultitaskingCameraAccessEnabled = true
+        }
+
         return color
     }
 

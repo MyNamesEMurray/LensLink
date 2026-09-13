@@ -353,11 +353,14 @@ Full-screen black; camera preview `resizeAspect`; content over it:
   - **Dim screen** — near-black overlay with a small "Streaming — tap to
     wake" hint, brightness at 5%, and preview rendering stopped. Under the
     hint sits a **battery readout** (level glyph + monospaced percentage,
-    a bolt while charging). It answers "do I need to plug this in?"
+    a bolt while charging), set deliberately large — around 44 pt, the
+    biggest thing on the dimmed screen, because the phone it answers for
+    is on a stand across the room. It answers "do I need to plug this in?"
     without waking the screen — the one question a dimmed phone on a
-    stand cannot otherwise answer. Grey normally, `connectAmber` in Low
-    Power Mode, `errorRed` at 20% or below, and grey again whenever
-    charging: Low Power Mode can be switched on at 80%, and one colour
+    stand cannot otherwise answer. A bright grey normally (plain
+    `idleGrey` disappears at 5% brightness under the overlay),
+    `connectAmber` in Low Power Mode, `errorRed` at 20% or below, and
+    grey again whenever charging: Low Power Mode can be switched on at 80%, and one colour
     for both would be a warning you learn to ignore. Nothing renders
     where iOS reports no level (Simulator). This is the only idle view
     that also applies to the Setup screen, which dims a minute into

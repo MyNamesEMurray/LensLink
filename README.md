@@ -72,7 +72,9 @@ phone.
      network needed, and the phone charges while streaming.
 
 The video appears within a second or two. Closing or backgrounding the app
-blanks the source.
+blanks the source. On iPads that support multitasking camera access
+(iPadOS 16+), sharing the screen doesn't count as backgrounding: the
+stream keeps running in Split View, Slide Over and Stage Manager.
 
 ## Features
 
