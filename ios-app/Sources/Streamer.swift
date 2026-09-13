@@ -188,6 +188,11 @@ final class Streamer: ObservableObject {
         guard let oldEncoder = encoder else { return }
         oldEncoder.stop()
         let size = resolution.size
+        // A resolution change mid-stream reshapes the PiP window too —
+        // 4:3 and 16:9 are different pictures, and the window should keep
+        // matching what OBS receives.
+        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
+                                                height: CGFloat(size.height))
         let newEncoder = VideoEncoder(
             codec: activeCodec,
             width: size.width, height: size.height,
@@ -1536,7 +1541,10 @@ final class Streamer: ObservableObject {
         status = .connecting
         updateIdleTimer()
         // Arms the system's automatic "start PiP as this app leaves the
-        // screen" behaviour for the life of the stream.
+        // screen" behaviour for the life of the stream, and gives the
+        // window the shape of the picture (see BackgroundPiP.videoSize).
+        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
+                                                height: CGFloat(size.height))
         BackgroundPiP.shared.setStreaming(true)
 
         camera.start()
