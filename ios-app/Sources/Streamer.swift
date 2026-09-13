@@ -181,6 +181,11 @@ final class Streamer: ObservableObject {
         guard let oldEncoder = encoder else { return }
         oldEncoder.stop()
         let size = resolution.size
+        // A resolution change mid-stream reshapes the PiP window too —
+        // 4:3 and 16:9 are different pictures, and the window should keep
+        // matching what OBS receives.
+        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
+                                                height: CGFloat(size.height))
         let newEncoder = VideoEncoder(
             codec: activeCodec,
             width: size.width, height: size.height,
@@ -1022,13 +1027,6 @@ final class Streamer: ObservableObject {
         // didSet doesn't run during init, so the stored preference has
         // to reach PiP by hand.
         BackgroundPiP.shared.isEnabled = backgroundStreaming
-        // Closing the PiP window from another app is the user saying
-        // "I'm done": iOS takes the camera back the moment that window
-        // goes, so end the stream rather than let OBS hold a frozen
-        // frame until the app is opened again.
-        BackgroundPiP.shared.onClosedWhileBackgrounded = { [weak self] in
-            self?.stop()
-        }
 
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
@@ -1077,6 +1075,16 @@ final class Streamer: ObservableObject {
                 case .began(let reason):
                     self.status = .error(
                         Streamer.interruptionMessage(reason))
+                    // Off screen with no PiP window left, iOS has taken
+                    // the camera for good: end the stream so OBS gets a
+                    // clean stop instead of a frozen frame. A *stashed*
+                    // window still counts as a window — it's hidden at
+                    // the screen edge, not closed — so stashing pauses
+                    // capture at most, and the resume below picks the
+                    // stream back up where iOS allows it.
+                    if !self.isForeground, !BackgroundPiP.shared.hasWindow {
+                        self.stop()
+                    }
                 case .ended:
                     // Capture restarted; OBS needs a fresh keyframe to
                     // pick the stream back up.
@@ -1471,7 +1479,10 @@ final class Streamer: ObservableObject {
         status = .connecting
         updateIdleTimer()
         // Arms the system's automatic "start PiP as this app leaves the
-        // screen" behaviour for the life of the stream.
+        // screen" behaviour for the life of the stream, and gives the
+        // window the shape of the picture (see BackgroundPiP.videoSize).
+        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
+                                                height: CGFloat(size.height))
         BackgroundPiP.shared.setStreaming(true)
 
         camera.start()
