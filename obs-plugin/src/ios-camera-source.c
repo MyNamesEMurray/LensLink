@@ -36,6 +36,7 @@
 #endif
 #include "protocol.h"
 #include "h264-decoder.h"
+#include "paused-still.h"
 #include "usbmux.h"
 #include "web-control.h"
 #include "lipsync.h"
@@ -149,6 +150,11 @@ struct ios_camera_source {
 	 * green picture is this feature working correctly far more often
 	 * than it is a fault, so the status has to say when it is on. */
 	volatile bool green_screen;
+	/* The stream is held, not broken: the phone is connected and its
+	 * camera is running, but no video is going out — the operator
+	 * paused it, or iOS took the camera from a hidden PiP window. Last
+	 * reported in STATE. */
+	volatile bool stream_paused;
 
 	/* Which registered source type this instance is: "LensLink Screen"
 	 * (true) or "LensLink Camera" (false). Set once at create from the
@@ -864,6 +870,45 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
  * that is the difference between "green, as designed" and "green, and
  * nothing is removing it".
  */
+/* Appended to the connected status line while the phone is holding the
+ * stream. Without it a paused source reads as a stalled one: same frozen
+ * picture, no explanation. */
+static const char *paused_suffix(struct ios_camera_source *s)
+{
+	return s->stream_paused ? T_("Status.StreamPaused") : "";
+}
+
+/*
+ * Replace the frozen last frame with something that says "paused".
+ *
+ * A held stream sends nothing, and an async source keeps showing its
+ * last frame — indistinguishable from a stall. One still, pushed once:
+ * async sources hold the most recent frame, so there is nothing to
+ * repeat and nothing polling while the pause lasts. Skipped on the GPU
+ * pipeline, whose frames never reach system memory for a thumbnail to
+ * be sampled from; there the picture simply stays as it was.
+ */
+static void output_paused_still(struct ios_camera_source *s,
+				struct client_state *c)
+{
+	if (!c->decoder || g_gpu_pipeline_mode)
+		return;
+
+	int width = 0, height = 0;
+	if (!h264_decoder_last_frame(c->decoder, &width, &height, NULL))
+		return;
+
+	uint8_t thumb[LENSLINK_THUMB_W * LENSLINK_THUMB_H];
+	if (!h264_decoder_thumbnail(c->decoder, thumb))
+		return;
+
+	/* One frame interval past the last real one keeps the still ahead
+	 * of what OBS has already shown, on the stream's own clock. */
+	uint64_t pts = h264_decoder_last_pts(c->decoder);
+	lenslink_paused_still_output(s->source, thumb, width, height,
+				     pts ? pts + 16666667ULL : 0);
+}
+
 static const char *green_screen_suffix(struct ios_camera_source *s)
 {
 	if (!s->green_screen)
@@ -1511,9 +1556,9 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		     "[lenslink] capture->decode latency: avg %u ms "
 		     "(min %u / max %u), link rtt %u ms, %u frames",
 		     avg_ms, min_ms, max_ms, rtt_ms, (unsigned)t->count);
-		set_status(s, "%s %s — ~%u ms%s", T_("Status.Connected"),
+		set_status(s, "%s %s — ~%u ms%s%s", T_("Status.Connected"),
 			   c->name[0] ? c->name : "iOS device", avg_ms,
-			   green_screen_suffix(s));
+			   green_screen_suffix(s), paused_suffix(s));
 
 		/* Only steer audio sync from stable measurements: a
 		 * congested link makes latency oscillate wildly, and
@@ -1829,9 +1874,9 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			}
 			break;
 		}
-		set_status(s, "%s %s%s", T_("Status.Connected"),
+		set_status(s, "%s %s%s%s", T_("Status.Connected"),
 			   c->name[0] ? c->name : "iOS device",
-			   green_screen_suffix(s));
+			   green_screen_suffix(s), paused_suffix(s));
 		break;
 	}
 	case OBSC_PKT_VIDEO_CONFIG: {
@@ -2092,6 +2137,10 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		s->device_state[n] = 0;
 		bool green_screen =
 			extract_json_bool(s->device_state, "greenScreen");
+		/* Held rather than ended: the phone keeps the connection but
+		 * stops sending video, so the absence of frames is a state to
+		 * show, not a stall to diagnose. */
+		bool paused = extract_json_bool(s->device_state, "paused");
 		/* Green screen is SDR-only; the snapshot carries "hdr" (HLG)
 		 * or "color" (Apple Log) only while a 10-bit pipeline runs.
 		 * The app enforces the exclusivity — this is belt and braces
@@ -2100,7 +2149,16 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		bool ten_bit = extract_json_bool(s->device_state, "hdr") ||
 			       strstr(s->device_state, "\"color\":") != NULL;
 		pthread_mutex_unlock(&s->status_mutex);
+		bool paused_changed = s->stream_paused != paused;
+		s->stream_paused = paused;
 		s->green_screen = green_screen && !s->is_screen_source;
+		if (paused_changed) {
+			set_status(s, "%s %s%s%s", T_("Status.Connected"),
+				   c->name[0] ? c->name : "iOS device",
+				   green_screen_suffix(s), paused_suffix(s));
+			if (paused)
+				output_paused_still(s, c);
+		}
 		if (green_screen && !ten_bit && !s->is_screen_source)
 			ensure_chroma_key_filter(s);
 		break;
@@ -3000,6 +3058,35 @@ static bool start_camera_clicked(obs_properties_t *props,
 	return false;
 }
 
+static bool pause_camera_clicked(obs_properties_t *props,
+				 obs_property_t *property, void *data)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+	struct ios_camera_source *s = data;
+	/* Pause holds the stream: the phone keeps the connection and the
+	 * camera, and simply stops sending video. Resuming costs a
+	 * keyframe rather than a reconnect. */
+	static const char json[] = "{\"cmd\":\"pause_stream\"}";
+
+	if (s)
+		ios_camera_enqueue_control(s, json, sizeof(json) - 1);
+	return false;
+}
+
+static bool resume_camera_clicked(obs_properties_t *props,
+				  obs_property_t *property, void *data)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+	struct ios_camera_source *s = data;
+	static const char json[] = "{\"cmd\":\"resume_stream\"}";
+
+	if (s)
+		ios_camera_enqueue_control(s, json, sizeof(json) - 1);
+	return false;
+}
+
 static bool stop_camera_clicked(obs_properties_t *props,
 				obs_property_t *property, void *data)
 {
@@ -3069,6 +3156,12 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 		obs_properties_add_button(props, "start_camera",
 					  T_("StartCamera"),
 					  start_camera_clicked);
+		obs_properties_add_button(props, "pause_camera",
+					  T_("PauseCamera"),
+					  pause_camera_clicked);
+		obs_properties_add_button(props, "resume_camera",
+					  T_("ResumeCamera"),
+					  resume_camera_clicked);
 		obs_properties_add_button(props, "stop_camera",
 					  T_("StopCamera"),
 					  stop_camera_clicked);

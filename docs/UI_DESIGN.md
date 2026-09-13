@@ -52,7 +52,17 @@ colours so it also looks native on the phone.
 | Standby      | `connectAmber`| `#FF9F0A` | "OBS connected — ready" |
 | Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
+| Paused       | `connectAmber`| `#FF9F0A` | "Paused"         |
 | Error        | `errorRed`    | `#FF453A` | *(the message)*  |
+
+Paused is a **held** stream, not a broken one: connected, camera
+running, no video going out. It takes the same amber as Standby and
+Connecting — connected but not live — and is always the single word
+"Paused". An operator pause (the Live screen's pause chip, the web
+panel, the source properties) says exactly that; a pause iOS forced by
+taking the camera keeps its explanatory message instead, because there
+the sentence is the actionable part. Either way the plugin learns of it
+through STATE and says so rather than sitting on a frozen picture.
 
 Standby is the remote-start state: the app is idle but OBS is connected
 and can start the camera. It shares the amber of Connecting — both mean

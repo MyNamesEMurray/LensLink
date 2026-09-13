@@ -207,6 +207,10 @@ static const char control_page[] =
 	/* Remote stop: mirrors the app's red Stop. The phone drops back to
 	 * standby, so this panel swaps to the Start button afterwards. */
 	"<div class='btnrow'>"
+	/* Hold the stream without ending it: the phone keeps the connection
+	 * and the camera, OBS keeps the source, and resuming is a keyframe
+	 * rather than a reconnect. Label follows the phone's state. */
+	"<button class='primary toggle' id='pausebtn'>Pause</button>"
 	"<button class='primary danger' id='stopbtn'>Stop camera</button>"
 	"<button class='primary toggle' id='asbtn2' "
 	"title='Start the camera automatically whenever the app is ready'>"
@@ -225,6 +229,7 @@ static const char control_page[] =
 	"startpanelEl=$('startpanel'),startbtnEl=$('startbtn'),"
 	"fmtrowEl=$('fmtrow'),fmtresEl=$('fmtres'),fmtfpsEl=$('fmtfps'),"
 	"fmtcodecEl=$('fmtcodec'),stopbtnEl=$('stopbtn'),"
+	"pausebtnEl=$('pausebtn'),"
 	"asbtn1El=$('asbtn1'),asbtn2El=$('asbtn2'),"
 	"emoderowEl=$('emoderow'),aeEl=$('ae'),meEl=$('me'),biasrowEl=$('biasrow'),"
 	"isorowEl=$('isorow'),isoEl=$('iso'),isovEl=$('isov'),"
@@ -263,6 +268,12 @@ static const char control_page[] =
 	"lensselEl.onchange=()=>send({cmd:'selectLens',label:lensselEl.value});"
 	"startbtnEl.onclick=()=>send({cmd:'start_stream'});"
 	"stopbtnEl.onclick=()=>send({cmd:'stop_stream'});"
+	"let paused=false;"
+	"function pauseUI(on){paused=on;"
+	"pausebtnEl.textContent=on?'Resume':'Pause';"
+	"pausebtnEl.className=on?'primary toggle on':'primary toggle'}"
+	"pausebtnEl.onclick=()=>{touch();pauseUI(!paused);"
+	"send({cmd:paused?'pause_stream':'resume_stream'})};"
 	/* Auto-start toggle: writes the source's own auto-start property
 	 * (the checkbox in the source properties), not a phone control. */
 	"let autoStart=false;"
@@ -379,6 +390,8 @@ static const char control_page[] =
 	"const st=await(await fetch('/api/state'+q())).json();"
 	/* Don't fight the operator's hand: only mirror app state when the panel
 	 * hasn't been touched for a couple of seconds. */
+	"if(Date.now()-lastTouch>2000&&typeof st.paused==='boolean')"
+	"pauseUI(st.paused);"
 	"if(Date.now()-lastTouch>2000&&typeof st.zoom==='number'){"
 	"if(st.maxZoom)zoomEl.max=st.maxZoom;"
 	"zoomEl.value=st.zoom;zvEl.textContent=(+st.zoom).toFixed(1)+'\\u00d7';"

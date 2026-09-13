@@ -375,6 +375,20 @@ struct StreamingView: View {
                 }
             }
 
+            // Hold the stream without ending it. Amber while paused —
+            // the status vocabulary's colour for "connected but not
+            // live" — so a glance at the row says which state it's in.
+            // Hidden for a camera-side pause: iOS took the camera, and
+            // a resume button that can't resume anything is a lie.
+            if !streamer.isPaused || streamer.pauseReason == .user {
+                ControlButton(systemImage: streamer.isPaused
+                                ? "play.fill" : "pause.fill",
+                              active: streamer.isPaused) {
+                    touched()
+                    streamer.setPaused(!streamer.isPaused, reason: .user)
+                }
+            }
+
             Button {
                 streamer.stop()
             } label: {

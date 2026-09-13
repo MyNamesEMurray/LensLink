@@ -23,6 +23,11 @@ final class Streamer: ObservableObject {
         case standby
         case connecting
         case streaming
+        /// Connected, camera running, nothing going out: the stream is
+        /// held rather than ended, so OBS keeps the source and a resume
+        /// is one tap away. Deliberately not an error — the operator (or
+        /// iOS, when a hidden PiP window loses the camera) asked for it.
+        case paused
         case error(String)
 
         /// The single canonical status word/phrase used by every surface
@@ -33,6 +38,7 @@ final class Streamer: ObservableObject {
             case .standby: return "OBS connected — ready"
             case .connecting: return "Waiting for OBS…"
             case .streaming: return "Live"
+            case .paused: return "Paused"
             case .error(let message): return message
             }
         }
@@ -44,6 +50,7 @@ final class Streamer: ObservableObject {
             case .standby: return Theme.connectAmber
             case .connecting: return Theme.connectAmber
             case .streaming: return Theme.liveGreen
+            case .paused: return Theme.connectAmber
             case .error: return Theme.errorRed
             }
         }
@@ -181,6 +188,11 @@ final class Streamer: ObservableObject {
         guard let oldEncoder = encoder else { return }
         oldEncoder.stop()
         let size = resolution.size
+        // A resolution change mid-stream reshapes the PiP window too —
+        // 4:3 and 16:9 are different pictures, and the window should keep
+        // matching what OBS receives.
+        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
+                                                height: CGFloat(size.height))
         let newEncoder = VideoEncoder(
             codec: activeCodec,
             width: size.width, height: size.height,
@@ -195,7 +207,8 @@ final class Streamer: ObservableObject {
             return
         }
         newEncoder.onEncodedFrame = { [weak self] frame in
-            self?.client.sendVideoFrame(frame)
+            guard let self, !self.isPaused else { return }
+            self.client.sendVideoFrame(frame)
         }
         wireCameraToEncoder(newEncoder, color: color)
         encoder = newEncoder
@@ -724,6 +737,8 @@ final class Streamer: ObservableObject {
             codecs = [VideoCodec.hevc.rawValue]
         }
         var state: [String: Any] = [
+            "paused": isPaused,
+            "pauseReason": pauseReason?.rawValue ?? "",
             "zoom": Double(zoom),
             "maxZoom": Double(camera.maxZoomFactor),
             "exposureBias": Double(exposureBias),
@@ -858,6 +873,44 @@ final class Streamer: ObservableObject {
     // State
     @Published private(set) var status: Status = .idle
     @Published private(set) var isStreaming = false
+
+    /// Held, not ended: the connection, the camera and the encoder all
+    /// stay up while video stops going out, so resuming costs a keyframe
+    /// rather than a reconnect. Two things set it — the operator (from
+    /// the Live screen, the web panel or OBS) and iOS, when a hidden PiP
+    /// window loses the camera.
+    @Published private(set) var isPaused = false
+    /// Why, for the surfaces that explain it: "user" or "camera".
+    @Published private(set) var pauseReason: PauseReason?
+
+    enum PauseReason: String {
+        case user
+        /// iOS took the camera away — a PiP window parked at the screen
+        /// edge. Resumes on its own when capture comes back.
+        case camera
+    }
+
+    /// Holds or resumes the stream. A camera-side pause keeps whatever
+    /// status message explains it (that message is the actionable part);
+    /// an operator pause says "Paused" and nothing else, because nothing
+    /// is wrong.
+    func setPaused(_ paused: Bool, reason: PauseReason) {
+        guard isStreaming else { return }
+        guard paused != isPaused else { return }
+        isPaused = paused
+        pauseReason = paused ? reason : nil
+        if paused {
+            if reason == .user {
+                status = .paused
+            }
+        } else {
+            status = lastClientState == .connected ? .streaming : .connecting
+            // OBS is sitting on the last frame it got; it needs a
+            // self-contained one to start decoding again.
+            encoder?.requestKeyframe()
+        }
+        scheduleStateSend()
+    }
     @Published var cameraPermissionDenied = false
 
     /// Tally: what OBS is doing with this camera right now. `live` means it
@@ -1068,14 +1121,22 @@ final class Streamer: ObservableObject {
                 guard let self, self.isStreaming else { return }
                 switch interruption {
                 case .began(let reason):
+                    // Held, not broken: OBS is told the stream is paused
+                    // (so it can say so instead of sitting on a frozen
+                    // frame), while the status keeps the sentence that
+                    // explains what to do about it.
+                    self.setPaused(true, reason: .camera)
                     self.status = .error(
                         Streamer.interruptionMessage(reason))
                 case .ended:
-                    // Capture restarted; OBS needs a fresh keyframe to
-                    // pick the stream back up.
-                    self.status = self.lastClientState == .connected
-                        ? .streaming : .connecting
-                    self.encoder?.requestKeyframe()
+                    // Capture restarted; requestKeyframe inside
+                    // setPaused gives OBS something decodable to
+                    // restart on.
+                    self.setPaused(false, reason: .camera)
+                    if !self.isPaused {
+                        self.status = self.lastClientState == .connected
+                            ? .streaming : .connecting
+                    }
                 }
             }
         }
@@ -1235,6 +1296,11 @@ final class Streamer: ObservableObject {
             if remoteStartEnabled, !isStreaming {
                 Task { await start() }
             }
+            return
+        case "pause_stream", "resume_stream":
+            // Pause needs no remote-start permission: it holds a stream
+            // the user already started, and can't turn the camera on.
+            setPaused(cmd == "pause_stream", reason: .user)
             return
         case "stop_stream":
             // Paired with the plugin's "Disconnect when hidden": hiding
@@ -1459,7 +1525,11 @@ final class Streamer: ObservableObject {
         }
 
         encoder.onEncodedFrame = { [weak self] frame in
-            self?.client.sendVideoFrame(frame)
+            // Paused holds the stream without ending it: the encoder
+            // keeps running (so resuming is a keyframe, not a restart)
+            // and its output is simply not sent.
+            guard let self, !self.isPaused else { return }
+            self.client.sendVideoFrame(frame)
         }
         // encoder.color is configure()'s returned colour verbatim (the
         // encoder was just built from it) — the green screen arm check
@@ -1471,7 +1541,10 @@ final class Streamer: ObservableObject {
         status = .connecting
         updateIdleTimer()
         // Arms the system's automatic "start PiP as this app leaves the
-        // screen" behaviour for the life of the stream.
+        // screen" behaviour for the life of the stream, and gives the
+        // window the shape of the picture (see BackgroundPiP.videoSize).
+        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
+                                                height: CGFloat(size.height))
         BackgroundPiP.shared.setStreaming(true)
 
         camera.start()
@@ -1630,6 +1703,10 @@ final class Streamer: ObservableObject {
     func stop() {
         guard isStreaming else { return }
         isStreaming = false
+        // A stream that ends is not a stream on hold; leaving this set
+        // would swallow the first frames of the next one.
+        isPaused = false
+        pauseReason = nil
         status = .idle
         updateIdleTimer()
         // Closes the PiP window too, if one is up: it shows a stream
