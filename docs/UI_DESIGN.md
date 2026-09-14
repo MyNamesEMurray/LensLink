@@ -56,7 +56,9 @@ colours so it also looks native on the phone.
 | Error        | `errorRed`    | `#FF453A` | *(the message)*  |
 
 Paused is a **held** stream, not a broken one: connected, camera
-running, no video going out. It takes the same amber as Standby and
+running, no camera video going out — what OBS shows instead is the
+phone's own held picture (the last frame blurred to grey with a pause
+glyph), so a pause never looks like a stall. It takes the same amber as Standby and
 Connecting — connected but not live — and is always the single word
 "Paused". An operator pause (the Live screen's pause chip, the web
 panel, the source properties) says exactly that; a pause iOS forced by

@@ -236,13 +236,19 @@ final class VideoEncoder {
 
     func encode(_ sampleBuffer: CMSampleBuffer) {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        encode(pixelBuffer: imageBuffer,
+               pts: CMSampleBufferGetPresentationTimeStamp(sampleBuffer),
+               duration: CMSampleBufferGetDuration(sampleBuffer))
+    }
 
+    /// For frames the app draws rather than captures — today just the
+    /// paused still, which is a pixel buffer with no sample buffer around
+    /// it. Same session, same output path; only the source differs.
+    func encode(pixelBuffer imageBuffer: CVPixelBuffer, pts: CMTime,
+                duration: CMTime = .invalid) {
         lock.lock()
         defer { lock.unlock() }
         guard let session else { return }
-
-        let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-        let duration = CMSampleBufferGetDuration(sampleBuffer)
 
         var frameProperties: CFDictionary?
         if forceNextKeyframe {

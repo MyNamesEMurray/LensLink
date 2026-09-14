@@ -193,7 +193,15 @@ plugin's embedded web panel (http://localhost:9980) generates these.
 
 `pause_stream` / `resume_stream` **hold** a running stream instead of
 ending it: the app keeps the connection, the camera and the encoder, and
-simply stops sending VIDEO. Audio is unaffected — a phone acting as the
+stops sending the camera's frames. In their place it draws a **held
+picture** — the last frame blurred to a 64×36 thumbnail and back, in
+grey, with a pause glyph — and sends that as ordinary VIDEO, forced to a
+keyframe, about once a second for as long as the pause lasts. Repeating
+it is what covers a source shown again mid-pause or a plugin that
+reconnects; a static frame costs tens of bytes. Drawing it here rather
+than in the plugin is deliberate: as video it reaches every decode
+pipeline, where a plugin-side drawing could only ever work for the
+standard one (the GPU pipeline keeps frames in textures). Audio is unaffected — a phone acting as the
 wireless mic keeps carrying the show. Resuming asks the encoder for a
 keyframe, so the plugin has something self-contained to restart decoding
 on. Unlike remote start these need no **Remote start from OBS**
@@ -240,7 +248,8 @@ H.264 through the ordinary `set_format` validation. Both fields are
 absent on SDR streams, whose snapshots are unchanged from before
 colour modes existed.
 
-Pause rides the snapshot too: `"paused": true` while video is held, with
+Pause rides the snapshot too, so surfaces can say *why* a picture is
+held rather than only show it: `"paused": true` while video is held, with
 `"pauseReason"` saying who held it — `"user"` for an operator pause (the
 app's Pause button, the web panel, or the source properties) or
 `"camera"` when iOS took the camera away, which happens when a PiP

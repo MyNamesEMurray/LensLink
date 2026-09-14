@@ -46,6 +46,13 @@ should add as close to zero as possible.
   path is unchanged; once open, the window is fed the buffers the
   encoder already has (no second capture, no second composite) and drops
   frames the display layer isn't ready for rather than queueing them.
+- **The paused still samples at 1 Hz, not per frame.** `PausedStill.note`
+  compares a timestamp per frame and, about once a second, reads a 64×36
+  luma thumbnail — a few thousand reads whatever the resolution, never
+  touching chroma. The still itself is drawn once when the pause starts
+  and re-encoded (not redrawn) once a second, which a static frame
+  compresses to tens of bytes. Nothing is retained from the capture pool
+  between frames, so no buffer is pinned.
 - Idle standby listener costs nothing measurable: no timers, no camera —
   just an accepting socket and 1 Hz timesync replies while OBS is
   connected.

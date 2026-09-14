@@ -207,8 +207,7 @@ final class Streamer: ObservableObject {
             return
         }
         newEncoder.onEncodedFrame = { [weak self] frame in
-            guard let self, !self.isPaused else { return }
-            self.client.sendVideoFrame(frame)
+            self?.client.sendVideoFrame(frame)
         }
         wireCameraToEncoder(newEncoder, color: color)
         encoder = newEncoder
@@ -249,14 +248,23 @@ final class Streamer: ObservableObject {
         // one boolean read per frame while the app is on screen.
         let pip = BackgroundPiP.shared
         if let compositor {
-            camera.onSampleBuffer = { [weak encoder, compositor, pip] sampleBuffer in
+            camera.onSampleBuffer = { [weak encoder, compositor, pip,
+                                       still = pausedStill,
+                                       gate = pauseGate] sampleBuffer in
                 // Fail-open is the compositor's contract: any
                 // Vision/Metal failure returns the original buffer
                 // untouched; nil only on pool exhaustion — drop the
                 // frame, never queue.
                 if let output = compositor.composite(sampleBuffer: sampleBuffer) {
-                    encoder?.encode(output)
+                    // What the still is drawn from is what OBS was
+                    // seeing: the composited frame, green screen and all.
+                    still.note(output)
+                    // The PiP window keeps showing the live camera while
+                    // a stream is held — pausing is about what OBS gets,
+                    // not about what the phone can see.
                     pip.enqueue(output)
+                    guard !gate.isPaused else { return }
+                    encoder?.encode(output)
                 }
             }
             camera.onDepthData = { [compositor,
@@ -268,9 +276,17 @@ final class Streamer: ObservableObject {
                 compositor.updateDepth(depth)
             }
         } else {
-            camera.onSampleBuffer = { [weak encoder, pip] sampleBuffer in
-                encoder?.encode(sampleBuffer)
+            camera.onSampleBuffer = { [weak encoder, pip,
+                                       still = pausedStill,
+                                       gate = pauseGate] sampleBuffer in
+                still.note(sampleBuffer)
                 pip.enqueue(sampleBuffer)
+                // The gate sits here, at the encoder's input: while a
+                // stream is held the camera's frames simply aren't
+                // encoded, which leaves the send path free to carry the
+                // one frame that should go out — the paused still.
+                guard !gate.isPaused else { return }
+                encoder?.encode(sampleBuffer)
             }
             camera.onDepthData = nil
         }
@@ -883,11 +899,51 @@ final class Streamer: ObservableObject {
     /// Why, for the surfaces that explain it: "user" or "camera".
     @Published private(set) var pauseReason: PauseReason?
 
+    /// The held picture OBS sees, drawn here rather than in the plugin:
+    /// encoded and sent like any other frame, it reaches every decode
+    /// pipeline instead of only the standard one (PausedStill explains
+    /// why that matters).
+    private let pausedStill = PausedStill()
+    /// Read on the capture queue, written here: while set, camera frames
+    /// are not encoded at all.
+    private let pauseGate = PauseGate()
+    /// Re-sends the still about once a second while paused, so a source
+    /// that reconnects or a scene that comes back mid-pause still finds
+    /// a picture that says "paused" rather than the last live frame.
+    private var pausedStillTask: Task<Void, Never>?
+
     enum PauseReason: String {
         case user
         /// iOS took the camera away — a PiP window parked at the screen
         /// edge. Resumes on its own when capture comes back.
         case camera
+    }
+
+    /// Draws the held picture once and re-sends it about once a second.
+    ///
+    /// Repeating costs almost nothing — a static frame compresses to
+    /// tens of bytes — and it covers the cases a single frame misses: a
+    /// source shown again mid-pause, a plugin that reconnects, a
+    /// keyframe lost on the way. Every one is forced to a keyframe so it
+    /// stands alone. If the camera never delivered a frame there is
+    /// nothing to draw from and the source keeps its last picture, which
+    /// is no worse than before.
+    private func startPausedStill() {
+        pausedStillTask?.cancel()
+        guard let frame = pausedStill.makeFrame() else {
+            pausedStillTask = nil
+            return
+        }
+        pausedStillTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let self, self.isPaused, self.isStreaming,
+                      let encoder = self.encoder else { return }
+                encoder.requestKeyframe()
+                encoder.encode(pixelBuffer: frame,
+                               pts: CMClockGetTime(CMClockGetHostTimeClock()))
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
     }
 
     /// Holds or resumes the stream. A camera-side pause keeps whatever
@@ -899,14 +955,21 @@ final class Streamer: ObservableObject {
         guard paused != isPaused else { return }
         isPaused = paused
         pauseReason = paused ? reason : nil
+        // Stops the camera's frames reaching the encoder (and lets them
+        // through again), so the only thing that can go out while held
+        // is the still below.
+        pauseGate.set(paused)
         if paused {
             if reason == .user {
                 status = .paused
             }
+            startPausedStill()
         } else {
+            pausedStillTask?.cancel()
+            pausedStillTask = nil
             status = lastClientState == .connected ? .streaming : .connecting
-            // OBS is sitting on the last frame it got; it needs a
-            // self-contained one to start decoding again.
+            // OBS is sitting on the still; it needs a self-contained
+            // frame to start decoding live video again.
             encoder?.requestKeyframe()
         }
         scheduleStateSend()
@@ -1525,11 +1588,7 @@ final class Streamer: ObservableObject {
         }
 
         encoder.onEncodedFrame = { [weak self] frame in
-            // Paused holds the stream without ending it: the encoder
-            // keeps running (so resuming is a keyframe, not a restart)
-            // and its output is simply not sent.
-            guard let self, !self.isPaused else { return }
-            self.client.sendVideoFrame(frame)
+            self?.client.sendVideoFrame(frame)
         }
         // encoder.color is configure()'s returned colour verbatim (the
         // encoder was just built from it) — the green screen arm check
@@ -1707,6 +1766,9 @@ final class Streamer: ObservableObject {
         // would swallow the first frames of the next one.
         isPaused = false
         pauseReason = nil
+        pauseGate.set(false)
+        pausedStillTask?.cancel()
+        pausedStillTask = nil
         status = .idle
         updateIdleTimer()
         // Closes the PiP window too, if one is up: it shows a stream
