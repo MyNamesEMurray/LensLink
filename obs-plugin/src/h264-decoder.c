@@ -9,8 +9,6 @@
 #include <media-io/video-io.h>
 #include <util/platform.h>
 
-#include <string.h>
-
 #include "pipeline-bench.h"
 
 struct h264_decoder {
@@ -37,63 +35,7 @@ struct h264_decoder {
 	int last_width;
 	int last_height;
 	const char *last_format_name;
-	/* Paused-still source material (see h264-decoder.h). */
-	uint8_t thumb[LENSLINK_THUMB_W * LENSLINK_THUMB_H];
-	bool thumb_valid;
-	uint64_t last_pts;
 };
-
-/* Sparse luma sample of one frame: THUMB_W x THUMB_H reads regardless of
- * resolution, so this costs the same at 4K as at 720p and never touches
- * chroma. Handles 8- and 10-bit layouts through the pixel descriptor
- * rather than a format switch that would go stale. */
-static void sample_thumbnail(struct h264_decoder *dec, const AVFrame *f)
-{
-	const AVPixFmtDescriptor *d = av_pix_fmt_desc_get(f->format);
-	if (!d || !f->data[0] || f->width <= 0 || f->height <= 0)
-		return;
-
-	const int depth = d->comp[0].depth;
-	const int shift = d->comp[0].shift;
-	const int step = d->comp[0].step;
-	const int drop = depth > 8 ? depth - 8 : 0;
-
-	for (int y = 0; y < LENSLINK_THUMB_H; y++) {
-		const uint8_t *row =
-			f->data[0] +
-			(ptrdiff_t)((y * f->height) / LENSLINK_THUMB_H) *
-				f->linesize[0];
-		uint8_t *out = dec->thumb + (size_t)y * LENSLINK_THUMB_W;
-		for (int x = 0; x < LENSLINK_THUMB_W; x++) {
-			const uint8_t *px =
-				row + (ptrdiff_t)((x * f->width) /
-						  LENSLINK_THUMB_W) * step;
-			unsigned value;
-			if (step >= 2) {
-				value = (unsigned)px[0] |
-					((unsigned)px[1] << 8);
-				value >>= shift;
-			} else {
-				value = *px;
-			}
-			out[x] = (uint8_t)(value >> drop);
-		}
-	}
-	dec->thumb_valid = true;
-}
-
-bool h264_decoder_thumbnail(const struct h264_decoder *dec, uint8_t *dst)
-{
-	if (!dec || !dst || !dec->thumb_valid)
-		return false;
-	memcpy(dst, dec->thumb, sizeof(dec->thumb));
-	return true;
-}
-
-uint64_t h264_decoder_last_pts(const struct h264_decoder *dec)
-{
-	return dec ? dec->last_pts : 0;
-}
 
 /* GPU decode APIs to try, best-first per platform. */
 static const enum AVHWDeviceType hw_priority[] = {
@@ -500,8 +442,6 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 					? (uint64_t)out_frame->pts
 					: os_gettime_ns();
 
-		sample_thumbnail(dec, out_frame);
-		dec->last_pts = out.timestamp;
 		obs_source_output_video(source, &out);
 
 		/* Benchmark: the standard pipeline's per-frame cost is the

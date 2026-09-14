@@ -36,7 +36,6 @@
 #endif
 #include "protocol.h"
 #include "h264-decoder.h"
-#include "paused-still.h"
 #include "usbmux.h"
 #include "web-control.h"
 #include "lipsync.h"
@@ -876,55 +875,6 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 static const char *paused_suffix(struct ios_camera_source *s)
 {
 	return s->stream_paused ? T_("Status.StreamPaused") : "";
-}
-
-/*
- * Replace the frozen last frame with something that says "paused".
- *
- * A held stream sends nothing, and an async source keeps showing its
- * last frame — indistinguishable from a stall. One still, pushed once:
- * async sources hold the most recent frame, so there is nothing to
- * repeat and nothing polling while the pause lasts. Skipped on the GPU
- * pipeline, whose frames never reach system memory for a thumbnail to
- * be sampled from; there the picture simply stays as it was.
- */
-static void output_paused_still(struct ios_camera_source *s,
-				struct client_state *c)
-{
-	/* Every way out of here is logged. A still that silently doesn't
-	 * appear is indistinguishable from a frozen frame — which is how
-	 * the first version of this shipped broken. */
-	if (!c->decoder || g_gpu_pipeline_mode) {
-		blog(LOG_INFO,
-		     "[lenslink] paused still skipped: %s",
-		     g_gpu_pipeline_mode ? "GPU pipeline keeps frames in "
-					   "textures"
-					 : "no decoder");
-		return;
-	}
-
-	int width = 0, height = 0;
-	if (!h264_decoder_last_frame(c->decoder, &width, &height, NULL)) {
-		blog(LOG_INFO,
-		     "[lenslink] paused still skipped: nothing decoded yet");
-		return;
-	}
-
-	uint8_t thumb[LENSLINK_THUMB_W * LENSLINK_THUMB_H];
-	if (!h264_decoder_thumbnail(c->decoder, thumb)) {
-		blog(LOG_INFO,
-		     "[lenslink] paused still skipped: no thumbnail");
-		return;
-	}
-
-	/* One frame interval past the last real one keeps the still ahead
-	 * of what OBS has already shown, on the stream's own clock. */
-	uint64_t pts = h264_decoder_last_pts(c->decoder);
-	bool drawn = lenslink_paused_still_output(s->source, thumb, width,
-						  height,
-						  pts ? pts + 16666667ULL : 0);
-	blog(LOG_INFO, "[lenslink] paused still %s (%dx%d)",
-	     drawn ? "sent" : "failed", width, height);
 }
 
 static const char *green_screen_suffix(struct ios_camera_source *s)
@@ -2209,13 +2159,15 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		bool paused_changed = s->stream_paused != paused;
 		s->stream_paused = paused;
 		s->green_screen = green_screen && !s->is_screen_source;
-		if (paused_changed) {
+		/* The held picture itself comes from the phone, encoded like
+		 * any other frame (ios-app PausedStill): drawing it here
+		 * could only ever work for the standard decode path, since
+		 * the GPU pipeline keeps frames in textures. All this side
+		 * does now is say so in the status line. */
+		if (paused_changed)
 			set_status(s, "%s %s%s%s", T_("Status.Connected"),
 				   c->name[0] ? c->name : "iOS device",
 				   green_screen_suffix(s), paused_suffix(s));
-			if (paused)
-				output_paused_still(s, c);
-		}
 		if (green_screen && !ten_bit && !s->is_screen_source)
 			ensure_chroma_key_filter(s);
 		break;
