@@ -215,6 +215,20 @@ final class CameraManager: NSObject {
                                 position: lens.position)
     }
 
+    /// A back lens's magnification relative to Main, the number the
+    /// Camera app prints on its lens buttons (0.5, 2, 3, 5): the ratio of
+    /// the two lenses' horizontal fields of view in tangent space. nil for
+    /// the front camera or where either device is missing.
+    static func zoomFactorRelativeToMain(_ lens: Lens) -> Double? {
+        guard lens.position == .back,
+              let device = device(for: lens),
+              let main = device(for: defaultLens) else { return nil }
+        let fov = Double(device.activeFormat.videoFieldOfView)
+        let mainFov = Double(main.activeFormat.videoFieldOfView)
+        guard fov > 0, mainFov > 0 else { return nil }
+        return tan(mainFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
+    }
+
     /// The depth-registered sibling of a user-facing lens: TrueDepth for
     /// the front camera, LiDAR for the rear Main (Wide) lens — Apple
     /// registers their depth maps to exactly those YUV cameras. Ultra

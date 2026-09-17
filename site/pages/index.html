@@ -31,38 +31,36 @@ nav: home
         <div class="screen{{FEED}}"{{FEED_STYLE}}>
           <div class="topgroup">
             <div class="toprow">
-            <span class="pill"><span class="dot live"></span>Live</span>
-            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/><path d="M12 12 8 8"/><circle cx="12" cy="12" r="9"/></svg></span>
-            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9"/></svg></span>
+            <span class="pill"><span class="dot live"></span>Live<span class="chev">⌄</span></span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span>
             <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
             </div>
             <span class="pill health">60 fps · 11.9 Mb/s · 0 dropped</span>
           </div>
           <div class="panelmock">
-            <div class="row">
-              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M8 11h6"/></svg>
-              <span class="track"><i style="width:38%"></i></span>
-              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35M8 11h6M11 8v6"/></svg>
-              <span class="ro">2.4×</span>
+            <div class="chiprow">
+              <span class="chp">Zoom</span>
+              <span class="chp on">Exposure</span>
+              <span class="chp">Shutter<i>A</i></span>
+              <span class="chp">WB<i>A</i></span>
+              <span class="chp">Focus<i>A</i></span>
+            </div>
+            <div class="dial">
+              <span class="ro yl">+0.3 EV</span>
+              <span class="track yl"><i style="width:58%"></i></span>
             </div>
             <div class="row">
-              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
-              <span class="track"><i style="width:58%"></i></span>
-              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M19.4 4.6l-2.1 2.1M6.7 17.3l-2.1 2.1"/></svg>
-              <span class="ro">+0.3</span>
-            </div>
-            <div class="row">
-              <span class="seg"><span class="on">AF</span><span>Lock</span></span>
+              <span class="mode">Auto · drag the picture up or down</span>
               <span class="chips">
                 <span class="chip on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>
-                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3.6 8h16.8M3.6 16h16.8"/></svg></span>
                 <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h11l-2-2M20 16H9l2 2"/><circle cx="12" cy="12" r="2"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 10 6 6 6-6"/></svg></span>
               </span>
             </div>
           </div>
         </div>
       </div>
-      <p class="caption">The app's Live screen. The red border is the tally light — this source is on air. Every control here is also in your browser on the computer.</p>
+      <p class="caption">The app's Live screen with the adjust tray open: one dial, retargeted by the chips. The red border is the tally light — this source is on air. Every control here is also in your browser on the computer.</p>
     </div>
   </div>
 </section>

@@ -112,9 +112,11 @@ backgrounding the app blanks the source.
 - **Multiple cameras.** Add one "LensLink Camera" source per phone. On USB you
   can pin a source to a specific device so the same phone always maps to
   the same source.
-- **Live camera controls**, both on the phone (full-screen view with pinch
-  zoom, tap-to-focus, exposure, focus lock, flashlight, camera flip — plus
-  manual ISO/shutter and white-balance lock on cameras that support them)
+- **Live camera controls**, both on the phone (a viewfinder with the
+  Camera app's lens buttons, pinch to zoom, tap to focus, drag for
+  exposure, and a one-dial adjust tray for exposure, shutter, white
+  balance, focus, flashlight and camera flip — manual ISO/shutter and
+  white-balance lock on cameras that support them)
   and **from your computer** via a browser panel at
   `http://localhost:9980` (the same set: zoom / exposure / manual
   ISO & shutter / focus / white balance / flashlight / flip, plus switching
@@ -134,8 +136,8 @@ backgrounding the app blanks the source.
 - **Phone mic audio (optional).** Turn on **Send phone mic to OBS** (in
   the app's **Options**) and the camera source carries the phone's
   microphone as its audio — the phone doubles as a wireless mic. (Off by default; most streamers use their own
-  mic and lip-sync it instead.) A mic row on the Live screen (and in the
-  web panel) picks which microphone: **Auto** is iOS's default input
+  mic and lip-sync it instead.) A Microphone row under the toggle (and a
+  mic row in the web panel) picks which microphone: **Auto** is iOS's default input
   routing — normally the *Bottom* mic regardless of which camera is
   active, since iOS doesn't tie the mic to the camera (a connected
   headset/Bluetooth mic takes over automatically). Pick **Front** or
@@ -148,8 +150,8 @@ backgrounding the app blanks the source.
   `LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms` beside OBS's stats — plus
   a dockable **LensLink** panel (View → Docks) with one row per phone.
   Decoded fps, wire bitrate, and measured capture→decode latency, updated
-  every second. On the phone, the gauge button on the Live screen shows
-  the same health line (fps · Mb/s · dropped frames).
+  every second. On the phone, Stats in the Live screen's status menu
+  shows the same health line (fps · Mb/s · dropped frames).
 - **GPU decode pipeline (beta).** Optionally keep decoded video on the
   graphics card the whole way to your scene — no round-trip through
   system memory. Lower CPU use and latency; the gains grow with
@@ -165,7 +167,7 @@ backgrounding the app blanks the source.
   quality briefly and recovers, instead of piling up latency.
 - **Battery saver.** While streaming, the phone screen dims after 10
   seconds; tap to wake it. (Turn this off in the app's **Options**, or dim
-  immediately with the moon button on the Live screen.) Optionally, enable
+  immediately from the Live screen's status menu.) Optionally, enable
   **Disconnect when this source isn't shown anywhere** in the source
   properties and the phone stops streaming entirely whenever the source is
   hidden, reconnecting when shown.

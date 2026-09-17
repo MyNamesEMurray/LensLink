@@ -347,6 +347,17 @@ struct ContentView: View {
         Section {
             Toggle("Send phone mic to OBS",
                    isOn: $streamer.sendMicAudio)
+            // Which microphone, chosen here before Start rather than on
+            // the Live screen: a set-once decision, and the Live screen
+            // is for the shot. Still live if changed mid-stream from the
+            // web panel, which keeps its own mic row.
+            if streamer.sendMicAudio {
+                Picker("Microphone", selection: $streamer.selectedMicID) {
+                    ForEach(streamer.micOptions) { mic in
+                        Text(mic.name).tag(mic.id)
+                    }
+                }
+            }
             Toggle("Auto lip-sync reference",
                    isOn: $streamer.sendAudioReference)
         } header: {
