@@ -70,7 +70,7 @@ struct StreamActivityWidget: Widget {
             } minimal: {
                 StatusDot(state: context.state, size: 8)
             }
-            .keylineTint(tint(context.state))
+            .keylineTint(statusTint(context.state))
         }
     }
 }
@@ -93,7 +93,7 @@ private func destinationLine(_ state: StreamActivityAttributes.ContentState) -> 
 
 /// Red on air, amber held, green live, red for an error message: the
 /// same reading these colours carry everywhere else in the product.
-private func tint(_ state: StreamActivityAttributes.ContentState) -> Color {
+private func statusTint(_ state: StreamActivityAttributes.ContentState) -> Color {
     if state.paused { return Palette.amber }
     if state.onAir { return Palette.onAir }
     switch state.statusWord {
@@ -109,7 +109,7 @@ private struct StatusDot: View {
 
     var body: some View {
         Circle()
-            .fill(tint(state))
+            .fill(statusTint(state))
             .frame(width: size, height: size)
     }
 }
@@ -163,7 +163,7 @@ private struct LockScreenCard: View {
             HStack(spacing: 12) {
                 Image(systemName: "video.fill")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(tint(state))
+                    .foregroundColor(statusTint(state))
                     .frame(width: 40, height: 40)
                     .background(Color.white.opacity(0.12),
                                 in: RoundedRectangle(cornerRadius: 11,
@@ -182,7 +182,7 @@ private struct LockScreenCard: View {
                         StatusDot(state: state, size: 8)
                         Text(statusLine(state))
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(tint(state))
+                            .foregroundColor(statusTint(state))
                     }
                     ElapsedTimer(since: state.startedAt)
                         .font(.caption)
