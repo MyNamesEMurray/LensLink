@@ -11,7 +11,7 @@ struct DocumentationView: View {
             Section {
                 Text("The camera streams to a **LensLink Camera** source in OBS; the screen broadcast streams to a **LensLink Screen** source. Add the source in OBS, enter the phone's Wi-Fi address as its Phone IP — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes).")
                 Text("The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs.")
-                Text("**Format** is one row — resolution, frame rate and codec — with the pickers behind it, each offering only what the chosen camera supports.")
+                Text("**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other, and each choice says what it will change before you tap it: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC.")
             } header: {
                 Text("Connecting")
             }
@@ -25,7 +25,7 @@ struct DocumentationView: View {
             Section {
                 Text("**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing.")
                 Text("**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT.")
-                Text("Both are HEVC-only and take effect when the camera next starts. The Color row only offers what this phone can capture.")
+                Text("Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture.")
             } header: {
                 Text("Color")
             }

@@ -355,27 +355,6 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
 
-            // Hidden on devices that can't encode Main10 — a choice that
-            // can never work is worse than none (only "Standard" would
-            // remain). Apple Log appears only when some lens actually
-            // has a Log capture format (iOS 17+).
-            if VideoEncoder.hdrSupported {
-                Picker(selection: $streamer.colorSetting) {
-                    Text("Standard").tag(StreamColor.sdr)
-                    Text("HDR (HLG)").tag(StreamColor.hlg)
-                    if CameraManager.appleLogCaptureAvailable {
-                        Text("Apple Log").tag(StreamColor.log)
-                    }
-                } label: {
-                    SettingsRowLabel("Color", systemImage: "paintpalette.fill",
-                                     color: Theme.tallyPurple)
-                }
-                // Green screen forces Standard: disabled, not hidden —
-                // a vanished row reads as a lost feature, a greyed one
-                // as a constraint (the Documentation sheet explains).
-                .disabled(streamer.greenScreenEnabled)
-            }
-
             Toggle(isOn: $streamer.greenScreenEnabled) {
                 SettingsRowLabel("Green screen",
                                  systemImage: "person.fill.viewfinder",
@@ -392,9 +371,17 @@ struct ContentView: View {
         }
     }
 
-    /// "4K · 60 fps · HEVC" — the format row's value.
+    /// "4K · 60 fps · HEVC", plus "· HDR" or "· Log" when the colour
+    /// isn't Standard — the format row's value.
     private var formatSummary: String {
-        "\(streamer.resolution.rawValue) · \(streamer.fps) fps · \(streamer.codec.label)"
+        var parts = [streamer.resolution.rawValue, "\(streamer.fps) fps",
+                     streamer.codec.label]
+        switch streamer.colorSetting {
+        case .sdr: break
+        case .hlg: parts.append("HDR")
+        case .log: parts.append("Log")
+        }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - Start
@@ -586,9 +573,18 @@ struct SettingsRowLabel: View {
     }
 }
 
-/// Resolution · frame rate · codec behind the Format row. The lists are
-/// the Setup screen's cached capability filters, passed in so this sheet
-/// never runs a format scan of its own.
+/// Resolution · frame rate · codec · color behind the Format row. The
+/// lists are the Setup screen's cached capability filters, passed in so
+/// this sheet never runs a format scan of its own.
+///
+/// Codec and Color are drawn as check rows rather than pickers because
+/// the two constrain each other — HDR and Apple Log are HEVC only, green
+/// screen is Standard only — and a picker that silently hides H.264
+/// reads as a bug ("where did H.264 go?"). Every choice stays visible,
+/// and a choice that will change another setting says so in its
+/// subtitle before you tap it. The model enforces the same rules
+/// (Streamer's codec/colorSetting didSets), so the row is a preview of
+/// what will happen, not a second implementation of it.
 private struct FormatSheet: View {
     @EnvironmentObject private var streamer: Streamer
     @Environment(\.dismiss) private var dismiss
@@ -609,16 +605,51 @@ private struct FormatSheet: View {
                             Text("\(fps) fps").tag(fps)
                         }
                     }
-                    Picker("Codec", selection: $streamer.codec) {
-                        // HDR and Apple Log are HEVC-only; offering H.264
-                        // would let the picker pick a value the didSet
-                        // immediately reverts.
-                        if streamer.colorSetting == .sdr {
-                            Text(VideoCodec.h264.label).tag(VideoCodec.h264)
+                }
+
+                Section {
+                    if VideoEncoder.isSupported(.hevc) {
+                        ChoiceRow(title: VideoCodec.hevc.label,
+                                  detail: nil,
+                                  selected: streamer.codec == .hevc) {
+                            streamer.codec = .hevc
                         }
-                        if VideoEncoder.isSupported(.hevc) {
-                            Text(VideoCodec.hevc.label).tag(VideoCodec.hevc)
+                    }
+                    ChoiceRow(title: VideoCodec.h264.label,
+                              detail: streamer.colorSetting == .sdr
+                                ? nil
+                                : "Switches Color to Standard — HDR and Apple Log are HEVC only",
+                              selected: streamer.codec == .h264) {
+                        streamer.codec = .h264
+                    }
+                } header: {
+                    Text("Codec")
+                }
+
+                // Hidden on devices that can't encode Main10 — a choice
+                // that can never work is worse than none (only
+                // "Standard" would remain). Apple Log appears only when
+                // some lens actually has a Log capture format (iOS 17+).
+                if VideoEncoder.hdrSupported {
+                    Section {
+                        ChoiceRow(title: "Standard", detail: nil,
+                                  selected: streamer.colorSetting == .sdr) {
+                            streamer.colorSetting = .sdr
                         }
+                        ChoiceRow(title: "HDR (HLG)",
+                                  detail: nonStandardColorDetail,
+                                  selected: streamer.colorSetting == .hlg) {
+                            streamer.colorSetting = .hlg
+                        }
+                        if CameraManager.appleLogCaptureAvailable {
+                            ChoiceRow(title: "Apple Log",
+                                      detail: nonStandardColorDetail,
+                                      selected: streamer.colorSetting == .log) {
+                                streamer.colorSetting = .log
+                            }
+                        }
+                    } header: {
+                        Text("Color")
                     }
                 }
             }
@@ -632,6 +663,55 @@ private struct FormatSheet: View {
         }
         .navigationViewStyle(.stack)
         .tint(Theme.accent)
+    }
+
+    /// What picking HDR or Apple Log will change, said before the tap:
+    /// the codec if it is H.264, green screen if it is on, and the
+    /// standing constraint otherwise.
+    private var nonStandardColorDetail: String? {
+        var notes: [String] = []
+        if streamer.codec == .h264 {
+            notes.append("Switches Codec to HEVC")
+        }
+        if streamer.greenScreenEnabled {
+            notes.append("Turns Green screen off")
+        }
+        return notes.isEmpty ? "HEVC only" : notes.joined(separator: " · ")
+    }
+}
+
+/// One selectable row with a checkmark: a title, an optional subtitle
+/// naming a consequence, and the accent check on the chosen one — the
+/// Settings app's own pattern for a short list of exclusive choices.
+private struct ChoiceRow: View {
+    let title: String
+    let detail: String?
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Theme.Space.m) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .foregroundColor(.primary)
+                    if let detail {
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                Spacer()
+                if selected {
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.semibold))
+                        .foregroundColor(Theme.accent)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
