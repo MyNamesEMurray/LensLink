@@ -1321,6 +1321,53 @@ static void apply_audio_sync(struct ios_camera_source *s, int64_t latency_ns)
 
 /* Sends a control command (JSON) to the device. Best-effort; receivers
  * ignore commands they don't understand, so new ones stay compatible. */
+static void send_control_cmd(struct client_state *c, const char *json);
+
+/* Copies `in` into `out` as a JSON string body: quotes and backslashes
+ * escaped, control characters dropped. Host names are plain ASCII in
+ * practice; this is the cheap guarantee that a strange one can't break
+ * the packet. */
+static void json_copy_escaped(char *out, size_t size, const char *in)
+{
+	size_t o = 0;
+	for (; *in && o + 2 < size; in++) {
+		unsigned char ch = (unsigned char)*in;
+		if (ch < 0x20)
+			continue;
+		if (ch == '"' || ch == '\\')
+			out[o++] = '\\';
+		out[o++] = (char)ch;
+	}
+	out[o] = 0;
+}
+
+/* Tells the phone who it is talking to — the computer's host name, the
+ * OBS version and the transport — so its Home screen can name the Mac
+ * the way AirPlay names a TV instead of showing an IP address. Sent once
+ * per connection right after HELLO; an older app ignores the command. */
+static void send_identify(struct ios_camera_source *s,
+			  struct client_state *c)
+{
+	char host[128] = {0};
+	if (gethostname(host, sizeof(host) - 1) != 0)
+		host[0] = 0;
+	/* mDNS-style host names carry a ".local" tail nobody wants to read. */
+	char *dot = strchr(host, '.');
+	if (dot)
+		*dot = 0;
+	char host_json[192];
+	json_copy_escaped(host_json, sizeof(host_json), host);
+	char obs_json[64];
+	json_copy_escaped(obs_json, sizeof(obs_json), obs_get_version_string());
+	char json[512];
+	snprintf(json, sizeof(json),
+		 "{\"cmd\":\"identify\",\"host\":\"%s\",\"obs\":\"%s\","
+		 "\"transport\":\"%s\"}",
+		 host_json, obs_json,
+		 s->conn_mode == CONN_DIAL_USB ? "usb" : "lan");
+	send_control_cmd(c, json);
+}
+
 static void send_control_cmd(struct client_state *c, const char *json)
 {
 	size_t len = strlen(json);
@@ -1837,6 +1884,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		     c->name[0] ? c->name : "(unnamed)",
 		     c->is_screen ? "screen" : "camera",
 		     c->standby ? ", standby" : "");
+		send_identify(s, c);
 		/* The phone picks what it streams, not this source; each source
 		 * type accepts only its own kind. Rejecting here (rather than
 		 * displaying with a warning) keeps a Screen source from ever

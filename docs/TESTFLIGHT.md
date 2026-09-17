@@ -31,8 +31,9 @@ repository secret**, four times:
 1. App Store Connect → **Apps** → **+** → **New App**.
 2. Platform iOS, name **LensLink**, bundle ID **com.exaltedpixels.LensLinkCamera**
    (register it under Identifiers if it isn't offered; the CI's
-   `-allowProvisioningUpdates` registers the broadcast extension's child id
-   `…LensLink.broadcast` automatically on first run).
+   `-allowProvisioningUpdates` registers the extensions' child ids —
+   `…LensLinkCamera.broadcast` (screen mirror) and `…LensLinkCamera.widgets`
+   (the Live Activity) — automatically on first run).
 3. SKU: anything, e.g. `lenslink`.
 
 ## 4. Run it

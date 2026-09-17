@@ -311,28 +311,41 @@ entry in `AppIcon.appiconset/Contents.json`; a PNG without the matching
 ## 6. Screen specifications
 
 ### 6.1 App — Setup screen
-Grouped form, top to bottom — parallel modules, each naming the OBS source
-it feeds and ending in the same full-width accent action button:
+An inset grouped form in the Settings app's own anatomy — every row a
+coloured icon tile (`SettingsRowLabel`, 29 pt, radius 7, white SF
+Symbol) and a title — top to bottom:
 
-1. **Banner** — the wordmark as the screen's title (no navigation bar;
-   nothing is ever pushed).
-2. **Connect** — status dot (`status.tint`) + `status.displayName` with
-   the phone's Wi-Fi IP on the same line (monospaced, tap-to-copy), and a
-   "How to connect" disclosure with the two setup steps — collapsible, and
-   it stays collapsed once read.
-3. **Camera** — Lens, Resolution, Frame rate, Codec pickers (each filtered
-   to what the selected lens supports), then **Start camera stream**. A
-   contextual "Open Settings" button appears only if a permission was
+1. **Title** — "LensLink" as a plain large title (no navigation bar;
+   nothing is ever pushed, so nothing needs a back button).
+2. **The computer** — one card: a computer glyph in `status.tint`
+   (`laptopcomputer` over USB, `desktopcomputer` otherwise), the
+   computer's **host name** once the plugin has introduced itself (the
+   `identify` command; "OBS Studio" until then), and under it the status
+   dot + `status.displayName`, with the OBS version and transport
+   appended while connected ("OBS connected — ready · OBS 32.0 · USB").
+   On the right: in Standby, an accent **Start** capsule; otherwise the
+   phone's Wi-Fi IP (monospaced, tap-to-copy), because the address is how
+   OBS finds this phone. Below, the Local Network warning when Bonjour
+   was denied, and the "How to connect" disclosure with the two setup
+   steps — collapsible, and it stays collapsed once read.
+3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
+   value reads `4K · 60 fps · HEVC` and opens a sheet with the
+   Resolution, Frame rate and Codec pickers (each filtered to what the
+   selected lens supports) — **Color**, and the **Green screen** toggle.
+   A contextual "Open Settings" button appears only if a permission was
    denied.
-4. **Screen mirror** — a "Screen mirror tools" diagnostics disclosure,
-   then **Start screen broadcast** (the system broadcast picker is
-   stretched invisibly over our button face — iOS won't start a broadcast
-   any other way).
-5. **Tail** — an **Options** row that presents the Options sheet, the
-   GitHub link, and the version line in the footer.
+4. **Start** — two stacked full-width buttons: **Start Camera** in the
+   accent, **Mirror Screen** in the system's secondary fill (the system
+   broadcast picker is stretched invisibly over the button face — iOS
+   won't start a broadcast any other way). A broken broadcast extension
+   warns above them.
+5. **Microphone** — see below.
+6. **Tail** — **Options** and **Documentation** rows that present their
+   sheets, **Report a problem**, the GitHub link, and the version line in
+   the footer.
 
-Long explanations don't belong on this screen: each module's footer is at
-most a sentence or two, so the form stays close to one screenful.
+Long explanations don't belong on this screen: the only footer is the
+version line, so the form stays close to one screenful.
 
 **Microphone module** (between Camera and Screen mirror): **Send phone
 mic to OBS**, then — only while that is on — a **Microphone** picker of
@@ -343,13 +356,17 @@ decision made before Start; the web panel keeps its own mic row for
 switching mid-stream.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
-so the main screen stays short: **Remote start from OBS**, **Idle view**
-(Standard / Clean feed / Dim screen), **Keep streaming in the
-background** (present only where iOS grants background capture — a
-toggle that can do nothing is worse than no toggle), and pushed screens
-for **Tally light** and **Presets**. Pure controls, no footers: every
-explanation lives in the Documentation screen (§3), which is also why
-the pushed screens carry none.
+so the main screen stays short, in the same icon-tile rows as Setup.
+First group, the things that matter during a stream: **Remote start from
+OBS**, **Idle view** (Standard / Clean feed / Dim screen), **Keep
+streaming in the background** (present only where iOS grants background
+capture — a toggle that can do nothing is worse than no toggle), and the
+pushed screens **Tally light** (row value: the statuses that light it,
+"On air, In preview") and **Presets** (row value: the default preset's
+name, or the count). Second group: **Allow system video effects**,
+**Camera diagnostics**, **Check broadcast link**. Pure controls, no
+footers: every explanation lives in the Documentation screen (§3), which
+is also why the pushed screens carry none.
 
 ### 6.2 App — Live screen
 Full-screen black; camera preview `resizeAspect`; two layers over it.
@@ -463,6 +480,33 @@ to the user and must be the same thing in the model.
 - Presets are phone-local. They move the same properties the Live screen
   and `CONTROL` do, so the `STATE` snapshot follows for free — no
   protocol change.
+
+### 6.2.2 Live Activity (Lock Screen and Dynamic Island)
+
+A stream is a live, timed, stoppable thing, which is what Live
+Activities exist for (iOS 16.1+; `LensLinkWidgets`, the WidgetKit
+extension). It starts with the stream and ends with it, immediately —
+a card that outlives its stream reads as a stream still running.
+
+- **Lock Screen card** (`glassPanel`-dark, white text): a `video.fill`
+  tile in the status colour, "LensLink" and a destination line
+  (`Studio-Mac · 4K · 60 fps · HEVC · USB`, from `identify` and the
+  format), and on the right the status word with its dot and the elapsed
+  time (a system `.timer`, counting without updates). Under them, on
+  iOS 17+, **Pause/Resume** (neutral) and **Stop** (`errorRed`) — `Button(intent:)`
+  with `LiveActivityIntent`s that run in the app; on iOS 16 the card is a
+  readout.
+- **Dynamic Island** — compact: the status dot leading, the elapsed time
+  trailing; expanded: status word + dot, the timer, the destination line
+  and the two buttons; minimal: the dot. The Island's keyline takes the
+  status colour.
+- **Colour rule**: the tally outranks the status — **On air** in
+  `tallyLive` red beats "Live" in `liveGreen`; **Paused** is amber;
+  Waiting/Standby amber; an error message `errorRed`. Same reading as
+  everywhere else (§2).
+- The content state carries the host name and format rather than the
+  attributes: the plugin introduces itself a moment *after* the stream
+  starts, and attributes are fixed at request time.
 
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):

@@ -8,6 +8,10 @@ import SwiftUI
 struct OptionsView: View {
     @EnvironmentObject private var streamer: Streamer
     @Environment(\.dismiss) private var dismiss
+    // For the row values: which statuses light the tally, and which
+    // preset is the default. Read-only here; their screens edit them.
+    @ObservedObject private var tallySettings = TallySettings.shared
+    @ObservedObject private var presets = PresetManager.shared
 
     // Screen-mirror diagnostics (Diagnostics section below).
     @State private var probeResult: String?
@@ -16,41 +20,72 @@ struct OptionsView: View {
     var body: some View {
         NavigationView {
             Form {
+                // The behaviours, in the order they matter during a
+                // stream; each row wears the Settings app's icon tile
+                // (SettingsRowLabel) so this sheet and the Setup screen
+                // read as one list style.
                 Section {
-                    Toggle("Remote start from OBS",
-                           isOn: $streamer.remoteStartEnabled)
+                    Toggle(isOn: $streamer.remoteStartEnabled) {
+                        SettingsRowLabel("Remote start from OBS",
+                                         systemImage: "play.fill",
+                                         color: Theme.liveGreen)
+                    }
                     // What the Live screen becomes 10 seconds after you
                     // stop touching it. Inline picker: three short labels
                     // that fit one row and read as one choice, where a
                     // pushed screen would hide two of the three.
-                    Picker("Idle view", selection: $streamer.idleAppearance) {
+                    Picker(selection: $streamer.idleAppearance) {
                         ForEach(Streamer.IdleAppearance.allCases) { view in
                             Text(view.displayName).tag(view)
                         }
+                    } label: {
+                        SettingsRowLabel("Idle view", systemImage: "moon.fill",
+                                         color: Color(hex: 0x5E5CE6))
                     }
                     // Hidden where iOS won't grant background capture at
                     // all: a toggle that can't do anything is worse than
                     // no toggle.
                     if streamer.backgroundStreamingAvailable {
-                        Toggle("Keep streaming in the background",
-                               isOn: $streamer.backgroundStreaming)
+                        Toggle(isOn: $streamer.backgroundStreaming) {
+                            SettingsRowLabel("Keep streaming in the background",
+                                             systemImage: "rectangle.on.rectangle",
+                                             color: Theme.accent)
+                        }
                     }
-                    Toggle("Allow system video effects",
-                           isOn: $streamer.allowVideoEffects)
-                }
-
-                Section {
                     NavigationLink(destination: TallyLightOptionsView()) {
-                        Text("Tally light")
+                        HStack {
+                            SettingsRowLabel("Tally light",
+                                             systemImage: "lightbulb.fill",
+                                             color: Theme.tallyLive)
+                            Spacer()
+                            Text(tallySummary)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                     NavigationLink(destination: PresetsView()) {
-                        Text("Presets")
+                        HStack {
+                            SettingsRowLabel("Presets",
+                                             systemImage: "slider.horizontal.3",
+                                             color: Theme.connectAmber)
+                            Spacer()
+                            Text(presetsSummary)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                 }
 
                 Section {
+                    Toggle(isOn: $streamer.allowVideoEffects) {
+                        SettingsRowLabel("Allow system video effects",
+                                         systemImage: "wand.and.stars",
+                                         color: Theme.idleGrey)
+                    }
                     NavigationLink(destination: CameraDiagnosticsView()) {
-                        Text("Camera diagnostics")
+                        SettingsRowLabel("Camera diagnostics",
+                                         systemImage: "list.bullet.rectangle",
+                                         color: Theme.idleGrey)
                     }
 
                     // The screen-mirror tools, moved here from the main
@@ -73,7 +108,9 @@ struct OptionsView: View {
                         }
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Check broadcast link")
+                            SettingsRowLabel("Check broadcast link",
+                                             systemImage: "antenna.radiowaves.left.and.right",
+                                             color: Theme.idleGrey)
                             Text(extensionStatus)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -84,8 +121,6 @@ struct OptionsView: View {
                             }
                         }
                     }
-                } header: {
-                    Text("Diagnostics")
                 }
             }
             .navigationTitle("Options")
@@ -105,6 +140,30 @@ struct OptionsView: View {
         }
         .navigationViewStyle(.stack)
         .tint(Theme.accent)
+    }
+}
+
+extension OptionsView {
+    /// "On air, In preview" — the statuses that light the border, in
+    /// priority order; "Off" when none does.
+    fileprivate var tallySummary: String {
+        let lit = tallySettings.entries
+            .filter { $0.color != TallyColor.none }
+            .map { $0.status.displayName }
+        return lit.isEmpty ? "Off" : lit.joined(separator: ", ")
+    }
+
+    /// The default preset's name, or how many there are.
+    fileprivate var presetsSummary: String {
+        if let id = presets.defaultPresetID,
+           let preset = presets.presets.first(where: { $0.id == id }) {
+            return preset.name
+        }
+        switch presets.presets.count {
+        case 0: return "None"
+        case 1: return "1 preset"
+        default: return "\(presets.presets.count) presets"
+        }
     }
 }
 

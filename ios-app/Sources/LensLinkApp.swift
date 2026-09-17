@@ -14,6 +14,16 @@ struct LensLinkApp: App {
                 .onOpenURL { url in
                     handle(url)
                 }
+                // The Lock Screen / Dynamic Island card that follows a
+                // stream (iOS 16.1+; the app itself runs on 15).
+                .onAppear {
+                    if #available(iOS 16.1, *) {
+                        let streamer = streamer
+                        Task { @MainActor in
+                            StreamActivityController.shared.attach(streamer)
+                        }
+                    }
+                }
         }
         .onChange(of: scenePhase) { phase in
             switch phase {

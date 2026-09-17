@@ -23,7 +23,7 @@ struct BroadcastPickerOverlay: UIViewRepresentable {
         picker.preferredExtension = Self.extensionBundleID
         // System audio only (see the extension); no mic toggle.
         picker.showsMicrophoneButton = false
-        picker.accessibilityLabel = "Start screen broadcast"
+        picker.accessibilityLabel = "Mirror Screen"
         Self.stripChrome(picker)
         return picker
     }
