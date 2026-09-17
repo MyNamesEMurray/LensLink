@@ -111,6 +111,7 @@ struct ContentView: View {
             streamer.clampCaptureSettings()
             refreshCapabilities()
         }
+        .onChange(of: streamer.highFrameRate) { _ in refreshCapabilities() }
         // Any settings change or connection event counts as activity;
         // scrolling alone doesn't, which the long fuse absorbs.
         .onReceive(streamer.objectWillChange) { _ in
@@ -182,7 +183,7 @@ struct ContentView: View {
             CameraManager.supports(resolution: $0, fps: 30,
                                    lens: streamer.selectedLens)
         }
-        availableFrameRates = [30, 60].filter {
+        availableFrameRates = streamer.candidateFrameRates.filter {
             CameraManager.supports(resolution: streamer.resolution,
                                    fps: Int32($0),
                                    lens: streamer.selectedLens)

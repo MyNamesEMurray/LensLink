@@ -374,8 +374,10 @@ faces** (default on), **Keep streaming in the background** (present only where i
 capture — a toggle that can do nothing is worse than no toggle), and the
 pushed screens **Tally light** (row value: the statuses that light it,
 "On air, In preview") and **Presets** (row value: the default preset's
-name, or the count). Second group: **Allow system video effects**,
-**Camera diagnostics**, **Check broadcast link**. Pure controls, no
+name, or the count). Second group, the experiments and the diagnostics: **High frame rate**
+(adds 120 / 240 fps to the Format sheet where the camera has them; off
+by default), **Allow system video effects**, **Camera diagnostics**,
+**Check broadcast link**. Pure controls, no
 footers: every explanation lives in the Documentation screen (§3), which
 is also why the pushed screens carry none.
 
