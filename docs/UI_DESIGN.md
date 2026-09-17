@@ -24,8 +24,15 @@ any change here should be reflected in both.
   never obscure the frame more than necessary.
 - **One glance = status.** A single coloured dot + one word communicates
   connection state identically everywhere.
-- **Same control, same shape.** Zoom, exposure, focus, flashlight, lens and
-  flip look and behave the same on the phone and in the browser.
+- **Same control, same shape.** Zoom, exposure, focus, flashlight, lens
+  and flip mean the same thing and sit in the same order on the phone and
+  in the browser. The phone folds them into one dial because a thumb on
+  a viewfinder has less room than a mouse on a page; the web panel keeps
+  a row per control.
+- **Two layers on the phone.** The Live screen shows only what a stream
+  needs at a glance; everything adjustable is one tap away in a tray.
+  The Camera app has more controls than LensLink and feels simpler
+  because almost none of them are visible at once.
 - **Calm by default.** Muted surfaces, one accent colour, restrained
   motion. Nothing pulses or animates unless it reflects real state change.
 - **Reversible & non-destructive.** Only Stop is destructive (red); every
@@ -179,6 +186,7 @@ from `/api/status`. Recalibration requests flow back as a REQUEST packet
 | `glassPanel`   | black @ 55% + blur (`.regularMaterial`) | Floating control panels |
 | `glassChip`    | white @ 12%                             | Circular control buttons (idle) |
 | `glassChipOn`  | `accent` @ 90%                          | Active/toggled control buttons |
+| `cameraYellow` | `#FFD60A`                               | App only: the selected lens button, the dial's readout and thumb, the auto badge — the Camera app's own colour for "the setting you're touching" |
 | `hairline`     | white @ 8%                              | Panel borders on the web |
 
 ### Text on glass
@@ -260,19 +268,20 @@ surfaces.
 
 | Control     | Icon(s)                                   | Pattern |
 |-------------|-------------------------------------------|---------|
-| Zoom        | `minus.magnifyingglass` / `plus.magnifyingglass` | Slider 1×…max, readout `N.N×` |
-| Exposure    | `sun.min` / `sun.max`                     | Slider −range…+range, readout `±N.N` |
-| Focus       | segmented **AF / Lock**                   | When Lock: a lens-position slider (0=near, 1=far) |
-| Exposure mode | segmented **AE / Manual**               | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. Hidden if unsupported |
-| White balance | segmented **AWB / Lock**                | When Lock: a colour-temperature slider (2500–8000 K, readout `5600K`). Hidden if unsupported |
-| Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** |
-| Lens        | `camera.aperture` menu                     | Menu of the device's real lenses; check on the active one |
-| Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back |
+| Zoom        | web: `minus.magnifyingglass` / `plus.magnifyingglass`; app: the **Zoom** chip and the lens buttons | Slider 1×…max, readout `N.N×`. On the phone, pinch is the primary control and the lens buttons (`.5` · `1×` · `2`, the Camera app's row) switch physical lenses |
+| Exposure    | web: `sun.min` / `sun.max`; app: the **Exposure** chip, or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
+| Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks |
+| Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported |
+| White balance | web: segmented **AWB / Lock**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). Hidden if unsupported |
+| Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** In the app, in the tray's bottom row |
+| Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each back lens's magnification relative to Main, the active one in `cameraYellow` carrying the live zoom (`2.4×`) |
+| Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
-| Idle (app)  | `moon.fill` (Dim screen) / `eye.slash` (Clean feed) | App-only; engages the chosen idle view now instead of waiting out the 10 s fuse. Absent in Standard |
+| Pause       | `pause.fill` / `play.fill`                 | Amber `glassChipOn` while paused; between the status pill and Stop |
+| Idle (app)  | `moon.fill` (Dim screen) / `eye.slash` (Clean feed) | App-only, an item in the status pill's menu; engages the chosen idle view now instead of waiting out the 10 s fuse. Absent in Standard |
 | Pulse (app) | `waveform.path`                            | App-only, in Options → Tally light: one glyph, `accent` when that status pulses and secondary when steady — the active-chip language, not a swapped icon |
-| Stats (app) | `gauge`                                    | App-only toggle; shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
-| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen; while live **with depth assist**, a "Subject distance" slider row (0.5–5.0 m, readout `2.5 m` monospaced) appears on the Live panel and the web panel, same position both surfaces. Dragging always sets a real cutoff — full-left = tightest (0.5 m); **"All" (no cutoff) is entered by tapping the readout**, and while "All" the thumb parks at the far (5.0) end. Identical on both surfaces |
+| Stats (app) | `gauge` / `checkmark`                      | App-only, an item in the status pill's menu; shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
+| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen; while live **with depth assist**, a subject-distance control (0.5–5.0 m, readout `2.5 m` monospaced) appears: the **Subject** chip in the app's tray, a slider row on the web panel. Dragging always sets a real cutoff — full-left = tightest (0.5 m); **"All" (no cutoff)** is tapping the active Subject chip in the app and tapping the readout on the web, and while "All" the thumb parks at the far (5.0) end |
 
 ### The app icon (three appearances)
 
@@ -325,44 +334,87 @@ it feeds and ending in the same full-width accent action button:
 Long explanations don't belong on this screen: each module's footer is at
 most a sentence or two, so the form stays close to one screenful.
 
+**Microphone module** (between Camera and Screen mirror): **Send phone
+mic to OBS**, then — only while that is on — a **Microphone** picker of
+the phone's inputs, then **Auto lip-sync reference** (mutually exclusive
+with the mic toggle; turning one on turns the other off). The picker
+lives here and not on the Live screen because which mic is a set-once
+decision made before Start; the web panel keeps its own mic row for
+switching mid-stream.
+
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short: **Remote start from OBS**, **Idle view**
 (Standard / Clean feed / Dim screen), **Keep streaming in the
 background** (present only where iOS grants background capture — a
-toggle that can do nothing is worse than no toggle), pushed screens for
-**Tally light**
-and **Presets**, and a **Microphone** group (**Send phone mic to OBS** /
-**Auto lip-sync reference** — mutually exclusive; turning one on turns the
-other off). Pure controls, no footers: every explanation lives in the
-Documentation screen (§3), which is also why the pushed screens carry
-none.
+toggle that can do nothing is worse than no toggle), and pushed screens
+for **Tally light** and **Presets**. Pure controls, no footers: every
+explanation lives in the Documentation screen (§3), which is also why
+the pushed screens carry none.
 
 ### 6.2 App — Live screen
-Full-screen black; camera preview `resizeAspect`; content over it:
+Full-screen black; camera preview `resizeAspect`; two layers over it.
 
-- **Top bar:** status pill (dot + word, left) · Stats button · Idle
-  button · Stop button (red). Glass chips. With Stats on, a health pill (fps ·
-  Mb/s · dropped) sits under the bar, leading-aligned. The Idle button
-  engages the idle view now instead of waiting out the fuse, and carries
-  that view's icon (`eye.slash` for Clean feed, `moon.fill` for Dim
-  screen); in Standard, which has no idle view, it isn't drawn.
-- **Bottom panel** (`glassPanel`, radius 16): zoom row, exposure rows
-  (AE/Manual segmented sharing the bias-slider row; ISO + Shutter rows in
-  Manual), white-balance row (AWB/Lock + temperature slider), then a
-  control row of Focus segmented + (lens-position slider when **Lock**, else
-  a flexible spacer) + Flashlight + Lens menu + Flip.
-- **Gestures:** pinch anywhere = zoom; tap = focus/expose at point. In
-  **AF** the focus row carries no inline label — tap-to-focus is a gesture,
-  not on-screen text (a label there crowded the row and wrapped badly).
+**The glance layer** — the whole screen for most of a stream:
+
+- **Top bar:** status pill (dot + word + a small `chevron.down`, left) ·
+  Pause · Stop (red). Glass chips. The pill is a **menu**: **Stats** (on/off,
+  `gauge` / `checkmark`) and, when an idle view is set, **Clean feed now** /
+  **Dim screen now** — both are about the screen rather than the shot and
+  earn no button of their own. With Stats on, a health pill (fps · Mb/s ·
+  dropped) sits under the bar, leading-aligned.
+- **Notice row:** one row under the status bar for whatever needs saying,
+  most urgent first — **Presets paused** (actionable) beats the lip-sync
+  readout (watch-only). Nothing is drawn when there is nothing to say;
+  never two pills stacked.
+- **Lens buttons** (bottom centre, back cameras only, as in the Camera
+  app): one round button per back lens labelled with its magnification
+  relative to Main (`.5`, `2`, `3`); the active one larger, in
+  `cameraYellow`, carrying the live zoom (`1×`, `2.4×`). Tapping switches
+  the physical lens. Hidden while the front camera is selected, and on
+  single-lens devices.
+- **Chevron** (`chevron.up` in a glass capsule) under the lens buttons
+  opens the tray.
+- **Gestures:** pinch = zoom within the lens; tap = focus/expose at point;
+  a **one-finger vertical drag** = exposure bias (the Camera app's sun
+  slider: six stops per screen height, a `cameraYellow` readout centred
+  while the finger is down, inert in manual exposure). With those, the
+  tray stays closed unless the operator means it.
+
+**The adjust tray** (`glassPanel`, radius 16, replaces the lens buttons
+and chevron; 200 ms):
+
+- **Chip row:** Zoom · Exposure · Shutter · WB · Focus (· Subject while
+  green screen runs with depth assist). Shutter needs manual exposure and
+  WB needs a lockable white balance; unsupported chips aren't drawn. The
+  active chip is white with black text. A chip on auto wears a small
+  `cameraYellow` **A** badge at its top-right corner (Zoom has none — it
+  has no auto).
+- **One dial:** a `cameraYellow` monospaced readout (`+0.7 EV`, `ISO 200`,
+  `1/125`, `5600 K`, `0.45`, `2.5 m` / `All`) over a native slider, driving
+  whatever the active chip names. Ranges and scales are the web panel's
+  (shutter log-scale, subject 0.5–5.0 m).
+- **Auto ↔ manual rule:** a drag on the dial takes that parameter out of
+  auto on the first touch (Shutter → manual exposure, WB → lock, Focus →
+  lock). Tapping the *active* chip again hands it back to auto. Exposure on
+  auto is the bias dial — an auto-exposure control, so dragging it leaves
+  auto alone — and once Shutter has taken exposure manual the same chip
+  reads **ISO** and drives ISO, so chip and readout never disagree.
+- **Bottom row:** a caption naming the mode (`Auto · drag to set by hand`,
+  `Manual · tap WB for auto`, `Pinch the picture to zoom`) · Flashlight ·
+  Flip · `chevron.down` to close.
+
+Set-once choices are not on this screen at all: the microphone picker is
+on Setup (Microphone module), lens defaults come from Setup's Lens
+picker, idle appearance from Options.
 - **Idle view:** what the screen becomes 10 s after the last touch, the
   user's choice in Options → Idle view. Any tap brings the controls back
   and restarts the fuse.
   - **Standard** — nothing happens; the controls stay up all stream.
-  - **Clean feed** — the preview alone: status pill, sync pill and control
-    panel fade out over 0.2 s. Two things deliberately stay, because
-    neither is a control: the tally border, and the health pill when Stats
-    is on — the Stats button *is* the "clean, but keep the numbers" switch,
-    so no second setting exists for it. A transparent tap catcher covers
+  - **Clean feed** — the preview alone: status pill, notice row, lens
+    buttons and tray fade out over 0.2 s. Two things deliberately stay,
+    because neither is a control: the tally border, and the health pill
+    when Stats is on — Stats *is* the "clean, but keep the numbers"
+    switch, so no second setting exists for it. A transparent tap catcher covers
     the screen, so the waking tap is only a wake (never also a focus pull)
     and the letterbox bars wake it too.
   - **Dim screen** — near-black overlay with a small "Streaming — tap to
@@ -421,9 +473,11 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    the header — only when more than one camera source is live. Every API
    request carries the selected source's `?src=` id; one page controls
    every phone.
-3. **Controls** in the *same order as the app's Live panel*: Zoom row,
+3. **Controls** in the *same order as the app's chip row*: Zoom row,
    Exposure row, Focus (AF/Lock + lens slider), then a chip row of
-   Flashlight · Lens · Flip.
+   Flashlight · Lens · Flip. One row per control rather than the phone's
+   single dial: a page at a desk has the room, and a mouse is not a
+   thumb.
 4. All controls send `CONTROL` packets; the panel polls `/api/state` and
    mirrors app-side changes (pausing while the operator is interacting), so
    the two stay in lock-step.

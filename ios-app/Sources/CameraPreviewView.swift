@@ -21,6 +21,10 @@ struct CameraPreviewView: UIViewRepresentable {
     var previewEnabled: Bool = true
     var onTapAtDevicePoint: ((CGPoint) -> Void)?
     var onPinchZoom: ((_ phase: PinchPhase, _ scale: CGFloat) -> Void)?
+    /// One-finger vertical drag — the Camera app's sun slider, used for
+    /// exposure bias. `travel` is the drag's distance as a fraction of the
+    /// view's height, positive upwards, measured from where it began.
+    var onVerticalDrag: ((_ phase: PinchPhase, _ travel: CGFloat) -> Void)?
 
     enum PinchPhase {
         case began
@@ -103,6 +107,22 @@ struct CameraPreviewView: UIViewRepresentable {
             }
             parent.onPinchZoom?(phase, recognizer.scale)
         }
+
+        @objc func handlePan(_ recognizer: UIPanGestureRecognizer) {
+            guard let view = recognizer.view else { return }
+            let phase: PinchPhase
+            switch recognizer.state {
+            case .began:
+                phase = .began
+            case .ended, .cancelled, .failed:
+                phase = .ended
+            default:
+                phase = .changed
+            }
+            let height = max(view.bounds.height, 1)
+            parent.onVerticalDrag?(
+                phase, -recognizer.translation(in: view).y / height)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -151,6 +171,14 @@ struct CameraPreviewView: UIViewRepresentable {
                 target: context.coordinator,
                 action: #selector(Coordinator.handlePinch(_:)))
             view.addGestureRecognizer(pinch)
+        }
+        if onVerticalDrag != nil {
+            let pan = UIPanGestureRecognizer(
+                target: context.coordinator,
+                action: #selector(Coordinator.handlePan(_:)))
+            // One finger only, so a pinch is never half-read as a drag.
+            pan.maximumNumberOfTouches = 1
+            view.addGestureRecognizer(pan)
         }
         return view
     }

@@ -13,6 +13,7 @@
 	--amber: #FF9F0A;
 	--red: #FF453A;
 	--grey: #8E8E93;
+	--camera-yellow: #FFD60A;
 
 	--bg: #0E0F13;
 	--bg-raised: #14161C;
@@ -277,6 +278,20 @@ kbd {
 .panelmock .seg span { font-size: 12px; padding: 4px 12px; border-radius: 10px; color: var(--txt2); }
 .panelmock .seg span.on { background: var(--accent); color: #fff; }
 .panelmock .chips { display: flex; gap: 8px; margin-left: auto; }
+.panelmock .chiprow { display: flex; gap: 5px; }
+.panelmock .chp { flex: 1; position: relative; text-align: center; font-size: 11px; font-weight: 600; padding: 6px 0;
+  border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--txt2); }
+.panelmock .chp.on { background: #fff; color: #000; }
+.panelmock .chp i { position: absolute; right: 3px; top: -5px; width: 13px; height: 13px; border-radius: 50%;
+  background: var(--camera-yellow); color: #000; font: 800 8px/13px var(--sans); font-style: normal; }
+.panelmock .dial { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 12px; }
+.panelmock .dial .ro { width: auto; text-align: center; }
+.panelmock .yl { color: var(--camera-yellow); }
+.panelmock .track.yl { align-self: stretch; flex: none; }
+.device .toprow .pill { margin-right: auto; }
+.panelmock .track.yl i { background: var(--camera-yellow); }
+.panelmock .mode { font-size: 11px; color: var(--txt2); }
+.pill .chev { margin-left: 2px; color: var(--txt2); line-height: 0; position: relative; top: -3px; }
 
 /* The control panel is a fixed ~239px stack of rows, so 16:10 is shorter
    than the content until the screen is about 382px wide — a ~470px

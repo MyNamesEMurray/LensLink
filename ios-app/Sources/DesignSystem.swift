@@ -27,6 +27,13 @@ enum Theme {
     static let glassChip = Color.white.opacity(0.12)
     static func glassChipOn() -> Color { accent.opacity(0.9) }
 
+    /// The Camera app's own yellow for the selected lens button and the
+    /// dial's needle and readout: the one place the Live screen borrows a
+    /// system convention instead of the accent, because that is the
+    /// colour every iPhone owner already reads as "the camera setting
+    /// I'm touching".
+    static let cameraYellow = Color(hex: 0xFFD60A)
+
     static let textPrimary = Color.white
     static let textSecondary = Color.white.opacity(0.6)
 
