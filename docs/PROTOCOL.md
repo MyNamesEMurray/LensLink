@@ -124,6 +124,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "pause_stream" }
 { "cmd": "resume_stream" }
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "set_quality", "quality": "maximum" }
 { "cmd": "mic", "id": "builtin:2" }
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
 { "cmd": "green_screen", "on": true, "maxDistance": 2.5 }
@@ -137,6 +138,13 @@ active lens (the STATE snapshot advertises the valid choices in
 `fps` / `codec`) and ignores unsupported requests. A format change flows
 through the normal live-reconfigure path: new VIDEO_CONFIG, fresh
 keyframe, decoder reset on a codec change.
+
+`set_quality` picks the bitrate strategy: `"balanced"` (the app's table,
+safe on ordinary Wi-Fi, the adaptive loop only backs off from it) or
+`"maximum"` (starts higher and probes upward while the link is clean, to
+a transport-set ceiling, with the encoder's quality-first settings). The
+STATE snapshot reports it as `quality`. A live stream rebuilds its
+encoder on the change, like a format change.
 
 `mic` selects which microphone feeds the phone-mic capture, hot-switchable
 mid-stream. Ids come from the STATE snapshot's `mics` list: `"auto"`
@@ -244,6 +252,7 @@ changes and once on connect. Payload: UTF-8 JSON, e.g.
 { "zoom": 2.5, "maxZoom": 10, "exposureBias": -0.5,
   "focusMode": "locked", "lensPosition": 0.4,
   "faceFocus": true, "supportsFaceFocus": true,
+  "quality": "balanced",
   "flashlight": true, "hasFlashlight": true, "camera": "back" }
 ```
 
