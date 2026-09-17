@@ -329,11 +329,22 @@ Symbol) and a title — top to bottom:
    was denied, and the "How to connect" disclosure with the two setup
    steps — collapsible, and it stays collapsed once read.
 3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
-   value reads `4K · 60 fps · HEVC` and opens a sheet with the
-   Resolution, Frame rate and Codec pickers (each filtered to what the
-   selected lens supports) — **Color**, and the **Green screen** toggle.
-   A contextual "Open Settings" button appears only if a permission was
-   denied.
+   value reads `4K · 60 fps · HEVC` (`· HDR` or `· Log` appended when the
+   colour isn't Standard) and opens the Format sheet — and the **Green
+   screen** toggle. A contextual "Open Settings" button appears only if
+   a permission was denied.
+
+   **The Format sheet**: Resolution and Frame rate pickers (each filtered
+   to what the selected lens supports), then **Codec** and **Color** as
+   check-row lists rather than pickers, because the two constrain each
+   other (HDR and Apple Log are HEVC only; green screen is Standard
+   only) and a picker that hides H.264 reads as a bug. Every choice stays
+   visible, and one that will change another setting says so in a
+   caption *before* the tap: H.264 reads "Switches Color to Standard —
+   HDR and Apple Log are HEVC only" while a non-Standard colour is set;
+   HDR/Log read "Switches Codec to HEVC" and/or "Turns Green screen off"
+   when those apply, and "HEVC only" otherwise. The model enforces the
+   same rules; the captions preview them.
 4. **Start** — two stacked full-width buttons: **Start Camera** in the
    accent, **Mirror Screen** in the system's secondary fill (the system
    broadcast picker is stretched invisibly over the button face — iOS
