@@ -1147,11 +1147,13 @@ final class Streamer: ObservableObject {
         resolution = CameraManager.Resolution(
             rawValue: defaults.string(forKey: "resolution") ?? "") ?? .hd720
         let storedFps = defaults.integer(forKey: "fps")
-        fps = storedFps > 0 ? storedFps : 30
+        var loadedFps = storedFps > 0 ? storedFps : 30
         // A high rate outlives its toggle only while the toggle is on.
-        if fps > 60, !(defaults.object(forKey: "highFrameRate") as? Bool ?? false) {
-            fps = 60
+        if loadedFps > 60,
+           !(defaults.object(forKey: "highFrameRate") as? Bool ?? false) {
+            loadedFps = 60
         }
+        fps = loadedFps
         let lenses = CameraManager.availableLenses()
         availableLenses = lenses.isEmpty ? [CameraManager.defaultLens] : lenses
         let savedLensID = defaults.string(forKey: "selectedLens")
