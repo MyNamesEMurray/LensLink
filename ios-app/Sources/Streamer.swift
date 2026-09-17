@@ -531,6 +531,17 @@ final class Streamer: ObservableObject {
         case auto
         case locked
     }
+    /// Faces first while focus is on auto (Options → Focus on faces):
+    /// the camera keeps focus and exposure on the faces it sees. A tap
+    /// point outranks it until the scene changes; a lock ignores it.
+    @Published var faceFocus: Bool =
+        UserDefaults.standard.object(forKey: "faceFocus") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(faceFocus, forKey: "faceFocus")
+            camera.setFaceDrivenFocus(faceFocus)
+            scheduleStateSend()
+        }
+    }
     @Published var focusSetting: FocusSetting = .auto {
         didSet {
             applyFocus()
@@ -719,6 +730,28 @@ final class Streamer: ObservableObject {
                               includeExposure: exposureSetting == .auto)
     }
 
+    /// Long press on the Live screen: the Camera app's AE/AF Lock. One
+    /// scan at the point, then focus is held at the lens position it
+    /// found and exposure at the ISO and shutter it chose — as the same
+    /// locked / manual states the tray's chips show, so the lock reads
+    /// and releases like any other (tap Focus, tap ISO).
+    func lockFocusAndExposure(at devicePoint: CGPoint) {
+        camera.lockFocusAndExposure(at: devicePoint) { [weak self] lens, iso, shutter in
+            Task { @MainActor [weak self] in
+                guard let self, self.isStreaming else { return }
+                if let lens {
+                    self.lensPosition = lens
+                    self.focusSetting = .locked
+                }
+                if self.camera.supportsManualExposure {
+                    self.iso = iso
+                    self.shutterSeconds = shutter
+                    self.exposureSetting = .manual
+                }
+            }
+        }
+    }
+
     /// Debounced push of the control state to the plugin (for its web UI).
     private var stateSendPending = false
 
@@ -760,6 +793,8 @@ final class Streamer: ObservableObject {
             "exposureBias": Double(exposureBias),
             "focusMode": focusSetting == .locked ? "locked" : "auto",
             "lensPosition": Double(lensPosition),
+            "faceFocus": faceFocus,
+            "supportsFaceFocus": camera.supportsFaceDrivenFocus,
             "flashlight": flashlightOn,
             "hasFlashlight": camera.hasFlashlight,
             "camera": selectedLens.position == .front ? "front" : "back",
@@ -1146,6 +1181,7 @@ final class Streamer: ObservableObject {
         // to reach PiP by hand.
         BackgroundPiP.shared.isEnabled = backgroundStreaming
 
+        camera.setFaceDrivenFocus(faceFocus)
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
                 self?.handleClientState(state)
@@ -1443,7 +1479,12 @@ final class Streamer: ObservableObject {
             if let position = command["lensPosition"] as? Double {
                 lensPosition = min(max(Float(position), 0), 1)
             }
-            focusSetting = (command["mode"] as? String) == "locked" ? .locked : .auto
+            if let faces = command["faces"] as? Bool {
+                faceFocus = faces
+            }
+            if let mode = command["mode"] as? String {
+                focusSetting = mode == "locked" ? .locked : .auto
+            }
         case "flashlight":
             if let on = command["on"] as? Bool {
                 flashlightOn = on

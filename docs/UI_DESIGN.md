@@ -270,7 +270,7 @@ surfaces.
 |-------------|-------------------------------------------|---------|
 | Zoom        | web: `minus.magnifyingglass` / `plus.magnifyingglass`; app: the **Zoom** chip and the lens buttons | Slider 1×…max, readout `N.N×`. On the phone, pinch is the primary control and the lens buttons (`.5` · `1×` · `2`, the Camera app's row) switch physical lenses |
 | Exposure    | web: `sun.min` / `sun.max`; app: the **Exposure** chip, or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
-| Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks |
+| Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
 | Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported |
 | White balance | web: segmented **AWB / Lock**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). Hidden if unsupported |
 | Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** In the app, in the tray's bottom row |
@@ -369,8 +369,8 @@ switching mid-stream.
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short, in the same icon-tile rows as Setup.
 First group, the things that matter during a stream: **Remote start from
-OBS**, **Idle view** (Standard / Clean feed / Dim screen), **Keep
-streaming in the background** (present only where iOS grants background
+OBS**, **Idle view** (Standard / Clean feed / Dim screen), **Focus on
+faces** (default on), **Keep streaming in the background** (present only where iOS grants background
 capture — a toggle that can do nothing is worse than no toggle), and the
 pushed screens **Tally light** (row value: the statuses that light it,
 "On air, In preview") and **Presets** (row value: the default preset's
@@ -402,8 +402,17 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   single-lens devices.
 - **Chevron** (`chevron.up` in a glass capsule) under the lens buttons
   opens the tray.
-- **Gestures:** pinch = zoom within the lens; tap = focus/expose at point;
-  a **one-finger vertical drag** = exposure bias (the Camera app's sun
+- **Gestures:** pinch = zoom within the lens; **tap** = focus/expose at
+  the point, marked by the Camera app's square — a 72 pt `cameraYellow`
+  rounded rectangle that lands with a 150 ms scale-in and fades a second
+  later. The point holds until the camera's own subject-area monitoring
+  says the scene changed, then auto (faces, or centre-weighted) takes
+  over again — never a timer of ours, and never for the rest of the
+  stream. **Long press** (0.5 s) = **AE/AF Lock** at the point: one scan,
+  then focus is held at the lens position it found and exposure at the
+  ISO and shutter it chose, as the same locked / manual states the chips
+  show ("AE/AF Lock" tag under the square, 1.8 s); releasing is tapping
+  Focus or ISO. A **one-finger vertical drag** = exposure bias (the Camera app's sun
   slider: six stops per screen height, a `cameraYellow` readout centred
   while the finger is down, inert in manual exposure). With those, the
   tray stays closed unless the operator means it.

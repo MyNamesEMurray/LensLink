@@ -42,6 +42,11 @@ struct OptionsView: View {
                         SettingsRowLabel("Idle view", systemImage: "moon.fill",
                                          color: Color(hex: 0x5E5CE6))
                     }
+                    Toggle(isOn: $streamer.faceFocus) {
+                        SettingsRowLabel("Focus on faces",
+                                         systemImage: "face.smiling",
+                                         color: Theme.cameraYellow)
+                    }
                     // Hidden where iOS won't grant background capture at
                     // all: a toggle that can't do anything is worse than
                     // no toggle.

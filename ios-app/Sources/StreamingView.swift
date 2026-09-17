@@ -28,6 +28,16 @@ struct StreamingView: View {
     @State private var brightnessLowered = false
     /// The adjust tray is up in place of the lens buttons.
     @State private var trayOpen = false
+    /// The yellow square where the last tap or long press landed. Gone
+    /// again after a moment, or the instant the camera lets the tap
+    /// point go; a value that lingered would read as a control.
+    @State private var focusMark: FocusMark?
+
+    private struct FocusMark: Equatable {
+        let point: CGPoint
+        let locked: Bool
+        let id = UUID()
+    }
     /// Which parameter the tray's dial drives.
     @State private var dialTarget: DialTarget = .exposure
     /// Each back lens's magnification relative to Main, for the lens
@@ -61,10 +71,16 @@ struct StreamingView: View {
                 // untouched). The last frame freezes underneath, invisible
                 // behind the overlay.
                 previewEnabled: !dimmed,
-                onTapAtDevicePoint: { point in
+                onTapAtDevicePoint: { point, viewPoint in
                     touched()
                     // Via the streamer so a tap keeps manual exposure locked.
                     streamer.focusAndExpose(at: point)
+                    focusMark = FocusMark(point: viewPoint, locked: false)
+                },
+                onLongPressAtDevicePoint: { point, viewPoint in
+                    touched()
+                    streamer.lockFocusAndExposure(at: point)
+                    focusMark = FocusMark(point: viewPoint, locked: true)
                 },
                 onPinchZoom: { phase, scale in
                     touched()
@@ -108,6 +124,26 @@ struct StreamingView: View {
             .padding()
             .animation(.easeInOut(duration: 0.2), value: showsControls)
             .animation(.easeInOut(duration: 0.2), value: trayOpen)
+
+            // The focus marker, in the preview's own coordinate space (both
+            // fill the screen). Not hit-testable: the next tap goes to the
+            // picture, not the square.
+            if let mark = focusMark {
+                ZStack {
+                    Color.clear
+                    FocusIndicator(locked: mark.locked)
+                        .position(mark.point)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .id(mark.id)
+                .task(id: mark.id) {
+                    try? await Task.sleep(
+                        nanoseconds: mark.locked ? 1_800_000_000 : 1_000_000_000)
+                    guard !Task.isCancelled, focusMark?.id == mark.id else { return }
+                    withAnimation(.easeOut(duration: 0.3)) { focusMark = nil }
+                }
+            }
 
             // The drag's readout, centred where the eye already is. Only
             // while a finger is down: a value that lingers reads as a
@@ -169,10 +205,18 @@ struct StreamingView: View {
         .onAppear {
             battery.retain()
             refreshLensFactors()
+            // The camera let the tap point go (the scene changed): the
+            // marker has nothing left to mark.
+            streamer.camera.onTapPointReset = {
+                Task { @MainActor in
+                    withAnimation(.easeOut(duration: 0.3)) { focusMark = nil }
+                }
+            }
         }
         .onDisappear {
             battery.release()
             restoreBrightness()
+            streamer.camera.onTapPointReset = nil
         }
     }
 
@@ -849,6 +893,10 @@ struct StreamingView: View {
             return "Pinch the picture to zoom"
         case .exposure where streamer.exposureSetting == .auto:
             return "Auto · drag the picture up or down"
+        case .focus where streamer.focusSetting == .auto:
+            return streamer.faceFocus && streamer.camera.supportsFaceDrivenFocus
+                ? "Auto · faces first · hold the picture to lock"
+                : "Auto · tap the picture · hold to lock"
         case .subject:
             return streamer.greenScreenMaxDistance > 0
                 ? "Cutoff · tap Subject for all"
@@ -996,6 +1044,36 @@ struct StreamingView: View {
     private func floatBinding(_ source: Binding<Float>) -> Binding<CGFloat> {
         Binding(get: { CGFloat(source.wrappedValue) },
                 set: { source.wrappedValue = Float($0) })
+    }
+}
+
+/// The Camera app's focus square: a thin yellow rounded rectangle that
+/// lands with a small scale-in, plus an "AE/AF Lock" tag under it for a
+/// long press. Drawn where the finger was; the parent decides when it
+/// goes.
+private struct FocusIndicator: View {
+    let locked: Bool
+    @State private var appeared = false
+
+    var body: some View {
+        VStack(spacing: Theme.Space.s) {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .strokeBorder(Theme.cameraYellow, lineWidth: 1.5)
+                .frame(width: 72, height: 72)
+            if locked {
+                Text("AE/AF Lock")
+                    .font(.caption2.weight(.bold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, Theme.Space.s)
+                    .padding(.vertical, Theme.Space.xs)
+                    .background(Theme.cameraYellow, in: Capsule())
+            }
+        }
+        .scaleEffect(appeared ? 1 : 1.3)
+        .opacity(appeared ? 1 : 0.4)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.15)) { appeared = true }
+        }
     }
 }
 
