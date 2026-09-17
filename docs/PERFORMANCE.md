@@ -211,11 +211,22 @@ The iOS capture/encode path was audited against Apple's AVFoundation and
 VideoToolbox guidance for real-time capture. Followed: `RealTime` +
 `AllowFrameReordering=false` (no B-frames) + `PrioritizeEncodingSpeed
 OverQuality` + `MaxFrameDelayCount=1` on the encoder, average bitrate
-with a hard data-rate cap, 2-second keyframes, `alwaysDiscardsLate
+with a hard data-rate cap (1.5× over one-second windows), 2-second
+keyframes, `alwaysDiscardsLate
 VideoFrames`, session interruption/runtime-error observers with restart,
 and — per the `systemPressureState` docs — thermal/power mitigation:
 at `.serious` the bitrate is halved, at `.critical` it's quartered and
 the frame rate halves (60→30, 30→15), restored when pressure abates.
+
+**Quality → Maximum** (Format sheet) relaxes three of those on purpose,
+and only there: speed-over-quality off, the peak cap at 2×, keyframes
+every 4 s (the plugin requests one on join). It also turns the adaptive
+loop from "back off from a fixed target" into a probe: start at 2× the
+table, +15% per 3 clean seconds up to 6× (USB) or 4× (Wi-Fi) the table,
+hold while sends queue 60–200 ms, cut a quarter on a drop or >200 ms,
+and stay under the level that broke for a minute. Same one-second
+cadence and the same counters the health readout uses — no new sampling
+and no new thread. Balanced keeps the original behaviour exactly.
 
 Deliberate divergences (don't "fix" these without reading this):
 

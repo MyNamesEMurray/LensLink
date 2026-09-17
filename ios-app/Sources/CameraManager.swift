@@ -294,6 +294,16 @@ final class CameraManager: NSObject {
         return nil
     }
 
+    /// Maximum quality without system video effects: take the full
+    /// sensor readout over the binned sibling. Binning averages 2×2
+    /// photosites — the effects-capable formats are usually the binned
+    /// ones — so the ordinary preference below trades sharpness for a
+    /// Video Effects panel nobody asked for. Written on the main actor
+    /// with the quality setting, read on the session queue at configure;
+    /// a Bool, so a stale read costs one configure with the other
+    /// preference, never a tear.
+    static var preferFullSensorReadout = false
+
     private static func format(for device: AVCaptureDevice,
                                resolution: Resolution,
                                fps: Int32,
@@ -354,13 +364,22 @@ final class CameraManager: NSObject {
         // user actually switches one on.
         let subtype = CMFormatDescriptionGetMediaSubType(first.formatDescription)
         var best = first
-        var bestScore = effectsScore(first)
-        for candidate in candidates.dropFirst()
-        where CMFormatDescriptionGetMediaSubType(candidate.formatDescription) == subtype {
-            let score = effectsScore(candidate)
-            if score > bestScore {
-                best = candidate
-                bestScore = score
+        if preferFullSensorReadout {
+            // Same pixel format, unbinned if one exists; a rate that only
+            // the binned formats reach (240 fps) keeps the binned one.
+            best = candidates.first {
+                CMFormatDescriptionGetMediaSubType($0.formatDescription) == subtype
+                    && !$0.isVideoBinned
+            } ?? first
+        } else {
+            var bestScore = effectsScore(first)
+            for candidate in candidates.dropFirst()
+            where CMFormatDescriptionGetMediaSubType(candidate.formatDescription) == subtype {
+                let score = effectsScore(candidate)
+                if score > bestScore {
+                    best = candidate
+                    bestScore = score
+                }
             }
         }
         // Unified-log breadcrumb (Console.app when a Mac is handy; the

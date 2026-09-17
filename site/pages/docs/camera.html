@@ -20,6 +20,7 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
     <tr><td>Resolution</td><td>Up to 3840×2160. Higher isn't automatically better — 1080p60 beats 4K30 for most talking-head work.</td></tr>
     <tr><td>Frame rate</td><td>30 or 60. Match your OBS canvas. <strong>Options → High frame rate</strong> (experimental) adds 120 and 240 where the camera has them.</td></tr>
     <tr><td>Codec</td><td>HEVC looks the same as H.264 at roughly 40% less data. Use it unless your OBS build can't decode it.</td></tr>
+    <tr><td>Quality</td><td><strong>Balanced</strong> streams at a bitrate that is safe on ordinary Wi-Fi. <strong>Maximum</strong> keeps probing upward while the connection stays clean &mdash; up to about six times that over USB, four over Wi-Fi &mdash; and settles just under whatever the link carries. It also switches the encoder to quality-first settings and streams from the full sensor readout. More data and more heat; USB is the place for it.</td></tr>
   </tbody>
 </table>
 <div class="callout">

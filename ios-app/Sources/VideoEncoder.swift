@@ -58,14 +58,22 @@ final class VideoEncoder {
 
     private static let startCode = Data([0x00, 0x00, 0x00, 0x01])
 
+    /// Maximum quality (Format → Quality → Maximum): the encoder is told
+    /// to spend its time on quality rather than speed, peaks may run to
+    /// 2× the average instead of 1.5×, and keyframes come every 4 s
+    /// instead of 2 — each a few percent of quality per bit that the
+    /// balanced setting trades for safety on a weak link.
+    private let maximumQuality: Bool
+
     init(codec: VideoCodec, width: Int32, height: Int32, fps: Int32, bitrate: Int,
-         color: StreamColor = .sdr) {
+         color: StreamColor = .sdr, maximumQuality: Bool = false) {
         self.codec = codec
         self.width = width
         self.height = height
         self.fps = fps
         self.bitrate = bitrate
         self.color = color
+        self.maximumQuality = maximumQuality
     }
 
     /// Whether this device can hardware-encode the codec (HEVC needs A10+).
@@ -171,21 +179,26 @@ final class VideoEncoder {
         }
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering,
                              value: kCFBooleanFalse)
-        // Shave per-frame encode time; quality difference is negligible
-        // at streaming bitrates.
+        // Balanced: shave per-frame encode time; the quality difference
+        // is small at streaming bitrates. Maximum: spend the time — the
+        // hardware encoder has headroom at every format the app offers,
+        // and at high bitrates the difference is what the bits bought.
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_PrioritizeEncodingSpeedOverQuality,
-                             value: kCFBooleanTrue)
+                             value: maximumQuality ? kCFBooleanFalse : kCFBooleanTrue)
         // Don't let the encoder sit on frames internally.
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_MaxFrameDelayCount,
                              value: NSNumber(value: 1))
-        Self.applyBitrate(bitrate, to: session)
+        Self.applyBitrate(bitrate, to: session, peakFactor: peakFactor)
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ExpectedFrameRate,
                              value: NSNumber(value: fps))
-        // Keyframe at least every 2 seconds so joins/recoveries are quick.
+        // Keyframe at least every 2 seconds so joins/recoveries are quick;
+        // 4 in Maximum, where keyframes are the expensive frames and the
+        // plugin asks for one on join anyway.
+        let keyframeSeconds: Int32 = maximumQuality ? 4 : 2
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_MaxKeyFrameInterval,
-                             value: NSNumber(value: fps * 2))
+                             value: NSNumber(value: fps * keyframeSeconds))
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration,
-                             value: NSNumber(value: 2))
+                             value: NSNumber(value: keyframeSeconds))
 
         VTCompressionSessionPrepareToEncodeFrames(session)
         lock.lock()
@@ -198,18 +211,23 @@ final class VideoEncoder {
         lock.lock()
         defer { lock.unlock() }
         guard let session else { return }
-        Self.applyBitrate(bitsPerSecond, to: session)
+        Self.applyBitrate(bitsPerSecond, to: session, peakFactor: peakFactor)
     }
 
-    /// Average target plus a HARD cap (1.5x average over 1-second windows).
-    /// Without the cap, hard-to-compress content — e.g. sensor noise
-    /// magnified by digital zoom — overshoots the average enough to
-    /// saturate a Wi-Fi link.
+    /// How far a one-second window may run above the average.
+    private var peakFactor: Double { maximumQuality ? 2.0 : 1.5 }
+
+    /// Average target plus a HARD cap (peakFactor × average over 1-second
+    /// windows). Without the cap, hard-to-compress content — e.g. sensor
+    /// noise magnified by digital zoom — overshoots the average enough to
+    /// saturate a Wi-Fi link; Maximum loosens it because the adaptive
+    /// loop is watching the link and detailed scenes are the point.
     private static func applyBitrate(_ bitsPerSecond: Int,
-                                     to session: VTCompressionSession) {
+                                     to session: VTCompressionSession,
+                                     peakFactor: Double) {
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_AverageBitRate,
                              value: NSNumber(value: bitsPerSecond))
-        let bytesPerSecondCap = bitsPerSecond * 3 / 16 // (bps / 8) * 1.5
+        let bytesPerSecondCap = Int(Double(bitsPerSecond) / 8 * peakFactor)
         let limits: [NSNumber] = [NSNumber(value: bytesPerSecondCap),
                                   NSNumber(value: 1.0)]
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_DataRateLimits,

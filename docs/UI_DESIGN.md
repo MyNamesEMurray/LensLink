@@ -335,8 +335,10 @@ Symbol) and a title — top to bottom:
    a permission was denied.
 
    **The Format sheet**: Resolution and Frame rate pickers (each filtered
-   to what the selected lens supports), then **Codec** and **Color** as
-   check-row lists rather than pickers, because the two constrain each
+   to what the selected lens supports), then **Quality** (**Balanced** —
+   "Safe on ordinary Wi-Fi" — or **Maximum** — "Finds the most your
+   connection carries"; the Format row's value gains `· Max`), then
+   **Codec** and **Color** as check-row lists rather than pickers, because the two constrain each
    other (HDR and Apple Log are HEVC only; green screen is Standard
    only) and a picker that hides H.264 reads as a bug. Every choice stays
    visible, and one that will change another setting says so in a

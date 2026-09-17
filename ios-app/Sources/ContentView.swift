@@ -382,6 +382,7 @@ struct ContentView: View {
         case .hlg: parts.append("HDR")
         case .log: parts.append("Log")
         }
+        if streamer.quality == .maximum { parts.append("Max") }
         return parts.joined(separator: " · ")
     }
 
@@ -625,6 +626,21 @@ private struct FormatSheet: View {
                     }
                 } header: {
                     Text("Codec")
+                }
+
+                Section {
+                    ChoiceRow(title: "Balanced",
+                              detail: "Safe on ordinary Wi-Fi",
+                              selected: streamer.quality == .balanced) {
+                        streamer.quality = .balanced
+                    }
+                    ChoiceRow(title: "Maximum",
+                              detail: "Finds the most your connection carries — more data, more heat; best over USB",
+                              selected: streamer.quality == .maximum) {
+                        streamer.quality = .maximum
+                    }
+                } header: {
+                    Text("Quality")
                 }
 
                 // Hidden on devices that can't encode Main10 — a choice

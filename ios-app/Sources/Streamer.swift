@@ -135,6 +135,45 @@ final class Streamer: ObservableObject {
     var candidateFrameRates: [Int] {
         highFrameRate ? [30, 60, 120, 240] : [30, 60]
     }
+
+    /// How hard to push the connection (Format → Quality). Balanced is the
+    /// table in CameraManager.Resolution.bitrate — sized to be safe on
+    /// ordinary Wi-Fi — and the adaptive loop only ever backs off from it.
+    /// Maximum starts above it and probes upward while the link stays
+    /// clean, to a ceiling set by the transport (USB carries far more
+    /// than Wi-Fi), and switches the encoder to its quality-first settings
+    /// (see VideoEncoder.maximumQuality) and the full-sensor formats.
+    enum StreamQuality: String, CaseIterable, Identifiable {
+        case balanced
+        case maximum
+        var id: String { rawValue }
+        var displayName: String {
+            switch self {
+            case .balanced: return "Balanced"
+            case .maximum: return "Maximum"
+            }
+        }
+    }
+    @Published var quality: StreamQuality =
+        StreamQuality(rawValue: UserDefaults.standard.string(forKey: "streamQuality")
+                      ?? "") ?? .balanced {
+        didSet {
+            UserDefaults.standard.set(quality.rawValue, forKey: "streamQuality")
+            updateSensorReadoutPreference()
+            // The encoder's settings and the format choice both follow
+            // the quality, so a live stream rebuilds like a format change
+            // — which also restarts the adaptive loop at the new target.
+            if isStreaming, quality != oldValue {
+                reconfigureLiveCapture(formatChanged: true)
+            }
+            scheduleStateSend()
+        }
+    }
+
+    private func updateSensorReadoutPreference() {
+        CameraManager.preferFullSensorReadout =
+            quality == .maximum && !allowVideoEffects
+    }
     /// The cameras this device actually has (Main / Ultra Wide / …).
     let availableLenses: [CameraManager.Lens]
 
@@ -223,7 +262,8 @@ final class Streamer: ObservableObject {
             width: size.width, height: size.height,
             fps: Int32(fps),
             bitrate: resolution.bitrate(for: activeCodec, color: color, fps: fps),
-            color: color)
+            color: color,
+            maximumQuality: quality == .maximum)
         do {
             try newEncoder.start()
         } catch {
@@ -442,7 +482,10 @@ final class Streamer: ObservableObject {
     /// to require (see CameraManager.configure). Applies when the camera
     /// next starts.
     @Published var allowVideoEffects: Bool {
-        didSet { UserDefaults.standard.set(allowVideoEffects, forKey: "allowVideoEffects") }
+        didSet {
+            UserDefaults.standard.set(allowVideoEffects, forKey: "allowVideoEffects")
+            updateSensorReadoutPreference()
+        }
     }
     /// Keep streaming when the user leaves LensLink, by moving the live
     /// picture into a Picture in Picture window (BackgroundPiP explains
@@ -846,6 +889,7 @@ final class Streamer: ObservableObject {
             "resolutions": resolutions,
             "frameRates": frameRates,
             "codecs": codecs,
+            "quality": quality.rawValue,
         ]
         // Absent = SDR — remote UIs key off the keys' absence, and an
         // SDR snapshot must look exactly as it did before HDR existed.
@@ -1213,6 +1257,7 @@ final class Streamer: ObservableObject {
         BackgroundPiP.shared.isEnabled = backgroundStreaming
 
         camera.setFaceDrivenFocus(faceFocus)
+        updateSensorReadoutPreference()
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
                 self?.handleClientState(state)
@@ -1539,6 +1584,11 @@ final class Streamer: ObservableObject {
             }
             exposureSetting =
                 (command["mode"] as? String) == "manual" ? .manual : .auto
+        case "set_quality":
+            if let raw = command["quality"] as? String,
+               let parsed = StreamQuality(rawValue: raw) {
+                quality = parsed
+            }
         case "set_format":
             applyRemoteFormat(command)
         case "mic":
@@ -1675,7 +1725,8 @@ final class Streamer: ObservableObject {
                                    bitrate: resolution.bitrate(for: activeCodec,
                                                                color: color,
                                                                fps: fps),
-                                   color: color)
+                                   color: color,
+                                   maximumQuality: quality == .maximum)
             try encoder.start()
         } catch {
             status = .error(error.localizedDescription)
@@ -1780,11 +1831,32 @@ final class Streamer: ObservableObject {
     /// the encoder and radio shed load before iOS shuts capture down.
     private var thermalBitrateScale = 1.0
 
+    /// The adaptive bitrate loop. Once a second it reads the client's
+    /// send counters and steers the encoder:
+    ///
+    /// - **Congestion** (a dropped frame, or a send that queued for more
+    ///   than 200 ms) cuts the rate by a quarter at once.
+    /// - **Balanced** then climbs back toward the table target, 10% per
+    ///   10 clean seconds, and never above it.
+    /// - **Maximum** starts at twice the table and *probes*: 15% per 3
+    ///   clean seconds, up to a ceiling the transport sets (6× the table
+    ///   over USB, 4× over Wi-Fi). Queueing between 60 and 200 ms is
+    ///   the early warning — the loop holds rather than pushes. After a
+    ///   cut it remembers the level that broke and won't cross it again
+    ///   for a minute, so a link that tops out at 40 Mb/s settles just
+    ///   under 40 instead of sawing across it.
+    ///
+    /// Thermal pressure scales the target for both (see
+    /// thermalBitrateScale). The counters and the one-second cadence are
+    /// the ones the health readout already uses — no new sampling.
     private func startAdaptiveBitrate(target: Int) {
         adaptiveTask?.cancel()
         adaptiveTask = Task { [weak self] in
-            var current = target
+            let maximum = self?.quality == .maximum
+            var current = maximum ? target * 2 : target
             var stableSeconds = 0
+            var congestedLevel: Int?
+            var lastCongestionAt: DispatchTime?
             var previousStats: StreamClient.Stats?
             var previousStatsAt = DispatchTime.now()
             var healthWasVisible = false
@@ -1825,12 +1897,20 @@ final class Streamer: ObservableObject {
                 previousStats = stats
                 previousStatsAt = now
 
-                let effectiveTarget = max(
+                let base = max(
                     1_000_000, Int(Double(target) * self.thermalBitrateScale))
+                let ceiling: Int
+                if maximum {
+                    ceiling = base * (self.obsTransport == "usb" ? 6 : 4)
+                } else {
+                    ceiling = base
+                }
                 let dropped = self.client.takeDroppedFrameCount()
                 let sendDelayMs = self.client.takeMaxSendDelayMs()
                 if dropped > 0 || sendDelayMs > 200 {
                     stableSeconds = 0
+                    congestedLevel = current
+                    lastCongestionAt = now
                     let reduced = max(1_000_000, current * 3 / 4)
                     if reduced < current {
                         current = reduced
@@ -1839,15 +1919,35 @@ final class Streamer: ObservableObject {
                               + "\(dropped), send delay \(sendDelayMs) ms) "
                               + "-> \(current / 1000) kbps")
                     }
-                } else if current > effectiveTarget {
-                    current = effectiveTarget
+                } else if current > ceiling {
+                    current = ceiling
                     self.encoder?.setBitrate(current)
-                    print("Thermal cap -> \(current / 1000) kbps")
-                } else if current < effectiveTarget {
-                    stableSeconds += 1
-                    if stableSeconds >= 10 {
+                    print("Bitrate ceiling -> \(current / 1000) kbps")
+                } else if current < ceiling {
+                    if maximum, sendDelayMs > 60 {
+                        // Queueing without loss: the link is near full.
+                        // Hold here; pushing now is what causes the drop.
                         stableSeconds = 0
-                        current = min(effectiveTarget, current * 11 / 10)
+                        continue
+                    }
+                    stableSeconds += 1
+                    let interval = maximum ? 3 : 10
+                    guard stableSeconds >= interval else { continue }
+                    stableSeconds = 0
+                    let step = maximum ? current * 115 / 100 : current * 11 / 10
+                    var next = min(ceiling, step)
+                    if maximum, let broke = congestedLevel,
+                       let at = lastCongestionAt, next >= broke {
+                        let sinceBreak = Double(now.uptimeNanoseconds
+                            - at.uptimeNanoseconds) / 1_000_000_000
+                        if sinceBreak < 60 {
+                            // Settle just under the level that broke; a
+                            // minute clean earns another try above it.
+                            next = min(next, broke * 9 / 10)
+                        }
+                    }
+                    if next > current {
+                        current = next
                         self.encoder?.setBitrate(current)
                     }
                 }
