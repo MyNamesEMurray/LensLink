@@ -851,7 +851,156 @@ final class CameraManager: NSObject {
             session.isMultitaskingCameraAccessEnabled = true
         }
 
+        installFocusDefaults()
+
         return color
+    }
+
+    // MARK: - Faces, tap points, and the way back to auto
+
+    /// Whether the active camera can track faces for focus and exposure
+    /// (iOS 15+ on any camera with a movable lens or a metered exposure).
+    var supportsFaceDrivenFocus: Bool {
+        guard #available(iOS 15.0, *), let device = activeDevice else {
+            return false
+        }
+        return device.isFocusPointOfInterestSupported
+            || device.isExposurePointOfInterestSupported
+    }
+
+    /// Faces first while in auto: the camera keeps focus and exposure on
+    /// the faces it sees instead of weighting the centre — the Camera
+    /// app's behaviour. Suspended, not cleared, while a tap point is in
+    /// force: a tap says "this, not the faces", and the subject-area
+    /// change that ends the tap hands faces back.
+    private(set) var faceDrivenFocus = true
+
+    func setFaceDrivenFocus(_ on: Bool) {
+        faceDrivenFocus = on
+        applyFaceDriven(on && !tapPointActive)
+    }
+
+    /// A tap-to-focus point is in force (see `focusAndExpose(at:)`).
+    private var tapPointActive = false
+    private var subjectAreaObserver: NSObjectProtocol?
+
+    /// Fires when a tap point has been let go of because the scene
+    /// changed — the Live screen uses it only to drop its marker.
+    var onTapPointReset: (() -> Void)?
+
+    private func applyFaceDriven(_ on: Bool) {
+        guard #available(iOS 15.0, *) else { return }
+        withLockedDevice { device in
+            if device.isFocusPointOfInterestSupported {
+                device.automaticallyAdjustsFaceDrivenAutoFocusEnabled = false
+                device.isFaceDrivenAutoFocusEnabled = on
+            }
+            if device.isExposurePointOfInterestSupported {
+                device.automaticallyAdjustsFaceDrivenAutoExposureEnabled = false
+                device.isFaceDrivenAutoExposureEnabled = on
+            }
+        }
+    }
+
+    /// Per device, after configure: faces per the setting, and the
+    /// system's own subject-area monitoring, which is what tells us a
+    /// tapped point has stopped meaning anything (the phone moved, the
+    /// subject walked). No timer of ours: the camera says when.
+    private func installFocusDefaults() {
+        tapPointActive = false
+        withLockedDevice { device in
+            device.isSubjectAreaChangeMonitoringEnabled = true
+        }
+        applyFaceDriven(faceDrivenFocus)
+        if let observer = subjectAreaObserver {
+            NotificationCenter.default.removeObserver(observer)
+            subjectAreaObserver = nil
+        }
+        guard let device = activeDevice else { return }
+        subjectAreaObserver = NotificationCenter.default.addObserver(
+            forName: .AVCaptureDeviceSubjectAreaDidChange,
+            object: device, queue: nil) { [weak self] _ in
+            self?.sessionQueue.async { self?.subjectAreaDidChange() }
+        }
+    }
+
+    /// The scene changed under a tapped point: back to centre-weighted
+    /// continuous auto (or faces), the way the Camera app lets a tap go.
+    /// A lock is a lock — `.locked` focus and `.custom` exposure are
+    /// left exactly where they are.
+    private func subjectAreaDidChange() {
+        guard tapPointActive else { return }
+        tapPointActive = false
+        let centre = CGPoint(x: 0.5, y: 0.5)
+        withLockedDevice { device in
+            if device.isFocusPointOfInterestSupported,
+               device.focusMode == .continuousAutoFocus {
+                device.focusPointOfInterest = centre
+                device.focusMode = .continuousAutoFocus
+            }
+            if device.isExposurePointOfInterestSupported,
+               device.exposureMode == .continuousAutoExposure {
+                device.exposurePointOfInterest = centre
+                device.exposureMode = .continuousAutoExposure
+            }
+        }
+        applyFaceDriven(faceDrivenFocus)
+        onTapPointReset?()
+    }
+
+    /// Long press: a one-shot focus and exposure scan at the point, then
+    /// a report of where the lens and the exposure landed, so the caller
+    /// can hold them as a lock — the Camera app's AE/AF Lock. Completion
+    /// arrives once both scans have settled (KVO on the device's own
+    /// adjusting flags), or after two seconds regardless, on an
+    /// arbitrary queue. A fixed-focus camera reports a nil lens
+    /// position.
+    func lockFocusAndExposure(
+        at devicePoint: CGPoint,
+        completion: @escaping (_ lensPosition: Float?, _ iso: Float,
+                               _ shutterSeconds: Double) -> Void) {
+        guard let device = activeDevice else { return }
+        tapPointActive = false
+        applyFaceDriven(false)
+        withLockedDevice { device in
+            if device.isFocusPointOfInterestSupported,
+               device.isFocusModeSupported(.autoFocus) {
+                device.focusPointOfInterest = devicePoint
+                device.focusMode = .autoFocus
+            }
+            if device.isExposurePointOfInterestSupported,
+               device.isExposureModeSupported(.autoExpose) {
+                device.exposurePointOfInterest = devicePoint
+                device.exposureMode = .autoExpose
+            }
+        }
+
+        var observers: [NSKeyValueObservation] = []
+        var done = false
+        let lock = NSLock()
+        let finish: (Bool) -> Void = { force in
+            lock.lock()
+            defer { lock.unlock() }
+            guard !done else { return }
+            guard force || (!device.isAdjustingFocus
+                            && !device.isAdjustingExposure) else { return }
+            done = true
+            observers.forEach { $0.invalidate() }
+            observers.removeAll()
+            let lens: Float? = device.isLockingFocusWithCustomLensPositionSupported
+                ? device.lensPosition : nil
+            completion(lens, device.iso, device.exposureDuration.seconds)
+        }
+        observers.append(device.observe(\.isAdjustingFocus, options: [.new]) {
+            _, _ in finish(false)
+        })
+        observers.append(device.observe(\.isAdjustingExposure, options: [.new]) {
+            _, _ in finish(false)
+        })
+        // The scans may already be over (fixed-focus front camera), and
+        // a scan that never reports back must not strand the lock.
+        sessionQueue.asyncAfter(deadline: .now() + 0.1) { finish(false) }
+        sessionQueue.asyncAfter(deadline: .now() + 2) { finish(true) }
     }
 
     // MARK: - Live camera controls
@@ -902,6 +1051,8 @@ final class CameraManager: NSObject {
     /// `resetExposure` is false while manual exposure is active, so
     /// switching focus modes doesn't silently discard the ISO/shutter lock.
     func setContinuousAutoFocus(resetExposure: Bool = true) {
+        tapPointActive = false
+        applyFaceDriven(faceDrivenFocus)
         withLockedDevice { device in
             if device.isFocusModeSupported(.continuousAutoFocus) {
                 device.focusMode = .continuousAutoFocus
@@ -931,6 +1082,10 @@ final class CameraManager: NSObject {
     /// `includeExposure` is false while manual exposure is active, so a
     /// focus tap doesn't discard the ISO/shutter lock.
     func focusAndExpose(at devicePoint: CGPoint, includeExposure: Bool = true) {
+        // The tap outranks the faces until the scene changes
+        // (subjectAreaDidChange), never for the rest of the stream.
+        tapPointActive = true
+        applyFaceDriven(false)
         withLockedDevice { device in
             if device.isFocusPointOfInterestSupported,
                device.isFocusModeSupported(.continuousAutoFocus) {

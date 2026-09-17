@@ -19,7 +19,13 @@ struct CameraPreviewView: UIViewRepresentable {
     /// cover for as long as the phone sits dimmed — pure wasted power.
     /// Capture (and the outgoing stream) is unaffected.
     var previewEnabled: Bool = true
-    var onTapAtDevicePoint: ((CGPoint) -> Void)?
+    /// Tap: focus/expose here. Reports the point in device coordinates
+    /// (0…1, for the camera) and in this view's coordinates (for the
+    /// marker drawn where the finger was).
+    var onTapAtDevicePoint: ((_ devicePoint: CGPoint, _ viewPoint: CGPoint) -> Void)?
+    /// Long press: lock focus and exposure here — the Camera app's
+    /// AE/AF Lock. Same two points as the tap.
+    var onLongPressAtDevicePoint: ((_ devicePoint: CGPoint, _ viewPoint: CGPoint) -> Void)?
     var onPinchZoom: ((_ phase: PinchPhase, _ scale: CGFloat) -> Void)?
     /// One-finger vertical drag — the Camera app's sun slider, used for
     /// exposure bias. `travel` is the drag's distance as a fraction of the
@@ -92,7 +98,16 @@ struct CameraPreviewView: UIViewRepresentable {
             let layerPoint = recognizer.location(in: view)
             let devicePoint = view.previewLayer
                 .captureDevicePointConverted(fromLayerPoint: layerPoint)
-            parent.onTapAtDevicePoint?(devicePoint)
+            parent.onTapAtDevicePoint?(devicePoint, layerPoint)
+        }
+
+        @objc func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
+            guard recognizer.state == .began,
+                  let view = recognizer.view as? PreviewView else { return }
+            let layerPoint = recognizer.location(in: view)
+            let devicePoint = view.previewLayer
+                .captureDevicePointConverted(fromLayerPoint: layerPoint)
+            parent.onLongPressAtDevicePoint?(devicePoint, layerPoint)
         }
 
         @objc func handlePinch(_ recognizer: UIPinchGestureRecognizer) {
@@ -171,6 +186,13 @@ struct CameraPreviewView: UIViewRepresentable {
                 target: context.coordinator,
                 action: #selector(Coordinator.handlePinch(_:)))
             view.addGestureRecognizer(pinch)
+        }
+        if onLongPressAtDevicePoint != nil {
+            let press = UILongPressGestureRecognizer(
+                target: context.coordinator,
+                action: #selector(Coordinator.handleLongPress(_:)))
+            press.minimumPressDuration = 0.5
+            view.addGestureRecognizer(press)
         }
         if onVerticalDrag != nil {
             let pan = UIPanGestureRecognizer(

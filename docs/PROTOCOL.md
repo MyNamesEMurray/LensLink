@@ -112,6 +112,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "exposure_bias", "value": -0.5 }
 { "cmd": "focus", "mode": "auto" }
 { "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
+{ "cmd": "focus", "faces": true }
 { "cmd": "flashlight", "on": true }
 { "cmd": "flip" }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
@@ -158,6 +159,12 @@ assumed to remember what it was last told. The app clears the light
 whenever the connection drops, so a stale "live" can't outlive the OBS
 that set it. Screen-mirror connections receive it too and ignore it: the
 broadcast extension has no UI.
+
+`focus` takes any subset of its fields: `mode` (`"auto"` / `"locked"`)
+with an optional `lensPosition`, and `faces` — whether the camera should
+keep focus and exposure on the faces it sees while on auto (the STATE
+snapshot reports it as `faceFocus`, and `supportsFaceFocus` says whether
+this camera can). Absent fields are left as they are.
 
 `identify` is the plugin introducing itself, sent once per connection
 right after HELLO: `host` is the computer's host name (any domain tail
@@ -236,6 +243,7 @@ changes and once on connect. Payload: UTF-8 JSON, e.g.
 ```json
 { "zoom": 2.5, "maxZoom": 10, "exposureBias": -0.5,
   "focusMode": "locked", "lensPosition": 0.4,
+  "faceFocus": true, "supportsFaceFocus": true,
   "flashlight": true, "hasFlashlight": true, "camera": "back" }
 ```
 
