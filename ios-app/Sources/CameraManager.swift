@@ -221,10 +221,10 @@ final class CameraManager: NSObject {
     /// the front camera or where either device is missing.
     static func zoomFactorRelativeToMain(_ lens: Lens) -> Double? {
         guard lens.position == .back,
-              let device = device(for: lens),
-              let main = device(for: defaultLens) else { return nil }
-        let fov = Double(device.activeFormat.videoFieldOfView)
-        let mainFov = Double(main.activeFormat.videoFieldOfView)
+              let lensDevice = Self.device(for: lens),
+              let mainDevice = Self.device(for: defaultLens) else { return nil }
+        let fov = Double(lensDevice.activeFormat.videoFieldOfView)
+        let mainFov = Double(mainDevice.activeFormat.videoFieldOfView)
         guard fov > 0, mainFov > 0 else { return nil }
         return tan(mainFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
     }
