@@ -859,9 +859,9 @@ final class CameraManager: NSObject {
     // MARK: - Faces, tap points, and the way back to auto
 
     /// Whether the active camera can track faces for focus and exposure
-    /// (iOS 15+ on any camera with a movable lens or a metered exposure).
+    /// (iOS 15.4+ on any camera with a movable lens or a metered exposure).
     var supportsFaceDrivenFocus: Bool {
-        guard #available(iOS 15.0, *), let device = activeDevice else {
+        guard #available(iOS 15.4, *), let device = activeDevice else {
             return false
         }
         return device.isFocusPointOfInterestSupported
@@ -889,7 +889,7 @@ final class CameraManager: NSObject {
     var onTapPointReset: (() -> Void)?
 
     private func applyFaceDriven(_ on: Bool) {
-        guard #available(iOS 15.0, *) else { return }
+        guard #available(iOS 15.4, *) else { return }
         withLockedDevice { device in
             if device.isFocusPointOfInterestSupported {
                 device.automaticallyAdjustsFaceDrivenAutoFocusEnabled = false
