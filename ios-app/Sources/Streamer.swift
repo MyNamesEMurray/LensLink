@@ -110,6 +110,31 @@ final class Streamer: ObservableObject {
     @Published var fps: Int {
         didSet { UserDefaults.standard.set(fps, forKey: "fps") }
     }
+    /// Experimental: offer 120 and 240 fps where the camera has them
+    /// (Options → High frame rate). Off by default because everything
+    /// downstream is sized for 60 — the bitrate budget grows, the phone
+    /// runs hotter, and an OBS canvas at 60 shows every other frame at
+    /// best. Turning it off clamps a high rate back to 60.
+    @Published var highFrameRate: Bool =
+        UserDefaults.standard.object(forKey: "highFrameRate") as? Bool ?? false {
+        didSet {
+            UserDefaults.standard.set(highFrameRate, forKey: "highFrameRate")
+            if !highFrameRate, fps > 60 {
+                fps = 60
+                clampCaptureSettings()
+                if isStreaming {
+                    reconfigureLiveCapture(formatChanged: true)
+                }
+            }
+            capabilityCache = nil
+            scheduleStateSend()
+        }
+    }
+    /// The frame rates any picker may offer before the camera's own
+    /// filter: the ordinary pair, or the experimental set.
+    var candidateFrameRates: [Int] {
+        highFrameRate ? [30, 60, 120, 240] : [30, 60]
+    }
     /// The cameras this device actually has (Main / Ultra Wide / …).
     let availableLenses: [CameraManager.Lens]
 
@@ -197,7 +222,7 @@ final class Streamer: ObservableObject {
             codec: activeCodec,
             width: size.width, height: size.height,
             fps: Int32(fps),
-            bitrate: resolution.bitrate(for: activeCodec, color: color),
+            bitrate: resolution.bitrate(for: activeCodec, color: color, fps: fps),
             color: color)
         do {
             try newEncoder.start()
@@ -216,7 +241,7 @@ final class Streamer: ObservableObject {
                                fps: Int32(fps),
                                color: color)
         startAdaptiveBitrate(
-            target: resolution.bitrate(for: activeCodec, color: color))
+            target: resolution.bitrate(for: activeCodec, color: color, fps: fps))
     }
 
     /// Points capture output at `encoder`, routed through the green
@@ -884,7 +909,7 @@ final class Streamer: ObservableObject {
             CameraManager.supports(resolution: $0, fps: 30, lens: selectedLens,
                                    color: color)
         }.map { $0.rawValue }
-        let frameRates = [30, 60].filter {
+        let frameRates = candidateFrameRates.filter {
             CameraManager.supports(resolution: resolution, fps: Int32($0),
                                    lens: selectedLens, color: color)
         }
@@ -1123,6 +1148,10 @@ final class Streamer: ObservableObject {
             rawValue: defaults.string(forKey: "resolution") ?? "") ?? .hd720
         let storedFps = defaults.integer(forKey: "fps")
         fps = storedFps > 0 ? storedFps : 30
+        // A high rate outlives its toggle only while the toggle is on.
+        if fps > 60, !(defaults.object(forKey: "highFrameRate") as? Bool ?? false) {
+            fps = 60
+        }
         let lenses = CameraManager.availableLenses()
         availableLenses = lenses.isEmpty ? [CameraManager.defaultLens] : lenses
         let savedLensID = defaults.string(forKey: "selectedLens")
@@ -1558,6 +1587,9 @@ final class Streamer: ObservableObject {
             newResolution = parsed
         }
         if let value = (command["fps"] as? NSNumber)?.intValue {
+            // The advertised list is the contract: a high rate is only
+            // on it while the experimental toggle is.
+            guard candidateFrameRates.contains(value) else { return }
             newFps = value
         }
         if let raw = command["codec"] as? String {
@@ -1639,7 +1671,8 @@ final class Streamer: ObservableObject {
                                    width: size.width, height: size.height,
                                    fps: Int32(fps),
                                    bitrate: resolution.bitrate(for: activeCodec,
-                                                               color: color),
+                                                               color: color,
+                                                               fps: fps),
                                    color: color)
             try encoder.start()
         } catch {
@@ -1674,7 +1707,8 @@ final class Streamer: ObservableObject {
         autoApplyPreset()
         healthDroppedBaseline = client.statsSnapshot().framesDropped
         startAdaptiveBitrate(target: resolution.bitrate(for: activeCodec,
-                                                        color: encoder.color))
+                                                        color: encoder.color,
+                                                        fps: fps))
         client.setStandby(false)
         if standbyActive {
             // Remote start: reuse the standby transport. If OBS is already

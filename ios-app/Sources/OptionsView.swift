@@ -82,6 +82,11 @@ struct OptionsView: View {
                 }
 
                 Section {
+                    Toggle(isOn: $streamer.highFrameRate) {
+                        SettingsRowLabel("High frame rate",
+                                         systemImage: "speedometer",
+                                         color: Theme.idleGrey)
+                    }
                     Toggle(isOn: $streamer.allowVideoEffects) {
                         SettingsRowLabel("Allow system video effects",
                                          systemImage: "wand.and.stars",

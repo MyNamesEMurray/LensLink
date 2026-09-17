@@ -21,7 +21,8 @@ final class CameraManager: NSObject {
         }
 
         func bitrate(for codec: VideoCodec,
-                     color: StreamColor = .sdr) -> Int {
+                     color: StreamColor = .sdr,
+                     fps: Int = 60) -> Int {
             let h264: Int
             switch self {
             case .hd720: h264 = 4_000_000
@@ -30,12 +31,22 @@ final class CameraManager: NSObject {
             }
             // HEVC reaches comparable quality at roughly 60% of the bits.
             let base = codec == .hevc ? h264 * 6 / 10 : h264
+            let colored: Int
             switch color {
             case .sdr:
-                return base
+                colored = base
             case .hlg, .log:
                 // 10-bit carries more data per pixel; give it headroom.
-                return base * 5 / 4
+                colored = base * 5 / 4
+            }
+            // The table is sized for 60 fps. Above it, frames are
+            // smaller on the wire because less changes between them,
+            // so the budget grows less than linearly: 1.5× at 120,
+            // 2× at 240. Below 60 the 60 fps budget simply goes further.
+            switch fps {
+            case ...60: return colored
+            case ...120: return colored * 3 / 2
+            default: return colored * 2
             }
         }
     }
