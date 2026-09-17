@@ -126,6 +126,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "mic", "id": "builtin:2" }
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
 { "cmd": "green_screen", "on": true, "maxDistance": 2.5 }
+{ "cmd": "identify", "host": "Studio-Mac", "obs": "32.0.1", "transport": "usb" }
 ```
 
 `set_format` switches the capture format mid-stream; any subset of its
@@ -157,6 +158,14 @@ assumed to remember what it was last told. The app clears the light
 whenever the connection drops, so a stale "live" can't outlive the OBS
 that set it. Screen-mirror connections receive it too and ignore it: the
 broadcast extension has no UI.
+
+`identify` is the plugin introducing itself, sent once per connection
+right after HELLO: `host` is the computer's host name (any domain tail
+stripped), `obs` the OBS Studio version, `transport` `"usb"` or `"lan"`
+for how the plugin dialed. The app uses it to name the computer on its
+Home screen and in its Live Activity; it forgets the values when the
+connection drops. Fields may be empty strings where the plugin couldn't
+learn them, and an older app ignores the command.
 
 `reference` gates the lip-sync reference (packet type 9):
 

@@ -999,6 +999,13 @@ final class Streamer: ObservableObject {
     /// Pushed by the plugin on change only, so these cost nothing while
     /// they're steady.
     @Published private(set) var tally: Tally = .off
+    /// What the plugin said about itself on connect (`identify`): the
+    /// computer's host name, its OBS version, and the transport it dialed
+    /// over ("usb" or "lan"). nil until told, and cleared with the
+    /// connection, so a stale name never outlives the OBS it named.
+    @Published private(set) var obsHost: String?
+    @Published private(set) var obsVersion: String?
+    @Published private(set) var obsTransport: String?
     @Published private(set) var syncState: SyncState = .off
 
     /// Asks the plugin to drop its locked mic latency and calibrate afresh
@@ -1371,6 +1378,18 @@ final class Streamer: ObservableObject {
             if remoteStartEnabled, isStreaming {
                 stop()
             }
+            return
+        case "identify":
+            // Before the isStreaming guard for the same reason as tally:
+            // it arrives on connect, and the Home screen is where the
+            // name matters most.
+            obsHost = (command["host"] as? String).flatMap {
+                $0.isEmpty ? nil : $0
+            }
+            obsVersion = (command["obs"] as? String).flatMap {
+                $0.isEmpty ? nil : $0
+            }
+            obsTransport = command["transport"] as? String
             return
         case "tally":
             // Handled before the isStreaming guard: the plugin announces
@@ -1817,6 +1836,9 @@ final class Streamer: ObservableObject {
         if case .connected = state {} else {
             tally = .off
             syncState = .off
+            obsHost = nil
+            obsVersion = nil
+            obsTransport = nil
         }
         guard isStreaming else {
             handleStandbyClientState(state)

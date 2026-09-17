@@ -56,8 +56,9 @@ phone.
 
 ## Connect
 
-1. On the phone, open **LensLink**, choose your camera/resolution/frame rate,
-   and tap **Start camera stream**. The app shows the phone's IP address.
+1. On the phone, open **LensLink**, choose your camera and format, and tap
+   **Start Camera**. The app shows the phone's IP address, and names your
+   computer once OBS connects.
 2. In OBS, add a source: **Sources → + → LensLink Camera** (or **LensLink
    Screen** to mirror the phone's screen instead — see below).
 3. Point it at your phone:
@@ -112,6 +113,10 @@ backgrounding the app blanks the source.
 - **Multiple cameras.** Add one "LensLink Camera" source per phone. On USB you
   can pin a source to a specific device so the same phone always maps to
   the same source.
+- **A Live Activity while streaming** (iOS 16.1+): the Lock Screen and
+  the Dynamic Island show where the picture is going, how long it has
+  been going, and whether you're on air — with Pause and Stop that work
+  without unlocking the phone (iOS 17+).
 - **Live camera controls**, both on the phone (a viewfinder with the
   Camera app's lens buttons, pinch to zoom, tap to focus, drag for
   exposure, and a one-dial adjust tray for exposure, shutter, white
@@ -210,7 +215,7 @@ has just become reachable, not after you pressed Stop.
 
 ## Screen mirroring
 
-Add a **LensLink Screen** source in OBS, then tap **Start screen broadcast**
+Add a **LensLink Screen** source in OBS, then tap **Mirror Screen**
 in the app to send your whole iPhone/iPad screen (plus the app's audio). It
 uses iOS's built-in screen broadcast, so it works from any app — pick
 **LensLink Screen** in the broadcast picker and tap **Start Broadcast**.

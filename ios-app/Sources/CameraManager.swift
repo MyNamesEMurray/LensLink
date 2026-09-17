@@ -216,17 +216,49 @@ final class CameraManager: NSObject {
     }
 
     /// A back lens's magnification relative to Main, the number the
-    /// Camera app prints on its lens buttons (0.5, 2, 3, 5): the ratio of
-    /// the two lenses' horizontal fields of view in tangent space. nil for
-    /// the front camera or where either device is missing.
+    /// Camera app prints on its lens buttons (0.5, 2, 3, 5). Taken from
+    /// the multi-camera virtual device's switch-over zoom factors, which
+    /// are exactly the numbers Apple prints: on a 0.5/1/3 phone the triple
+    /// camera's zoom space starts at the ultra-wide (1) and switches to
+    /// the wide at 2 and the telephoto at 6, so relative to the wide that
+    /// is 0.5, 1 and 3. The field-of-view ratio is the fallback for a
+    /// device with no virtual camera; it lands on .57 and 3.2 rather than
+    /// .5 and 3, so it is rounded to the nearest half. nil for the front
+    /// camera or where the device is missing.
     static func zoomFactorRelativeToMain(_ lens: Lens) -> Double? {
-        guard lens.position == .back,
-              let lensDevice = Self.device(for: lens),
+        guard lens.position == .back else { return nil }
+        if let exact = switchOverFactor(for: lens) { return exact }
+        guard let lensDevice = Self.device(for: lens),
               let mainDevice = Self.device(for: defaultLens) else { return nil }
         let fov = Double(lensDevice.activeFormat.videoFieldOfView)
         let mainFov = Double(mainDevice.activeFormat.videoFieldOfView)
         guard fov > 0, mainFov > 0 else { return nil }
-        return tan(mainFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
+        let ratio = tan(mainFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
+        return max(0.5, (ratio * 2).rounded() / 2)
+    }
+
+    private static func switchOverFactor(for lens: Lens) -> Double? {
+        let virtualTypes: [AVCaptureDevice.DeviceType] = [
+            .builtInTripleCamera, .builtInDualWideCamera, .builtInDualCamera,
+        ]
+        for type in virtualTypes {
+            guard let virtualDevice = AVCaptureDevice.default(
+                    type, for: .video, position: .back) else { continue }
+            let members = virtualDevice.constituentDevices
+            let switchOvers = virtualDevice.virtualDeviceSwitchOverVideoZoomFactors
+                .map { $0.doubleValue }
+            guard members.count == switchOvers.count + 1 else { continue }
+            func factor(of deviceType: AVCaptureDevice.DeviceType) -> Double? {
+                guard let index = members.firstIndex(
+                        where: { $0.deviceType == deviceType }) else { return nil }
+                return index == 0 ? 1 : switchOvers[index - 1]
+            }
+            guard let lensFactor = factor(of: lens.deviceType),
+                  let mainFactor = factor(of: .builtInWideAngleCamera),
+                  mainFactor > 0 else { continue }
+            return lensFactor / mainFactor
+        }
+        return nil
     }
 
     /// The depth-registered sibling of a user-facing lens: TrueDepth for

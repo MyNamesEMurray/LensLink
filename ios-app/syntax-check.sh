@@ -30,5 +30,5 @@ else
     fi
 fi
 
-"$SWIFTC" -parse Sources/*.swift BroadcastExtension/*.swift
+"$SWIFTC" -parse Sources/*.swift BroadcastExtension/*.swift WidgetExtension/*.swift
 echo "✓ Swift sources parse clean (syntax only — the full type check runs in CI on macOS)"

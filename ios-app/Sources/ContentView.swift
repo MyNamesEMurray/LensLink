@@ -17,9 +17,11 @@ struct ContentView: View {
     // The behaviour toggles live in a sheet (OptionsView) so the main
     // screen stays short — see that file for why. The explanations live
     // in a second sheet (DocumentationView) so the sections themselves
-    // are pure controls.
+    // are pure controls. Format (resolution · frame rate · codec) is a
+    // third sheet behind one row, the Camera app's own pattern.
     @State private var showOptions = false
     @State private var showDocs = false
+    @State private var showFormat = false
 
     // Standby keeps the phone awake (see Streamer.updateIdleTimer) so
     // remote start stays reachable; this dim overlay is what makes that
@@ -39,20 +41,19 @@ struct ContentView: View {
         }
     }
 
-    // The form is the per-stream decisions in order — Connect,
-    // Camera & color, Microphone, Screen mirror — the stream modules
-    // saying which OBS source they talk to and ending in the same
-    // full-width action button, plus a two-row tail (Options sheet +
-    // GitHub/version). The banner is the title (no NavigationView: nothing
-    // is ever pushed, and the wordmark replaces the large-title text).
+    // The form is the per-stream decisions in order — the computer,
+    // the camera, the microphone — then the two Start buttons and a
+    // tail of Options / Documentation / links. A large title, not a
+    // navigation bar: nothing is ever pushed, so nothing needs a back
+    // button (docs/UI_DESIGN.md §6.1).
     private var settingsForm: some View {
         ZStack {
             Form {
-                bannerHeader
-                connectSection
+                titleHeader
+                connectionSection
                 cameraSection
+                startSection
                 micSection
-                screenMirrorSection
                 tailSection
             }
             .tint(Theme.accent)
@@ -82,9 +83,15 @@ struct ContentView: View {
                 .navigationViewStyle(.stack)
                 .tint(Theme.accent)
             }
+            .sheet(isPresented: $showFormat) {
+                FormatSheet(availableResolutions: availableResolutions,
+                            availableFrameRates: availableFrameRates)
+                    .environmentObject(streamer)
+            }
             // Opening or closing a sheet is activity too.
             .onChange(of: showOptions) { _ in lastInteraction = Date() }
             .onChange(of: showDocs) { _ in lastInteraction = Date() }
+            .onChange(of: showFormat) { _ in lastInteraction = Date() }
 
             if dimmed {
                 dimOverlay
@@ -122,7 +129,7 @@ struct ContentView: View {
                 // with no visible way back.
                 if streamer.standbyActive
                     && streamer.idleAppearance == .dim &&
-                    !showOptions && !showDocs && !dimmed &&
+                    !showOptions && !showDocs && !showFormat && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
                 } else if !streamer.standbyActive && dimmed {
@@ -182,43 +189,71 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Banner
+    // MARK: - Title
 
-    /// The wordmark as the screen's title. Light/dark variants switch
-    /// automatically via the asset catalog's luminosity appearances.
-    private var bannerHeader: some View {
+    /// The app's name as a plain large title, the way the system's own
+    /// apps open. The wordmark asset stays in the catalog for the icon
+    /// and the site; on the screen a word is enough.
+    private var titleHeader: some View {
         Section {
-            Image("Banner")
-                .resizable()
-                .scaledToFit()
-                .frame(height: 48)
-                .frame(maxWidth: .infinity)
-                .accessibilityLabel("LensLink")
+            Text("LensLink")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityAddTraits(.isHeader)
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                .padding(.top, Theme.Space.s)
+                .listRowInsets(EdgeInsets(top: Theme.Space.s, leading: Theme.Space.xl,
+                                          bottom: 0, trailing: Theme.Space.xl))
         }
     }
 
-    // MARK: - Connect
+    // MARK: - Connection
 
-    /// Status + the phone's address on one line; setup instructions
-    /// collapse away once read.
-    private var connectSection: some View {
+    /// The computer, as a card: its name once the plugin has said it
+    /// (`identify`), the status dot and word, and on the right either
+    /// Start (OBS is connected and can start the camera) or the phone's
+    /// address (nothing is connected yet, and the address is how OBS
+    /// finds this phone). Setup instructions collapse away once read.
+    private var connectionSection: some View {
         Section {
             HStack(spacing: Theme.Space.m) {
-                Circle()
-                    .fill(streamer.status.tint)
-                    .frame(width: 10, height: 10)
-                Text(streamer.status.displayName)
-                    .font(.callout)
-                Spacer()
-                if let ip = wifiIP {
+                Image(systemName: computerSymbol)
+                    .font(.system(size: 26, weight: .regular))
+                    .foregroundColor(streamer.status.tint)
+                    .frame(width: 40)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(connectionTitle)
+                        .font(.headline)
+                        .lineLimit(1)
+                    HStack(spacing: Theme.Space.xs + 2) {
+                        Circle()
+                            .fill(streamer.status.tint)
+                            .frame(width: 8, height: 8)
+                        Text(connectionSubtitle)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+                Spacer(minLength: Theme.Space.s)
+                if streamer.status == .standby {
+                    Button {
+                        Task { await streamer.start() }
+                    } label: {
+                        Text("Start")
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, Theme.Space.l)
+                            .padding(.vertical, Theme.Space.s)
+                            .background(Theme.accent, in: Capsule())
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.plain)
+                } else if let ip = wifiIP {
                     Text(ip)
                         .font(.callout.monospacedDigit().bold())
                         .textSelection(.enabled)
                 }
             }
+            .padding(.vertical, Theme.Space.xs)
             if streamer.discoverable == false {
                 // The Bonjour advertise was denied: the phone won't show
                 // up by name in OBS and nothing else says why. iOS's
@@ -256,56 +291,84 @@ struct ContentView: View {
                     Image(systemName: "2.circle")
                 }
             }
-        } header: {
-            Text("Connect")
         }
+    }
+
+    /// A laptop glyph over USB, a desktop otherwise: the transport is
+    /// the one thing about the computer the phone can actually see.
+    private var computerSymbol: String {
+        streamer.obsTransport == "usb" ? "laptopcomputer" : "desktopcomputer"
+    }
+
+    private var connectionTitle: String {
+        streamer.obsHost ?? "OBS Studio"
+    }
+
+    /// Status word first (docs/UI_DESIGN.md §2), then what the plugin
+    /// said about itself: version and transport, only while it is here
+    /// to say it.
+    private var connectionSubtitle: String {
+        var parts = [streamer.status.displayName]
+        if streamer.status != .idle, !streamer.isStreaming {
+            if let version = streamer.obsVersion {
+                parts.append("OBS \(version)")
+            }
+            switch streamer.obsTransport {
+            case "usb": parts.append("USB")
+            case "lan": parts.append("Wi-Fi")
+            default: break
+            }
+        }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - Camera
 
     private var cameraSection: some View {
         Section {
-            Picker("Lens", selection: $streamer.selectedLens) {
+            Picker(selection: $streamer.selectedLens) {
                 ForEach(streamer.availableLenses) { lens in
                     Text(lens.label).tag(lens)
                 }
+            } label: {
+                SettingsRowLabel("Camera", systemImage: "camera.fill",
+                                 color: Theme.connectAmber)
             }
 
-            Picker("Resolution", selection: $streamer.resolution) {
-                ForEach(availableResolutions) { resolution in
-                    Text(resolution.rawValue).tag(resolution)
+            // One row for resolution · frame rate · codec, with the
+            // pickers behind it: three rows of pickers said the same
+            // thing three times.
+            Button {
+                showFormat = true
+            } label: {
+                HStack {
+                    SettingsRowLabel("Format", systemImage: "rectangle.stack",
+                                     color: Theme.accent)
+                    Spacer()
+                    Text(formatSummary)
+                        .foregroundColor(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(.secondary)
                 }
+                .contentShape(Rectangle())
             }
-
-            Picker("Frame rate", selection: $streamer.fps) {
-                ForEach(availableFrameRates, id: \.self) { fps in
-                    Text("\(fps) fps").tag(fps)
-                }
-            }
-
-            Picker("Codec", selection: $streamer.codec) {
-                // HDR and Apple Log are HEVC-only; offering H.264 would
-                // let the picker pick a value the didSet immediately
-                // reverts.
-                if streamer.colorSetting == .sdr {
-                    Text(VideoCodec.h264.label).tag(VideoCodec.h264)
-                }
-                if VideoEncoder.isSupported(.hevc) {
-                    Text(VideoCodec.hevc.label).tag(VideoCodec.hevc)
-                }
-            }
+            .buttonStyle(.plain)
 
             // Hidden on devices that can't encode Main10 — a choice that
             // can never work is worse than none (only "Standard" would
             // remain). Apple Log appears only when some lens actually
             // has a Log capture format (iOS 17+).
             if VideoEncoder.hdrSupported {
-                Picker("Color", selection: $streamer.colorSetting) {
+                Picker(selection: $streamer.colorSetting) {
                     Text("Standard").tag(StreamColor.sdr)
                     Text("HDR (HLG)").tag(StreamColor.hlg)
                     if CameraManager.appleLogCaptureAvailable {
                         Text("Apple Log").tag(StreamColor.log)
                     }
+                } label: {
+                    SettingsRowLabel("Color", systemImage: "paintpalette.fill",
+                                     color: Theme.tallyPurple)
                 }
                 // Green screen forces Standard: disabled, not hidden —
                 // a vanished row reads as a lost feature, a greyed one
@@ -313,7 +376,11 @@ struct ContentView: View {
                 .disabled(streamer.greenScreenEnabled)
             }
 
-            Toggle("Green screen", isOn: $streamer.greenScreenEnabled)
+            Toggle(isOn: $streamer.greenScreenEnabled) {
+                SettingsRowLabel("Green screen",
+                                 systemImage: "person.fill.viewfinder",
+                                 color: Theme.liveGreen)
+            }
 
             if streamer.cameraPermissionDenied || streamer.micPermissionDenied {
                 Button("Camera access denied — open Settings") {
@@ -322,58 +389,24 @@ struct ContentView: View {
                     }
                 }
             }
-
-            Button {
-                Task { await streamer.start() }
-            } label: {
-                ActionRowLabel(title: "Start camera stream",
-                               systemImage: "video.fill")
-            }
-            .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-        } header: {
-            // Sections are pure controls; every explanation lives in
-            // the Documentation sheet (tail row).
-            Text("Camera & color")
         }
     }
 
-    // MARK: - Microphone
-
-    /// Moved up from Options: mic role is a per-stream decision, not a
-    /// set-and-forget behaviour toggle, so it earns main-screen space.
-    private var micSection: some View {
-        Section {
-            Toggle("Send phone mic to OBS",
-                   isOn: $streamer.sendMicAudio)
-            // Which microphone, chosen here before Start rather than on
-            // the Live screen: a set-once decision, and the Live screen
-            // is for the shot. Still live if changed mid-stream from the
-            // web panel, which keeps its own mic row.
-            if streamer.sendMicAudio {
-                Picker("Microphone", selection: $streamer.selectedMicID) {
-                    ForEach(streamer.micOptions) { mic in
-                        Text(mic.name).tag(mic.id)
-                    }
-                }
-            }
-            Toggle("Auto lip-sync reference",
-                   isOn: $streamer.sendAudioReference)
-        } header: {
-            Text("Microphone")
-        }
+    /// "4K · 60 fps · HEVC" — the format row's value.
+    private var formatSummary: String {
+        "\(streamer.resolution.rawValue) · \(streamer.fps) fps · \(streamer.codec.label)"
     }
 
-    // MARK: - Screen mirror
+    // MARK: - Start
 
     @State private var extensionStatus = ""
 
-    /// Same shape as the camera module: content, then one full-width
-    /// action button. The button face is ours; the (invisible) system
-    /// broadcast picker stretched over it receives the tap, because iOS
-    /// won't start a broadcast any other way.
-    private var screenMirrorSection: some View {
+    /// The two things this screen exists to start, stacked: the camera
+    /// (accent) and the screen broadcast (the quieter fill). The
+    /// broadcast button's face is ours; the (invisible) system broadcast
+    /// picker stretched over it receives the tap, because iOS won't
+    /// start a broadcast any other way.
+    private var startSection: some View {
         Section {
             // Surface a broken extension unconditionally (sideloading can
             // silently drop it); the healthy state and the broadcast-link
@@ -384,15 +417,25 @@ struct ContentView: View {
                     .foregroundColor(.red)
             }
 
+            Button {
+                Task { await streamer.start() }
+            } label: {
+                ActionRowLabel(title: "Start Camera",
+                               systemImage: "video.fill",
+                               style: .primary)
+            }
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+
             ZStack {
-                ActionRowLabel(title: "Start screen broadcast",
-                               systemImage: "rectangle.on.rectangle")
+                ActionRowLabel(title: "Mirror Screen",
+                               systemImage: "rectangle.on.rectangle",
+                               style: .secondary)
                 BroadcastPickerOverlay()
             }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
-        } header: {
-            Text("Screen mirror")
         }
         .onAppear {
             // Whether the extension survived sideloading — the broadcast
@@ -401,62 +444,83 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Microphone
+
+    /// Mic role is a per-stream decision, not a set-and-forget behaviour
+    /// toggle, so it earns main-screen space. Which mic is chosen here
+    /// before Start rather than on the Live screen: a set-once decision,
+    /// and the Live screen is for the shot. Still live if changed
+    /// mid-stream from the web panel, which keeps its own mic row.
+    private var micSection: some View {
+        Section {
+            Toggle(isOn: $streamer.sendMicAudio) {
+                SettingsRowLabel("Send phone mic to OBS", systemImage: "mic.fill",
+                                 color: Theme.connectAmber)
+            }
+            if streamer.sendMicAudio {
+                Picker("Microphone", selection: $streamer.selectedMicID) {
+                    ForEach(streamer.micOptions) { mic in
+                        Text(mic.name).tag(mic.id)
+                    }
+                }
+            }
+            Toggle(isOn: $streamer.sendAudioReference) {
+                SettingsRowLabel("Auto lip-sync reference",
+                                 systemImage: "waveform",
+                                 color: Theme.accent)
+            }
+        }
+    }
+
     // MARK: - Tail (Options / About)
 
-    /// Two compact rows close the form: the Options sheet (remote start,
-    /// dim, effects, tally, diagnostics — each explained in place there,
-    /// not in a footer here) and the GitHub link. TestFlight testers otherwise have no
-    /// pointer to the plugin/docs/issues; the version line gives bug
-    /// reports a build to cite.
+    /// Rows that close the form: the Options sheet (remote start, dim,
+    /// effects, tally, diagnostics — each explained in the Documentation
+    /// sheet, not in a footer here), the Documentation sheet, and the
+    /// links. TestFlight testers otherwise have no pointer to the
+    /// plugin/docs/issues; the version line gives bug reports a build to
+    /// cite.
     private var tailSection: some View {
         Section {
             Button {
                 showOptions = true
             } label: {
-                HStack {
-                    Label {
-                        Text("Options")
-                    } icon: {
-                        Image(systemName: "gearshape")
-                            .foregroundColor(Theme.accent)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(.secondary)
-                }
-                .contentShape(Rectangle())
+                disclosureRow("Options", systemImage: "gearshape.fill",
+                              color: Theme.idleGrey)
             }
             .buttonStyle(.plain)
             Button {
                 showDocs = true
             } label: {
-                HStack {
-                    Label {
-                        Text("Documentation")
-                    } icon: {
-                        Image(systemName: "book")
-                            .foregroundColor(Theme.accent)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(.secondary)
-                }
-                .contentShape(Rectangle())
+                disclosureRow("Documentation", systemImage: "book.fill",
+                              color: Theme.accent)
             }
             .buttonStyle(.plain)
             Link(destination: Self.reportProblemURL) {
-                Label("Report a problem", systemImage: "ladybug")
+                SettingsRowLabel("Report a problem", systemImage: "ladybug.fill",
+                                 color: Theme.errorRed)
             }
             Link(destination: URL(string: "https://github.com/MyNamesEMurray/LensLink")!) {
-                Label("LensLink on GitHub", systemImage: "link")
+                SettingsRowLabel("LensLink on GitHub", systemImage: "link",
+                                 color: Theme.idleGrey)
             }
         } footer: {
             // The one surviving footer: bug reports need a build to cite,
             // and the version has no control it could live beside.
             Text(Self.versionLine)
         }
+    }
+
+    private func disclosureRow(_ title: String, systemImage: String,
+                               color: Color) -> some View {
+        HStack {
+            SettingsRowLabel(title, systemImage: systemImage, color: color)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.secondary)
+        }
+        .contentShape(Rectangle())
     }
 
     /// The GitHub bug-report form with the phone-side facts prefilled
@@ -494,19 +558,101 @@ struct ContentView: View {
     }()
 }
 
-/// The one action-button face used by every module, so "Start camera
-/// stream" and "Start screen broadcast" read as the same kind of control.
-private struct ActionRowLabel: View {
+/// The Settings app's row anatomy: a coloured rounded tile with a white
+/// symbol, then the title. Shared by the Setup screen and Options so the
+/// two read as one list style (docs/UI_DESIGN.md §6.1).
+struct SettingsRowLabel: View {
     let title: String
     let systemImage: String
+    let color: Color
+
+    init(_ title: String, systemImage: String, color: Color) {
+        self.title = title
+        self.systemImage = systemImage
+        self.color = color
+    }
+
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 29, height: 29)
+                .background(color, in: RoundedRectangle(cornerRadius: 7,
+                                                        style: .continuous))
+        }
+    }
+}
+
+/// Resolution · frame rate · codec behind the Format row. The lists are
+/// the Setup screen's cached capability filters, passed in so this sheet
+/// never runs a format scan of its own.
+private struct FormatSheet: View {
+    @EnvironmentObject private var streamer: Streamer
+    @Environment(\.dismiss) private var dismiss
+    let availableResolutions: [CameraManager.Resolution]
+    let availableFrameRates: [Int]
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    Picker("Resolution", selection: $streamer.resolution) {
+                        ForEach(availableResolutions) { resolution in
+                            Text(resolution.rawValue).tag(resolution)
+                        }
+                    }
+                    Picker("Frame rate", selection: $streamer.fps) {
+                        ForEach(availableFrameRates, id: \.self) { fps in
+                            Text("\(fps) fps").tag(fps)
+                        }
+                    }
+                    Picker("Codec", selection: $streamer.codec) {
+                        // HDR and Apple Log are HEVC-only; offering H.264
+                        // would let the picker pick a value the didSet
+                        // immediately reverts.
+                        if streamer.colorSetting == .sdr {
+                            Text(VideoCodec.h264.label).tag(VideoCodec.h264)
+                        }
+                        if VideoEncoder.isSupported(.hevc) {
+                            Text(VideoCodec.hevc.label).tag(VideoCodec.hevc)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Format")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .navigationViewStyle(.stack)
+        .tint(Theme.accent)
+    }
+}
+
+/// The one action-button face used by both Start buttons, so "Start
+/// Camera" and "Mirror Screen" read as the same kind of control: the
+/// camera in the accent, the broadcast in the system's quieter fill.
+private struct ActionRowLabel: View {
+    enum Style { case primary, secondary }
+
+    let title: String
+    let systemImage: String
+    var style: Style = .primary
 
     var body: some View {
         Label(title, systemImage: systemImage)
             .font(.body.weight(.semibold))
-            .foregroundColor(.white)
+            .foregroundColor(style == .primary ? .white : .primary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(Theme.accent,
+            .background(style == .primary
+                            ? Theme.accent : Color(.secondarySystemFill),
                         in: RoundedRectangle(cornerRadius: Theme.Radius.chip))
     }
 }

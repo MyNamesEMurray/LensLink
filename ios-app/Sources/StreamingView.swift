@@ -609,8 +609,12 @@ struct StreamingView: View {
         }
     }
 
+    /// Back lenses in magnification order (.5 · 1× · 2), the Camera
+    /// app's order, rather than the device list's Main-first order.
     private var backLenses: [CameraManager.Lens] {
-        streamer.availableLenses.filter { $0.position == .back }
+        streamer.availableLenses
+            .filter { $0.position == .back }
+            .sorted { (lensFactors[$0.id] ?? 1) < (lensFactors[$1.id] ?? 1) }
     }
 
     private func refreshLensFactors() {
