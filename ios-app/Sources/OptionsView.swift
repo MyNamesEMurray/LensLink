@@ -12,10 +12,6 @@ struct OptionsView: View {
     // here; its screen edits it.
     @ObservedObject private var tallySettings = TallySettings.shared
 
-    // Screen-mirror diagnostics (Diagnostics section below).
-    @State private var probeResult: String?
-    @State private var extensionStatus = ""
-
     var body: some View {
         NavigationView {
             Form {
@@ -80,50 +76,9 @@ struct OptionsView: View {
                                          systemImage: "list.bullet.rectangle",
                                          color: Theme.idleGrey)
                     }
-
-                    // The screen-mirror tools, moved here from the main
-                    // screen's Screen mirror section (a broken extension
-                    // still warns there unconditionally).
-                    // Diagnostic: verifies the broadcast extension's
-                    // listener is reachable on-device, independent of
-                    // OBS/USB. Run it while a broadcast is active.
-                    Button {
-                        probeResult = "Checking…"
-                        BroadcastProbe.run { result in
-                            switch result {
-                            case .screenListener:
-                                probeResult = "✓ Broadcast link is up — OBS should be able to connect"
-                            case .appListener:
-                                probeResult = "✗ Only the app's own listener answered — start a screen broadcast, then run this again"
-                            case .none:
-                                probeResult = "✗ No listener — is a screen broadcast running? If yes, the extension isn't working"
-                            }
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            SettingsRowLabel("Check broadcast link",
-                                             systemImage: "antenna.radiowaves.left.and.right",
-                                             color: Theme.idleGrey)
-                            Text(extensionStatus)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            if let probeResult {
-                                Text(probeResult)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
                 }
             }
             .navigationTitle("Options")
-            .onAppear {
-                // Whether the extension survived sideloading — the
-                // broadcast picker can show a stale entry even when it
-                // didn't.
-                extensionStatus =
-                    BroadcastProbe.installedExtensionDescription()
-            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
