@@ -4,8 +4,9 @@
 # "What to Test" script splits the body on it.)
 #
 # Label a PR to sort it: `enhancement` → New, `bug` → Fixes. Unlabeled
-# PRs land under "Other changes". Dependabot bumps are excluded — they
-# only touch CI and never change what users download.
+# PRs land under "Changes" — a heading that reads right on its own,
+# which it often is. Dependabot bumps are excluded — they only touch CI
+# and never change what users download.
 changelog:
   exclude:
     authors:
@@ -20,6 +21,6 @@ changelog:
     - title: Fixes
       labels:
         - bug
-    - title: Other changes
+    - title: Changes
       labels:
         - "*"

@@ -420,6 +420,68 @@ jobs:
           path: dist
           merge-multiple: true
 
+      # Full history and every tag: the component table below asks, for
+      # each half of the product, which release last changed it.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          path: src
+
+      # One repo ships two things, and a release cut for an app change
+      # still carries plugin assets. Without this, every release reads
+      # as "download the plugin again". The table says, per component,
+      # whether this release changed it — and if not, which release did,
+      # so nobody reinstalls a build they already have.
+      - name: Which components changed
+        id: components
+        working-directory: src
+        run: |
+          tag="${{ inputs.tag_name || github.ref_name }}"
+          repo_url="https://github.com/${{ github.repository }}"
+          # Newest first, by creation: CI cuts tags in order, and version
+          # sort would put a beta above the stable it precedes.
+          mapfile -t tags < <(git tag --list 'v*' --sort=-creatordate)
+          start=-1
+          for i in "${!tags[@]}"; do
+            if [ "${tags[$i]}" = "$tag" ]; then start=$i; break; fi
+          done
+          # The release in which a component last changed: walk back from
+          # this tag until a tag-to-tag diff touches its paths.
+          changed_since() {
+            local paths=$1
+            local i
+            for ((i = start; i < ${#tags[@]} - 1; i++)); do
+              if ! git diff --quiet "${tags[$((i + 1))]}" "${tags[$i]}" -- $paths; then
+                echo "${tags[$i]}"
+                return
+              fi
+            done
+            echo "${tags[$((${#tags[@]} - 1))]}"
+          }
+          row() {
+            local name=$1 since=$2 updated=$3 unchanged=$4
+            if [ "$since" = "$tag" ]; then
+              echo "| **$name** | $updated |"
+            else
+              echo "| **$name** | Unchanged since [$since]($repo_url/releases/tag/$since) — $unchanged |"
+            fi
+          }
+          {
+            echo "summary<<SUMMARY"
+            if [ "$start" -ge 0 ]; then
+              plugin_since=$(changed_since "obs-plugin installer")
+              app_since=$(changed_since "ios-app")
+              echo "## What's in this release"
+              echo
+              echo "| Component | This release |"
+              echo "|-----------|--------------|"
+              row "OBS plugin" "$plugin_since" "Updated — install it below." "nothing to reinstall."
+              row "iPhone / iPad app" "$app_since" "Updated — TestFlight updates it automatically." "the app you have is current."
+              echo
+            fi
+            echo "SUMMARY"
+          } >> "$GITHUB_OUTPUT"
+
       # The release-notes template. The install table must stay ABOVE the
       # generated notes (the API prepends `body`), and the "What's Changed"
       # heading GitHub generates is load-bearing: testflight_whats_to_test.py
@@ -443,6 +505,7 @@ jobs:
             dist/lenslink-linux-x86_64.tar.gz
             dist/LensLink-unsigned.ipa
           body: |
+            ${{ steps.components.outputs.summary }}
             ## Install
 
             | Platform | Download | Then |

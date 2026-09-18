@@ -225,13 +225,19 @@ FFmpeg inside whatever OBS release users run.
 
 ### Release notes
 
-Every release page follows a fixed template: a compact **Install** table
-(templated in `release.yml`'s publish job — direct asset links, with
-manual/sideload/USB detail collapsed underneath), then GitHub's generated
-**What's Changed** changelog, shaped by
-[`.github/release.yml`](../.github/release.yml). Label a PR `enhancement`
-or `bug` to sort it into the New/Fixes section; unlabeled PRs land under
-"Other changes", and Dependabot bumps are excluded. Two invariants:
+Every release page follows a fixed template: a **What's in this
+release** table first — one row per component (OBS plugin, iPhone/iPad
+app) saying whether this release changed it, and if not, which release
+did ("Unchanged since v1.13.0-beta.3 — nothing to reinstall"); the
+publish job computes it by diffing tag to tag over `obs-plugin/` +
+`installer/` and `ios-app/`, so a release cut for an app change never
+reads as "download the plugin again" — then a compact **Install** table
+(direct asset links, with manual/sideload/USB detail collapsed
+underneath), then GitHub's generated **What's Changed** changelog, shaped
+by [`.github/release.yml`](../.github/release.yml). Label a PR
+`enhancement` or `bug` to sort it into the New/Fixes section; unlabeled
+PRs land under "Changes", and Dependabot bumps are excluded. Two
+invariants:
 the install table stays *above* the changelog (the API prepends the
 body), and the "What's Changed" heading must survive verbatim —
 `testflight_whats_to_test.py` splits the body on it to fill TestFlight's
