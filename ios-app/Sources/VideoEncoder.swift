@@ -58,15 +58,22 @@ final class VideoEncoder {
 
     private static let startCode = Data([0x00, 0x00, 0x00, 0x01])
 
-    /// Maximum quality (Format → Quality → Maximum): the encoder is told
-    /// to spend its time on quality rather than speed, peaks may run to
-    /// 2× the average instead of 1.5×, and keyframes come every 4 s
-    /// instead of 2 — each a few percent of quality per bit that the
-    /// balanced setting trades for safety on a weak link.
+    /// Maximum quality (Format → Quality → Maximum): peaks may run to 2×
+    /// the average instead of 1.5×, and keyframes come every 4 s instead
+    /// of 2 — each a few percent of quality per bit that the balanced
+    /// setting trades for safety on a weak link.
     private let maximumQuality: Bool
+    /// Tell the encoder to spend its time on quality rather than speed.
+    /// Separate from `maximumQuality` because it is the one setting that
+    /// can cost frames: at 4K60 the hardware encoder in quality mode
+    /// could not finish a frame in 16 ms and the stream sat at 45 fps.
+    /// `qualityPriorityAffordable` is the rule, and the streamer's
+    /// watchdog is the backstop for a device the rule misjudges.
+    private let qualityPriority: Bool
 
     init(codec: VideoCodec, width: Int32, height: Int32, fps: Int32, bitrate: Int,
-         color: StreamColor = .sdr, maximumQuality: Bool = false) {
+         color: StreamColor = .sdr, maximumQuality: Bool = false,
+         qualityPriority: Bool = false) {
         self.codec = codec
         self.width = width
         self.height = height
@@ -74,6 +81,16 @@ final class VideoEncoder {
         self.bitrate = bitrate
         self.color = color
         self.maximumQuality = maximumQuality
+        self.qualityPriority = qualityPriority
+    }
+
+    /// Whether the hardware encoder can be asked for quality over speed
+    /// and still keep up. Measured, not theoretical: 4K60 (497 Mpx/s)
+    /// fell to 45 fps in quality mode on a current iPhone; 1080p60 and
+    /// 1080p120 (249 Mpx/s) hold their rate. The line is drawn there.
+    static func qualityPriorityAffordable(width: Int32, height: Int32,
+                                          fps: Int32) -> Bool {
+        Int64(width) * Int64(height) * Int64(fps) <= 1920 * 1080 * 120
     }
 
     /// Whether this device can hardware-encode the codec (HEVC needs A10+).
@@ -184,7 +201,7 @@ final class VideoEncoder {
         // hardware encoder has headroom at every format the app offers,
         // and at high bitrates the difference is what the bits bought.
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_PrioritizeEncodingSpeedOverQuality,
-                             value: maximumQuality ? kCFBooleanFalse : kCFBooleanTrue)
+                             value: qualityPriority ? kCFBooleanFalse : kCFBooleanTrue)
         // Don't let the encoder sit on frames internally.
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_MaxFrameDelayCount,
                              value: NSNumber(value: 1))

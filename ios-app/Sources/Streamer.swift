@@ -163,6 +163,9 @@ final class Streamer: ObservableObject {
             // The encoder's settings and the format choice both follow
             // the quality, so a live stream rebuilds like a format change
             // — which also restarts the adaptive loop at the new target.
+            if quality != oldValue {
+                encoderSpeedFallback = false
+            }
             if isStreaming, quality != oldValue {
                 reconfigureLiveCapture(formatChanged: true)
             }
@@ -173,6 +176,22 @@ final class Streamer: ObservableObject {
     private func updateSensorReadoutPreference() {
         CameraManager.preferFullSensorReadout =
             quality == .maximum && !allowVideoEffects
+    }
+
+    /// The adaptive loop's watchdog tripped: in Maximum, with the encoder
+    /// in quality mode, frames went out well under the capture rate with
+    /// the network clean — the encoder itself couldn't keep up. Set for
+    /// the rest of the stream; the encoder is rebuilt with speed priority
+    /// and everything else Maximum does stays on.
+    private var encoderSpeedFallback = false
+
+    /// Quality-over-speed for the encoder: Maximum, within the pixel rate
+    /// the hardware handles in that mode, and not after the watchdog has
+    /// caught it falling behind.
+    private func encoderQualityPriority(width: Int32, height: Int32) -> Bool {
+        quality == .maximum && !encoderSpeedFallback
+            && VideoEncoder.qualityPriorityAffordable(width: width, height: height,
+                                                      fps: Int32(fps))
     }
     /// The cameras this device actually has (Main / Ultra Wide / …).
     let availableLenses: [CameraManager.Lens]
@@ -263,7 +282,9 @@ final class Streamer: ObservableObject {
             fps: Int32(fps),
             bitrate: resolution.bitrate(for: activeCodec, color: color, fps: fps),
             color: color,
-            maximumQuality: quality == .maximum)
+            maximumQuality: quality == .maximum,
+            qualityPriority: encoderQualityPriority(width: size.width,
+                                                    height: size.height))
         do {
             try newEncoder.start()
         } catch {
@@ -1726,7 +1747,9 @@ final class Streamer: ObservableObject {
                                                                color: color,
                                                                fps: fps),
                                    color: color,
-                                   maximumQuality: quality == .maximum)
+                                   maximumQuality: quality == .maximum,
+                                   qualityPriority: encoderQualityPriority(
+                                       width: size.width, height: size.height))
             try encoder.start()
         } catch {
             status = .error(error.localizedDescription)
@@ -1857,6 +1880,10 @@ final class Streamer: ObservableObject {
             var stableSeconds = 0
             var congestedLevel: Int?
             var lastCongestionAt: DispatchTime?
+            // Encoder watchdog (Maximum only): seconds in a row the send
+            // rate sat under 90% of the capture rate with the network
+            // clean. Five of them means the encoder is the bottleneck.
+            var slowSeconds = 0
             var previousStats: StreamClient.Stats?
             var previousStatsAt = DispatchTime.now()
             var healthWasVisible = false
@@ -1878,14 +1905,17 @@ final class Streamer: ObservableObject {
                     - previousStatsAt.uptimeNanoseconds) / 1_000_000_000
                 let healthVisible = UserDefaults.standard.bool(
                     forKey: StreamerDefaults.showHealth)
+                var sentPerSecond: Double?
+                if let previous = previousStats, elapsed > 0.2 {
+                    sentPerSecond = Double(max(0, stats.framesSent
+                        - previous.framesSent)) / elapsed
+                }
                 if healthVisible, let previous = previousStats,
-                   elapsed > 0.2 {
-                    let frames = Double(max(0, stats.framesSent
-                        - previous.framesSent))
+                   let sent = sentPerSecond {
                     let bits = Double(max(0, stats.bytesSent
                         - previous.bytesSent)) * 8
                     self.health = StreamHealth(
-                        fps: Int((frames / elapsed).rounded()),
+                        fps: Int(sent.rounded()),
                         megabitsPerSecond: bits / elapsed / 1_000_000,
                         droppedFrames: max(0, stats.framesDropped - self.healthDroppedBaseline))
                 } else if healthWasVisible {
@@ -1907,6 +1937,31 @@ final class Streamer: ObservableObject {
                 }
                 let dropped = self.client.takeDroppedFrameCount()
                 let sendDelayMs = self.client.takeMaxSendDelayMs()
+
+                // Frames leaving well under the capture rate while the
+                // network is clean can only be the encoder falling
+                // behind. Rebuild it once with speed priority; the rest
+                // of Maximum (bitrate, peaks, keyframes, format) stays.
+                if maximum, !self.encoderSpeedFallback, !self.isPaused,
+                   dropped == 0, sendDelayMs <= 60, let sent = sentPerSecond {
+                    // The camera halves its rate only at critical pressure
+                    // (where the bitrate scale is a quarter); expect that.
+                    let expected = Double(self.fps)
+                        * (self.thermalBitrateScale <= 0.25 ? 0.5 : 1.0)
+                    slowSeconds = sent < expected * 0.9 ? slowSeconds + 1 : 0
+                    if slowSeconds >= 5, let encoder = self.encoder {
+                        slowSeconds = 0
+                        self.encoderSpeedFallback = true
+                        print("Encoder watchdog: \(Int(sent)) fps of \(Int(expected)) "
+                              + "with the link clean -> speed priority")
+                        self.rebuildEncoder(codec: encoder.codec, color: encoder.color)
+                        self.encoder?.setBitrate(current)
+                        continue
+                    }
+                } else {
+                    slowSeconds = 0
+                }
+
                 if dropped > 0 || sendDelayMs > 200 {
                     stableSeconds = 0
                     congestedLevel = current
@@ -1973,6 +2028,7 @@ final class Streamer: ObservableObject {
 
         adaptiveTask?.cancel()
         adaptiveTask = nil
+        encoderSpeedFallback = false
         health = nil
         tally = .off
         syncState = .off
