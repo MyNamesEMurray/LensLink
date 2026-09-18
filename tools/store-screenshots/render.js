@@ -28,6 +28,14 @@ const DEVICES = {
   'ipad-13':    { raw: 'ipad',   w: 2064, h: 2752, pad: 140, h1: 120, p: 56, devw: 1700, radius: 100, bezel: 24 },
 };
 
+// Where the battery pill sits in a capture, as fractions of its width
+// and height, per capture kind: iPhone's status bar flanks the Dynamic
+// Island, the iPad's is a thin strip along the top edge.
+const BATTERY = {
+  iphone: { sampleX: 0.835, y: 0.034, coverX: 0.84, coverW: 0.10, coverY: 0.022, coverH: 0.025, bx: 0.848, bw: 0.066, bh: 0.0145 },
+  ipad:   { sampleX: 0.985, y: 0.0135, coverX: 0.926, coverW: 0.052, coverY: 0.005, coverH: 0.017, bx: 0.934, bw: 0.028, bh: 0.0095 },
+};
+
 let chromium;
 try {
   ({ chromium } = require('playwright'));
@@ -67,7 +75,8 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
         .replace(/{{RADIUS}}/g, d.radius).replace(/{{BEZEL}}/g, d.bezel)
         .replace('{{HEADLINE}}', esc(shot.headline)).replace('{{SUB}}', esc(shot.sub))
         .replace('{{IMG}}', img)
-        .replace('{{FULLBATTERY}}', shot.statusBar ? 'true' : 'false');
+        .replace('{{FULLBATTERY}}', shot.statusBar ? 'true' : 'false')
+        .replace('{{BATTERY}}', JSON.stringify(BATTERY[d.raw]));
       const page = await browser.newPage({ viewport: { width: d.w, height: d.h }, deviceScaleFactor: 1 });
       await page.setContent(html, { waitUntil: 'load' });
       await page.waitForFunction(() => document.getElementById('shot').dataset.fullBattery !== 'true');
