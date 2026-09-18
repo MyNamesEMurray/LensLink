@@ -374,9 +374,8 @@ faces** (default on), and the pushed screen **Tally light** (row value: the stat
 "On air, In preview"), and **Remember camera settings** (default on; see
 §6.2.1). Second group, the experiments and the diagnostics: **High frame rate**
 (adds 120 / 240 fps to the Format sheet where the camera has them; off
-by default), **Allow system video effects**, **Camera diagnostics**,
-**Check broadcast link**. Pure controls, no
-footers: every explanation lives in the Documentation screen (§3), which
+by default), **Allow system video effects**, **Camera diagnostics**. Pure
+controls, no footers: every explanation lives in the Documentation screen (§3), which
 is also why the pushed screens carry none.
 
 ### 6.2 App — Live screen

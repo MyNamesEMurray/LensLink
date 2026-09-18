@@ -363,9 +363,9 @@ are the places to watch.
   distro), or build from source with `obs-plugin/BUILDING.md` — a local
   build links your system's own FFmpeg and always matches.
 - **Screen broadcast won't connect (sideloaded only):** re-signing can
-  silently break the broadcast extension. In the app, open **Screen mirror
-  tools → Check broadcast link** while a broadcast is running — it verifies
-  the extension is alive on-device, independent of OBS.
+  silently break the broadcast extension. The app's Home screen warns in
+  its Screen mirror section when the extension is missing from the
+  installed bundle.
 - **Two sources, same phone:** one phone can feed one source at a time. A
   second source aimed at the same device will say it's already in use.
   Exception: with **Disconnect when this source isn't shown anywhere**

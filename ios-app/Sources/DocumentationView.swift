@@ -77,7 +77,6 @@ struct DocumentationView: View {
 
             Section {
                 Text("**Camera diagnostics** lists the camera's formats — which resolutions support the Control Center video effects, and which are 10-bit HDR or Apple Log capable. Paste it into a bug report if something is missing.")
-                Text("**Check broadcast link** verifies the screen-mirror extension is alive on this phone, independent of OBS — run it while a screen broadcast is active.")
             } header: {
                 Text("Diagnostics")
             }
