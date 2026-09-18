@@ -151,17 +151,19 @@ each submission.
 Required sets: **6.9-inch iPhone** and **13-inch iPad** (the app targets
 both device families). Take them on device with the tally lit where it
 matters; the Camera app's own screenshots are the reference for framing.
+`tools/store-screenshots/` adds the headline and bezel and outputs the
+exact store sizes; its `shots.json` names each capture.
 
-1. Home: the computer card naming the Mac, "OBS connected — ready",
+1. `home`: the computer card naming the Mac, "OBS connected — ready",
    Camera / Format / Green screen rows.
-2. Live, glance layer: the picture, status pill, Pause, Stop, lens
-   buttons, tally border on air.
-3. Live, adjust tray open on Exposure.
-4. Format sheet: Quality and Color.
-5. OBS on the Mac with the LensLink Camera source live (a Mac
-   screenshot cropped to the store's iPhone frame is not allowed;
-   photograph the setup, or skip this one).
-6. Options.
+2. `live-glance`: the picture, status pill, Pause, Stop, lens buttons,
+   tally border on air. Point the camera at something worth looking at.
+3. `live-tray`: the adjust tray open on Exposure, same scene.
+4. `format`: the Format sheet with Quality and Color visible.
+5. `options`.
+6. `obs`: the phone's Live screen with the Mac visible behind it, or the
+   web control panel on the phone. A Mac screenshot in the store's
+   iPhone frame is not allowed.
 
 ## App Privacy questionnaire
 
