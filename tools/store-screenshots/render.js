@@ -19,10 +19,13 @@ const rawDir = path.resolve(opt('--raw', path.join(here, 'raw')));
 const outDir = path.resolve(opt('--out', path.join(here, 'out')));
 const only = opt('--only', '') ? opt('--only', '').split(',') : null;
 
-// App Store Connect sizes: 6.9-inch iPhone and 13-inch iPad, portrait.
+// App Store Connect sizes, portrait. `raw` names which capture feeds
+// each: the 6.5-inch set is rendered from the same iPhone captures as
+// the 6.9-inch one (App Store Connect asks for one or the other).
 const DEVICES = {
-  iphone: { w: 1320, h: 2868, pad: 120, h1: 104, p: 50, devw: 1120, radius: 140, bezel: 22 },
-  ipad:   { w: 2064, h: 2752, pad: 140, h1: 120, p: 56, devw: 1700, radius: 100, bezel: 24 },
+  'iphone-6.9': { raw: 'iphone', w: 1320, h: 2868, pad: 120, h1: 104, p: 50, devw: 1120, radius: 140, bezel: 22 },
+  'iphone-6.5': { raw: 'iphone', w: 1284, h: 2778, pad: 116, h1: 101, p: 49, devw: 1090, radius: 136, bezel: 22 },
+  'ipad-13':    { raw: 'ipad',   w: 2064, h: 2752, pad: 140, h1: 120, p: 56, devw: 1700, radius: 100, bezel: 24 },
 };
 
 let chromium;
@@ -55,7 +58,7 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   for (const shot of shots) {
     if (only && !only.includes(shot.name)) continue;
     for (const [device, d] of Object.entries(DEVICES)) {
-      const raw = path.join(rawDir, `${shot.name}-${device}.png`);
+      const raw = path.join(rawDir, `${shot.name}-${d.raw}.png`);
       if (!fs.existsSync(raw)) { missing.push(path.relative(process.cwd(), raw)); continue; }
       const img = 'data:image/png;base64,' + fs.readFileSync(raw).toString('base64');
       const html = template
