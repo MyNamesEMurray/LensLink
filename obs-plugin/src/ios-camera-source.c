@@ -151,8 +151,8 @@ struct ios_camera_source {
 	volatile bool green_screen;
 	/* The stream is held, not broken: the phone is connected and its
 	 * camera is running, but no video is going out — the operator
-	 * paused it, or iOS took the camera from a hidden PiP window. Last
-	 * reported in STATE. */
+	 * paused it, or iOS interrupted capture (another app took the
+	 * camera beside LensLink on an iPad). Last reported in STATE. */
 	volatile bool stream_paused;
 
 	/* Which registered source type this instance is: "LensLink Screen"

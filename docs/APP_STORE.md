@@ -56,21 +56,16 @@ each submission.
 > phone's screen (with app audio, never the microphone) to a **LensLink
 > Screen** source in OBS. Test it the same way with that source type.
 >
-> **Background modes.** `audio`: the app captures the microphone while
-> streaming when the user turns on "Send phone mic to OBS" (a wireless
-> mic) or "Auto lip-sync reference" (a timing signal the plugin uses to
-> align the user's own microphone; it is never heard). `voip`: this is
-> declared for one feature, "Keep streaming in the background" (Options,
-> on by default). When the user leaves the app mid-stream, the live
-> picture moves into a Picture in Picture window so the camera keeps
-> running; iOS grants that only to apps declaring voip or holding the
-> multitasking-camera-access entitlement. The app is not a calling app;
-> the feature exists because LensLink's output typically feeds a video
-> call through OBS's virtual camera. We have requested the
-> multitasking-camera-access entitlement and will drop the voip
-> declaration the moment it is granted. Streaming only ever runs after
-> the user taps Start, the system camera indicator is on throughout, and
-> it stops on Stop, on lock, or from the computer.
+> **Background behaviour.** The app declares no background modes.
+> Streaming runs only while the app is on screen: leaving it or locking
+> the phone stops the stream. On iPads that allow multitasking camera
+> access, streaming continues beside another app in Split View, Slide
+> Over and Stage Manager. Streaming only ever runs after the user taps
+> Start, the system camera indicator is on throughout, and it stops on
+> Stop, on lock, or from the computer. The microphone is used only while
+> streaming and only when the user turns on "Send phone mic to OBS" (a
+> wireless mic) or "Auto lip-sync reference" (a timing signal the plugin
+> uses to align the user's own microphone; it is never heard).
 >
 > **Local Network permission** is required: the plugin dials the phone
 > over the LAN. Without it, the app still works over USB.
@@ -128,7 +123,7 @@ each submission.
 > - Remote start: OBS starts the camera while the app sits idle
 > - Tally light: a colored border says when you're on air
 > - Pause with a held picture instead of a frozen frame
-> - Keep streaming while you switch apps
+> - Keeps streaming beside other apps on iPads that support it
 > - Automatic lip-sync: the plugin measures latency and aligns your
 >   real microphone
 > - Virtual green screen, right on the phone
@@ -182,21 +177,21 @@ Already answered in the build: `ITSAppUsesNonExemptEncryption = false`
 
 ## The multitasking camera entitlement
 
-Requested from Apple (form answers recorded below). Until granted, the
-app ships with `voip` in `UIBackgroundModes` and the review note above
-explains why. When granted: add the entitlement to the app target in
-`project.yml`, remove `voip`, update `docs/DEVELOPMENT.md`'s background
-streaming section and this note.
+Requested from Apple (form answers recorded below). The submitted build
+does not depend on it: the app declares no background modes and stops
+streaming when it leaves the screen. When granted: add the entitlement
+to the app target in `project.yml` and update `docs/DEVELOPMENT.md`'s
+backgrounding section, the site's FAQ and this note.
 
 - App Name: LensLink Camera
 - Bundle ID: `com.exaltedpixels.LensLinkCamera`
 - Primary purpose video calls/conferencing: **No**
-- Why: the app streams the camera to OBS as a production camera; the
-  operator leaves the app briefly during a stream, and iOS stops capture
-  the moment it is not on screen. Today the app works around that with
-  a Picture in Picture window, which iOS allows only under `voip` — a
-  mode that does not describe the app. The entitlement is the correct
-  mechanism and lets the declaration go.
+- Why: the app streams the camera to OBS as a production camera. An
+  operator often needs another app briefly during a stream (a chat, a
+  run sheet, a timer), and iOS stops capture the moment the app is not
+  on screen, so today the stream ends when they leave. The entitlement
+  would let capture continue while the operator is elsewhere, the way
+  it already does beside another app on a supported iPad.
 - Camera use: capture from the built-in cameras with full manual
   control, hardware encode with VideoToolbox, stream over LAN or USB to
   OBS. Nothing recorded, nothing leaves the local network, camera runs

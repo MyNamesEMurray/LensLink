@@ -141,23 +141,19 @@ data\obs-plugins\ios-camera-source\</code></pre>
   The stream is <strong>paused</strong>, not broken: the phone is still
   connected and its camera is still running, but no video is going out.
   Either someone paused it — the phone's Live screen, the web panel, or
-  the source properties all have the button — or iOS took the camera
-  from a background stream whose Picture in Picture window was parked at
-  the screen edge. Resume from any of those places; the window case
-  resumes by itself when you pull the window back out.
+  the source properties all have the button — or iOS interrupted the
+  camera, which happens when another app opens it beside LensLink on an
+  iPad. Resume from any of those places; the interruption case resumes
+  by itself when the camera comes back.
 </p>
 
 <h2>The picture freezes or goes black when I switch apps on the phone</h2>
 <p>
-  Expected: iOS suspends camera capture for apps that aren't on screen. A screen
-  <em>broadcast</em> is the exception and keeps running across apps.
-</p>
-<p>
-  Turn on <strong>Keep streaming in the background</strong> (Options) and
-  leaving the app instead parks the picture in a Picture in Picture
-  window, with the camera still running. If no window appears, iOS hasn't
-  granted this device background camera access and the stream stops as
-  before. Locking the phone ends the stream.
+  Expected: iOS suspends camera capture for apps that aren't on screen,
+  so LensLink stops the stream cleanly and the source blanks. Locking the
+  phone does the same. A screen <em>broadcast</em> is the exception and
+  keeps running across apps, and a supported iPad keeps streaming beside
+  another app in Split View, Slide Over or Stage Manager.
 </p>
 <p>
   The window carries no buttons of its own — iOS stopped drawing them for

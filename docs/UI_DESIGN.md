@@ -370,9 +370,7 @@ switching mid-stream.
 so the main screen stays short, in the same icon-tile rows as Setup.
 First group, the things that matter during a stream: **Remote start from
 OBS**, **Idle view** (Standard / Clean feed / Dim screen), **Focus on
-faces** (default on), **Keep streaming in the background** (present only where iOS grants background
-capture — a toggle that can do nothing is worse than no toggle), and the
-pushed screen **Tally light** (row value: the statuses that light it,
+faces** (default on), and the pushed screen **Tally light** (row value: the statuses that light it,
 "On air, In preview"), and **Remember camera settings** (default on; see
 §6.2.1). Second group, the experiments and the diagnostics: **High frame rate**
 (adds 120 / 240 fps to the Format sheet where the camera has them; off

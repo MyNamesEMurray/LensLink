@@ -46,16 +46,6 @@ struct OptionsView: View {
                                          systemImage: "face.smiling",
                                          color: Theme.cameraYellow)
                     }
-                    // Hidden where iOS won't grant background capture at
-                    // all: a toggle that can't do anything is worse than
-                    // no toggle.
-                    if streamer.backgroundStreamingAvailable {
-                        Toggle(isOn: $streamer.backgroundStreaming) {
-                            SettingsRowLabel("Keep streaming in the background",
-                                             systemImage: "rectangle.on.rectangle",
-                                             color: Theme.accent)
-                        }
-                    }
                     NavigationLink(destination: TallyLightOptionsView()) {
                         HStack {
                             SettingsRowLabel("Tally light",
