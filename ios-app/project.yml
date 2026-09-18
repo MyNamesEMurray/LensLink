@@ -20,9 +20,6 @@ targets:
     dependencies:
       # Embeds the screen-mirror broadcast extension in the app bundle.
       - target: LensLinkBroadcast
-      # The Live Activity (Lock Screen / Dynamic Island card) lives in a
-      # WidgetKit extension; iOS 16.1+, so it simply isn't loaded on 15.
-      - target: LensLinkWidgets
     info:
       path: Sources/Info.plist
       properties:
@@ -34,10 +31,6 @@ targets:
         # builds are testable immediately instead of "Missing Compliance".
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
-        # A stream is a live, timed, stoppable thing: the Live Activity
-        # in LensLinkWidgets puts it on the Lock Screen and the Dynamic
-        # Island (Sources/StreamActivityController.swift).
-        NSSupportsLiveActivities: true
         # All four orientations: App Store validation requires the full set
         # for iPad multitasking (or UIRequiresFullScreen, which we'd rather
         # not force).
@@ -117,10 +110,9 @@ targets:
         # the real version; this value only covers local Xcode builds.
         MARKETING_VERSION: "1.8.0"
         CURRENT_PROJECT_VERSION: "1" # CI overrides with the next ASC build number
-        # AppIntents (Siri shortcuts) is iOS 16+ and ActivityKit (the Live
-        # Activity) 16.1+; the deployment target is 15, so both must be
-        # weak-linked or the app won't launch on iOS 15.
-        OTHER_LDFLAGS: "-weak_framework AppIntents -weak_framework ActivityKit"
+        # AppIntents (Siri shortcuts) is iOS 16+; the deployment target is
+        # 15, so it must be weak-linked or the app won't launch on iOS 15.
+        OTHER_LDFLAGS: "-weak_framework AppIntents"
         # Set your Apple Developer team to run on a device:
         # DEVELOPMENT_TEAM: XXXXXXXXXX
 
@@ -159,37 +151,3 @@ targets:
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "1.8.0" # must match the app's; CI overrides both
         CURRENT_PROJECT_VERSION: "1" # matched to the app by CI
-
-  # The Live Activity: a WidgetKit extension drawing the stream's Lock
-  # Screen card and Dynamic Island presentation. It shares the activity's
-  # attributes and its Pause/Stop intents with the app — the same source
-  # files compiled into both targets; LENSLINK_WIDGET keeps the intents'
-  # app-side bodies (which reach into Streamer) out of this target.
-  LensLinkWidgets:
-    type: app-extension
-    platform: iOS
-    deploymentTarget: "16.1"
-    sources:
-      - WidgetExtension
-      - path: Sources/StreamActivityAttributes.swift
-      - path: Sources/StreamActivityIntents.swift
-    info:
-      path: WidgetExtension/Info.plist
-      properties:
-        CFBundleDisplayName: LensLink
-        CFBundleShortVersionString: $(MARKETING_VERSION)
-        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
-    settings:
-      base:
-        # Must be a child of the app's bundle id; the TestFlight
-        # workflow's -allowProvisioningUpdates registers it on first run,
-        # as it did for the broadcast extension.
-        PRODUCT_BUNDLE_IDENTIFIER: com.exaltedpixels.LensLinkCamera.widgets
-        TARGETED_DEVICE_FAMILY: "1,2"
-        SWIFT_VERSION: "5.0"
-        CODE_SIGN_STYLE: Automatic
-        MARKETING_VERSION: "1.8.0" # must match the app's; CI overrides both
-        CURRENT_PROJECT_VERSION: "1" # matched to the app by CI
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) LENSLINK_WIDGET"

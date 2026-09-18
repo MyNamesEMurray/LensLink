@@ -18,12 +18,6 @@ struct DocumentationView: View {
             }
 
             Section {
-                Text("While streaming, the Lock Screen and the Dynamic Island carry a **Live Activity** (iOS 16.1 and later): where the picture is going, how long it has been going, and whether you're on air — red on air, amber paused or waiting, green live. On iOS 17 and later its **Stop** button works without unlocking the phone. It appears with the stream and leaves with it.")
-            } header: {
-                Text("Live Activity")
-            }
-
-            Section {
                 Text("**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing.")
                 Text("**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT.")
                 Text("Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture.")
@@ -69,17 +63,10 @@ struct DocumentationView: View {
                 Text("**Pause** holds a stream without ending it — the phone stays connected, the camera stays on, and OBS shows a dimmed, blurred still with a pause symbol instead of a frozen picture. The pause button sits on the Live screen next to Stop, and the same control is in OBS (source properties) and the web panel. Audio keeps going, so the phone can still be your microphone while the picture is held.")
                 Text("**Keep streaming in the background** moves the picture into a Picture in Picture window when you leave LensLink mid-stream, which is what lets the camera keep running — iOS stops capture for an app that is nowhere on screen. The window carries no buttons of its own: tap it to come back to LensLink, and stop or pause from here, from OBS, from the web panel, or by asking Siri. Locking the phone ends the stream. Pushing the window off the side of the screen parks it, and iOS only lends the camera to a window it can see: capture pauses, the green camera dot goes out, and OBS shows the paused still until you pull the window back — then it resumes on its own.")
                 Text("**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60.")
+                Text("**Remember camera settings** keeps each camera's exposure, white balance, zoom and focus from one stream to the next — a shot dialled in once stays dialled in, per lens. Turn it off and every camera starts on auto, and what was stored is forgotten.")
                 Text("**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
             } header: {
                 Text("Options")
-            }
-
-            Section {
-                Text("A **preset** saves the camera settings you re-dial every session — exposure, white balance, zoom, focus — and you choose which of those it carries. Everything it leaves out stays where it is.")
-                Text("Give a preset a **camera** and it applies whenever that camera starts; mark one as the **default** and it covers any camera without its own. Options → Presets.")
-                Text("Changing any of those settings by hand pauses automatic presets, so one can never overwrite an adjustment you just made — a **Presets paused** pill appears on the Live screen, and tapping it resumes and re-applies without stopping the stream.")
-            } header: {
-                Text("Presets")
             }
 
             Section {

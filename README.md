@@ -113,10 +113,6 @@ backgrounding the app blanks the source.
 - **Multiple cameras.** Add one "LensLink Camera" source per phone. On USB you
   can pin a source to a specific device so the same phone always maps to
   the same source.
-- **A Live Activity while streaming** (iOS 16.1+): the Lock Screen and
-  the Dynamic Island show where the picture is going, how long it has
-  been going, and whether you're on air — with a Stop that works
-  without unlocking the phone (iOS 17+).
 - **Live camera controls**, both on the phone (a viewfinder with the
   Camera app's lens buttons, pinch to zoom, tap to focus, drag for
   exposure, and a one-dial adjust tray for exposure, shutter, white

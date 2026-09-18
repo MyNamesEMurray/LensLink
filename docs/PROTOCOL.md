@@ -178,8 +178,7 @@ this camera can). Absent fields are left as they are.
 right after HELLO: `host` is the computer's host name (any domain tail
 stripped), `obs` the OBS Studio version, `transport` `"usb"` or `"lan"`
 for how the plugin dialed. The app uses it to name the computer on its
-Home screen and in its Live Activity; it forgets the values when the
-connection drops. Fields may be empty strings where the plugin couldn't
+Home screen; it forgets the values when the connection drops. Fields may be empty strings where the plugin couldn't
 learn them, and an older app ignores the command.
 
 `reference` gates the lip-sync reference (packet type 9):

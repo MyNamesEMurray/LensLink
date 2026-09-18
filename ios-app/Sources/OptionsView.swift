@@ -8,10 +8,9 @@ import SwiftUI
 struct OptionsView: View {
     @EnvironmentObject private var streamer: Streamer
     @Environment(\.dismiss) private var dismiss
-    // For the row values: which statuses light the tally, and which
-    // preset is the default. Read-only here; their screens edit them.
+    // For the tally row's value: which statuses light it. Read-only
+    // here; its screen edits it.
     @ObservedObject private var tallySettings = TallySettings.shared
-    @ObservedObject private var presets = PresetManager.shared
 
     // Screen-mirror diagnostics (Diagnostics section below).
     @State private var probeResult: String?
@@ -68,16 +67,10 @@ struct OptionsView: View {
                                 .lineLimit(1)
                         }
                     }
-                    NavigationLink(destination: PresetsView()) {
-                        HStack {
-                            SettingsRowLabel("Presets",
-                                             systemImage: "slider.horizontal.3",
-                                             color: Theme.connectAmber)
-                            Spacer()
-                            Text(presetsSummary)
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
+                    Toggle(isOn: $streamer.rememberCameraSettings) {
+                        SettingsRowLabel("Remember camera settings",
+                                         systemImage: "clock.arrow.circlepath",
+                                         color: Theme.connectAmber)
                     }
                 }
 
@@ -161,19 +154,6 @@ extension OptionsView {
             .filter { $0.color != TallyColor.none }
             .map { $0.status.displayName }
         return lit.isEmpty ? "Off" : lit.joined(separator: ", ")
-    }
-
-    /// The default preset's name, or how many there are.
-    fileprivate var presetsSummary: String {
-        if let id = presets.defaultPresetID,
-           let preset = presets.presets.first(where: { $0.id == id }) {
-            return preset.name
-        }
-        switch presets.presets.count {
-        case 0: return "None"
-        case 1: return "1 preset"
-        default: return "\(presets.presets.count) presets"
-        }
     }
 }
 

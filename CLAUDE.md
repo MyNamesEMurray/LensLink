@@ -101,11 +101,7 @@ cd ios-app && xcodegen generate && open LensLink.xcodeproj
 New files under `Sources/` are picked up automatically, but anything the
 **broadcast extension** also needs must be listed explicitly under
 `LensLinkBroadcast.sources` in `ios-app/project.yml` (today: `Protocol.swift`,
-`StreamClient.swift`, `VideoEncoder.swift`), and likewise anything the
-**widget extension** (the Live Activity) shares under
-`LensLinkWidgets.sources` (today: `StreamActivityAttributes.swift`,
-`StreamActivityIntents.swift` — the latter's app-side bodies are behind
-`#if !LENSLINK_WIDGET`). Details (signing, older Xcode):
+`StreamClient.swift`, `VideoEncoder.swift`). Details (signing, older Xcode):
 `ios-app/BUILDING.md`.
 
 ### Performance measurements
