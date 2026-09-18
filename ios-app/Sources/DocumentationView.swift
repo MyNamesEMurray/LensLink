@@ -18,12 +18,6 @@ struct DocumentationView: View {
             }
 
             Section {
-                Text("While streaming, the Lock Screen and the Dynamic Island carry a **Live Activity** (iOS 16.1 and later): where the picture is going, how long it has been going, and whether you're on air — red on air, amber paused or waiting, green live. On iOS 17 and later its **Stop** button works without unlocking the phone. It appears with the stream and leaves with it.")
-            } header: {
-                Text("Live Activity")
-            }
-
-            Section {
                 Text("**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing.")
                 Text("**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT.")
                 Text("Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture.")

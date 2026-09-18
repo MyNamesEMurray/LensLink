@@ -503,35 +503,6 @@ to the user and must be the same thing in the model.
   and `CONTROL` do, so the `STATE` snapshot follows for free — no
   protocol change.
 
-### 6.2.2 Live Activity (Lock Screen and Dynamic Island)
-
-A stream is a live, timed, stoppable thing, which is what Live
-Activities exist for (iOS 16.1+; `LensLinkWidgets`, the WidgetKit
-extension). It starts with the stream and ends with it, immediately —
-a card that outlives its stream reads as a stream still running.
-
-- **Lock Screen card** (`glassPanel`-dark, white text): a `video.fill`
-  tile in the status colour, "LensLink" and a destination line
-  (`Studio-Mac · 4K · 60 fps · HEVC · USB`, from `identify` and the
-  format), and on the right the status word with its dot and the elapsed
-  time (a system `.timer`, counting without updates). Under them, on
-  iOS 17+, one button: **Stop** (`errorRed`) — a `Button(intent:)` with a
-  `LiveActivityIntent` that runs in the app; on iOS 16 the card is a
-  readout. Only Stop, deliberately: a phone showing its Lock Screen has
-  already had the camera held or taken, so a Pause/Resume pair there
-  would promise a picture the system won't give until the app is back.
-- **Dynamic Island** — compact: the status dot leading, the elapsed time
-  trailing; expanded: status word + dot, the timer, the destination line
-  and the Stop button; minimal: the dot. The Island's keyline takes the
-  status colour.
-- **Colour rule**: the tally outranks the status — **On air** in
-  `tallyLive` red beats "Live" in `liveGreen`; **Paused** is amber;
-  Waiting/Standby amber; an error message `errorRed`. Same reading as
-  everywhere else (§2).
-- The content state carries the host name and format rather than the
-  attributes: the plugin introduces itself a moment *after* the stream
-  starts, and attributes are fixed at request time.
-
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):
 
