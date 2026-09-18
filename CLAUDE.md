@@ -34,6 +34,8 @@ Read the matching doc before touching an area:
 - `docs/DEVELOPMENT.md` — architecture, repo layout, CI, release automation.
 - `docs/ROADMAP.md` (planned work — check before designing a feature),
   `docs/TESTFLIGHT.md` (App Store Connect / TestFlight automation),
+  `docs/APP_STORE.md` (review notes, store listing, the multitasking
+  camera entitlement — keep in step with user-visible features),
   `docs/DEBUGGING-SCREEN-MIRROR.md` (the broadcast extension's failure
   modes, which are hard to observe from the app).
 
