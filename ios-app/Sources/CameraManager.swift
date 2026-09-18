@@ -147,18 +147,6 @@ final class CameraManager: NSObject {
         start()
     }
 
-    /// Whether iOS will let this app keep capturing while it isn't the
-    /// only thing on screen — an iPad with extended-display Stage
-    /// Manager, an app declaring `voip` against the iOS 18 SDK, or the
-    /// multitasking-camera-access entitlement (docs/DEVELOPMENT.md).
-    /// Device- and app-level, so it answers before the session has been
-    /// configured: the Options toggle can be shown or hidden from cold
-    /// launch, not only after the first stream.
-    var supportsMultitaskingCapture: Bool {
-        guard #available(iOS 16.0, *) else { return false }
-        return session.isMultitaskingCameraAccessSupported
-    }
-
     static func requestPermission() async -> Bool {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:

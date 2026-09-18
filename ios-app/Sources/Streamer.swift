@@ -26,7 +26,7 @@ final class Streamer: ObservableObject {
         /// Connected, camera running, nothing going out: the stream is
         /// held rather than ended, so OBS keeps the source and a resume
         /// is one tap away. Deliberately not an error — the operator (or
-        /// iOS, when a hidden PiP window loses the camera) asked for it.
+        /// iOS, when another app takes the camera) asked for it.
         case paused
         case error(String)
 
@@ -276,11 +276,6 @@ final class Streamer: ObservableObject {
         guard let oldEncoder = encoder else { return }
         oldEncoder.stop()
         let size = resolution.size
-        // A resolution change mid-stream reshapes the PiP window too —
-        // 4:3 and 16:9 are different pictures, and the window should keep
-        // matching what OBS receives.
-        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
-                                                height: CGFloat(size.height))
         let newEncoder = VideoEncoder(
             codec: activeCodec,
             width: size.width, height: size.height,
@@ -334,12 +329,8 @@ final class Streamer: ObservableObject {
         }
         greenScreenDistance.value = Float(greenScreenMaxDistance)
         greenScreenDepthActive = compositor != nil && camera.depthAssistActive
-        // The PiP window (BackgroundPiP) shows the frames that go on the
-        // wire, composited and all — not a second capture path. It costs
-        // one boolean read per frame while the app is on screen.
-        let pip = BackgroundPiP.shared
         if let compositor {
-            camera.onSampleBuffer = { [weak encoder, compositor, pip,
+            camera.onSampleBuffer = { [weak encoder, compositor,
                                        still = pausedStill,
                                        gate = pauseGate] sampleBuffer in
                 // Fail-open is the compositor's contract: any
@@ -350,10 +341,6 @@ final class Streamer: ObservableObject {
                     // What the still is drawn from is what OBS was
                     // seeing: the composited frame, green screen and all.
                     still.note(output)
-                    // The PiP window keeps showing the live camera while
-                    // a stream is held — pausing is about what OBS gets,
-                    // not about what the phone can see.
-                    pip.enqueue(output)
                     guard !gate.isPaused else { return }
                     encoder?.encode(output)
                 }
@@ -367,11 +354,10 @@ final class Streamer: ObservableObject {
                 compositor.updateDepth(depth)
             }
         } else {
-            camera.onSampleBuffer = { [weak encoder, pip,
+            camera.onSampleBuffer = { [weak encoder,
                                        still = pausedStill,
                                        gate = pauseGate] sampleBuffer in
                 still.note(sampleBuffer)
-                pip.enqueue(sampleBuffer)
                 // The gate sits here, at the encoder's input: while a
                 // stream is held the camera's frames simply aren't
                 // encoded, which leaves the send path free to carry the
@@ -512,24 +498,6 @@ final class Streamer: ObservableObject {
             UserDefaults.standard.set(allowVideoEffects, forKey: "allowVideoEffects")
             updateSensorReadoutPreference()
         }
-    }
-    /// Keep streaming when the user leaves LensLink, by moving the live
-    /// picture into a Picture in Picture window (BackgroundPiP explains
-    /// why that window is the mechanism). Only ever reachable where iOS
-    /// grants multitasking camera access; elsewhere the toggle is hidden
-    /// and backgrounding ends the stream as it always has.
-    @Published var backgroundStreaming: Bool {
-        didSet {
-            UserDefaults.standard.set(backgroundStreaming,
-                                      forKey: "backgroundStreaming")
-            BackgroundPiP.shared.isEnabled = backgroundStreaming
-        }
-    }
-    /// Whether "Keep streaming in the background" can do anything on
-    /// this device — PiP support plus iOS's grant of multitasking camera
-    /// access. Hides the toggle everywhere else.
-    var backgroundStreamingAvailable: Bool {
-        BackgroundPiP.isPlatformSupported && camera.supportsMultitaskingCapture
     }
     /// Send phone-mic audio as a lip-sync calibration reference (never
     /// played out — the plugin correlates it against your real mic).
@@ -999,8 +967,8 @@ final class Streamer: ObservableObject {
     /// Held, not ended: the connection, the camera and the encoder all
     /// stay up while video stops going out, so resuming costs a keyframe
     /// rather than a reconnect. Two things set it — the operator (from
-    /// the Live screen, the web panel or OBS) and iOS, when a hidden PiP
-    /// window loses the camera.
+    /// the Live screen, the web panel or OBS) and iOS, when capture is
+    /// interrupted (another app takes the camera on an iPad, say).
     @Published private(set) var isPaused = false
     /// Why, for the surfaces that explain it: "user" or "camera".
     @Published private(set) var pauseReason: PauseReason?
@@ -1020,8 +988,9 @@ final class Streamer: ObservableObject {
 
     enum PauseReason: String {
         case user
-        /// iOS took the camera away — a PiP window parked at the screen
-        /// edge. Resumes on its own when capture comes back.
+        /// iOS took the camera away (a capture interruption, such as
+        /// another app opening the camera beside LensLink on an iPad).
+        /// Resumes on its own when capture comes back.
         case camera
     }
 
@@ -1248,15 +1217,6 @@ final class Streamer: ObservableObject {
             && !defaults.bool(forKey: "sendAudioReference")
         selectedMicID = defaults.string(forKey: "selectedMic") ?? "auto"
         remoteStartEnabled = defaults.object(forKey: "remoteStartEnabled") as? Bool ?? true
-        // On by default: before this existed, leaving the app mid-stream
-        // simply broke the stream, so the opt-out is for people who'd
-        // rather not have a PiP window follow them around.
-        backgroundStreaming = defaults.object(
-            forKey: "backgroundStreaming") as? Bool ?? true
-
-        // didSet doesn't run during init, so the stored preference has
-        // to reach PiP by hand.
-        BackgroundPiP.shared.isEnabled = backgroundStreaming
 
         camera.setFaceDrivenFocus(faceFocus)
         updateSensorReadoutPreference()
@@ -1352,14 +1312,7 @@ final class Streamer: ObservableObject {
         case .videoDeviceNotAvailableWithMultipleForegroundApps:
             return "Camera paused — this iPad can't share the camera on screen"
         case .videoDeviceNotAvailableInBackground:
-            // Off screen but a window still exists: the PiP window is
-            // parked at the screen edge, and iOS only lends the camera to
-            // a window it can see. Pulling the window back is the fix,
-            // and it resumes on its own when you do — a different thing
-            // to tell the user than "come back to the app".
-            return BackgroundPiP.shared.hasWindow
-                ? "Camera paused — pull the window back to resume"
-                : "Camera paused — app left the screen"
+            return "Camera paused — app left the screen"
         case .videoDeviceNotAvailableDueToSystemPressure:
             return "Camera paused — device too hot"
         default:
@@ -1389,51 +1342,17 @@ final class Streamer: ObservableObject {
 
     func sceneDidActivate() {
         isForeground = true
-        // Back on screen: PiP (if it was carrying the stream) closes
-        // itself, and the pending hand-off check has nothing to decide.
-        pipHandOff?.cancel()
-        pipHandOff = nil
-        BackgroundPiP.shared.stop()
         updateStandby()
     }
 
     func sceneDidEnterBackground() {
         isForeground = false
-        // Picture in Picture is the one way a stream survives leaving the
-        // screen (BackgroundPiP). The system starts that window as the
-        // app backgrounds, and whether it won the race with this
-        // callback isn't ordered — so give it a moment before writing
-        // the stream off. Nothing else is deferred: the standby listener
-        // still goes now, because a suspended app can't be remote-started
-        // either way.
-        if isStreaming, backgroundStreaming, BackgroundPiP.shared.isAvailable {
-            handOffToPiP()
-        } else {
-            // The camera can't capture in the background; stop cleanly so
-            // OBS shows a blank source instead of a frozen frame.
-            stop()
-        }
+        // The camera can't capture in the background; stop cleanly so
+        // OBS shows a blank source instead of a frozen frame. The standby
+        // listener goes too: a suspended app can't be remote-started.
+        stop()
         stopStandby()
     }
-
-    /// Gives PiP a beat to open its window, then stops the stream if no
-    /// window appeared — a frozen source in OBS is the one outcome worth
-    /// ruling out. One task at the transition, not a timer: nothing polls
-    /// while the window is up.
-    private func handOffToPiP() {
-        pipHandOff?.cancel()
-        pipHandOff = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            guard let self, !Task.isCancelled else { return }
-            guard self.isStreaming, !self.isForeground,
-                  !BackgroundPiP.shared.isActive else { return }
-            self.stop()
-        }
-    }
-
-    /// Pending "did PiP actually take over?" check, cancelled the moment
-    /// the app comes back.
-    private var pipHandOff: Task<Void, Never>?
 
     private func updateStandby() {
         guard !isStreaming else { return }
@@ -1749,12 +1668,6 @@ final class Streamer: ObservableObject {
         isStreaming = true
         status = .connecting
         updateIdleTimer()
-        // Arms the system's automatic "start PiP as this app leaves the
-        // screen" behaviour for the life of the stream, and gives the
-        // window the shape of the picture (see BackgroundPiP.videoSize).
-        BackgroundPiP.shared.videoSize = CGSize(width: CGFloat(size.width),
-                                                height: CGFloat(size.height))
-        BackgroundPiP.shared.setStreaming(true)
 
         camera.start()
         resetCameraControls()
@@ -2001,9 +1914,6 @@ final class Streamer: ObservableObject {
         pausedStillTask = nil
         status = .idle
         updateIdleTimer()
-        // Closes the PiP window too, if one is up: it shows a stream
-        // that no longer exists.
-        BackgroundPiP.shared.setStreaming(false)
 
         adaptiveTask?.cancel()
         adaptiveTask = nil

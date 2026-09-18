@@ -23,8 +23,8 @@ import CoreVideo
 /// the resolution, and the still is at most a second stale — invisible
 /// once it has been blurred to 64×36 anyway. It also means a still can
 /// still be drawn when the camera has already been taken away, which is
-/// exactly the case that started this: iOS revoking capture from a PiP
-/// window parked at the screen edge.
+/// exactly the case that started this: iOS interrupting capture while a
+/// stream is up.
 final class PausedStill: @unchecked Sendable {
     static let thumbWidth = 64
     static let thumbHeight = 36

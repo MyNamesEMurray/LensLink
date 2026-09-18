@@ -277,9 +277,8 @@ Pause rides the snapshot too, so surfaces can say *why* a picture is
 held rather than only show it: `"paused": true` while video is held, with
 `"pauseReason"` saying who held it — `"user"` for an operator pause (the
 app's Pause button, the web panel, or the source properties) or
-`"camera"` when iOS took the camera away, which happens when a PiP
-window carrying a background stream is parked at the screen edge. The
-reason is what lets a surface choose between offering a Resume button
+`"camera"` when iOS interrupted capture (another app opening the camera
+beside LensLink on an iPad, say). The reason is what lets a surface choose between offering a Resume button
 and explaining that the phone is waiting on iOS.
 
 Green screen state rides the snapshot the same way:

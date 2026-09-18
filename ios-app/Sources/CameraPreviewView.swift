@@ -68,13 +68,6 @@ struct CameraPreviewView: UIViewRepresentable {
             case .landscapeRight: video = .landscapeRight
             default: return
             }
-            // The PiP window opens the way the phone was being held, and
-            // this is the only place that reliably knows: by the time the
-            // app is leaving the screen the scene has already reverted to
-            // the Home screen's orientation, which is why reading it at
-            // hand-off time gave every stream a portrait window.
-            BackgroundPiP.shared.noteInterfaceOrientation(
-                scene.interfaceOrientation)
             let layer = previewLayer
             sessionQueue?.async {
                 if let connection = layer.connection,
@@ -165,16 +158,6 @@ struct CameraPreviewView: UIViewRepresentable {
             }
         }
 
-        // PiP flies out of this view, and needs it before the app is
-        // ever backgrounded — the window can't be conjured on the way
-        // out. Inert where the platform refuses background capture.
-        let pipSession = session
-        Task { @MainActor [weak view] in
-            guard let view else { return }
-            BackgroundPiP.shared.attach(sourceView: view,
-                                        session: pipSession)
-        }
-
         if onTapAtDevicePoint != nil {
             let tap = UITapGestureRecognizer(
                 target: context.coordinator,
@@ -230,10 +213,6 @@ struct CameraPreviewView: UIViewRepresentable {
         let layer = uiView.previewLayer
         coordinator.parent.sessionQueue.async {
             layer.session = nil
-        }
-        Task { @MainActor [weak uiView] in
-            guard let uiView else { return }
-            BackgroundPiP.shared.detach(sourceView: uiView)
         }
     }
 }

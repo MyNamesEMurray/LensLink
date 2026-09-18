@@ -39,28 +39,6 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        # Background execution. Both are here for ONE feature: keeping the
-        # camera alive while the user is in another app, via Picture in
-        # Picture (Sources/BackgroundPiP.swift). iOS grants that through
-        # AVCaptureSession.isMultitaskingCameraAccessEnabled, which — off
-        # an iPad with extended-display Stage Manager — turns on only for
-        # an app that links against the iOS 18 SDK and declares `voip`,
-        # or one holding Apple's multitasking-camera-access entitlement.
-        # `audio` covers the PiP window itself and the mic reference.
-        #
-        # `voip` is the declaration to think about before submitting:
-        # LensLink is not a calling app, and App Review guideline 2.5.4
-        # is about background modes used for their stated purpose. The
-        # case to make in the review notes is the pipeline this feature
-        # exists for — LensLink feeds OBS, OBS feeds its virtual camera,
-        # and that camera is what Teams/Zoom/Meet see — so the phone is
-        # the camera in a video call even though the call isn't ours.
-        # Alternative if that argument doesn't land: request
-        # com.apple.developer.avfoundation.multitasking-camera-access
-        # from Apple and drop `voip`. See docs/DEVELOPMENT.md.
-        UIBackgroundModes:
-          - audio
-          - voip
         NSCameraUsageDescription: >-
           LensLink streams your camera to OBS on your computer.
         # Control Center's Video Effects panel (Portrait, Studio Light,

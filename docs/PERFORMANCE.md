@@ -40,12 +40,6 @@ should add as close to zero as possible.
   cover (`CameraPreviewView.previewEnabled`). The outgoing stream is
   unaffected. On top of the existing OLED-black + brightness drop, this
   is the biggest saver for the "phone mounted behind the monitor" case.
-- **Background PiP costs one boolean read per frame while inline.** The
-  frame tee into the PiP window (`BackgroundPiP.enqueue`) returns on a
-  lock-guarded flag until a window is actually open, so the on-screen
-  path is unchanged; once open, the window is fed the buffers the
-  encoder already has (no second capture, no second composite) and drops
-  frames the display layer isn't ready for rather than queueing them.
 - **The paused still samples at 1 Hz, not per frame.** `PausedStill.note`
   compares a timestamp per frame and, about once a second, reads a 64×36
   luma thumbnail — a few thousand reads whatever the resolution, never
