@@ -14,9 +14,12 @@ store listing uses, at the exact sizes App Store Connect accepts:
 
    ```bash
    cd tools/store-screenshots
-   npx playwright install chromium   # once
+   npm install playwright   # once; no browser download needed
    node render.js
    ```
+
+   It drives the Edge or Chrome already on the machine. Only if neither
+   is installed does it need `npx playwright install chromium`.
 
    Output lands in `out/`, one file per shot and device, ready to upload.
    `--only home,live-glance` renders a subset; `--raw` and `--out`

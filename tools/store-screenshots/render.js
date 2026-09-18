@@ -39,9 +39,17 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const template = fs.readFileSync(path.join(here, 'template.html'), 'utf8');
   fs.mkdirSync(outDir, { recursive: true });
 
-  const launch = { headless: true };
-  if (process.env.CHROMIUM_PATH) launch.executablePath = process.env.CHROMIUM_PATH;
-  const browser = await chromium.launch(launch);
+  // No browser download needed: an installed Edge or Chrome is driven
+  // directly, and Playwright's own Chromium is the last resort.
+  const attempts = [];
+  if (process.env.CHROMIUM_PATH) attempts.push({ executablePath: process.env.CHROMIUM_PATH });
+  attempts.push({ channel: 'msedge' }, { channel: 'chrome' }, {});
+  let browser, lastErr;
+  for (const a of attempts) {
+    try { browser = await chromium.launch({ headless: true, ...a }); break; }
+    catch (e) { lastErr = e; }
+  }
+  if (!browser) throw lastErr;
   let made = 0, missing = [];
 
   for (const shot of shots) {
