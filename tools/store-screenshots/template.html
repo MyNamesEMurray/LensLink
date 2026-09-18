@@ -43,6 +43,33 @@
 <body>
   <h1>{{HEADLINE}}</h1>
   <p>{{SUB}}</p>
-  <div class="device"><img src="{{IMG}}" alt=""></div>
+  <div class="device"><img id="shot" src="{{IMG}}" alt="" data-full-battery="{{FULLBATTERY}}"></div>
+  <script>
+    // Screenshots taken on a low phone paint the battery pill red. When
+    // the shot has a status bar, repaint that pill as a full white
+    // battery: cover it with the colour just left of it, then draw the
+    // iOS glyph at the same place. Positions are fractions of the frame,
+    // so any iPhone-with-Dynamic-Island capture size works.
+    const img = document.getElementById('shot');
+    if (img.dataset.fullBattery === 'true') {
+      const fix = () => {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const g = c.getContext('2d');
+        g.drawImage(img, 0, 0);
+        const px = g.getImageData(Math.round(w * 0.835), Math.round(h * 0.034), 1, 1).data;
+        g.fillStyle = `rgb(${px[0]},${px[1]},${px[2]})`;
+        g.fillRect(w * 0.84, h * 0.022, w * 0.10, h * 0.025);
+        const bw = w * 0.066, bh = h * 0.0145, bx = w * 0.848, by = h * 0.034 - bh / 2;
+        const r = bh * 0.28;
+        g.fillStyle = '#fff';
+        g.beginPath(); g.roundRect(bx, by, bw, bh, r); g.fill();
+        g.beginPath(); g.roundRect(bx + bw + w * 0.003, by + bh * 0.3, w * 0.004, bh * 0.4, w * 0.002); g.fill();
+        img.src = c.toDataURL('image/png');
+        img.dataset.fullBattery = 'done';
+      };
+      if (img.complete) fix(); else img.addEventListener('load', fix, { once: true });
+    }
+  </script>
 </body>
 </html>

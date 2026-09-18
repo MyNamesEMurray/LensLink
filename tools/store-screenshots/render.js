@@ -63,9 +63,11 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
         .replace(/{{H1}}/g, d.h1).replace(/{{P}}/g, d.p).replace(/{{DEVW}}/g, d.devw)
         .replace(/{{RADIUS}}/g, d.radius).replace(/{{BEZEL}}/g, d.bezel)
         .replace('{{HEADLINE}}', esc(shot.headline)).replace('{{SUB}}', esc(shot.sub))
-        .replace('{{IMG}}', img);
+        .replace('{{IMG}}', img)
+        .replace('{{FULLBATTERY}}', shot.statusBar ? 'true' : 'false');
       const page = await browser.newPage({ viewport: { width: d.w, height: d.h }, deviceScaleFactor: 1 });
       await page.setContent(html, { waitUntil: 'load' });
+      await page.waitForFunction(() => document.getElementById('shot').dataset.fullBattery !== 'true');
       const out = path.join(outDir, `${shot.name}-${device}.png`);
       await page.screenshot({ path: out, clip: { x: 0, y: 0, width: d.w, height: d.h } });
       await page.close();

@@ -25,6 +25,10 @@ store listing uses, at the exact sizes App Store Connect accepts:
    `--only home,live-glance` renders a subset; `--raw` and `--out`
    point elsewhere.
 
+Shots marked `"statusBar": true` in `shots.json` get their battery pill
+repainted as a full white battery, so a capture taken on a low phone
+doesn't ship with a red one; the time and signal icons stay as taken.
+
 `raw/` and `out/` are ignored by git: captures are large and personal to
 the device they came from, and the output is regenerated in seconds.
 Edit `template.html` for the frame and typography, `shots.json` for
