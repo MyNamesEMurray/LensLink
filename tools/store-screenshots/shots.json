@@ -2,7 +2,8 @@
   {
     "name": "home",
     "headline": "Your iPhone, in OBS.",
-    "sub": "Open the app, tap Start Camera. OBS finds the phone over Wi-Fi or USB."
+    "sub": "Open the app, tap Start Camera. OBS finds the phone over Wi-Fi or USB.",
+    "statusBar": true
   },
   {
     "name": "live-glance",
@@ -17,12 +18,14 @@
   {
     "name": "format",
     "headline": "Balanced, or Maximum.",
-    "sub": "Maximum finds the most your connection can carry and keeps it there."
+    "sub": "Maximum finds the most your connection can carry and keeps it there.",
+    "statusBar": true
   },
   {
     "name": "options",
     "headline": "Remote start. Tally light. Remembered settings.",
-    "sub": "Built for production, not for fiddling with mid-stream."
+    "sub": "Built for production, not for fiddling with mid-stream.",
+    "statusBar": true
   },
   {
     "name": "obs",

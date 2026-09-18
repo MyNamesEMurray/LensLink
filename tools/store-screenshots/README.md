@@ -2,7 +2,8 @@
 
 Turns raw device captures into the captioned, framed screenshots the
 store listing uses, at the exact sizes App Store Connect accepts:
-**1320 × 2868** (6.9-inch iPhone) and **2064 × 2752** (13-inch iPad).
+**1320 × 2868** (6.9-inch iPhone), **1284 × 2778** (6.5-inch iPhone,
+from the same captures) and **2064 × 2752** (13-inch iPad).
 
 1. Take the captures on device (Volume up + Side button). The list of
    shots, their headlines and the order they appear in is `shots.json`;
@@ -14,13 +15,22 @@ store listing uses, at the exact sizes App Store Connect accepts:
 
    ```bash
    cd tools/store-screenshots
-   npx playwright install chromium   # once
+   npm install playwright   # once; no browser download needed
    node render.js
    ```
 
-   Output lands in `out/`, one file per shot and device, ready to upload.
+   It drives the Edge or Chrome already on the machine. Only if neither
+   is installed does it need `npx playwright install chromium`.
+
+   Output lands in `out/` as `<name>-iphone-6.9.png`,
+   `<name>-iphone-6.5.png` and `<name>-ipad-13.png`, ready to upload.
+   Upload whichever iPhone size the App Store Connect slot asks for.
    `--only home,live-glance` renders a subset; `--raw` and `--out`
    point elsewhere.
+
+Shots marked `"statusBar": true` in `shots.json` get their battery pill
+repainted as a full white battery, so a capture taken on a low phone
+doesn't ship with a red one; the time and signal icons stay as taken.
 
 `raw/` and `out/` are ignored by git: captures are large and personal to
 the device they came from, and the output is regenerated in seconds.
