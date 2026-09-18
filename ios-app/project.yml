@@ -86,7 +86,7 @@ targets:
         # CI overrides MARKETING_VERSION from the release tag (v1.8.2 ->
         # 1.8.2, betas stripped to their base version) so TestFlight shows
         # the real version; this value only covers local Xcode builds.
-        MARKETING_VERSION: "1.8.0"
+        MARKETING_VERSION: "1.13.0"
         CURRENT_PROJECT_VERSION: "1" # CI overrides with the next ASC build number
         # AppIntents (Siri shortcuts) is iOS 16+; the deployment target is
         # 15, so it must be weak-linked or the app won't launch on iOS 15.
@@ -127,5 +127,5 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
         CODE_SIGN_STYLE: Automatic
-        MARKETING_VERSION: "1.8.0" # must match the app's; CI overrides both
+        MARKETING_VERSION: "1.13.0" # must match the app's; CI overrides both
         CURRENT_PROJECT_VERSION: "1" # matched to the app by CI
