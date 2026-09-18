@@ -372,9 +372,9 @@ First group, the things that matter during a stream: **Remote start from
 OBS**, **Idle view** (Standard / Clean feed / Dim screen), **Focus on
 faces** (default on), **Keep streaming in the background** (present only where iOS grants background
 capture — a toggle that can do nothing is worse than no toggle), and the
-pushed screens **Tally light** (row value: the statuses that light it,
-"On air, In preview") and **Presets** (row value: the default preset's
-name, or the count). Second group, the experiments and the diagnostics: **High frame rate**
+pushed screen **Tally light** (row value: the statuses that light it,
+"On air, In preview"), and **Remember camera settings** (default on; see
+§6.2.1). Second group, the experiments and the diagnostics: **High frame rate**
 (adds 120 / 240 fps to the Format sheet where the camera has them; off
 by default), **Allow system video effects**, **Camera diagnostics**,
 **Check broadcast link**. Pure controls, no
@@ -392,10 +392,9 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   **Dim screen now** — both are about the screen rather than the shot and
   earn no button of their own. With Stats on, a health pill (fps · Mb/s ·
   dropped) sits under the bar, leading-aligned.
-- **Notice row:** one row under the status bar for whatever needs saying,
-  most urgent first — **Presets paused** (actionable) beats the lip-sync
-  readout (watch-only). Nothing is drawn when there is nothing to say;
-  never two pills stacked.
+- **Notice row:** one row under the status bar for whatever needs saying
+  — today the lip-sync readout. Nothing is drawn when there is nothing
+  to say; never two pills stacked.
 - **Lens buttons** (bottom centre, back cameras only, as in the Camera
   app): one round button per back lens labelled with its magnification
   relative to Main (`.5`, `2`, `3`); the active one larger, in
@@ -472,36 +471,24 @@ picker, idle appearance from Options.
     that also applies to the Setup screen, which dims a minute into
     remote-start standby.
 
-### 6.2.1 Presets
+### 6.2.1 Remembered camera settings
 
-Saved camera looks (Options → Presets): a name, any subset of
-**Exposure / White balance / Zoom / Focus**, and optionally a camera it
-belongs to. A group left out is not stored, so it can never be applied by
-mistake — "not included" and "included but unchanged" are the same thing
-to the user and must be the same thing in the model.
+No saved looks to name. Each camera's **exposure, white balance, zoom
+and focus** are stored per lens as they change while streaming (on the
+debounced STATE send, and once more at stop) and put back when that
+lens next starts — at stream start, or a live lens switch — after the
+usual reset. The Camera app remembers the same way. Rules:
 
-- A preset applies when its camera starts (stream start, or a live lens
-  switch); the **default** covers any camera without one of its own.
-- Changing a covered setting **by hand pauses auto-apply** — from the Live
-  screen or a remote `CONTROL` command, which are the same intent. A
-  **Presets paused** pill (amber dot, `arrow.clockwise`, the sync pill's
-  anatomy) appears on the Live screen and resumes on tap, applying the
-  matching preset immediately. Never a restart, never stopping the stream.
-- The pill appears only where resuming would do something: paused, the
-  master switch on, and a preset that matches this camera.
-- **Options → Presets** is a plain list — the master switch, the presets,
-  and New preset — with no hand-apply action: the screen is reachable
-  only from Setup, where no camera is running, so an "apply now" button
-  could never do anything visible.
-- The **editor** builds each group out of the same segmented controls and
-  slider rows as the Live screen (AE/Manual, AWB/Lock, AF/Lock; the same
-  icons, the same 44 pt monospaced readout), so the preset you are
-  writing looks like the panel it will drive. Its ranges come from the
-  running camera where there is one and from the format-independent
-  fallbacks otherwise; values are clamped again on apply.
-- Presets are phone-local. They move the same properties the Live screen
-  and `CONTROL` do, so the `STATE` snapshot follows for free — no
-  protocol change.
+- Everything is stored, every time: there is no "which groups" choice,
+  because there is no screen to make it on. The tray shows what came
+  back (locked chips, the ISO readout), and tapping a chip releases it.
+- Values are clamped again on apply by the same didSets the Live screen
+  uses, so a lens position or ISO saved on one format never exceeds the
+  next one's limits.
+- **Options → Remember camera settings** (default on) is the whole UI.
+  Off forgets what is stored and every camera starts on auto.
+- Phone-local; the same properties the Live screen and `CONTROL` move,
+  so the `STATE` snapshot follows for free — no protocol change.
 
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):
