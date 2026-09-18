@@ -1,0 +1,92 @@
+title: Privacy policy
+description: LensLink Camera collects no data. What the app can see, what it does with it, and what never leaves your local network.
+nav: docs
+---
+<section class="tight">
+  <div class="wrap">
+    <article class="doc" style="max-width: 46em">
+      <h1>Privacy policy</h1>
+      <p class="lede">
+        LensLink Camera collects no data. Nothing about you, your device or
+        your video leaves your local network, and there is no account, no
+        sign-in and no analytics. This page says what the app can see and
+        what it does with it.
+      </p>
+
+      <h2>What the app does with the camera and microphone</h2>
+      <p>
+        When you tap Start Camera, the app captures video from the
+        phone's camera, encodes it on the phone and sends it over your
+        local Wi-Fi network or a USB cable to OBS Studio on your own
+        computer, through the open-source LensLink plugin. The camera runs
+        only after you tap Start, the system camera indicator is on for
+        the whole stream, and it stops on Stop, when you leave the app or
+        when you lock the phone. Nothing is recorded on the phone and no
+        frame is stored anywhere.
+      </p>
+      <p>
+        The microphone is used only while streaming and only when you
+        turn on <strong>Send phone mic to OBS</strong> (which sends the
+        audio to OBS as a wireless microphone) or <strong>Auto lip-sync
+        reference</strong> (a timing signal the plugin uses to align your
+        own microphone; it is never heard or stored).
+      </p>
+      <p>
+        <strong>Mirror Screen</strong> sends the phone's screen and app
+        audio to OBS the same way, through the system broadcast picker,
+        and stops when you end the broadcast.
+      </p>
+
+      <h2>Local network</h2>
+      <p>
+        The app asks for Local Network permission because OBS connects to
+        the phone over your LAN. It announces itself with Bonjour so the
+        plugin can list it by name, and it listens for OBS on one TCP
+        port. It never connects to any server of ours, because there is
+        none. Every connection is between your phone and your computer.
+      </p>
+
+      <h2>What is stored on the phone</h2>
+      <p>
+        Your settings (format, quality, remembered camera adjustments,
+        options) are kept in the app's own preferences on the device and
+        go nowhere else. Deleting the app deletes them.
+      </p>
+
+      <h2>What is not collected</h2>
+      <ul>
+        <li>No analytics, usage tracking or advertising identifiers.</li>
+        <li>No crash-reporting SDK. If you install through TestFlight,
+          Apple may share crash logs and any feedback you send with us,
+          under Apple's own TestFlight terms.</li>
+        <li>No account, email address or personal information.</li>
+        <li>No third-party SDKs at all.</li>
+      </ul>
+      <p>
+        The only links that leave the app open in Safari and go to the
+        project's GitHub repository (source code and bug reports) or to
+        this site.
+      </p>
+
+      <h2>Siri and Shortcuts</h2>
+      <p>
+        "Start streaming with LensLink" and "Stop streaming with
+        LensLink" run on the device. Apple's handling of Siri requests is
+        covered by Apple's privacy policy, not this one.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        The app is rated 4+ and collects no data from anyone, of any age.
+      </p>
+
+      <h2>Changes and contact</h2>
+      <p>
+        If this policy changes, the new version is published here with
+        the date below. Questions go to the
+        <a href="/support/">support page</a>.
+      </p>
+      <p><em>Last updated 18 September 2026.</em></p>
+    </article>
+  </div>
+</section>

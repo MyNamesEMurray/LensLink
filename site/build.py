@@ -207,7 +207,8 @@ FOOTER_COLS = [
     ("Project", [(REPO_URL, "Source on GitHub"),
                  (REPO_URL + "/releases", "Release notes"),
                  (REPO_URL + "/issues", "Report a bug"),
-                 (REPO_URL + "/blob/main/LICENSE", "License (GPL-2.0-or-later)")]),
+                 (REPO_URL + "/blob/main/LICENSE", "License (GPL-2.0-or-later)"),
+                 ("/support/", "Support"), ("/privacy/", "Privacy policy")]),
 ]
 
 
