@@ -582,11 +582,10 @@ struct SettingsRowLabel: View {
 /// Codec and Color are drawn as check rows rather than pickers because
 /// the two constrain each other — HDR and Apple Log are HEVC only, green
 /// screen is Standard only — and a picker that silently hides H.264
-/// reads as a bug ("where did H.264 go?"). Every choice stays visible,
-/// and a choice that will change another setting says so in its
-/// subtitle before you tap it. The model enforces the same rules
-/// (Streamer's codec/colorSetting didSets), so the row is a preview of
-/// what will happen, not a second implementation of it.
+/// reads as a bug ("where did H.264 go?"). Every choice stays visible;
+/// the 10-bit colours carry a two-word "HEVC only" and nothing else,
+/// and the model (Streamer's codec/colorSetting didSets) does the
+/// switching when a choice needs it. Maximum wears a Beta tag.
 private struct FormatSheet: View {
     @EnvironmentObject private var streamer: Streamer
     @Environment(\.dismiss) private var dismiss
@@ -617,10 +616,7 @@ private struct FormatSheet: View {
                             streamer.codec = .hevc
                         }
                     }
-                    ChoiceRow(title: VideoCodec.h264.label,
-                              detail: streamer.colorSetting == .sdr
-                                ? nil
-                                : "Switches Color to Standard — HDR and Apple Log are HEVC only",
+                    ChoiceRow(title: VideoCodec.h264.label, detail: nil,
                               selected: streamer.codec == .h264) {
                         streamer.codec = .h264
                     }
@@ -629,13 +625,11 @@ private struct FormatSheet: View {
                 }
 
                 Section {
-                    ChoiceRow(title: "Balanced",
-                              detail: "Safe on ordinary Wi-Fi",
+                    ChoiceRow(title: "Balanced", detail: nil,
                               selected: streamer.quality == .balanced) {
                         streamer.quality = .balanced
                     }
-                    ChoiceRow(title: "Maximum",
-                              detail: "Finds the most your connection carries — more data, more heat; best over USB",
+                    ChoiceRow(title: "Maximum", detail: nil, tag: "Beta",
                               selected: streamer.quality == .maximum) {
                         streamer.quality = .maximum
                     }
@@ -653,14 +647,12 @@ private struct FormatSheet: View {
                                   selected: streamer.colorSetting == .sdr) {
                             streamer.colorSetting = .sdr
                         }
-                        ChoiceRow(title: "HDR (HLG)",
-                                  detail: nonStandardColorDetail,
+                        ChoiceRow(title: "HDR (HLG)", detail: "HEVC only",
                                   selected: streamer.colorSetting == .hlg) {
                             streamer.colorSetting = .hlg
                         }
                         if CameraManager.appleLogCaptureAvailable {
-                            ChoiceRow(title: "Apple Log",
-                                      detail: nonStandardColorDetail,
+                            ChoiceRow(title: "Apple Log", detail: "HEVC only",
                                       selected: streamer.colorSetting == .log) {
                                 streamer.colorSetting = .log
                             }
@@ -682,27 +674,16 @@ private struct FormatSheet: View {
         .tint(Theme.accent)
     }
 
-    /// What picking HDR or Apple Log will change, said before the tap:
-    /// the codec if it is H.264, green screen if it is on, and the
-    /// standing constraint otherwise.
-    private var nonStandardColorDetail: String? {
-        var notes: [String] = []
-        if streamer.codec == .h264 {
-            notes.append("Switches Codec to HEVC")
-        }
-        if streamer.greenScreenEnabled {
-            notes.append("Turns Green screen off")
-        }
-        return notes.isEmpty ? "HEVC only" : notes.joined(separator: " · ")
-    }
 }
 
-/// One selectable row with a checkmark: a title, an optional subtitle
-/// naming a consequence, and the accent check on the chosen one — the
-/// Settings app's own pattern for a short list of exclusive choices.
+/// One selectable row with a checkmark: a title, an optional short
+/// subtitle, an optional small tag ("Beta"), and the accent check on the
+/// chosen one — the Settings app's own pattern for a short list of
+/// exclusive choices.
 private struct ChoiceRow: View {
     let title: String
     let detail: String?
+    var tag: String? = nil
     let selected: Bool
     let action: () -> Void
 
@@ -710,8 +691,19 @@ private struct ChoiceRow: View {
         Button(action: action) {
             HStack(spacing: Theme.Space.m) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .foregroundColor(.primary)
+                    HStack(spacing: Theme.Space.s) {
+                        Text(title)
+                            .foregroundColor(.primary)
+                        if let tag {
+                            Text(tag)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundColor(Theme.accent)
+                                .padding(.horizontal, Theme.Space.s)
+                                .padding(.vertical, 2)
+                                .background(Theme.accent.opacity(0.15),
+                                            in: Capsule())
+                        }
+                    }
                     if let detail {
                         Text(detail)
                             .font(.caption)

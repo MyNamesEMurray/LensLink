@@ -335,18 +335,16 @@ Symbol) and a title — top to bottom:
    a permission was denied.
 
    **The Format sheet**: Resolution and Frame rate pickers (each filtered
-   to what the selected lens supports), then **Quality** (**Balanced** —
-   "Safe on ordinary Wi-Fi" — or **Maximum** — "Finds the most your
-   connection carries"; the Format row's value gains `· Max`), then
-   **Codec** and **Color** as check-row lists rather than pickers, because the two constrain each
+   to what the selected lens supports), then **Quality** (**Balanced** or
+   **Maximum**, the latter with a small accent **Beta** tag and no
+   caption; the Format row's value gains `· Max`), then **Codec** and
+   **Color** as check-row lists rather than pickers, because the two constrain each
    other (HDR and Apple Log are HEVC only; green screen is Standard
    only) and a picker that hides H.264 reads as a bug. Every choice stays
-   visible, and one that will change another setting says so in a
-   caption *before* the tap: H.264 reads "Switches Color to Standard —
-   HDR and Apple Log are HEVC only" while a non-Standard colour is set;
-   HDR/Log read "Switches Codec to HEVC" and/or "Turns Green screen off"
-   when those apply, and "HEVC only" otherwise. The model enforces the
-   same rules; the captions preview them.
+   visible; the captions stay short — HDR and Apple Log read "HEVC only",
+   nothing else carries one — and the model does the switching when a
+   choice needs it (picking H.264 returns Color to Standard, picking a
+   10-bit colour switches the codec to HEVC and turns green screen off).
 4. **Start** — two stacked full-width buttons: **Start Camera** in the
    accent, **Mirror Screen** in the system's secondary fill (the system
    broadcast picker is stretched invisibly over the button face — iOS
@@ -517,12 +515,14 @@ a card that outlives its stream reads as a stream still running.
   (`Studio-Mac · 4K · 60 fps · HEVC · USB`, from `identify` and the
   format), and on the right the status word with its dot and the elapsed
   time (a system `.timer`, counting without updates). Under them, on
-  iOS 17+, **Pause/Resume** (neutral) and **Stop** (`errorRed`) — `Button(intent:)`
-  with `LiveActivityIntent`s that run in the app; on iOS 16 the card is a
-  readout.
+  iOS 17+, one button: **Stop** (`errorRed`) — a `Button(intent:)` with a
+  `LiveActivityIntent` that runs in the app; on iOS 16 the card is a
+  readout. Only Stop, deliberately: a phone showing its Lock Screen has
+  already had the camera held or taken, so a Pause/Resume pair there
+  would promise a picture the system won't give until the app is back.
 - **Dynamic Island** — compact: the status dot leading, the elapsed time
   trailing; expanded: status word + dot, the timer, the destination line
-  and the two buttons; minimal: the dot. The Island's keyline takes the
+  and the Stop button; minimal: the dot. The Island's keyline takes the
   status colour.
 - **Colour rule**: the tally outranks the status — **On air** in
   `tallyLive` red beats "Live" in `liveGreen`; **Paused** is amber;
