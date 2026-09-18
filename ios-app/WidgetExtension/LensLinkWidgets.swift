@@ -7,7 +7,7 @@ import WidgetKit
 /// Live Activity. A stream is a live, timed, stoppable thing — what Live
 /// Activities exist for — so the Lock Screen card says where the picture
 /// is going, how long it has been going, and whether it is on air, with
-/// Pause and Stop that work without unlocking (iOS 17; on 16 the card is
+/// a Stop that works without unlocking (iOS 17; on 16 the card is
 /// read-only). The Dynamic Island carries the compact form: a dot in the
 /// status colour and the elapsed time.
 @main
@@ -57,7 +57,7 @@ struct StreamActivityWidget: Widget {
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    ActivityButtons(paused: context.state.paused)
+                    StopButton()
                 }
             } compactLeading: {
                 StatusDot(state: context.state, size: 8)
@@ -125,28 +125,19 @@ private struct ElapsedTimer: View {
     }
 }
 
-/// Pause/Resume and Stop, on iOS 17 where a Live Activity can carry
-/// buttons at all. Absent on 16, where the card is a readout.
-private struct ActivityButtons: View {
-    let paused: Bool
-
+/// Stop, on iOS 17 where a Live Activity can carry a button at all.
+/// Absent on 16, where the card is a readout. Only Stop: a phone showing
+/// its Lock Screen has already had the camera held or taken, so a
+/// Pause/Resume pair there is a promise the system won't keep.
+private struct StopButton: View {
     var body: some View {
         if #available(iOS 17.0, *) {
-            HStack(spacing: 8) {
-                Button(intent: PauseStreamActivityIntent()) {
-                    Label(paused ? "Resume" : "Pause",
-                          systemImage: paused ? "play.fill" : "pause.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                }
-                .tint(.white.opacity(0.2))
-                Button(intent: StopStreamActivityIntent()) {
-                    Label("Stop", systemImage: "stop.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                }
-                .tint(Palette.errorRed)
+            Button(intent: StopStreamActivityIntent()) {
+                Label("Stop", systemImage: "stop.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
             }
+            .tint(Palette.errorRed)
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
         }
@@ -190,7 +181,7 @@ private struct LockScreenCard: View {
                         .frame(maxWidth: 64, alignment: .trailing)
                 }
             }
-            ActivityButtons(paused: state.paused)
+            StopButton()
         }
         .padding(14)
         .foregroundColor(.white)

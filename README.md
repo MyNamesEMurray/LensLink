@@ -115,7 +115,7 @@ backgrounding the app blanks the source.
   the same source.
 - **A Live Activity while streaming** (iOS 16.1+): the Lock Screen and
   the Dynamic Island show where the picture is going, how long it has
-  been going, and whether you're on air — with Pause and Stop that work
+  been going, and whether you're on air — with a Stop that works
   without unlocking the phone (iOS 17+).
 - **Live camera controls**, both on the phone (a viewfinder with the
   Camera app's lens buttons, pinch to zoom, tap to focus, drag for

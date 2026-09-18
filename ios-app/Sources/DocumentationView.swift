@@ -11,14 +11,14 @@ struct DocumentationView: View {
             Section {
                 Text("The camera streams to a **LensLink Camera** source in OBS; the screen broadcast streams to a **LensLink Screen** source. Add the source in OBS, enter the phone's Wi-Fi address as its Phone IP — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes).")
                 Text("The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs.")
-                Text("**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other, and each choice says what it will change before you tap it: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC.")
+                Text("**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC.")
                 Text("**Quality**, in the Format sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time.")
             } header: {
                 Text("Connecting")
             }
 
             Section {
-                Text("While streaming, the Lock Screen and the Dynamic Island carry a **Live Activity** (iOS 16.1 and later): where the picture is going, how long it has been going, and whether you're on air — red on air, amber paused or waiting, green live. On iOS 17 and later its **Pause** and **Stop** buttons work without unlocking the phone. It appears with the stream and leaves with it.")
+                Text("While streaming, the Lock Screen and the Dynamic Island carry a **Live Activity** (iOS 16.1 and later): where the picture is going, how long it has been going, and whether you're on air — red on air, amber paused or waiting, green live. On iOS 17 and later its **Stop** button works without unlocking the phone. It appears with the stream and leaves with it.")
             } header: {
                 Text("Live Activity")
             }
