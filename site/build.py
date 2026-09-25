@@ -554,6 +554,14 @@ def write(path, text):
         fh.write(text)
 
 
+CJK_BREAK = re.compile(r"(?<=[\u3000-\u9fff\uff00-\uffef])\n[ \t]*(?=[\u3000-\u9fff\uff00-\uffef])")
+
+
+def join_cjk_lines(body):
+    parts = re.split(r"(<pre[\s>].*?</pre>)", body, flags=re.S)
+    return "".join(p if p.startswith("<pre") else CJK_BREAK.sub("", p) for p in parts)
+
+
 def render_body(body, feed_class, feed_style):
     return (body.replace("{{TESTFLIGHT}}", TESTFLIGHT_URL)
                 .replace("{{APPSTORE}}", APPSTORE_URL)
@@ -646,6 +654,8 @@ def build():
             body, toc = add_heading_ids(body, anchors=is_doc,
                                         label=body_loc.t("docs.anchor"), ids=ids)
             body = render_body(body, feed_class, feed_style)
+            if mode != "fallback":
+                body = join_cjk_lines(body)
             if loc.prefix:
                 body = localize_links(body, loc, known)
             page = {"loc": loc, "english": english, "locales": locales, "rel": rel,

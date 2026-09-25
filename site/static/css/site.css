@@ -310,7 +310,7 @@ kbd {
 .panelmock .seg span.on { background: var(--accent); color: #fff; }
 .panelmock .chips { display: flex; gap: 8px; margin-left: auto; }
 .panelmock .chiprow { display: flex; gap: 5px; }
-.panelmock .chp { flex: 1; position: relative; text-align: center; font-size: 11px; font-weight: 600; padding: 6px 0;
+.panelmock .chp { flex: 1; position: relative; text-align: center; font-size: 11px; font-weight: 600; padding: 6px 0; white-space: nowrap;
   border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--txt2); }
 .panelmock .chp.on { background: #fff; color: #000; }
 .panelmock .chp i { position: absolute; right: 3px; top: -5px; width: 13px; height: 13px; border-radius: 50%;
