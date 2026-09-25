@@ -29,18 +29,25 @@ obs-plugin/            C plugin for OBS Studio (CMake)
   src/web-control.c    browser control panel (http://localhost:9980)
   src/diagnostics.c    the pasteable diagnostics report (Tools menu, /api/diagnostics)
   src/lipsync.c        audio cross-correlation for lip-sync calibration
+  data/locale/         en-US.ini (source) + one .ini per language
 ios-app/               SwiftUI companion app (XcodeGen project)
   Sources/VideoEncoder.swift    VideoToolbox encode + AVCC→Annex B
   Sources/StreamClient.swift    Network.framework listener + framing
   Sources/AudioReference.swift  mic capture for lip-sync reference
   Sources/StreamingView.swift   full-screen streaming UI + camera controls
+  Sources/Localization.swift    L() lookup, shared with the broadcast extension
+  Sources/Localization/         <lang>.lproj string tables (en is the source)
 installer/windows/     Inno Setup script for the Windows plugin installer
 site/                  lenslink.cam — static site generator (stdlib only)
   build.py             renders pages/ into dist/; DOC_ORDER drives the docs nav
   pages/               one HTML fragment per page, with front matter
   static/              css, js, Cloudflare _headers and _redirects
+  i18n/                shell strings per language (en.json is the source)
+  translations/        translated pages, mirroring pages/ per language
+tools/check-l10n.py    checks every localized surface (runs in CI)
 docs/PROTOCOL.md       wire protocol specification
 docs/UI_DESIGN.md      app + web-panel design system
+docs/LOCALIZATION.md   languages, how each surface is translated, glossary
 site/README.md         how the site is built and deployed (Cloudflare Pages)
 ```
 
@@ -90,6 +97,9 @@ Pull requests run [`.github/workflows/build.yml`](../.github/workflows/build.yml
 - **iOS app** — the Xcode project is generated with XcodeGen and compiled
   for the iOS Simulator on a macOS runner (validates the Swift; installable
   device builds must be signed).
+- **Localization** — `tools/check-l10n.py` checks the app, plugin, web
+  panel and website strings against their English sources (see
+  [`LOCALIZATION.md`](LOCALIZATION.md)).
 
 PRs merge automatically once the required Build checks pass (branch
 protection on `main`).

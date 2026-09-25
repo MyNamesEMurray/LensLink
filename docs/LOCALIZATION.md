@@ -38,7 +38,7 @@ or `site/` (the **Localization** job).
 Standard Apple `.strings` files, with the English text as the key:
 
 ```
-ios-app/Sources/Localization/<lang>.lproj/Localizable.strings   app UI, intents
+ios-app/Sources/Localization/<lang>.lproj/Localizable.strings   app UI, intents, VoiceOver text
 ios-app/Sources/Localization/<lang>.lproj/InfoPlist.strings     permission prompts
 ios-app/Sources/Localization/<lang>.lproj/AppShortcuts.strings  Siri phrases
 ios-app/BroadcastExtension/<lang>.lproj/Localizable.strings     extension messages
@@ -94,6 +94,9 @@ translated in the page through `Web.Lens.*` keys.
 The status pill's color comes from the `tone` field of `/api/status`
 (`idle`, `wait`, `ready`, `live`, `error`), never from the status text,
 so it is correct in every language.
+
+The page is built once per OBS session, so an edited `.ini` shows up in
+the panel after OBS restarts.
 
 ### Website
 

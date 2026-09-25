@@ -37,7 +37,9 @@ Read the matching doc before touching an area:
   `docs/APP_STORE.md` (review notes, store listing, the multitasking
   camera entitlement — keep in step with user-visible features),
   `docs/DEBUGGING-SCREEN-MIRROR.md` (the broadcast extension's failure
-  modes, which are hard to observe from the app).
+  modes, which are hard to observe from the app),
+  `docs/LOCALIZATION.md` (how every surface is translated, the languages,
+  and the glossary translators follow).
 
 ### Things that must change together
 
@@ -45,7 +47,9 @@ Read the matching doc before touching an area:
 |--------|-------------|
 | Wire protocol | `docs/PROTOCOL.md` + `obs-plugin/src/protocol.h` + `ios-app/Sources/Protocol.swift` (the constants/enums are hand-mirrored, not generated) |
 | Design tokens, status vocabulary | `docs/UI_DESIGN.md` + `ios-app/Sources/DesignSystem.swift` + the inline page in `obs-plugin/src/web-control.c` |
-| Any plugin-visible string | `obs-plugin/data/locale/en-US.ini` |
+| Any plugin-visible or web panel string | `obs-plugin/data/locale/en-US.ini` (web panel keys are `Web.*`, also listed in `web_text_keys[]` in `web-control.c`) + the same key in every other `.ini` there |
+| Any user-visible app string | the English key in `ios-app/Sources/Localization/en.lproj/Localizable.strings` (or `BroadcastExtension/en.lproj/` for the extension) + every other `.lproj`. SwiftUI literals localize themselves; everything else goes through `L()`; never interpolate into a localized string |
+| A website shell string | `site/i18n/en.json` + every other `site/i18n/*.json` (edited English pages just go stale in their translations, which is expected) |
 | User-visible behaviour, a setting, or a release asset's file name | the matching page under `site/pages/` (the site documents all three surfaces; `site/README.md` has the map) |
 | A control the user can set from more than one place | app UI, web panel, and source properties all read the same cached STATE — add the field to STATE, not to one surface |
 
@@ -103,8 +107,19 @@ cd ios-app && xcodegen generate && open LensLink.xcodeproj
 New files under `Sources/` are picked up automatically, but anything the
 **broadcast extension** also needs must be listed explicitly under
 `LensLinkBroadcast.sources` in `ios-app/project.yml` (today: `Protocol.swift`,
-`StreamClient.swift`, `VideoEncoder.swift`). Details (signing, older Xcode):
+`StreamClient.swift`, `VideoEncoder.swift`, `Localization.swift`). Details (signing, older Xcode):
 `ios-app/BUILDING.md`.
+
+### Localized strings: check (works in this Linux environment)
+
+```bash
+python3 tools/check-l10n.py
+```
+
+Checks the app's `.strings` files against the keys the Swift sources use,
+the plugin's `.ini` files against the keys the C sources use, and the
+website's translations against their English pages. CI runs it too
+(**Localization** job). Details: `docs/LOCALIZATION.md`.
 
 ### Performance measurements
 
@@ -187,7 +202,10 @@ and idle, waiting for remote start". Points that shape the code:
   that boundary; nothing else may reach across it.
 - `net-compat.h` is the Winsock/BSD-socket shim; use it instead of
   platform `#ifdef`s in new code.
-- Locale strings: `obs-plugin/data/locale/en-US.ini`.
+- Locale strings: `obs-plugin/data/locale/<locale>.ini`, `en-US.ini` is
+  the source. The web panel's text is the `Web.*` keys, injected into the
+  page when it is first served; its status colour comes from the `tone`
+  every `set_status()` records, never from the (translated) text.
 
 ### iOS app (ios-app/Sources/)
 
@@ -215,4 +233,7 @@ and idle, waiting for remote start". Points that shape the code:
   the basics). Match the style around you.
 - UI wording follows `docs/UI_DESIGN.md` vocabulary — e.g. always
   "Flashlight", never "Torch"; status words come from `Status.displayName`,
-  never ad-hoc strings.
+  never ad-hoc strings. Translations use the glossary in
+  `docs/LOCALIZATION.md`.
+- Values that cross the wire (lens labels, codec names, STATE/CONTROL
+  fields) stay English; the UI translates them for display only.
