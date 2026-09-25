@@ -1,0 +1,73 @@
+title: Documentação do LensLink
+description: Tudo sobre instalar, conectar e usar o LensLink, o plugin do OBS Studio e app para iPhone que transformam o seu celular em uma fonte de câmera.
+source: 05e0e6803736
+---
+<h1>Documentação</h1>
+<p class="lede">
+  Dois programas que conversam entre si: um plugin no OBS e um app no celular.
+  Estas páginas explicam como instalar os dois, como conectá-los e cada ajuste
+  que cada um oferece.
+</p>
+
+<div class="callout">
+  <p><strong>Com pressa?</strong> O <a href="/setup/">guia de configuração</a> faz quatro
+  perguntas e mostra só os passos que correspondem às suas respostas. Ou leia
+  <a href="/docs/install/">Instalação</a> e depois <a href="/docs/connect/">Conexão</a>,
+  que trazem o mesmo conteúdo completo.</p>
+</div>
+
+<h2>Como as peças se encaixam</h2>
+<p>
+  O app captura, codifica em hardware para H.264 ou HEVC e aguarda conexões na
+  porta TCP <code>9979</code>. O plugin se conecta a essa porta (pela sua rede
+  ou pelo serviço de dispositivos USB da Apple), decodifica na GPU quando
+  possível e entrega os quadros ao OBS como uma fonte comum.
+</p>
+<p>
+  Nenhum serviço na nuvem, nenhuma conta. Se as duas pontas se enxergam, o
+  LensLink funciona.
+</p>
+<table>
+  <thead><tr><th>Peça</th><th>Onde roda</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td>App LensLink</td><td>iPhone / iPad</td><td>Captura, codifica, aguarda conexões. Transmite enquanto está na tela (ou ao lado de outro app, em um iPad compatível).</td></tr>
+    <tr><td>LensLink Camera</td><td>Fonte do OBS</td><td>O vídeo da câmera, os controles dela e a sincronia labial.</td></tr>
+    <tr><td>LensLink Screen</td><td>Fonte do OBS</td><td>Uma transmissão de tela do iOS com o áudio do sistema.</td></tr>
+    <tr><td>Painel no navegador</td><td>http://localhost:9980</td><td>Os mesmos controles da câmera, no computador.</td></tr>
+  </tbody>
+</table>
+
+<h2>Comece por aqui</h2>
+<ul class="doccards">
+  <li><a href="/docs/install/"><strong>Instalação</strong><span>Plugin no Windows, macOS e Linux; app pela App Store, TestFlight, sideload ou Xcode.</span></a></li>
+  <li><a href="/docs/connect/"><strong>Conecte o OBS ao celular</strong><span>Wi-Fi, USB, vários celulares e o significado de cada mensagem de status.</span></a></li>
+  <li><a href="/docs/camera/"><strong>Câmera, lentes e imagem</strong><span>Formatos, exposição manual, HDR, Apple Log, tela verde, ajustes memorizados.</span></a></li>
+  <li><a href="/docs/screen-mirroring/"><strong>Espelhamento de tela</strong><span>Transmitir a tela e o áudio dela, e fixar o tamanho da fonte.</span></a></li>
+  <li><a href="/docs/audio/"><strong>Áudio e sincronia labial</strong><span>O celular como microfone, e o alinhamento automático do seu próprio microfone.</span></a></li>
+  <li><a href="/docs/remote-start/"><strong>Início remoto</strong><span>Iniciar a câmera pelo OBS, pela Siri, por um atalho ou por uma URL.</span></a></li>
+  <li><a href="/docs/web-panel/"><strong>Painel de controle no navegador</strong><span>O painel na porta 9980 e a API HTTP por trás dele.</span></a></li>
+  <li><a href="/docs/settings/"><strong>Referência de configurações</strong><span>Cada propriedade da fonte, configuração do plugin e opção do app.</span></a></li>
+  <li><a href="/docs/performance/"><strong>Latência e desempenho</strong><span>Do que o atraso é feito, e o pipeline de decodificação na GPU.</span></a></li>
+  <li><a href="/docs/troubleshooting/"><strong>Solução de problemas</strong><span>Sintoma por sintoma, com as linhas de log a procurar.</span></a></li>
+</ul>
+
+<h2>Vocabulário</h2>
+<p>Cada um destes termos significa uma coisa específica em todo o app, o plugin e estas páginas.</p>
+<table>
+  <tbody>
+    <tr><td>Tela de configuração</td><td>A primeira tela do app: o cartão do computador, as linhas da câmera e os dois botões de iniciar, antes de qualquer transmissão.</td></tr>
+    <tr><td>Tela Ao vivo</td><td>A visualização em tela cheia durante a transmissão: a imagem, os botões de lente e uma bandeja de ajustes a um toque de distância.</td></tr>
+    <tr><td>Em espera</td><td>App aberto e ocioso, OBS conectado e capaz de iniciar a câmera. Âmbar.</td></tr>
+    <tr><td>Luz tally</td><td>A borda colorida que indica o que a fonte está fazendo no OBS: no ar, na pré-visualização e outros status que você escolher.</td></tr>
+    <tr><td>Tela de repouso</td><td>O que a tela Ao vivo vira 10 segundos após o seu último toque.</td></tr>
+    <tr><td>Referência de sincronia labial</td><td>O microfone do celular enviado apenas como sinal de tempo. Nunca é ouvido na transmissão.</td></tr>
+  </tbody>
+</table>
+
+<h2>Como obter ajuda</h2>
+<p>
+  <a href="/docs/troubleshooting/">Solução de problemas</a> cobre os tipos de
+  falha conhecidos com as linhas de log que eles produzem. Para qualquer coisa
+  nova, abra uma issue no <a href="{{REPO}}/issues">GitHub</a> e anexe o log do
+  OBS (<strong>Ajuda → Arquivos de log</strong>) e o relatório de <strong>Opções → Diagnóstico da câmera</strong>.
+</p>

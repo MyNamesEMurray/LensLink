@@ -1,0 +1,214 @@
+title: LensLink: seu iPhone como câmera no OBS Studio
+description: O LensLink transforma um iPhone ou iPad em uma fonte de câmera de alta qualidade no OBS Studio, via Wi-Fi ou USB. Até 4K60 em H.264 ou HEVC, controles da câmera ao vivo, sincronia labial automática. Gratuito e de código aberto.
+nav: home
+source: d5c6fc00fbbc
+---
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Gratuito e de código aberto · GPL-2.0-or-later</span>
+      <h1>Seu iPhone já é a melhor câmera que você tem. <em>Leve-o para o OBS.</em></h1>
+      <p class="lede">
+        Duas fontes do OBS, uma câmera e um espelhamento de tela, ligadas
+        diretamente ao seu iPhone ou iPad via Wi-Fi ou USB. Sem driver de câmera
+        virtual, sem servidor RTMP, sem assinatura.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="/download/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          Baixar
+        </a>
+        <a class="btn ghost" href="/setup/">Configuração guiada</a>
+      </div>
+      <p class="meta">
+        <span>OBS Studio 32+</span><span>Windows, macOS, Linux</span><span>iOS/iPadOS 15+</span>
+      </p>
+    </div>
+
+    <div>
+      <!-- The app's Live screen, rebuilt from the same design tokens the
+           app and the plugin's browser panel use. -->
+      <div class="device">
+        <div class="screen{{FEED}}"{{FEED_STYLE}}>
+          <div class="topgroup">
+            <div class="toprow">
+            <span class="pill"><span class="dot live"></span>Ao vivo<span class="chev">⌄</span></span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span>
+            <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
+            </div>
+            <span class="pill health">60 fps · 11.9 Mb/s · 0 perdidos</span>
+          </div>
+          <div class="panelmock">
+            <div class="chiprow">
+              <span class="chp">Zoom</span>
+              <span class="chp on">Exposição</span>
+              <span class="chp">Obturador<i>A</i></span>
+              <span class="chp">WB<i>A</i></span>
+              <span class="chp">Foco<i>A</i></span>
+            </div>
+            <div class="dial">
+              <span class="ro yl">+0.3 EV</span>
+              <span class="track yl"><i style="width:58%"></i></span>
+            </div>
+            <div class="row">
+              <span class="mode">Auto · arraste a imagem para cima ou para baixo</span>
+              <span class="chips">
+                <span class="chip on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h11l-2-2M20 16H9l2 2"/><circle cx="12" cy="12" r="2"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 10 6 6 6-6"/></svg></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">A tela Ao vivo do app com a bandeja de ajustes aberta: um único seletor giratório, redirecionado pelos chips. A borda vermelha é a luz tally: esta fonte está no ar. Todos os controles daqui também estão no navegador do computador.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Configuração</p>
+      <h2>Três passos, cerca de três minutos</h2>
+      <p>Plugin no computador, app no celular, fonte no OBS. Sem configurar o roteador, sem conta.</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>Instale o plugin do OBS</h3>
+        <p>Um instalador para Windows e macOS, um tarball para Linux. Adiciona duas fontes ao OBS que você já usa.</p>
+      </li>
+      <li>
+        <h3>Instale o app no iPhone</h3>
+        <p>Gratuito na <a href="{{APPSTORE}}">App Store</a>. Ou participe do beta no TestFlight, faça sideload da versão não assinada ou compile você mesmo.</p>
+      </li>
+      <li>
+        <h3>Adicione a fonte no OBS</h3>
+        <p><strong>Fontes → + → LensLink Camera</strong>, depois escolha o seu celular ou conecte o cabo. O vídeo aparece em um ou dois segundos.</p>
+      </li>
+    </ol>
+    <div class="cta">
+      <a class="btn ghost small" href="/setup/">Responda a quatro perguntas</a>
+      <a class="btn ghost small" href="/docs/install/">Guia completo de instalação</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">O que você recebe</p>
+      <h2>Uma fonte de câmera de verdade, não um improviso de webcam</h2>
+      <p>O celular codifica em hardware; o plugin decodifica na sua GPU e entrega os quadros ao OBS. Uma conexão, nada no meio do caminho.</p>
+    </div>
+    <div class="grid three">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="m17 12 5-3v9l-5-3z"/></svg>
+        <h3>Até 4K a 60 fps</h3>
+        <p>H.264 ou HEVC. O seletor só oferece combinações que a sua câmera realmente suporta.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/><path d="M2 9a15 15 0 0 1 20 0"/></svg>
+        <h3>Wi-Fi ou USB</h3>
+        <p>O USB dispensa rede, mantém a latência mais estável e carrega o celular durante a transmissão. O Wi-Fi dispensa o cabo.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        <h3>Controle pelo computador</h3>
+        <p>Zoom, exposição, ISO e obturador manuais, foco, equilíbrio de branco, lanterna, lente, alternar câmera: pelo celular, por um painel no navegador ou pelas propriedades da fonte.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h2l2-5 3 10 3-13 3 16 2-8h3"/></svg>
+        <h3>Sincronia labial automática</h3>
+        <p>O plugin mede a latência real e alinha o seu próprio microfone à imagem. Estabiliza em cerca de quinze segundos e depois se mantém.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>
+        <h3>Espelhamento de tela</h3>
+        <p>Um segundo tipo de fonte espelha a tela inteira com o áudio, usando a transmissão do próprio iOS. Ideal para jogos de celular e demonstrações de apps.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v9"/><path d="M7.5 6.5a7 7 0 1 0 9 0"/></svg>
+        <h3>Início remoto</h3>
+        <p>O próprio OBS inicia a câmera, então um celular montado no suporte nunca precisa descer. Siri e Atalhos também funcionam.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Indo além</p>
+      <h2>Coisas que uma webcam não faz</h2>
+      <p>Tudo opcional. Sem mexer em nada, a fonte é uma câmera SDR simples.</p>
+    </div>
+    <div class="grid two">
+      <div>
+        <h3>Apple Log (beta)</h3>
+        <p>Em iPhones Pro (iOS 17+), transmita uma imagem Log plana de 10 bits e faça a correção de cor com o filtro Aplicar LUT do OBS. O plugin decodifica a imagem fielmente e, fora isso, não mexe nela.</p>
+      </div>
+      <div>
+        <h3>HDR em HLG (beta)</h3>
+        <p>HLG de 10 bits sobre HEVC, nas câmeras compatíveis. O OBS renderiza corretamente tanto em telas SDR quanto HDR.</p>
+      </div>
+      <div>
+        <h3>Tela verde virtual (beta)</h3>
+        <p>O celular pinta de verde sólido tudo o que não é você antes de codificar, e o plugin adiciona um filtro chroma key já ajustado. Com a profundidade do Face ID ou do LiDAR, um corte por distância remove quem passar atrás de você.</p>
+      </div>
+      <div>
+        <h3>Todas as lentes, trocadas ao vivo</h3>
+        <p>Principal, Ultra-angular, Teleobjetiva, Frontal: troque durante a transmissão sem derrubar a fonte do OBS.</p>
+      </div>
+      <div>
+        <h3>Pipeline de decodificação na GPU (beta)</h3>
+        <p>O vídeo decodificado fica na placa de vídeo em vez de ir e voltar pela memória do sistema. Menos CPU e menos latência, sobretudo em 4K.</p>
+      </div>
+      <div>
+        <h3>Saúde à vista</h3>
+        <p>Taxa de quadros decodificada, taxa de bits na rede e latência medida, por celular e a cada segundo, na barra de status do OBS e em um painel encaixável.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Resumo</p>
+      <h2>Especificações</h2>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr><td>Vídeo</td><td>Até <span class="num">3840×2160</span> a <span class="num">60 fps</span>, H.264 ou HEVC. HDR (HLG) e Apple Log em beta.</td></tr>
+        <tr><td>Latência</td><td>Cerca de <span class="num">60 ms</span> via USB em 1080p ou 4K. No Wi-Fi é maior e mais variável.</td></tr>
+        <tr><td>Transporte</td><td>USB ou Wi-Fi local. Uma conexão TCP, sem retransmissão pela nuvem.</td></tr>
+        <tr><td>Áudio</td><td>Microfone do celular como áudio da fonte (opcional), uma referência de tempo para a sincronia labial ou o áudio do sistema no espelhamento de tela.</td></tr>
+        <tr><td>Computador</td><td>OBS Studio 32+ no Windows, macOS ou Linux. No Windows, o USB precisa do iTunes por causa do driver da Apple.</td></tr>
+        <tr><td>Celular</td><td>iPhone ou iPad com iOS/iPadOS 15+.</td></tr>
+        <tr><td>Câmeras</td><td>Várias ao mesmo tempo: uma fonte por celular, cada uma controlada separadamente.</td></tr>
+        <tr><td>Preço</td><td>Gratuito, GPL-2.0-or-later. Sem conta, sem marca d'água, sem plano pago.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Documentação</p>
+      <h2>Escrita para responder à pergunta</h2>
+      <p>Cada tela, ajuste e tipo de falha, inclusive os incômodos, como por que o iOS silencia áudio com DRM durante uma transmissão e por que o USB precisa do iTunes no Windows.</p>
+    </div>
+    <ul class="doccards">
+      <li><a href="/docs/install/"><strong>Instalação</strong><span>Plugin e app, em todas as plataformas, inclusive a partir do código-fonte.</span></a></li>
+      <li><a href="/docs/connect/"><strong>Conexão</strong><span>Wi-Fi, USB, vários celulares e o significado de cada mensagem de status.</span></a></li>
+      <li><a href="/docs/camera/"><strong>Câmera e imagem</strong><span>Lentes, formatos, exposição manual, HDR, Apple Log, tela verde, ajustes memorizados.</span></a></li>
+      <li><a href="/docs/troubleshooting/"><strong>Solução de problemas</strong><span>Sintoma por sintoma, com as linhas de log a verificar.</span></a></li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="/download/">Baixar o LensLink</a>
+      <a class="btn ghost" href="/docs/">Ver toda a documentação</a>
+    </div>
+  </div>
+</section>

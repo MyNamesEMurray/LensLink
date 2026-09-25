@@ -1,0 +1,97 @@
+title: Política de privacidade
+description: O LensLink Camera não coleta nenhum dado. O que o app pode ver, o que faz com isso e o que nunca sai da sua rede local.
+nav: docs
+source: 0dc862d45f0a
+---
+<section class="tight">
+  <div class="wrap">
+    <article class="doc" style="max-width: 46em">
+      <h1>Política de privacidade</h1>
+      <p class="lede">
+        O LensLink Camera não coleta nenhum dado. Nada sobre você, o seu
+        dispositivo ou o seu vídeo sai da sua rede local, e não há conta, login
+        nem análise de uso. Esta página explica o que o app pode ver e o que
+        faz com isso.
+      </p>
+
+      <h2>O que o app faz com a câmera e o microfone</h2>
+      <p>
+        Quando você toca em Iniciar câmera, o app captura o vídeo da câmera do
+        celular, codifica no próprio celular e o envia pela sua rede Wi-Fi local
+        ou por um cabo USB ao OBS Studio no seu próprio computador, por meio do
+        plugin LensLink, de código aberto. A câmera só funciona depois que você
+        toca em Iniciar, o indicador de câmera do sistema fica aceso durante
+        toda a transmissão, e ela para quando você toca em Parar, sai do app ou
+        bloqueia o celular. Nada é gravado no celular e nenhum quadro é
+        armazenado em lugar nenhum.
+      </p>
+      <p>
+        O microfone só é usado durante a transmissão, e só quando você ativa
+        <strong>Enviar microfone do celular ao OBS</strong> (que envia o áudio
+        ao OBS como um microfone sem fio) ou <strong>Referência automática de
+        sincronia labial</strong> (um sinal de tempo que o plugin usa para
+        alinhar o seu próprio microfone; ele nunca é ouvido nem armazenado).
+      </p>
+      <p>
+        <strong>Espelhar tela</strong> envia a tela do celular e o áudio dos
+        apps ao OBS da mesma forma, pelo seletor de transmissão do sistema, e
+        para quando você encerra a transmissão.
+      </p>
+
+      <h2>Rede local</h2>
+      <p>
+        O app pede a permissão de Rede Local porque o OBS se conecta ao celular
+        pela sua LAN. Ele se anuncia via Bonjour para que o plugin possa
+        listá-lo pelo nome, e aguarda o OBS em uma porta TCP. Ele nunca se
+        conecta a nenhum servidor nosso, porque não existe nenhum. Toda conexão
+        é entre o seu celular e o seu computador.
+      </p>
+
+      <h2>O que fica armazenado no celular</h2>
+      <p>
+        Seus ajustes (formato, qualidade, ajustes de câmera memorizados,
+        opções) ficam nas preferências do próprio app no dispositivo e não vão
+        para nenhum outro lugar. Apagar o app os apaga.
+      </p>
+
+      <h2>O que não é coletado</h2>
+      <ul>
+        <li>Nenhuma análise de uso, rastreamento ou identificador de publicidade.</li>
+        <li>Nenhum SDK de relatório de falhas. Se você ativou o compartilhamento
+          com desenvolvedores de apps no iOS (Ajustes → Privacidade e Segurança →
+          Análise e Melhorias), a Apple pode compartilhar conosco registros de
+          falhas. Se você instalar pelo TestFlight, a Apple também pode
+          compartilhar qualquer feedback que você enviar, sob os termos do
+          próprio TestFlight da Apple.</li>
+        <li>Nenhuma conta, endereço de e-mail ou informação pessoal.</li>
+        <li>Nenhum SDK de terceiros.</li>
+      </ul>
+      <p>
+        Os únicos links que saem do app abrem no Safari e levam ao repositório
+        do projeto no GitHub (código-fonte e relatórios de bugs) ou a este site.
+      </p>
+
+      <h2>Siri e Atalhos</h2>
+      <p>
+        "Iniciar transmissão com o LensLink" e "Parar transmissão com o
+        LensLink" são executados no dispositivo. O tratamento dos pedidos à
+        Siri pela Apple é regido pela política de privacidade da Apple, não por
+        esta.
+      </p>
+
+      <h2>Crianças</h2>
+      <p>
+        O app tem classificação 4+ e não coleta dados de ninguém, de nenhuma idade.
+      </p>
+
+      <h2>Alterações e contato</h2>
+      <p>
+        Se esta política mudar, a nova versão será publicada aqui com a data
+        abaixo. Dúvidas podem ser enviadas pela
+        <a href="/support/">página de suporte</a>.
+      </p>
+      <p><em>Última atualização: 25 de setembro de 2026.</em></p>
+      <p>Esta é uma tradução; em caso de divergência, prevalece a versão em inglês desta política.</p>
+    </article>
+  </div>
+</section>

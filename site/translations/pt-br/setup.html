@@ -1,0 +1,185 @@
+title: Configurar o LensLink
+description: Responda a quatro perguntas e receba os passos exatos de configuração para o seu computador, a sua conexão e o que você quer no OBS, sem passos que não se aplicam a você.
+nav: setup
+script: /js/setup.js
+source: bcb74f465811
+---
+<section class="setup">
+  <div class="wrap">
+    <h1>Configurar o LensLink</h1>
+
+    <form class="wizard" id="wizard">
+      <fieldset>
+        <legend>Seu computador</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="os" value="windows" checked><span>Windows</span></label>
+          <label><input type="radio" name="os" value="macos"><span>macOS</span></label>
+          <label><input type="radio" name="os" value="linux"><span>Linux</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Como o celular se conecta</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="link" value="usb" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V7"/><circle cx="12" cy="4" r="1.6"/><path d="M12 13l4-3 .8 2.4"/><path d="M12 16l-4-3v-2.2"/></svg> Cabo USB <em class="rec">Recomendado</em></span></label>
+          <label><input type="radio" name="link" value="wifi"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5a12 12 0 0 1 16 0"/><path d="M7.5 15a7 7 0 0 1 9 0"/><circle cx="12" cy="18.6" r="1.2" fill="currentColor" stroke="none"/></svg> Wi-Fi</span></label>
+          <label><input type="radio" name="link" value="unsure"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2-2.5 3.6"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg> Não sei</span></label>
+        </div>
+        <p class="q-answer" id="unsure-note" hidden>
+          Use o cabo: os passos abaixo são os de USB. Mude para
+          <strong>Wi-Fi</strong> se o celular precisar ficar em um lugar aonde o
+          cabo não chega.
+        </p>
+      </fieldset>
+
+      <fieldset>
+        <legend>O que você quer no OBS</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="mode" value="camera" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="M15.5 11.5l6-3.2v7.4l-6-3.2z"/></svg> Câmera do celular</span></label>
+          <label><input type="radio" name="mode" value="screen"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg> Tela do celular</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Como você vai instalar o app</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="app" value="appstore" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 18.5h15"/></svg> App Store <em class="rec">Recomendado</em></span></label>
+          <label><input type="radio" name="app" value="sideload"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12 8v6"/><path d="M9.5 11.5L12 14l2.5-2.5"/></svg> Sideload</span></label>
+          <label><input type="radio" name="app" value="xcode"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5-8.5 8.5H6v-5z"/><path d="M12.5 6.5l5 5"/></svg> Xcode</span></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <p class="nojs" id="nojs">
+      Todos os passos aparecem abaixo, marcados com a configuração a que
+      pertencem. Ative o JavaScript para filtrá-los.
+    </p>
+
+    <p class="needs" id="needs" hidden></p>
+
+    <ol class="guide" id="guide">
+
+      <li>
+        <h2>Confira se o OBS é a versão 32 ou mais recente</h2>
+        <p>Ajuda → Sobre.</p>
+      </li>
+
+      <li data-os="windows">
+        <h2>Instale o plugin <span class="tag">Windows</span></h2>
+        <p>Execute o <code>LensLink-installer-windows-x64.exe</code> da <a href="/download/">página de downloads</a>.</p>
+      </li>
+
+      <li data-os="macos">
+        <h2>Instale o plugin <span class="tag">macOS</span></h2>
+        <p>Abra o <code>LensLink-installer-macos-universal.pkg</code> da <a href="/download/">página de downloads</a> com <strong>clique direito → Abrir</strong>. Ele não é notarizado, então o clique duplo é recusado.</p>
+      </li>
+
+      <li data-os="linux">
+        <h2>Instale o plugin <span class="tag">Linux</span></h2>
+        <pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+      </li>
+
+      <li>
+        <h2>Reinicie o OBS</h2>
+        <p><strong>Fontes → +</strong> agora lista LensLink Camera e LensLink Screen.</p>
+      </li>
+
+      <li data-app="appstore">
+        <h2>Instale o app <span class="tag">App Store</span></h2>
+        <p>Instale o <a href="{{APPSTORE}}">LensLink Camera</a> pela App Store. Para receber novas versões antes que cheguem à App Store, <a href="{{TESTFLIGHT}}">participe do beta no TestFlight</a>.</p>
+      </li>
+
+      <li data-app="sideload">
+        <h2>Instale o app <span class="tag">Sideload</span></h2>
+        <p><code>LensLink-unsigned.ipa</code> da <a href="{{REPO}}/releases/latest">versão mais recente</a>, pelo <a href="https://sideloadly.io">Sideloadly</a>.</p>
+        <p class="warn">Com um ID Apple gratuito, ele expira depois de 7 dias, e a nova assinatura faz as frases da Siri pararem de funcionar: use <code>lenslink://start</code> em um atalho.</p>
+      </li>
+
+      <li data-app="xcode">
+        <h2>Compile o app <span class="tag">Xcode</span></h2>
+        <pre><code>brew install xcodegen
+cd ios-app &amp;&amp; xcodegen generate &amp;&amp; open LensLink.xcodeproj</code></pre>
+      </li>
+
+      <li data-link="usb" data-os="windows">
+        <h2>Instale o iTunes <span class="tag">Windows</span> <span class="tag">USB</span></h2>
+        <p>Ele fornece o driver de dispositivos da Apple. Sem ele, o USB não enxerga o celular.</p>
+      </li>
+
+      <li data-link="usb" data-os="linux">
+        <h2>Confira se o usbmuxd está instalado <span class="tag">Linux</span> <span class="tag">USB</span></h2>
+        <p>O plugin se conecta a <code>/var/run/usbmuxd</code>. A maioria dos ambientes de desktop já o traz; se não for o caso, instale o pacote <code>usbmuxd</code>.</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>Conecte o cabo e toque em Confiar <span class="tag">USB</span></h2>
+        <p>Desbloqueie o celular antes e use um cabo de dados.</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>Coloque os dois na mesma rede <span class="tag">Wi-Fi</span></h2>
+        <p>Redes de convidados e o isolamento de clientes bloqueiam a conexão.</p>
+      </li>
+
+      <li>
+        <h2>Abra o LensLink no celular</h2>
+        <p data-mode="camera">Escolha lente, resolução, taxa de quadros e codec.</p>
+        <p data-link="wifi">A tela de configuração mostra o endereço do celular: toque para copiar.</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>Permita o acesso à Rede Local <span class="tag">Wi-Fi</span></h2>
+        <p>Necessário para o celular aparecer pelo nome. Digitar o IP funciona sem essa permissão.</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>Adicione a fonte <span class="tag">Câmera</span></h2>
+        <p><strong>Fontes → + → LensLink Camera</strong>. Uma por celular.</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>Adicione a fonte <span class="tag">Tela</span></h2>
+        <p><strong>Fontes → + → LensLink Screen</strong>.</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>Aponte a fonte para o celular <span class="tag">USB</span></h2>
+        <p>Defina <strong>Conexão</strong> como <strong>Cabo USB</strong>.</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>Aponte a fonte para o celular <span class="tag">Wi-Fi</span></h2>
+        <p>Escolha o celular na lista <strong>Celular</strong> ou digite o IP.</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>Inicie a câmera <span class="tag">Câmera</span></h2>
+        <p>Toque em <strong>Iniciar câmera</strong>, ou deixe o app aberto e o OBS a inicia para você.</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>Inicie a transmissão <span class="tag">Tela</span></h2>
+        <p><strong>Espelhar tela</strong> → <strong>LensLink Screen</strong> → <strong>Iniciar Transmissão</strong>. Depois disso, você pode sair do app.</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>Fixe o tamanho da fonte <span class="tag">Tela</span></h2>
+        <p>Clique direito → <strong>Transform → Edit Transform…</strong>, defina <strong>Bounding Box Type</strong> como <strong>Scale to inner bounds</strong>, para que trocar de app não redimensione o seu layout.</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>Alinhe o seu microfone <span class="tag">Câmera</span></h2>
+        <p>Opcional: escolha-o em <strong>Fonte de áudio para sincronia labial</strong>, ative o atraso e <strong>Calibrar automaticamente</strong>, ligue a <strong>Referência automática de sincronia labial</strong> no app e fale por quinze segundos. <a href="/docs/audio/">Detalhes</a>.</p>
+      </li>
+
+    </ol>
+
+    <p class="guide-foot">
+      Suas respostas ficam na barra de endereço: copie o link para enviar a
+      alguém exatamente esta configuração. Travou? A linha <strong>Status</strong>
+      da fonte indica a etapa que está falhando: <a href="/docs/connect/#reading-the-status-field">o que cada uma
+      significa</a>. Mais detalhes em <a href="/docs/install/">instalação</a> e
+      <a href="/docs/connect/">conexão</a>.
+    </p>
+  </div>
+</section>
