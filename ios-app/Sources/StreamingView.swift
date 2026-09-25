@@ -321,7 +321,7 @@ struct StreamingView: View {
             HStack(spacing: Theme.Space.s) {
                 Image(systemName: batterySymbol(percent))
                     .font(.system(size: 44, weight: .regular))
-                Text("\(percent)%")
+                Text(L("%lld%%", percent))
                     .font(.system(size: 44, weight: .semibold,
                                   design: .rounded).monospacedDigit())
                 if battery.isCharging {
@@ -339,8 +339,8 @@ struct StreamingView: View {
     /// decoration once the percentage is spoken.
     private func batteryAccessibilityLabel(_ percent: Int) -> String {
         battery.isCharging
-            ? "Battery \(percent) percent, charging"
-            : "Battery \(percent) percent"
+            ? L("Battery %lld percent, charging", percent)
+            : L("Battery %lld percent", percent)
     }
 
     /// Red means low, amber means the OS is throttling, grey means fine —
@@ -501,7 +501,7 @@ struct StreamingView: View {
                     goIdle()
                 } label: {
                     Label(streamer.idleAppearance == .clean
-                            ? "Clean feed now" : "Dim screen now",
+                            ? L("Clean feed now") : L("Dim screen now"),
                           systemImage: streamer.idleAppearance == .clean
                             ? "eye.slash" : "moon.fill")
                 }
@@ -540,11 +540,11 @@ struct StreamingView: View {
         case .off:
             return nil
         case .measuring:
-            return ("Measuring sync", Theme.accent)
+            return (L("Measuring sync"), Theme.accent)
         case .locked:
-            return ("Sync locked", Theme.liveGreen)
+            return (L("Sync locked"), Theme.liveGreen)
         case .relocking:
-            return ("Recalibrating", Theme.connectAmber)
+            return (L("Recalibrating"), Theme.connectAmber)
         }
     }
 
@@ -587,9 +587,8 @@ struct StreamingView: View {
     /// "stream health overlay"); monospaced so they don't jitter.
     private func healthPill(_ health: Streamer.StreamHealth) -> some View {
         HStack {
-            Text("\(health.fps) fps · "
-                 + String(format: "%.1f", health.megabitsPerSecond)
-                 + " Mb/s · \(health.droppedFrames) dropped")
+            Text(L("%1$lld fps · %2$.1f Mb/s · %3$lld dropped",
+                   health.fps, health.megabitsPerSecond, health.droppedFrames))
                 .font(.caption.monospacedDigit())
                 .glassPill()
             Spacer()
@@ -660,7 +659,7 @@ struct StreamingView: View {
                         .background(Color.black.opacity(active ? 0.6 : 0.45),
                                     in: Circle())
                 }
-                .accessibilityLabel(lens.label)
+                .accessibilityLabel(lens.displayLabel)
             }
         }
     }
@@ -793,22 +792,22 @@ struct StreamingView: View {
         let name = chipLabel(target)
         switch auto {
         case nil: return name
-        case true?: return "\(name), auto"
-        case false?: return "\(name), manual"
+        case true?: return L("%@, auto", name)
+        case false?: return L("%@, manual", name)
         }
     }
 
     private func chipLabel(_ target: DialTarget) -> String {
         switch target {
-        case .zoom: return "Zoom"
+        case .zoom: return L("Zoom")
         // The same chip drives bias on auto and ISO in manual; its name
         // follows, so the dial's readout and the chip never disagree.
         case .exposure:
-            return streamer.exposureSetting == .manual ? "ISO" : "Exposure"
-        case .shutter: return "Shutter"
-        case .whiteBalance: return "WB"
-        case .focus: return "Focus"
-        case .subject: return "Subject"
+            return streamer.exposureSetting == .manual ? "ISO" : L("Exposure")
+        case .shutter: return L("Shutter")
+        case .whiteBalance: return L("WB")
+        case .focus: return L("Focus")
+        case .subject: return L("Subject")
         }
     }
 
@@ -859,21 +858,21 @@ struct StreamingView: View {
     private func modeLine(_ target: DialTarget) -> String {
         switch target {
         case .zoom:
-            return "Pinch the picture to zoom"
+            return L("Pinch the picture to zoom")
         case .exposure where streamer.exposureSetting == .auto:
-            return "Auto · drag the picture up or down"
+            return L("Auto · drag the picture up or down")
         case .focus where streamer.focusSetting == .auto:
             return streamer.faceFocus && streamer.camera.supportsFaceDrivenFocus
-                ? "Auto · faces first · hold the picture to lock"
-                : "Auto · tap the picture · hold to lock"
+                ? L("Auto · faces first · hold the picture to lock")
+                : L("Auto · tap the picture · hold to lock")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
-                ? "Cutoff · tap Subject for all"
-                : "All · drag to set a cutoff"
+                ? L("Cutoff · tap Subject for all")
+                : L("All · drag to set a cutoff")
         default:
             return isAuto(target) == true
-                ? "Auto · drag to set by hand"
-                : "Manual · tap \(chipLabel(target)) for auto"
+                ? L("Auto · drag to set by hand")
+                : L("Manual · tap %@ for auto", chipLabel(target))
         }
     }
 
@@ -939,17 +938,17 @@ struct StreamingView: View {
                 ? "ISO \(Int(streamer.iso))"
                 : String(format: "%+.1f EV", streamer.exposureBias)
         case .shutter:
-            return streamer.exposureSetting == .manual ? shutterReadout : "Auto"
+            return streamer.exposureSetting == .manual ? shutterReadout : L("Auto")
         case .whiteBalance:
             return streamer.whiteBalanceSetting == .locked
-                ? "\(Int(streamer.whiteBalanceTemperature)) K" : "Auto"
+                ? "\(Int(streamer.whiteBalanceTemperature)) K" : L("Auto")
         case .focus:
             return streamer.focusSetting == .locked
-                ? String(format: "%.2f", streamer.lensPosition) : "Auto"
+                ? String(format: "%.2f", streamer.lensPosition) : L("Auto")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
-                ? String(format: "%.1f m", streamer.greenScreenMaxDistance)
-                : "All"
+                ? L("%.1f m", streamer.greenScreenMaxDistance)
+                : L("All")
         }
     }
 

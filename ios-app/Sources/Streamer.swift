@@ -34,11 +34,11 @@ final class Streamer: ObservableObject {
         /// (see docs/UI_DESIGN.md §2).
         var displayName: String {
             switch self {
-            case .idle: return "Not connected"
-            case .standby: return "OBS connected — ready"
-            case .connecting: return "Waiting for OBS…"
-            case .streaming: return "Live"
-            case .paused: return "Paused"
+            case .idle: return L("Not connected")
+            case .standby: return L("OBS connected — ready")
+            case .connecting: return L("Waiting for OBS…")
+            case .streaming: return L("Live")
+            case .paused: return L("Paused")
             case .error(let message): return message
             }
         }
@@ -78,9 +78,9 @@ final class Streamer: ObservableObject {
         /// UI label, American English per docs/UI_DESIGN.md.
         var displayName: String {
             switch self {
-            case .standard: return "Standard"
-            case .clean: return "Clean feed"
-            case .dim: return "Dim screen"
+            case .standard: return L("Standard")
+            case .clean: return L("Clean feed")
+            case .dim: return L("Dim screen")
             }
         }
     }
@@ -149,8 +149,8 @@ final class Streamer: ObservableObject {
         var id: String { rawValue }
         var displayName: String {
             switch self {
-            case .balanced: return "Balanced"
-            case .maximum: return "Maximum"
+            case .balanced: return L("Balanced")
+            case .maximum: return L("Maximum")
             }
         }
     }
@@ -1310,13 +1310,13 @@ final class Streamer: ObservableObject {
     ) -> String {
         switch reason {
         case .videoDeviceNotAvailableWithMultipleForegroundApps:
-            return "Camera paused — this iPad can't share the camera on screen"
+            return L("Camera paused — this iPad can't share the camera on screen")
         case .videoDeviceNotAvailableInBackground:
-            return "Camera paused — app left the screen"
+            return L("Camera paused — app left the screen")
         case .videoDeviceNotAvailableDueToSystemPressure:
-            return "Camera paused — device too hot"
+            return L("Camera paused — device too hot")
         default:
-            return "Camera paused — in use by another app"
+            return L("Camera paused — in use by another app")
         }
     }
 
@@ -1620,7 +1620,7 @@ final class Streamer: ObservableObject {
 
         guard await CameraManager.requestPermission() else {
             cameraPermissionDenied = true
-            status = .error("Camera access denied — enable it in Settings")
+            status = .error(L("Camera access denied — enable it in Settings"))
             return
         }
 

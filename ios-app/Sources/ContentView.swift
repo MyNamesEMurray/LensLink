@@ -197,7 +197,7 @@ struct ContentView: View {
     /// and the site; on the screen a word is enough.
     private var titleHeader: some View {
         Section {
-            Text("LensLink")
+            Text(verbatim: "LensLink")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
@@ -280,7 +280,7 @@ struct ContentView: View {
                 }
                 Label {
                     if let ip = wifiIP {
-                        Text("Enter \(Text(ip).bold()) as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes).")
+                        Text(markdown: L("Enter **%@** as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes).", ip))
                             .font(.callout)
                             .foregroundColor(.secondary)
                     } else {
@@ -329,10 +329,10 @@ struct ContentView: View {
         Section {
             Picker(selection: $streamer.selectedLens) {
                 ForEach(streamer.availableLenses) { lens in
-                    Text(lens.label).tag(lens)
+                    Text(lens.displayLabel).tag(lens)
                 }
             } label: {
-                SettingsRowLabel("Camera", systemImage: "camera.fill",
+                SettingsRowLabel(L("Camera"), systemImage: "camera.fill",
                                  color: Theme.connectAmber)
             }
 
@@ -343,7 +343,7 @@ struct ContentView: View {
                 showFormat = true
             } label: {
                 HStack {
-                    SettingsRowLabel("Format", systemImage: "rectangle.stack",
+                    SettingsRowLabel(L("Format"), systemImage: "rectangle.stack",
                                      color: Theme.accent)
                     Spacer()
                     Text(formatSummary)
@@ -357,7 +357,7 @@ struct ContentView: View {
             .buttonStyle(.plain)
 
             Toggle(isOn: $streamer.greenScreenEnabled) {
-                SettingsRowLabel("Green screen",
+                SettingsRowLabel(L("Green screen"),
                                  systemImage: "person.fill.viewfinder",
                                  color: Theme.liveGreen)
             }
@@ -375,14 +375,14 @@ struct ContentView: View {
     /// "4K · 60 fps · HEVC", plus "· HDR" or "· Log" when the colour
     /// isn't Standard — the format row's value.
     private var formatSummary: String {
-        var parts = [streamer.resolution.rawValue, "\(streamer.fps) fps",
+        var parts = [streamer.resolution.rawValue, L("%lld fps", streamer.fps),
                      streamer.codec.label]
         switch streamer.colorSetting {
         case .sdr: break
         case .hlg: parts.append("HDR")
-        case .log: parts.append("Log")
+        case .log: parts.append(L("Log"))
         }
-        if streamer.quality == .maximum { parts.append("Max") }
+        if streamer.quality == .maximum { parts.append(L("Max")) }
         return parts.joined(separator: " · ")
     }
 
@@ -409,7 +409,7 @@ struct ContentView: View {
             Button {
                 Task { await streamer.start() }
             } label: {
-                ActionRowLabel(title: "Start Camera",
+                ActionRowLabel(title: L("Start Camera"),
                                systemImage: "video.fill",
                                style: .primary)
             }
@@ -418,7 +418,7 @@ struct ContentView: View {
             .listRowBackground(Color.clear)
 
             ZStack {
-                ActionRowLabel(title: "Mirror Screen",
+                ActionRowLabel(title: L("Mirror Screen"),
                                systemImage: "rectangle.on.rectangle",
                                style: .secondary)
                 BroadcastPickerOverlay()
@@ -443,18 +443,18 @@ struct ContentView: View {
     private var micSection: some View {
         Section {
             Toggle(isOn: $streamer.sendMicAudio) {
-                SettingsRowLabel("Send phone mic to OBS", systemImage: "mic.fill",
+                SettingsRowLabel(L("Send phone mic to OBS"), systemImage: "mic.fill",
                                  color: Theme.connectAmber)
             }
             if streamer.sendMicAudio {
                 Picker("Microphone", selection: $streamer.selectedMicID) {
                     ForEach(streamer.micOptions) { mic in
-                        Text(mic.name).tag(mic.id)
+                        Text(mic.displayName).tag(mic.id)
                     }
                 }
             }
             Toggle(isOn: $streamer.sendAudioReference) {
-                SettingsRowLabel("Auto lip-sync reference",
+                SettingsRowLabel(L("Auto lip-sync reference"),
                                  systemImage: "waveform",
                                  color: Theme.accent)
             }
@@ -474,23 +474,23 @@ struct ContentView: View {
             Button {
                 showOptions = true
             } label: {
-                disclosureRow("Options", systemImage: "gearshape.fill",
+                disclosureRow(L("Options"), systemImage: "gearshape.fill",
                               color: Theme.idleGrey)
             }
             .buttonStyle(.plain)
             Button {
                 showDocs = true
             } label: {
-                disclosureRow("Documentation", systemImage: "book.fill",
+                disclosureRow(L("Documentation"), systemImage: "book.fill",
                               color: Theme.accent)
             }
             .buttonStyle(.plain)
             Link(destination: Self.reportProblemURL) {
-                SettingsRowLabel("Report a problem", systemImage: "ladybug.fill",
+                SettingsRowLabel(L("Report a problem"), systemImage: "ladybug.fill",
                                  color: Theme.errorRed)
             }
             Link(destination: URL(string: "https://github.com/MyNamesEMurray/LensLink")!) {
-                SettingsRowLabel("LensLink on GitHub", systemImage: "link",
+                SettingsRowLabel(L("LensLink on GitHub"), systemImage: "link",
                                  color: Theme.idleGrey)
             }
         } footer: {
@@ -530,10 +530,15 @@ struct ContentView: View {
             URLQueryItem(name: "versions", value:
                 "\(versionLine), \(model), iOS \(UIDevice.current.systemVersion)"),
         ]
-        // TestFlight builds carry a sandbox receipt; prefill the install
-        // dropdown so reports say which distribution they came from.
-        if Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" {
-            items.append(URLQueryItem(name: "install", value: "TestFlight"))
+        // TestFlight builds carry a sandbox receipt and App Store builds a
+        // production one; prefill the install dropdown so reports say
+        // which distribution they came from.
+        if let receipt = Bundle.main.appStoreReceiptURL {
+            if receipt.lastPathComponent == "sandboxReceipt" {
+                items.append(URLQueryItem(name: "install", value: "TestFlight"))
+            } else if FileManager.default.fileExists(atPath: receipt.path) {
+                items.append(URLQueryItem(name: "install", value: "App Store"))
+            }
         }
         url.queryItems = items
         return url.url!
@@ -603,7 +608,7 @@ private struct FormatSheet: View {
                     }
                     Picker("Frame rate", selection: $streamer.fps) {
                         ForEach(availableFrameRates, id: \.self) { fps in
-                            Text("\(fps) fps").tag(fps)
+                            Text(L("%lld fps", fps)).tag(fps)
                         }
                     }
                 }
@@ -625,11 +630,11 @@ private struct FormatSheet: View {
                 }
 
                 Section {
-                    ChoiceRow(title: "Balanced", detail: nil,
+                    ChoiceRow(title: L("Balanced"), detail: nil,
                               selected: streamer.quality == .balanced) {
                         streamer.quality = .balanced
                     }
-                    ChoiceRow(title: "Maximum", detail: nil, tag: "Beta",
+                    ChoiceRow(title: L("Maximum"), detail: nil, tag: L("Beta"),
                               selected: streamer.quality == .maximum) {
                         streamer.quality = .maximum
                     }
@@ -643,16 +648,16 @@ private struct FormatSheet: View {
                 // some lens actually has a Log capture format (iOS 17+).
                 if VideoEncoder.hdrSupported {
                     Section {
-                        ChoiceRow(title: "Standard", detail: nil,
+                        ChoiceRow(title: L("Standard"), detail: nil,
                                   selected: streamer.colorSetting == .sdr) {
                             streamer.colorSetting = .sdr
                         }
-                        ChoiceRow(title: "HDR (HLG)", detail: "HEVC only",
+                        ChoiceRow(title: L("HDR (HLG)"), detail: L("HEVC only"),
                                   selected: streamer.colorSetting == .hlg) {
                             streamer.colorSetting = .hlg
                         }
                         if CameraManager.appleLogCaptureAvailable {
-                            ChoiceRow(title: "Apple Log", detail: "HEVC only",
+                            ChoiceRow(title: L("Apple Log"), detail: L("HEVC only"),
                                       selected: streamer.colorSetting == .log) {
                                 streamer.colorSetting = .log
                             }

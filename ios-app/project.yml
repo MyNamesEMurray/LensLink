@@ -10,6 +10,7 @@ options:
   # Xcode still complains about a "future project file format", generate
   # with XcodeGen 2.38.0 instead of the latest (see BUILDING.md).
   xcodeVersion: "14.2"
+  developmentLanguage: en
 
 targets:
   LensLink:
@@ -106,6 +107,7 @@ targets:
       - path: Sources/Protocol.swift
       - path: Sources/StreamClient.swift
       - path: Sources/VideoEncoder.swift
+      - path: Sources/Localization.swift
     info:
       path: BroadcastExtension/Info.plist
       properties:

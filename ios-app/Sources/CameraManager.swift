@@ -168,6 +168,16 @@ final class CameraManager: NSObject {
         var id: String {
             "\(position == .front ? "front" : "back"):\(deviceType.rawValue)"
         }
+
+        var displayLabel: String {
+            switch label {
+            case "Front": return L("Front")
+            case "Ultra Wide (0.5×)": return L("Ultra Wide (0.5×)")
+            case "Telephoto": return L("Telephoto")
+            case "Main (Wide)": return L("Main (Wide)")
+            default: return label
+            }
+        }
     }
 
     /// Enumerates the cameras present on this device, back lenses first
@@ -649,7 +659,7 @@ final class CameraManager: NSObject {
 
         guard var device = Self.device(for: lens) else {
             throw NSError(domain: "CameraManager", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "Camera not available"])
+                          userInfo: [NSLocalizedDescriptionKey: L("Camera not available")])
         }
         // Depth assist (green screen): swap to the depth-registered
         // sibling device (TrueDepth / LiDAR) — the plain lenses have no
@@ -671,13 +681,14 @@ final class CameraManager: NSObject {
                                fps: fps, color: color) else {
             throw NSError(domain: "CameraManager", code: 4,
                           userInfo: [NSLocalizedDescriptionKey:
-                            "\(resolution.rawValue) at \(fps) fps is not supported by the \(lens.label) camera"])
+                            L("%1$@ at %2$lld fps is not supported by the %3$@ camera",
+                              resolution.rawValue, Int(fps), lens.displayLabel)])
         }
 
         let input = try AVCaptureDeviceInput(device: device)
         guard session.canAddInput(input) else {
             throw NSError(domain: "CameraManager", code: 2,
-                          userInfo: [NSLocalizedDescriptionKey: "Cannot add camera input"])
+                          userInfo: [NSLocalizedDescriptionKey: L("Cannot add camera input")])
         }
         session.addInput(input)
 
@@ -760,7 +771,7 @@ final class CameraManager: NSObject {
 
         guard session.canAddOutput(output) else {
             throw NSError(domain: "CameraManager", code: 3,
-                          userInfo: [NSLocalizedDescriptionKey: "Cannot add video output"])
+                          userInfo: [NSLocalizedDescriptionKey: L("Cannot add video output")])
         }
         session.addOutput(output)
         videoOutput = output

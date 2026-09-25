@@ -199,7 +199,7 @@ final class StreamClient {
         guard let nwPort = NWEndpoint.Port(rawValue: port),
               let listener = try? NWListener(using: Self.tcpParameters(), on: nwPort) else {
             listenerStateDescription = "init failed"
-            state = .failed("Could not open USB listener")
+            state = .failed(L("Could not open USB listener"))
             return
         }
 

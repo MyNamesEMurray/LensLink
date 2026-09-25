@@ -13,12 +13,12 @@ enum TallyStatus: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .onAir: return "On air"
-        case .preview: return "In preview"
-        case .connectionLost: return "Connection lost"
-        case .calibrating: return "Calibrating lip-sync"
-        case .syncLocked: return "Lip-sync locked"
-        case .lowBattery: return "Low battery"
+        case .onAir: return L("On air")
+        case .preview: return L("In preview")
+        case .connectionLost: return L("Connection lost")
+        case .calibrating: return L("Calibrating lip-sync")
+        case .syncLocked: return L("Lip-sync locked")
+        case .lowBattery: return L("Low battery")
         }
     }
 
@@ -36,7 +36,17 @@ enum TallyColor: String, Codable, CaseIterable {
     case purple
     case white
 
-    var displayName: String { rawValue == "none" ? "Off" : rawValue.capitalized }
+    var displayName: String {
+        switch self {
+        case .none: return L("Off")
+        case .red: return L("Red")
+        case .amber: return L("Amber")
+        case .green: return L("Green")
+        case .blue: return L("Blue")
+        case .purple: return L("Purple")
+        case .white: return L("White")
+        }
+    }
 
     /// Border colour; nil for `.none`. Values come from the shared status
     /// palette (docs/UI_DESIGN.md) so the border speaks the same colour
@@ -232,7 +242,7 @@ struct TallyLightOptionsView: View {
                             .foregroundColor(entry.pulse
                                              ? Theme.accent : .secondary)
                             .accessibilityLabel("Pulse")
-                            .accessibilityValue(entry.pulse ? "On" : "Off")
+                            .accessibilityValue(entry.pulse ? L("On") : L("Off"))
                         }
                     }
                 }
