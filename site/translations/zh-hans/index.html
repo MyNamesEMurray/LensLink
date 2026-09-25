@@ -1,0 +1,214 @@
+title: LensLink：把 iPhone 用作 OBS Studio 的摄像头
+description: LensLink 通过 Wi-Fi 或 USB，把 iPhone 或 iPad 变成 OBS Studio 中的高画质摄像头来源。最高 4K60，支持 H.264 或 HEVC，可实时控制摄像头，自动音画同步。免费且开源。
+nav: home
+source: d5c6fc00fbbc
+---
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>免费且开源 · GPL-2.0-or-later</span>
+      <h1>你的 iPhone 已经是你最好的摄像头。<em>把它接进 OBS。</em></h1>
+      <p class="lede">
+        两个 OBS 来源（一个摄像头，一个屏幕镜像），通过 Wi-Fi 或 USB
+        直接连接你的 iPhone 或 iPad。不需要虚拟摄像头驱动，不需要 RTMP
+        服务器，也不需要订阅。
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="/download/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          下载
+        </a>
+        <a class="btn ghost" href="/setup/">引导式设置</a>
+      </div>
+      <p class="meta">
+        <span>OBS Studio 32+</span><span>Windows、macOS、Linux</span><span>iOS/iPadOS 15+</span>
+      </p>
+    </div>
+
+    <div>
+      <!-- The app's Live screen, rebuilt from the same design tokens the
+           app and the plugin's browser panel use. -->
+      <div class="device">
+        <div class="screen{{FEED}}"{{FEED_STYLE}}>
+          <div class="topgroup">
+            <div class="toprow">
+            <span class="pill"><span class="dot live"></span>直播中<span class="chev">⌄</span></span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span>
+            <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
+            </div>
+            <span class="pill health">60 fps · 11.9 Mb/s · 丢帧 0</span>
+          </div>
+          <div class="panelmock">
+            <div class="chiprow">
+              <span class="chp">变焦</span>
+              <span class="chp on">曝光</span>
+              <span class="chp">快门<i>A</i></span>
+              <span class="chp">白平衡<i>A</i></span>
+              <span class="chp">对焦<i>A</i></span>
+            </div>
+            <div class="dial">
+              <span class="ro yl">+0.3 EV</span>
+              <span class="track yl"><i style="width:58%"></i></span>
+            </div>
+            <div class="row">
+              <span class="mode">自动 · 上下拖动画面</span>
+              <span class="chips">
+                <span class="chip on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h11l-2-2M20 16H9l2 2"/><circle cx="12" cy="12" r="2"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 10 6 6 6-6"/></svg></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">App 的直播界面，调节栏已展开：一个转盘，由上方的按钮切换调节对象。红色边框是 Tally 灯，表示此来源正在播出。这里的每个控件也都能在电脑上的浏览器中使用。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">设置</p>
+      <h2>三个步骤，大约三分钟</h2>
+      <p>电脑上装插件，手机上装 App，OBS 里加来源。无需配置路由器，无需账户。</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>安装 OBS 插件</h3>
+        <p>Windows 和 macOS 有安装程序，Linux 有 tar 压缩包。它会在你现有的 OBS 中添加两个来源。</p>
+      </li>
+      <li>
+        <h3>安装 iPhone App</h3>
+        <p>在 <a href="{{APPSTORE}}">App Store</a> 免费下载。你也可以加入 TestFlight 测试版、侧载未签名版本，或自行编译。</p>
+      </li>
+      <li>
+        <h3>在 OBS 中添加来源</h3>
+        <p><strong>源 → + → LensLink Camera</strong>，然后选择你的手机或插上数据线。一两秒内就会出现画面。</p>
+      </li>
+    </ol>
+    <div class="cta">
+      <a class="btn ghost small" href="/setup/">改为回答四个问题</a>
+      <a class="btn ghost small" href="/docs/install/">完整安装指南</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">你能得到什么</p>
+      <h2>真正的摄像头来源，而不是网络摄像头的变通方案</h2>
+      <p>手机用硬件编码，插件在你的 GPU 上解码，再把帧交给 OBS。只有一条连接，中间没有任何环节。</p>
+    </div>
+    <div class="grid three">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="m17 12 5-3v9l-5-3z"/></svg>
+        <h3>最高 4K 60 fps</h3>
+        <p>H.264 或 HEVC。选择器只提供你的摄像头实际支持的组合。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/><path d="M2 9a15 15 0 0 1 20 0"/></svg>
+        <h3>Wi-Fi 或 USB</h3>
+        <p>USB 不需要网络，延迟最稳定，还能边推流边给手机充电。Wi-Fi 则省掉了线缆。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        <h3>在电脑上控制</h3>
+        <p>变焦、曝光、手动 ISO 和快门、对焦、白平衡、手电筒、镜头、切换摄像头，可以在手机、浏览器面板或来源属性中操作。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h2l2-5 3 10 3-13 3 16 2-8h3"/></svg>
+        <h3>自动音画同步</h3>
+        <p>插件测量真实延迟，并将你自己的麦克风与画面对齐。大约十五秒后稳定下来，之后保持不变。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>
+        <h3>屏幕镜像</h3>
+        <p>第二种来源类型通过 iOS 自带的屏幕直播镜像整个屏幕及其音频。适合手机游戏和 App 演示。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v9"/><path d="M7.5 6.5a7 7 0 1 0 9 0"/></svg>
+        <h3>远程启动</h3>
+        <p>由 OBS 自己启动摄像头，架好的手机无需取下。Siri 和快捷指令也可以。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">更进一步</p>
+      <h2>网络摄像头做不到的事</h2>
+      <p>全部需要手动开启。不做任何改动时，此来源就是一个普通的 SDR 摄像头。</p>
+    </div>
+    <div class="grid two">
+      <div>
+        <h3>Apple Log（测试版）</h3>
+        <p>在 Pro 系列 iPhone（iOS 17+）上，推送平坦的 10 位 Log 画面，并用 OBS 的“应用 LUT”滤镜调色。插件如实解码，此外不对画面做任何处理。</p>
+      </div>
+      <div>
+        <h3>HLG 格式的 HDR（测试版）</h3>
+        <p>在支持的摄像头上，通过 HEVC 传输 10 位 HLG。无论 SDR 还是 HDR 画布，OBS 都能正确渲染。</p>
+      </div>
+      <div>
+        <h3>虚拟绿幕（测试版）</h3>
+        <p>手机在编码前把你以外的一切涂成纯绿色，插件则添加一个调校好的色度键滤镜。借助 Face ID 或 LiDAR 深度，距离截断会去掉从你身后走过的人。</p>
+      </div>
+      <div>
+        <h3>所有镜头，实时切换</h3>
+        <p>主摄、超广角、长焦、前置，推流过程中切换，OBS 来源不会中断。</p>
+      </div>
+      <div>
+        <h3>GPU 解码管线（测试版）</h3>
+        <p>解码后的视频留在显卡上，而不是在系统内存中来回传输。CPU 占用和延迟都更低，4K 下尤为明显。</p>
+      </div>
+      <div>
+        <h3>看得见的健康状态</h3>
+        <p>解码帧率、传输码率和实测延迟，按手机逐秒显示在 OBS 的状态栏和一个可停靠的面板中。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">一览</p>
+      <h2>规格</h2>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr><td>视频</td><td>最高 <span class="num">3840×2160</span>、<span class="num">60 fps</span>，H.264 或 HEVC。HDR（HLG）和 Apple Log 为测试版。</td></tr>
+        <tr><td>延迟</td><td>通过 USB，1080p 或 4K 下约 <span class="num">60 ms</span>。Wi-Fi 更高，波动也更大。</td></tr>
+        <tr><td>传输</td><td>USB 或本地 Wi-Fi。一条 TCP 连接，没有云端中转。</td></tr>
+        <tr><td>音频</td><td>可选：手机麦克风作为来源的音频、作为音画同步的时间参考，或在屏幕镜像时传输系统音频。</td></tr>
+        <tr><td>电脑</td><td>Windows、macOS 或 Linux 上的 OBS Studio 32+。在 Windows 上使用 USB 需要 iTunes 提供 Apple 的驱动程序。</td></tr>
+        <tr><td>手机</td><td>运行 iOS/iPadOS 15+ 的 iPhone 或 iPad。</td></tr>
+        <tr><td>摄像头</td><td>可同时使用多台：每部手机一个来源，各自独立控制。</td></tr>
+        <tr><td>价格</td><td>免费，GPL-2.0-or-later。无需账户，没有水印，没有付费升级版。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">文档</p>
+      <h2>为解答问题而写</h2>
+      <p>每个界面、每项设置、每种故障，包括那些棘手的问题，比如为什么 iOS 在屏幕直播时会静音 DRM 音频，以及为什么在 Windows 上使用 USB 需要 iTunes。</p>
+    </div>
+    <ul class="doccards">
+      <li><a href="/docs/install/"><strong>安装</strong><span>插件和 App，覆盖所有平台，包括从源代码构建。</span></a></li>
+      <li><a href="/docs/connect/"><strong>连接</strong><span>Wi-Fi、USB、多部手机，以及每条状态信息的含义。</span></a></li>
+      <li><a href="/docs/camera/"><strong>摄像头与画面</strong><span>镜头、格式、手动曝光、HDR、Apple Log、绿幕、记住的设置。</span></a></li>
+      <li><a href="/docs/troubleshooting/"><strong>故障排除</strong><span>按症状逐一说明，并附上需要检查的日志行。</span></a></li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="/download/">下载 LensLink</a>
+      <a class="btn ghost" href="/docs/">浏览全部文档</a>
+    </div>
+  </div>
+</section>

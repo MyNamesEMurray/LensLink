@@ -1,0 +1,148 @@
+title: Câmera, lentes e imagem
+description: Lentes, resoluções, taxas de quadros e codecs; exposição e equilíbrio de branco manuais; HDR e Apple Log; a tela verde virtual; e os ajustes memorizados.
+source: 32ffbd58274b
+---
+<h1>Câmera, lentes e imagem</h1>
+<p class="lede">
+  A imagem é definida no celular, antes da codificação. O plugin decodifica o que
+  recebe e não altera nada.
+</p>
+
+<h2>Escolhendo lente, resolução, taxa de quadros e codec</h2>
+<p>
+  São quatro seletores na seção <strong>Câmera</strong> da tela de configuração,
+  cada um filtrado pelo que a lente selecionada consegue fazer. Uma combinação que
+  não aparece na lista não é suportada pelo hardware.
+</p>
+<table>
+  <thead><tr><th>Ajuste</th><th>Observações</th></tr></thead>
+  <tbody>
+    <tr><td>Lente</td><td>Principal, Ultra-angular, Teleobjetiva ou Frontal. Pode ser trocada durante a transmissão.</td></tr>
+    <tr><td>Resolução</td><td>Até 3840×2160. Mais alta não é automaticamente melhor: 1080p60 supera 4K30 na maioria dos vídeos de uma pessoa falando para a câmera.</td></tr>
+    <tr><td>Taxa de quadros</td><td>30 ou 60. Use a mesma do canvas do OBS. <strong>Opções → Taxa de quadros alta</strong> (experimental) acrescenta 120 e 240 quando a câmera oferece.</td></tr>
+    <tr><td>Codec</td><td>O HEVC tem a mesma aparência do H.264 com cerca de 40% menos dados. Use-o, a menos que a sua versão do OBS não consiga decodificá-lo.</td></tr>
+    <tr><td>Qualidade</td><td><strong>Equilibrada</strong> transmite com uma taxa de bits segura em um Wi-Fi comum. <strong>Máxima</strong> continua testando taxas mais altas enquanto a conexão se mantém limpa (até cerca de seis vezes aquela por USB, quatro por Wi-Fi) e se estabiliza logo abaixo do que o link aguenta. Ela também passa o codificador para ajustes que priorizam a qualidade e transmite a leitura completa do sensor. Mais dados e mais calor; o lugar dela é no USB.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p>Se a fonte disser <em>"Conectado, mas esta versão do OBS não consegue
+  decodificar o vídeo"</em>, essa versão não tem decodificador HEVC. Mude o app
+  para H.264; nada mais muda.</p>
+</div>
+
+<h3>Mudando os ajustes durante a transmissão</h3>
+<p>
+  Lente, resolução, taxa de quadros e codec podem ser alterados com a transmissão
+  ao vivo, pelo painel no navegador ou pelas propriedades da fonte. A troca de lente
+  é instantânea; a troca de formato pausa por um instante enquanto a câmera reinicia.
+</p>
+
+<h2>Controles da câmera ao vivo</h2>
+<p>
+  Os mesmos controles aparecem na tela Ao vivo do app, no
+  <a href="/docs/web-panel/">painel no navegador</a> e (em parte) nas propriedades
+  da fonte, na mesma ordem em todos os lugares; mexer em um atualiza os outros.
+</p>
+<p>
+  No celular, a tela Ao vivo mostra a imagem, o indicador de status, Pausar,
+  Parar e os botões de lente (<strong>.5</strong>, <strong>1×</strong>,
+  <strong>2</strong>), como no app Câmera. Faça o gesto de pinça para dar zoom,
+  toque para focar e arraste para cima ou para baixo na imagem para clarear ou
+  escurecer o enquadramento. A seta abre a <strong>bandeja de ajustes</strong>: um
+  dial e um chip para cada coisa que ele controla. Um <strong>A</strong> amarelo em
+  um chip indica que aquele ajuste está no automático; arraste o dial e ele passa
+  para manual, toque de novo no chip ativo e ele volta. O painel no navegador
+  organiza os mesmos controles em linhas.
+</p>
+<table>
+  <thead><tr><th>Controle</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td>Zoom</td><td>De 1× até o máximo da lente. Faça pinça na tela Ao vivo, toque em um botão de lente ou use o chip Zoom ou o controle deslizante do painel.</td></tr>
+    <tr><td>Exposição</td><td>No automático, um dial de compensação (arraste a imagem no celular). Arraste <strong>Obturador</strong> para passar a exposição para manual (o chip Exposição vira <strong>ISO</strong>) ou escolha <strong>Manual</strong> no painel. O modo manual fica oculto nas câmeras que não o têm.</td></tr>
+    <tr><td>Foco</td><td>Automático, ou travado com um dial de perto a longe. No automático, a câmera acompanha rostos (Opções → Foco em rostos). Toque na pré-visualização para focar e expor naquele ponto até a cena mudar; mantenha pressionado para travar foco e exposição ali.</td></tr>
+    <tr><td>Equilíbrio de branco</td><td>Automático, ou travado com um dial de 2500 a 8000 K.</td></tr>
+    <tr><td>Lanterna</td><td>Ligada ou desligada. Uma luz de preenchimento dura a curta distância, e pouco mais que isso. Na fileira inferior da bandeja, no celular.</td></tr>
+    <tr><td>Lente</td><td>As lentes reais do aparelho: os botões de lente no celular, um menu no painel.</td></tr>
+    <tr><td>Alternar</td><td>Da frontal para a traseira e de volta. Na fileira inferior da bandeja, no celular.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>Trave o foco e o equilíbrio de branco depois de acertar o enquadramento.</strong>
+  O foco automático e o equilíbrio de branco automático ficam procurando quando alguém
+  passa ou uma luz muda, e essa busca aparece na transmissão. Este é o maior ganho
+  de qualidade desta página.</p>
+</div>
+
+<h2>Cor: HDR e Apple Log</h2>
+<p>
+  <strong>Cor</strong> fica na janela Formato do app e só oferece o que este celular
+  consegue capturar. As duas opções exigem HEVC e entram em vigor na próxima vez que
+  a câmera iniciar; a janela as marca como "somente HEVC", e escolher H.264 ali
+  volta a Cor para Padrão.
+</p>
+<h3>HDR (HLG)</h3>
+<p>
+  Captura HLG de 10 bits. O OBS faz o mapeamento de tons para um canvas SDR; um
+  canvas HDR recebe a imagem real. Desativado por padrão.
+</p>
+<h3>Apple Log</h3>
+<p>
+  Nos iPhones Pro (iOS 17+), uma imagem plana de 10 bits para correção de cor:
+  adicione um filtro <strong>Aplicar LUT</strong> à fonte e carregue uma LUT
+  Apple Log. O plugin não aplica nada por conta própria.
+</p>
+<div class="callout warn">
+  <p>O Log parece desbotado até passar pela correção de cor. Se você não vai
+  adicionar uma LUT, use Padrão.</p>
+</div>
+
+<h2>Tela verde virtual</h2>
+<p>
+  Tudo o que não é você é pintado de verde sólido <em>antes</em> de o vídeo sair
+  do celular; ativá-la define a Cor como Padrão. A fonte então adiciona no OBS um
+  filtro chroma key já ajustado, uma única vez, então excluí-lo ou reajustá-lo é
+  respeitado.
+</p>
+<ul>
+  <li><strong>Assistência de profundidade</strong> refina o recorte com profundidade real: a câmera frontal nos celulares com Face ID, a lente Principal traseira nos celulares Pro (com LiDAR). As outras lentes usam apenas a detecção de formas, que mantém todas as pessoas no quadro. Ela também desativa o Palco Central e os outros efeitos do sistema.</li>
+  <li><strong>Distância do assunto</strong> aparece enquanto a assistência de profundidade está ativa: tudo além do limite vira fundo, e é assim que você remove alguém que passa atrás de você. Arraste para escolher de 0,5 a 5,0 m, ou toque no valor para <strong>Tudo</strong>.</li>
+</ul>
+
+
+<h2 id="remembered">Ajustes memorizados</h2>
+<p>
+  A <strong>exposição, o equilíbrio de branco, o zoom e o foco</strong> de cada
+  câmera são mantidos de uma transmissão para a outra, por lente, então um
+  enquadramento acertado uma vez continua acertado. Trave o equilíbrio de branco na
+  lente Principal hoje e ele volta travado amanhã; mude para a Ultra-angular
+  durante a transmissão e <em>ela</em> volta do jeito que você a deixou da última vez. Não há
+  nada para nomear nem salvar: a bandeja mostra o que foi restaurado, e tocar em um
+  chip o libera.
+</p>
+<p><strong>Opções → Memorizar ajustes da câmera</strong> desativa isso, o que também apaga o que estava guardado.</p>
+
+<h2>Efeitos de vídeo da Central de Controle</h2>
+<p>
+  Retrato, Luz de Estúdio e os demais são recursos do iOS, ativados na Central de
+  Controle enquanto um app usa a câmera. O iOS só os oferece em certas câmeras e
+  formatos (normalmente a câmera frontal, nada acima de 1920×1440), e em muitos
+  iPhones as câmeras traseiras não recebem nenhum.
+</p>
+<ul>
+  <li><strong>Opções → Diagnóstico da câmera</strong> lista o que o seu aparelho oferece, por câmera e formato.</li>
+  <li>O LensLink escolhe um formato compatível com efeitos sempre que os seus ajustes permitem.</li>
+  <li>Um botão que aparece, mas fica acinzentado, indica que a taxa de quadros está alta demais: reduza-a e ative <strong>Opções → Permitir efeitos de vídeo do sistema</strong> para que o iOS possa variá-la.</li>
+</ul>
+<p>
+  Os filtros do app Câmera e os Estilos Fotográficos da Apple não estão disponíveis
+  para nenhum app de terceiros. Para dar um visual, use os filtros do OBS (clique com
+  o botão direito na fonte → <strong>Filtros</strong>).
+</p>
+
+<h2>Segurando o celular</h2>
+<p>
+  A interface acompanha a rotação do celular (a menos que o bloqueio de rotação
+  esteja ativado) e a visualização ao vivo fica na posição correta em qualquer
+  orientação. O que o OBS recebe é sempre a orientação paisagem nativa do sensor,
+  então girar o celular nunca redimensiona a fonte na sua cena.
+</p>

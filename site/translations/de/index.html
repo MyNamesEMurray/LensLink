@@ -1,0 +1,214 @@
+title: LensLink – dein iPhone als Kamera in OBS Studio
+description: LensLink macht ein iPhone oder iPad zu einer hochwertigen Kameraquelle in OBS Studio, über Wi-Fi oder USB. Bis zu 4K60 in H.264 oder HEVC, Kamerasteuerung in Echtzeit, automatische Lippensynchronität. Kostenlos und Open Source.
+nav: home
+source: d5c6fc00fbbc
+---
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Kostenlos und Open Source · GPL-2.0-or-later</span>
+      <h1>Dein iPhone ist längst die beste Kamera, die du hast. <em>Hol sie in OBS.</em></h1>
+      <p class="lede">
+        Zwei OBS-Quellen – eine Kamera und eine Bildschirmspiegelung – direkt mit
+        deinem iPhone oder iPad verbunden, über Wi-Fi oder USB. Kein Treiber für
+        eine virtuelle Kamera, kein RTMP-Server, kein Abo.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="/download/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          Download
+        </a>
+        <a class="btn ghost" href="/setup/">Geführte Einrichtung</a>
+      </div>
+      <p class="meta">
+        <span>OBS Studio 32+</span><span>Windows, macOS, Linux</span><span>iOS/iPadOS 15+</span>
+      </p>
+    </div>
+
+    <div>
+      <!-- The app's Live screen, rebuilt from the same design tokens the
+           app and the plugin's browser panel use. -->
+      <div class="device">
+        <div class="screen{{FEED}}"{{FEED_STYLE}}>
+          <div class="topgroup">
+            <div class="toprow">
+            <span class="pill"><span class="dot live"></span>Live<span class="chev">⌄</span></span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span>
+            <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
+            </div>
+            <span class="pill health">60 fps · 11.9 Mb/s · 0 verworfen</span>
+          </div>
+          <div class="panelmock">
+            <div class="chiprow">
+              <span class="chp">Zoom</span>
+              <span class="chp on">Belichtung</span>
+              <span class="chp">Verschluss<i>A</i></span>
+              <span class="chp">WA<i>A</i></span>
+              <span class="chp">Fokus<i>A</i></span>
+            </div>
+            <div class="dial">
+              <span class="ro yl">+0.3 EV</span>
+              <span class="track yl"><i style="width:58%"></i></span>
+            </div>
+            <div class="row">
+              <span class="mode">Auto · Bild nach oben oder unten ziehen</span>
+              <span class="chips">
+                <span class="chip on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h11l-2-2M20 16H9l2 2"/><circle cx="12" cy="12" r="2"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 10 6 6 6-6"/></svg></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">Der Live-Bildschirm der App mit geöffneter Einstellleiste: ein einziger Regler, dessen Funktion die Chips wählen. Der rote Rahmen ist das Tally-Licht – diese Quelle ist auf Sendung. Jedes Bedienelement hier gibt es auch im Browser auf dem Computer.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Einrichtung</p>
+      <h2>Drei Schritte, etwa drei Minuten</h2>
+      <p>Plugin auf den Computer, App aufs Smartphone, Quelle in OBS. Keine Router-Konfiguration, kein Konto.</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>OBS-Plugin installieren</h3>
+        <p>Ein Installationsprogramm für Windows und macOS, ein Tarball für Linux. Fügt deinem vorhandenen OBS zwei Quellen hinzu.</p>
+      </li>
+      <li>
+        <h3>iPhone-App installieren</h3>
+        <p>Kostenlos im <a href="{{APPSTORE}}">App Store</a>. Oder tritt der TestFlight-Beta bei, installiere den unsignierten Build per Sideloading oder kompiliere die App selbst.</p>
+      </li>
+      <li>
+        <h3>Quelle in OBS hinzufügen</h3>
+        <p><strong>Quellen → + → LensLink Camera</strong>, dann dein Smartphone auswählen oder das Kabel anschließen. Nach ein, zwei Sekunden erscheint das Bild.</p>
+      </li>
+    </ol>
+    <div class="cta">
+      <a class="btn ghost small" href="/setup/">Lieber vier Fragen beantworten</a>
+      <a class="btn ghost small" href="/docs/install/">Vollständige Installationsanleitung</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Was du bekommst</p>
+      <h2>Eine echte Kameraquelle, kein Webcam-Behelf</h2>
+      <p>Das Smartphone kodiert in Hardware, das Plugin dekodiert auf deiner GPU und übergibt OBS die Frames. Eine Verbindung, nichts dazwischen.</p>
+    </div>
+    <div class="grid three">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="m17 12 5-3v9l-5-3z"/></svg>
+        <h3>Bis zu 4K mit 60 fps</h3>
+        <p>H.264 oder HEVC. Die Auswahl bietet nur Kombinationen an, die deine Kamera tatsächlich unterstützt.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/><path d="M2 9a15 15 0 0 1 20 0"/></svg>
+        <h3>Wi-Fi oder USB</h3>
+        <p>USB braucht kein Netzwerk, hält die Latenz am stabilsten und lädt das Smartphone beim Streamen. Mit Wi-Fi fällt das Kabel weg.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        <h3>Steuerung vom Computer aus</h3>
+        <p>Zoom, Belichtung, manuelle ISO und Verschlusszeit, Fokus, Weißabgleich, Taschenlampe, Objektiv, Kamerawechsel – am Smartphone, in einem Browser-Steuerfeld oder in den Eigenschaften der Quelle.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h2l2-5 3 10 3-13 3 16 2-8h3"/></svg>
+        <h3>Automatische Lippensynchronität</h3>
+        <p>Das Plugin misst die tatsächliche Latenz und richtet dein eigenes Mikrofon am Bild aus. Nach etwa fünfzehn Sekunden hat es sich eingependelt und bleibt dann stabil.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>
+        <h3>Bildschirmspiegelung</h3>
+        <p>Ein zweiter Quelltyp spiegelt den ganzen Bildschirm samt Ton, über die Bildschirmübertragung von iOS selbst. Gut geeignet für Mobile Games und App-Demos.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v9"/><path d="M7.5 6.5a7 7 0 1 0 9 0"/></svg>
+        <h3>Fernstart</h3>
+        <p>OBS startet die Kamera selbst, ein montiertes Smartphone muss also nie abgenommen werden. Siri und Kurzbefehle funktionieren auch.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Mehr Möglichkeiten</p>
+      <h2>Was eine Webcam nicht kann</h2>
+      <p>Alles optional. Ohne dein Zutun ist die Quelle eine ganz normale SDR-Kamera.</p>
+    </div>
+    <div class="grid two">
+      <div>
+        <h3>Apple Log (Beta)</h3>
+        <p>Auf Pro-iPhones (iOS 17+) streamst du ein flaches 10-Bit-Log-Bild und machst das Grading mit dem OBS-Filter „LUT anwenden“. Das Plugin dekodiert es originalgetreu und lässt das Bild ansonsten unangetastet.</p>
+      </div>
+      <div>
+        <h3>HDR in HLG (Beta)</h3>
+        <p>10-Bit-HLG über HEVC, auf Kameras, die das unterstützen. OBS stellt es auf SDR- und HDR-Leinwänden gleichermaßen korrekt dar.</p>
+      </div>
+      <div>
+        <h3>Virtueller Greenscreen (Beta)</h3>
+        <p>Das Smartphone färbt vor dem Kodieren alles außer dir einfarbig grün, und das Plugin fügt einen passend eingestellten Chroma-Key-Filter hinzu. Mit Tiefendaten von Face ID oder LiDAR blendet eine Entfernungsgrenze Personen aus, die hinter dir vorbeigehen.</p>
+      </div>
+      <div>
+        <h3>Jedes Objektiv, live umschaltbar</h3>
+        <p>Haupt, Ultraweitwinkel, Tele, Frontkamera – mitten im Stream umgeschaltet, ohne dass die OBS-Quelle abbricht.</p>
+      </div>
+      <div>
+        <h3>GPU-Dekodierpipeline (Beta)</h3>
+        <p>Dekodiertes Video bleibt auf der Grafikkarte, statt den Umweg über den Arbeitsspeicher zu nehmen. Weniger CPU-Last und Latenz, vor allem bei 4K.</p>
+      </div>
+      <div>
+        <h3>Zustand immer im Blick</h3>
+        <p>Dekodierte Bildrate, Bitrate der Übertragung und gemessene Latenz – pro Smartphone, jede Sekunde – in der Statusleiste von OBS und in einem andockbaren Panel.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Auf einen Blick</p>
+      <h2>Technische Daten</h2>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr><td>Video</td><td>Bis zu <span class="num">3840×2160</span> mit <span class="num">60 fps</span>, H.264 oder HEVC. HDR (HLG) und Apple Log als Beta.</td></tr>
+        <tr><td>Latenz</td><td>Etwa <span class="num">60 ms</span> über USB bei 1080p oder 4K. Über Wi-Fi höher und schwankender.</td></tr>
+        <tr><td>Übertragung</td><td>USB oder lokales Wi-Fi. Eine TCP-Verbindung, keine Weiterleitung über die Cloud.</td></tr>
+        <tr><td>Audio</td><td>Optional das Mikrofon des Smartphones als Ton der Quelle, eine Zeitreferenz für die Lippensynchronität oder bei der Bildschirmspiegelung der Systemton.</td></tr>
+        <tr><td>Computer</td><td>OBS Studio 32+ unter Windows, macOS oder Linux. USB unter Windows braucht iTunes für Apples Treiber.</td></tr>
+        <tr><td>Smartphone</td><td>iPhone oder iPad mit iOS/iPadOS 15+.</td></tr>
+        <tr><td>Kameras</td><td>Mehrere gleichzeitig: eine Quelle pro Smartphone, jede einzeln steuerbar.</td></tr>
+        <tr><td>Preis</td><td>Kostenlos, GPL-2.0-or-later. Kein Konto, kein Wasserzeichen, keine Bezahlversion.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Dokumentation</p>
+      <h2>Geschrieben, um Fragen zu beantworten</h2>
+      <p>Jeder Bildschirm, jede Einstellung, jeder Fehlerfall – auch die unbequemen, etwa warum iOS DRM-Ton während einer Übertragung stummschaltet und warum USB unter Windows iTunes braucht.</p>
+    </div>
+    <ul class="doccards">
+      <li><a href="/docs/install/"><strong>Installation</strong><span>Plugin und App, für jede Plattform, auch aus dem Quellcode.</span></a></li>
+      <li><a href="/docs/connect/"><strong>Verbinden</strong><span>Wi-Fi, USB, mehrere Smartphones und jede Statusmeldung erklärt.</span></a></li>
+      <li><a href="/docs/camera/"><strong>Kamera und Bild</strong><span>Objektive, Formate, manuelle Belichtung, HDR, Apple Log, Greenscreen, gespeicherte Einstellungen.</span></a></li>
+      <li><a href="/docs/troubleshooting/"><strong>Fehlerbehebung</strong><span>Symptom für Symptom, mit den Logzeilen, die du prüfen solltest.</span></a></li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="/download/">LensLink herunterladen</a>
+      <a class="btn ghost" href="/docs/">Zur gesamten Dokumentation</a>
+    </div>
+  </div>
+</section>

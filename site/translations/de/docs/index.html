@@ -1,0 +1,73 @@
+title: LensLink-Dokumentation
+description: Alles über Installation, Verbindung und Betrieb von LensLink – dem OBS-Studio-Plugin und der iPhone-App, die dein Smartphone zur Kameraquelle machen.
+source: 05e0e6803736
+---
+<h1>Dokumentation</h1>
+<p class="lede">
+  Zwei Programme, die miteinander sprechen: ein Plugin in OBS, eine App auf dem
+  Smartphone. Diese Seiten behandeln die Installation beider, ihre Verbindung
+  und jede Einstellung, die eines von beiden bietet.
+</p>
+
+<div class="callout">
+  <p><strong>Du hast es eilig?</strong> Die <a href="/setup/">Einrichtungsanleitung</a> stellt vier
+  Fragen und zeigt dir nur die Schritte, die zu deinen Antworten passen. Oder lies
+  <a href="/docs/install/">Installation</a> und dann <a href="/docs/connect/">Verbinden</a>,
+  dort steht dasselbe ausführlich.</p>
+</div>
+
+<h2>Wie alles zusammenspielt</h2>
+<p>
+  Die App nimmt auf, kodiert in Hardware nach H.264 oder HEVC und wartet auf
+  TCP-Port <code>9979</code>. Das Plugin wählt diesen Port an – über dein
+  Netzwerk oder über Apples USB-Gerätedienst –, dekodiert wo möglich auf der
+  GPU und übergibt OBS die Frames als ganz normale Quelle.
+</p>
+<p>
+  Kein Cloud-Dienst, kein Konto. Wenn sich beide Seiten erreichen können,
+  funktioniert LensLink.
+</p>
+<table>
+  <thead><tr><th>Teil</th><th>Wo es läuft</th><th>Was es tut</th></tr></thead>
+  <tbody>
+    <tr><td>LensLink-App</td><td>iPhone / iPad</td><td>Nimmt auf, kodiert, wartet auf Verbindungen. Streamt, solange sie auf dem Bildschirm ist (oder auf einem unterstützten iPad neben einer anderen App).</td></tr>
+    <tr><td>LensLink Camera</td><td>OBS-Quelle</td><td>Der Kamerastream, seine Steuerung und die Lippensynchronität.</td></tr>
+    <tr><td>LensLink Screen</td><td>OBS-Quelle</td><td>Eine iOS-Bildschirmübertragung mit ihrem Systemton.</td></tr>
+    <tr><td>Browser-Steuerfeld</td><td>http://localhost:9980</td><td>Dieselbe Kamerasteuerung, auf dem Computer.</td></tr>
+  </tbody>
+</table>
+
+<h2>Erste Schritte</h2>
+<ul class="doccards">
+  <li><a href="/docs/install/"><strong>Installation</strong><span>Plugin unter Windows, macOS und Linux; App aus dem App Store, über TestFlight, per Sideloading oder mit Xcode.</span></a></li>
+  <li><a href="/docs/connect/"><strong>OBS mit dem Smartphone verbinden</strong><span>Wi-Fi, USB, mehrere Smartphones und jede Statusmeldung erklärt.</span></a></li>
+  <li><a href="/docs/camera/"><strong>Kamera, Objektive und Bild</strong><span>Formate, manuelle Belichtung, HDR, Apple Log, Greenscreen, gespeicherte Einstellungen.</span></a></li>
+  <li><a href="/docs/screen-mirroring/"><strong>Bildschirmspiegelung</strong><span>Den Bildschirm übertragen, samt Ton, und die Größe der Quelle festlegen.</span></a></li>
+  <li><a href="/docs/audio/"><strong>Audio und Lippensynchronität</strong><span>Das Smartphone als Mikrofon und der automatische Abgleich deines eigenen Mikrofons.</span></a></li>
+  <li><a href="/docs/remote-start/"><strong>Fernstart</strong><span>Die Kamera aus OBS, per Siri, mit einem Kurzbefehl oder über eine URL starten.</span></a></li>
+  <li><a href="/docs/web-panel/"><strong>Browser-Steuerfeld</strong><span>Das Steuerfeld auf Port 9980 und die HTTP-API dahinter.</span></a></li>
+  <li><a href="/docs/settings/"><strong>Einstellungsreferenz</strong><span>Jede Quelleigenschaft, jede Plugin-Einstellung und jede App-Option.</span></a></li>
+  <li><a href="/docs/performance/"><strong>Latenz und Leistung</strong><span>Woraus die Verzögerung besteht, und die GPU-Dekodierpipeline.</span></a></li>
+  <li><a href="/docs/troubleshooting/"><strong>Fehlerbehebung</strong><span>Symptom für Symptom, mit den Logzeilen, nach denen du suchen solltest.</span></a></li>
+</ul>
+
+<h2>Begriffe</h2>
+<p>Jeder dieser Begriffe bedeutet in der App, im Plugin und auf diesen Seiten genau eine Sache.</p>
+<table>
+  <tbody>
+    <tr><td>Einrichtungsbildschirm</td><td>Der erste Bildschirm der App: die Computer-Karte, die Kamerazeilen und die beiden Start-Schaltflächen, bevor etwas gestreamt wird.</td></tr>
+    <tr><td>Live-Bildschirm</td><td>Die Vollbildansicht während des Streamens: das Bild, die Objektivtasten und eine Einstellleiste, nur einen Tipp entfernt.</td></tr>
+    <tr><td>Bereitschaft</td><td>App geöffnet und im Leerlauf, OBS verbunden und in der Lage, die Kamera zu starten. Bernsteinfarben.</td></tr>
+    <tr><td>Tally-Licht</td><td>Der farbige Rahmen, der anzeigt, was die Quelle in OBS gerade tut – auf Sendung, in der Vorschau und weitere Zustände, die du auswählst.</td></tr>
+    <tr><td>Ruheansicht</td><td>Was aus dem Live-Bildschirm 10 Sekunden nach deiner letzten Berührung wird.</td></tr>
+    <tr><td>Lippensynchron-Referenz</td><td>Das Mikrofon des Smartphones, nur als Zeitsignal gesendet. Im Stream nie zu hören.</td></tr>
+  </tbody>
+</table>
+
+<h2>Hilfe bekommen</h2>
+<p>
+  <a href="/docs/troubleshooting/">Fehlerbehebung</a> behandelt die bekannten
+  Fehlerfälle mit den Logzeilen, die sie erzeugen. Für alles Neue eröffne ein Issue auf
+  <a href="{{REPO}}/issues">GitHub</a> und hänge das OBS-Log (<strong>Hilfe →
+  Logdateien</strong>) und <strong>Optionen → Kameradiagnose</strong> an.
+</p>

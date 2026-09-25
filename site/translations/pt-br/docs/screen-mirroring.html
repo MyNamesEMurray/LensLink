@@ -1,0 +1,81 @@
+title: Espelhamento de tela
+description: Espelhe a tela inteira do seu iPhone ou iPad no OBS, com o áudio, usando a fonte LensLink Screen e a transmissão nativa do iOS.
+source: 241eae9c8fb9
+---
+<h1>Espelhamento de tela</h1>
+<p class="lede">
+  A <strong>LensLink Screen</strong> recebe uma transmissão de tela do iOS: a tela
+  inteira com o áudio, de qualquer app, codificada em HEVC.
+</p>
+
+<h2>Configurando</h2>
+<ol class="walk">
+  <li>
+    <strong>Adicione a fonte no OBS</strong>
+    <p><strong>Fontes → + → LensLink Screen</strong>, depois aponte-a para o celular exatamente como faria com uma fonte de câmera.</p>
+  </li>
+  <li>
+    <strong>Inicie a transmissão no celular</strong>
+    <p>Toque em <strong>Espelhar tela</strong>, escolha <strong>LensLink Screen</strong> e toque em <strong>Iniciar Transmissão</strong>. O iOS exige o seletor dele aqui.</p>
+  </li>
+  <li>
+    <strong>Saia do app</strong>
+    <p>Diferente da câmera, uma transmissão de tela continua rodando entre apps; é justamente para isso que ela serve.</p>
+  </li>
+</ol>
+
+<div class="callout">
+  <p>Cada tipo de fonte aceita apenas a sua própria transmissão. Se fonte e transmissão não
+  combinarem, o campo Status diz para qual fonte mudar, em vez de não mostrar nada.</p>
+</div>
+
+<h2>Áudio</h2>
+<ul>
+  <li><strong>O áudio dos apps e do sistema é transmitido</strong>: som de jogos, vídeos no navegador, efeitos de apps.</li>
+  <li><strong>O áudio protegido por DRM é silenciado pelo iOS</strong> durante qualquer transmissão (Apple Music, Spotify, Netflix). Isso vale para todas as extensões de transmissão da plataforma; o LensLink não tem como evitar.</li>
+  <li><strong>O seu microfone não é enviado.</strong> Capte a sua voz pelo OBS. (A fonte de câmera pode levar o microfone do celular; esta, de propósito, não leva.)</li>
+</ul>
+<p>
+  Para <em>ouvir</em> o áudio, e não apenas gravá-lo, defina o
+  <strong>Monitoramento de áudio</strong> da fonte como <strong>Monitorar e enviar áudio</strong> nas
+  Propriedades de áudio avançadas do OBS.
+</p>
+
+<h2>Travando o tamanho da fonte</h2>
+<p>
+  Um espelhamento informa a resolução que o iOS estiver transmitindo, e ela muda
+  entre apps e orientações; por isso a fonte pode mudar de tamanho durante a
+  transmissão e bagunçar o seu layout. Fixe-a em uma caixa de tamanho fixo:
+</p>
+<ol>
+  <li>Clique com o botão direito na fonte → <strong>Transformar</strong> → <strong>Editar transformação...</strong></li>
+  <li>Defina <strong>Tipo da caixa delimitadora</strong> como <strong>Redimensionar até as bordas internas</strong> ("Ajustar").</li>
+  <li>Dê à caixa delimitadora o tamanho que você quer que o espelhamento ocupe.</li>
+</ol>
+<figure>
+  <img src="/img/screen-fit-transform.png" alt="Janela Editar transformação do OBS com o Tipo da caixa delimitadora definido como Redimensionar até as bordas internas" width="544" loading="lazy">
+  <figcaption>O OBS passa a redimensionar cada tamanho recebido para caber na sua caixa, em vez de redimensionar o seu layout.</figcaption>
+</figure>
+
+<h2>O que a fonte Screen não tem</h2>
+<p>
+  Nada de controles de câmera nem de painel no navegador: não há nada para dar zoom
+  ou focar. As propriedades dela são a conexão, a decodificação e o diagnóstico.
+</p>
+
+<h2>Compartilhando um celular entre duas fontes</h2>
+<p>
+  Um celular alimenta uma fonte por vez. Ative <strong>Desconectar quando esta
+  fonte não aparecer em lugar nenhum</strong> nas duas, e uma fonte oculta
+  libera o celular; assim, trocar de cena passa o aparelho de uma para a outra.
+</p>
+
+<h2>Quando a transmissão não conecta</h2>
+<p>
+  A extensão de transmissão é um processo separado, então as falhas dela são difíceis
+  de ver. Verifique duas coisas:
+</p>
+<ul>
+  <li>Em uma versão instalada por <strong>sideload</strong>, a reassinatura pode remover ou quebrar a extensão, uma consequência conhecida de reescrever os IDs de pacote. A seção Espelhamento de tela da tela principal do app avisa quando a extensão está faltando no app instalado. As versões do TestFlight e da App Store não são afetadas.</li>
+  <li>Se a transmissão começa no celular, mas o OBS não mostra nada, o problema está na conexão: veja <a href="/docs/connect/#reading-the-status-field">Lendo o campo Status</a>.</li>
+</ul>

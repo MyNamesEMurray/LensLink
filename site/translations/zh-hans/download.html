@@ -1,0 +1,129 @@
+title: 下载 LensLink
+description: 下载适用于 Windows、macOS 或 Linux 上 OBS Studio 的 LensLink 插件，并从 App Store 在你的 iPhone 或 iPad 上安装 LensLink App。
+nav: download
+script: /js/download.js
+source: 93d3caf21abf
+---
+<section class="dl-hero">
+  <div class="wrap">
+    <h1>下载 LensLink</h1>
+    <p>
+      相互通信的两部分：OBS Studio 的<strong>插件</strong>，以及你的
+      iPhone 或 iPad 上的 <strong>App</strong>。两者缺一不可。
+    </p>
+    <p id="os-detected" class="detected" hidden></p>
+    <p id="rel-meta" class="relmeta" hidden>
+      <span>最新版本 <span class="num" id="rel-tag">—</span></span>
+      <span>发布于 <span class="num" id="rel-date">—</span></span>
+      <span><a id="rel-notes" href="{{REPO}}/releases/latest">发行说明</a></span>
+    </p>
+    <p id="rel-fallback" class="relmeta" hidden>
+      <span>无法从 GitHub 获取文件列表。下方的按钮仍会指向最新版本。</span>
+    </p>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="dl-pair">
+
+      <div class="card">
+        <span class="step">第 1 部分</span>
+        <h2>OBS 插件</h2>
+        <p>为 OBS Studio 32+ 添加 <strong>LensLink Camera</strong> 和 <strong>LensLink
+        Screen</strong> 来源。安装后需重启 OBS。</p>
+
+        <ul class="oslist">
+          <li id="dl-win-installer" data-os="windows">
+            <span class="grow"><span class="name">Windows 安装程序</span>
+              <span class="file">LensLink-installer-windows-x64.exe</span></span>
+            <a class="btn small" href="{{REPO}}/releases/latest">下载</a>
+          </li>
+          <li id="dl-win-zip">
+            <span class="grow"><span class="name">Windows，手动安装</span>
+              <span class="file">lenslink-windows-x64.zip</span></span>
+            <a class="btn small ghost" href="{{REPO}}/releases/latest">下载</a>
+          </li>
+          <li id="dl-mac-pkg" data-os="macos">
+            <span class="grow"><span class="name">macOS 安装包</span>
+              <span class="file">LensLink-installer-macos-universal.pkg</span></span>
+            <a class="btn small" href="{{REPO}}/releases/latest">下载</a>
+          </li>
+          <li id="dl-mac-zip">
+            <span class="grow"><span class="name">macOS，手动安装</span>
+              <span class="file">lenslink-macos-universal.zip</span></span>
+            <a class="btn small ghost" href="{{REPO}}/releases/latest">下载</a>
+          </li>
+          <li id="dl-linux" data-os="linux">
+            <span class="grow"><span class="name">Linux</span>
+              <span class="file">lenslink-linux-x86_64.tar.gz</span></span>
+            <a class="btn small" href="{{REPO}}/releases/latest">下载</a>
+          </li>
+        </ul>
+        <p class="sub">各平台的步骤：<a href="/docs/install/">安装指南</a>。
+        也可以<a href="{{REPO}}/blob/main/obs-plugin/BUILDING.md">从源代码构建</a>。</p>
+      </div>
+
+      <div class="card">
+        <span class="step">第 2 部分</span>
+        <h2>iPhone / iPad App</h2>
+        <p>负责采集视频并等待 OBS 连接。需要 iOS 或 iPadOS 15+。在
+        App Store 免费下载，并会自动更新。</p>
+
+        <a class="btn primary" href="{{APPSTORE}}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          在 App Store 获取
+        </a>
+        <p class="sub">LensLink Camera，免费，无 App 内购买项目。</p>
+
+        <ul class="oslist">
+          <li>
+            <span class="grow"><span class="name">TestFlight 测试版</span>
+              <span class="file">在 App 审核之前抢先体验新版本</span></span>
+            <a class="btn small ghost" href="{{TESTFLIGHT}}">加入</a>
+          </li>
+          <li id="dl-ipa">
+            <span class="grow"><span class="name">侧载，未签名版本</span>
+              <span class="file">LensLink-unsigned.ipa</span></span>
+            <a class="btn small ghost" href="{{REPO}}/releases/latest">下载</a>
+          </li>
+          <li>
+            <span class="grow"><span class="name">在 Xcode 中构建</span>
+              <span class="file">ios-app/BUILDING.md</span></span>
+            <a class="btn small ghost" href="{{REPO}}/blob/main/ios-app/BUILDING.md">说明</a>
+          </li>
+        </ul>
+        <p class="sub">使用免费 Apple ID 时，侧载的 App 会在 7 天后过期，并且 Siri
+        短语会失效。<a href="/docs/install/#sideloading">原因</a>。</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>安装之前</h2>
+      <p>最容易让人卡住的两件事。</p>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr>
+          <td>OBS Studio 32 或更高版本</td>
+          <td><strong>帮助 → 关于</strong>。更早的版本无法加载插件。</td>
+        </tr>
+        <tr>
+          <td>USB 辅助组件，仅限 USB</td>
+          <td>Apple 的设备驱动程序随 iTunes 一起提供。Linux 则需要
+          <code>usbmuxd</code> 守护进程；macOS 已内置。使用 Wi-Fi
+          时都不需要。</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="cta">
+      <a class="btn primary" href="/docs/install/">安装指南</a>
+      <a class="btn ghost" href="{{REPO}}/releases">所有版本和更新日志</a>
+    </div>
+  </div>
+</section>

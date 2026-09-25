@@ -1,0 +1,101 @@
+title: Início remoto
+description: Inicie e pare a câmera do celular pelo OBS, por um botão no navegador, pela Siri, por um atalho ou por uma URL, sem precisar tirar do suporte um celular já montado.
+source: 3b19eded1e63
+---
+<h1>Início remoto</h1>
+<p class="lede">
+  Um celular preso atrás de um monitor não deveria ter que sair dali só para alguém
+  tocar em Iniciar. Enquanto o app está aberto e ocioso, o próprio OBS pode iniciar a
+  câmera.
+</p>
+
+<h2>Por que o app precisa estar aberto</h2>
+<p>
+  O iOS só mantém a câmera e o receptor do LensLink rodando enquanto o app está na
+  tela. Tudo o que vem a seguir existe por causa disso: o app anuncia que está
+  <strong>em espera</strong> quando está aberto e ocioso, e o OBS assume a partir daí.
+</p>
+<p>
+  É também por isso que os caminhos pela Siri e pelos Atalhos abrem o app primeiro, e
+  por isso que o celular adia o bloqueio automático enquanto a espera está armada:
+  bloquear suspenderia o receptor. A tela de configuração escurece depois de um
+  minuto, em âmbar e não em verde: armado, mas não ao vivo.
+</p>
+<div class="callout">
+  <p>O início remoto vem ativado por padrão. Desative-o em <strong>Início remoto
+  pelo OBS</strong>, nas <strong>Opções</strong> do app.</p>
+</div>
+
+<h2>As quatro formas de iniciar</h2>
+
+<h3>Automaticamente, quando a fonte se conecta</h3>
+<p>
+  <strong>Iniciar a câmera do celular automaticamente quando estiver pronta</strong>
+  vem ativado por padrão: abra o app e o vídeo aparece, sem mais nenhuma ação. E ele
+  também não fica brigando com você: o OBS só inicia automaticamente quando o app
+  acabou de ficar acessível, não depois de você ter tocado em Parar.
+</p>
+
+<h3>Pelo OBS</h3>
+<p>
+  <strong>Iniciar câmera no celular</strong> e <strong>Parar câmera no
+  celular</strong>, nas propriedades da fonte, sempre que o app estiver conectado.
+</p>
+
+<h3>Pelo painel no navegador</h3>
+<p>
+  <a href="/docs/web-panel/">O painel</a> em
+  <code>http://localhost:9980</code> mostra <strong>Iniciar câmera</strong> enquanto
+  o app está ocioso e um <strong>Parar câmera</strong> vermelho enquanto está ao
+  vivo, cada um com um botão <strong>Início automático</strong> ao lado.
+</p>
+
+<h3>Pela Siri, pelos Atalhos ou por uma URL</h3>
+<ul>
+  <li><strong>Siri (iOS 16+):</strong> <em>"E aí Siri, iniciar transmissão com o LensLink."</em></li>
+  <li><strong>Atalhos:</strong> as ações <strong>Iniciar transmissão da câmera</strong> e <strong>Parar transmissão da câmera</strong>, úteis em automações, como iniciar quando o celular é conectado a um carregador específico.</li>
+  <li><strong>Esquema de URL:</strong> <code>lenslink://start</code> e <code>lenslink://stop</code>. É o caminho do iOS 15, e funciona em todo lugar.</li>
+</ul>
+<div class="callout warn">
+  <p><strong>Frases da Siri e sideload não combinam.</strong> A reassinatura reescreve
+  o ID do pacote, o que deixa órfãos os dados de frases compilados: a Siri recusa,
+  mesmo que a mesma ação funcione pelos Atalhos. Use a versão da App Store ou
+  <code>lenslink://start</code>. Verifique também se o app já foi aberto pelo menos uma vez
+  e se "Usar com a Siri" está ativado em <strong>Ajustes → Siri e Busca →
+  LensLink</strong>.</p>
+</div>
+
+<h2>A troca de cena também inicia e para a câmera</h2>
+<p>
+  Com <strong>Desconectar quando esta fonte não aparecer em lugar nenhum</strong>,
+  ocultar a fonte para a câmera do celular, e mostrá-la inicia de novo. Combinado
+  com o início automático, o celular só codifica enquanto está na tela em algum lugar.
+</p>
+
+<h2>Automatizando por script</h2>
+<p>O endpoint do painel é um simples HTTP POST:</p>
+<pre><code>curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"start_stream"}'
+
+curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"stop_stream"}'</code></pre>
+<p>
+  Com mais de um celular, acrescente o id da fonte obtido em <code>/api/sources</code>
+  como <code>?src=</code>. API completa:
+  <a href="/docs/web-panel/#the-http-api">painel no navegador</a>.
+</p>
+
+<h2>O que esperar no celular</h2>
+<table>
+  <tbody>
+    <tr><td>App aberto, OBS não conectado</td><td>Ponto cinza, "Não conectado".</td></tr>
+    <tr><td>App aberto, OBS conectado, câmera ociosa</td><td>Ponto âmbar, "OBS conectado: pronto". Em espera: início remoto armado.</td></tr>
+    <tr><td>Em espera, sem toques por um minuto</td><td>A tela escurece e mostra um ícone âmbar para despertar. Qualquer toque a desperta; o receptor nunca para.</td></tr>
+    <tr><td>Iniciado</td><td>Tela Ao vivo, ponto verde, "Ao vivo".</td></tr>
+  </tbody>
+</table>
+<p>
+  O escurecimento em espera só acontece quando a <strong>Tela de repouso</strong> está
+  em <strong>Escurecer tela</strong>, e nunca enquanto você estiver tocando na tela ou
+  com uma janela aberta.
+</p>

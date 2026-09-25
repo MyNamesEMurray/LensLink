@@ -1,0 +1,61 @@
+title: LensLink 文档
+description: 关于安装、连接和运行 LensLink 的一切。LensLink 由 OBS Studio 插件和 iPhone App 组成，能把你的手机变成摄像头来源。
+source: 05e0e6803736
+---
+<h1>文档</h1>
+<p class="lede">
+  两个相互通信的程序：OBS 中的插件，手机上的 App。这些页面介绍如何安装两者、如何连接它们，以及两者提供的每一项设置。
+</p>
+
+<div class="callout">
+  <p><strong>赶时间？</strong><a href="/setup/">设置向导</a>会问你四个问题，只给出与你的回答相符的步骤。你也可以先读<a href="/docs/install/">安装</a>，再读<a href="/docs/connect/">连接</a>，内容相同，只是更完整。</p>
+</div>
+
+<h2>各部分如何配合</h2>
+<p>
+  App 负责采集，用硬件编码为 H.264 或 HEVC，并在 TCP 端口 <code>9979</code> 上等待连接。插件通过你的网络或 Apple 的 USB 设备服务连接该端口，尽可能在 GPU 上解码，再把帧作为普通来源交给 OBS。
+</p>
+<p>
+  没有云服务，无需账户。只要两端能互相访问，LensLink 就能工作。
+</p>
+<table>
+  <thead><tr><th>组件</th><th>运行位置</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td>LensLink App</td><td>iPhone / iPad</td><td>采集、编码、等待连接。在屏幕上显示时推流（在支持的 iPad 上，与其他 App 并排显示时也可以）。</td></tr>
+    <tr><td>LensLink Camera</td><td>OBS 来源</td><td>摄像头视频流、它的控件，以及音画同步。</td></tr>
+    <tr><td>LensLink Screen</td><td>OBS 来源</td><td>iOS 屏幕直播及其系统音频。</td></tr>
+    <tr><td>浏览器面板</td><td>http://localhost:9980</td><td>同样的摄像头控件，在电脑上使用。</td></tr>
+  </tbody>
+</table>
+
+<h2>从这里开始</h2>
+<ul class="doccards">
+  <li><a href="/docs/install/"><strong>安装</strong><span>Windows、macOS 和 Linux 上的插件；通过 App Store、TestFlight、侧载或 Xcode 安装 App。</span></a></li>
+  <li><a href="/docs/connect/"><strong>将 OBS 连接到手机</strong><span>Wi-Fi、USB、多部手机，以及每条状态信息的含义。</span></a></li>
+  <li><a href="/docs/camera/"><strong>摄像头、镜头与画面</strong><span>格式、手动曝光、HDR、Apple Log、绿幕、记住的设置。</span></a></li>
+  <li><a href="/docs/screen-mirroring/"><strong>屏幕镜像</strong><span>屏幕直播、屏幕音频，以及固定来源尺寸。</span></a></li>
+  <li><a href="/docs/audio/"><strong>音频与音画同步</strong><span>把手机用作麦克风，以及自动对齐你自己的麦克风。</span></a></li>
+  <li><a href="/docs/remote-start/"><strong>远程启动</strong><span>通过 OBS、Siri、快捷指令或 URL 启动摄像头。</span></a></li>
+  <li><a href="/docs/web-panel/"><strong>浏览器控制面板</strong><span>端口 9980 上的面板及其背后的 HTTP API。</span></a></li>
+  <li><a href="/docs/settings/"><strong>设置参考</strong><span>每一项来源属性、插件设置和 App 选项。</span></a></li>
+  <li><a href="/docs/performance/"><strong>延迟与性能</strong><span>延迟由哪些部分构成，以及 GPU 解码管线。</span></a></li>
+  <li><a href="/docs/troubleshooting/"><strong>故障排除</strong><span>按症状逐一说明，并附上需要查找的日志行。</span></a></li>
+</ul>
+
+<h2>术语</h2>
+<p>以下每个术语在 App、插件和这些页面中都只表示一个特定的含义。</p>
+<table>
+  <tbody>
+    <tr><td>主界面</td><td>App 的第一个界面：电脑卡片、摄像头各行和两个“启动”按钮，此时还没有开始推流。</td></tr>
+    <tr><td>直播界面</td><td>推流时的全屏视图：画面、镜头按钮，以及轻点一下即可打开的调节栏。</td></tr>
+    <tr><td>待机</td><td>App 已打开且处于空闲状态，OBS 已连接并可以启动摄像头。琥珀色。</td></tr>
+    <tr><td>Tally 灯</td><td>彩色边框，表示来源在 OBS 中的状态：播出中、预览中，以及你选择的其他状态。</td></tr>
+    <tr><td>空闲显示</td><td>你最后一次触摸 10 秒后，直播界面所变成的样子。</td></tr>
+    <tr><td>音画同步参考</td><td>仅作为时间信号发送的手机麦克风音频。永远不会在直播中被听到。</td></tr>
+  </tbody>
+</table>
+
+<h2>获取帮助</h2>
+<p>
+  <a href="/docs/troubleshooting/">故障排除</a>列出了已知的故障类型及其产生的日志行。遇到新问题时，在 <a href="{{REPO}}/issues">GitHub</a> 上提交 issue，并附上 OBS 日志（<strong>帮助 → 日志文件</strong>）和<strong>选项 → 摄像头诊断</strong>。
+</p>

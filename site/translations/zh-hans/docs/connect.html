@@ -1,0 +1,110 @@
+title: 将 OBS 连接到手机
+description: 通过 Wi-Fi 或 USB 将 LensLink Camera 来源连接到你的 iPhone，同时使用多部手机，并看懂来源可能显示的每一条状态信息。
+source: 15367c815715
+---
+<h1>将 OBS 连接到手机</h1>
+<p class="lede">
+  一条 TCP 连接承载视频、摄像头控制、时钟同步和状态信息，经由你的本地网络或 USB 线传输。不经过互联网。
+</p>
+
+<h2>简要步骤</h2>
+<ol class="walk">
+  <li>
+    <strong>在手机上</strong>
+    <p>打开 LensLink，选择摄像头和格式，然后轻点<strong>启动摄像头</strong>。主界面会显示手机的 Wi-Fi 地址，轻点即可复制。</p>
+    <p>如果<strong>从 OBS 远程启动</strong>处于打开状态（默认），只要让 App 保持打开并处于空闲状态即可，OBS 会自己启动摄像头。</p>
+  </li>
+  <li>
+    <strong>在 OBS 中</strong>
+    <p><strong>源 → + → LensLink Camera</strong>。每部手机一个来源。</p>
+  </li>
+  <li>
+    <strong>让来源指向手机</strong>
+    <p><strong>Wi-Fi：</strong>在<strong>手机</strong>下拉菜单中选择你的设备，或输入 App 显示的 IP。</p>
+    <p><strong>USB：</strong>插上数据线，并将<strong>连接</strong>设为 <strong>USB 线</strong>。</p>
+  </li>
+</ol>
+<p>一两秒内就会出现画面。推流过程中离开 App 会让来源变为空白，因为 iOS 会暂停不在屏幕上的 App 的摄像头采集。在支持的 iPad 上，LensLink 在分屏浏览、侧拉和台前调度中与其他 App 并排显示时仍会继续推流。</p>
+
+<h2>Wi-Fi</h2>
+<p>
+  两台设备必须位于同一网络，而且该网络必须允许设备之间直接通信。访客网络、启用了客户端隔离的接入点，以及许多办公室或校园网络都会阻止这种通信；而电脑连接到手机开启的热点则不会。
+</p>
+
+<h3>按名称查找手机</h3>
+<p>
+  App 打开时会通过 Bonjour 广播自己，<strong>手机</strong>下拉菜单会列出找到的设备。如果列表中没有你的手机，但输入 IP 可以连接，说明 App 缺少 iOS 进行这种广播所需的<strong>本地网络</strong>权限：在系统询问时允许，或前往<strong>设置 → 隐私与安全性 → 本地网络 → LensLink</strong> 中开启。
+</p>
+<p>
+  手机也会获取新的 DHCP 租约，这是按名称选择的另一个原因。如果你更喜欢输入地址，可以在路由器中为手机保留一个地址。
+</p>
+
+<h2>USB</h2>
+<p>
+  凡是重要的场合都用 USB：不涉及网络，延迟最稳定，而且手机在编码时还能充电。这一点很有价值，因为编码视频是手机要做的最繁重的工作之一。
+</p>
+<ol class="walk">
+  <li>
+    <strong>仅限 Windows：安装 iTunes</strong>
+    <p>它提供 Apple 的设备驱动程序。没有它，任何数据线都无法使用。</p>
+  </li>
+  <li>
+    <strong>插上数据线并轻点“信任”</strong>
+    <p>手机必须处于解锁状态才会弹出提示，而且必须使用数据线。</p>
+  </li>
+  <li>
+    <strong>将“连接”设为“USB 线”</strong>
+    <p>除非你使用多部手机，否则将 <strong>USB 设备</strong>保持为<strong>自动</strong>。</p>
+  </li>
+</ol>
+<p>
+  <strong>插了多部手机时</strong>，将每个来源的 <strong>USB 设备</strong>设为特定设备，而不是“自动”。这样无论插入顺序如何，同一部手机都始终为同一个来源供流。固定到未连接设备的来源会等待，并显示相应提示。
+</p>
+
+<h2>同时使用多部手机</h2>
+<p>
+  每部手机一个 <strong>LensLink Camera</strong> 来源。每个来源都有自己的连接、控件和健康状态读数，浏览器面板也会为每个来源增加一个标签页。
+</p>
+<div class="callout">
+  <p><strong>一部手机同一时间只能为一个来源供流。</strong>第二个指向同一设备的来源会提示该设备已被占用。例外：开启<strong>此来源未在任何位置显示时断开连接</strong>后，隐藏的来源会释放手机，因此一个场景中的 Camera 来源和另一个场景中的 Screen 来源可以共用同一部手机。</p>
+</div>
+
+<h2>读懂“状态”字段</h2>
+<p>
+  每个 LensLink 来源的属性顶部都有一行<strong>状态</strong>，它会指出具体是哪个环节出了问题。
+</p>
+<table>
+  <thead><tr><th>状态</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td>已连接：…</td><td>正在推流。附带设备、格式和实测延迟。</td></tr>
+    <tr><td>已连接，摄像头空闲</td><td>待机：App 可访问，但未在采集。可以在这里、在浏览器面板中或在手机上启动它。</td></tr>
+    <tr><td>正在启动手机摄像头…</td><td>已发送远程启动指令，摄像头正在启动。</td></tr>
+    <tr><td>正在尝试连接手机 …</td><td>地址错误或无法访问，或者 App 不在前台。</td></tr>
+    <tr><td>输入手机的 IP 地址</td><td>Wi-Fi 来源未设置主机地址。</td></tr>
+    <tr><td>未在 USB 上检测到设备</td><td>检查数据线并轻点“信任”。在 Windows 上，确认已安装 iTunes。</td></tr>
+    <tr><td>已找到设备，但无法连接到 LensLink App</td><td>数据线没有问题。解锁手机，并将 App 切换到前台。</td></tr>
+    <tr><td>正在等待所选 USB 设备</td><td>固定到了一台未连接的设备。</td></tr>
+    <tr><td>此设备已被另一个 LensLink 来源占用</td><td>两个来源，一部手机。见上文。</td></tr>
+    <tr><td>已断开，正在重新连接</td><td>连接中断，来源正在重新拨号。</td></tr>
+    <tr><td>已暂停：来源已隐藏</td><td><strong>此来源未在任何位置显示时断开连接</strong>已开启，且没有任何地方显示该来源。</td></tr>
+    <tr><td>手机正在发送屏幕直播</td><td>来源类型错误。屏幕直播要用 <strong>LensLink Screen</strong> 来源。</td></tr>
+    <tr><td>已连接，但此 OBS 版本无法解码该视频流</td><td>该版本中没有 HEVC 解码器。将 App 切换为 H.264。</td></tr>
+  </tbody>
+</table>
+
+<h2>保持良好状态</h2>
+<ul>
+  <li><strong>留意数字。</strong>OBS 的状态栏为每部手机显示一行，如 <code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>；<strong>视图 → 停靠窗口 → LensLink</strong> 则以面板形式显示同样的内容。</li>
+  <li><strong>网络拥塞会自动处理。</strong>App 会短暂降低画质再恢复，而不是让延迟不断累积。</li>
+  <li><strong>节省电量：</strong>开启<strong>此来源未在任何位置显示时断开连接</strong>后，只要来源被隐藏，手机就会停止编码。</li>
+  <li><strong>视频流在你的网络中不加密</strong>，适用于可信的家庭和工作室网络。</li>
+</ul>
+
+<h2>如果无法连接</h2>
+<ol>
+  <li>App 是否<strong>显示在屏幕上</strong>，且手机已解锁？</li>
+  <li>Wi-Fi：是否在同一网络，而不是有一台设备连着访客 SSID？</li>
+  <li>USB：是否使用数据线，并已轻点<strong>信任</strong>？</li>
+  <li>否则，按照上表中与你的“状态”字段相符的那一行处理。</li>
+</ol>
+<p>仍然无法解决：<a href="/docs/troubleshooting/">故障排除</a>。</p>

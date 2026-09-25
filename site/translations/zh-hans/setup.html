@@ -1,0 +1,180 @@
+title: 设置 LensLink
+description: 回答四个问题，获取与你的电脑、连接方式以及你想在 OBS 中呈现的内容完全对应的设置步骤，不含任何与你无关的步骤。
+nav: setup
+script: /js/setup.js
+source: bcb74f465811
+---
+<section class="setup">
+  <div class="wrap">
+    <h1>设置 LensLink</h1>
+
+    <form class="wizard" id="wizard">
+      <fieldset>
+        <legend>你的电脑</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="os" value="windows" checked><span>Windows</span></label>
+          <label><input type="radio" name="os" value="macos"><span>macOS</span></label>
+          <label><input type="radio" name="os" value="linux"><span>Linux</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>手机的连接方式</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="link" value="usb" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V7"/><circle cx="12" cy="4" r="1.6"/><path d="M12 13l4-3 .8 2.4"/><path d="M12 16l-4-3v-2.2"/></svg> USB 线 <em class="rec">推荐</em></span></label>
+          <label><input type="radio" name="link" value="wifi"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5a12 12 0 0 1 16 0"/><path d="M7.5 15a7 7 0 0 1 9 0"/><circle cx="12" cy="18.6" r="1.2" fill="currentColor" stroke="none"/></svg> Wi-Fi</span></label>
+          <label><input type="radio" name="link" value="unsure"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2-2.5 3.6"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg> 不确定</span></label>
+        </div>
+        <p class="q-answer" id="unsure-note" hidden>
+          用数据线，下面列出的就是 USB 的步骤。如果手机必须放在线缆够不到的地方，
+          再切换到 <strong>Wi-Fi</strong>。
+        </p>
+      </fieldset>
+
+      <fieldset>
+        <legend>你想在 OBS 中呈现什么</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="mode" value="camera" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="M15.5 11.5l6-3.2v7.4l-6-3.2z"/></svg> 手机摄像头</span></label>
+          <label><input type="radio" name="mode" value="screen"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg> 手机屏幕</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>你打算如何安装 App</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="app" value="appstore" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 18.5h15"/></svg> App Store <em class="rec">推荐</em></span></label>
+          <label><input type="radio" name="app" value="sideload"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12 8v6"/><path d="M9.5 11.5L12 14l2.5-2.5"/></svg> 侧载</span></label>
+          <label><input type="radio" name="app" value="xcode"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5-8.5 8.5H6v-5z"/><path d="M12.5 6.5l5 5"/></svg> Xcode</span></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <p class="nojs" id="nojs">
+      下面列出了所有步骤，并标注了各自适用的设置。开启 JavaScript
+      即可筛选。
+    </p>
+
+    <p class="needs" id="needs" hidden></p>
+
+    <ol class="guide" id="guide">
+
+      <li>
+        <h2>确认 OBS 为 32 或更高版本</h2>
+        <p>帮助 → 关于。</p>
+      </li>
+
+      <li data-os="windows">
+        <h2>安装插件 <span class="tag">Windows</span></h2>
+        <p>运行<a href="/download/">下载页面</a>中的 <code>LensLink-installer-windows-x64.exe</code>。</p>
+      </li>
+
+      <li data-os="macos">
+        <h2>安装插件 <span class="tag">macOS</span></h2>
+        <p>用<strong>右键点按 → 打开</strong>来打开<a href="/download/">下载页面</a>中的 <code>LensLink-installer-macos-universal.pkg</code>。它未经公证，所以双击打开会被拒绝。</p>
+      </li>
+
+      <li data-os="linux">
+        <h2>安装插件 <span class="tag">Linux</span></h2>
+        <pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+      </li>
+
+      <li>
+        <h2>重启 OBS</h2>
+        <p><strong>源 → +</strong> 中现在会列出 LensLink Camera 和 LensLink Screen。</p>
+      </li>
+
+      <li data-app="appstore">
+        <h2>安装 App <span class="tag">App Store</span></h2>
+        <p>从 App Store 安装 <a href="{{APPSTORE}}">LensLink Camera</a>。如果想在新版本上架 App Store 之前抢先使用，可以改为<a href="{{TESTFLIGHT}}">加入 TestFlight 测试版</a>。</p>
+      </li>
+
+      <li data-app="sideload">
+        <h2>安装 App <span class="tag">侧载</span></h2>
+        <p>从<a href="{{REPO}}/releases/latest">最新版本</a>下载 <code>LensLink-unsigned.ipa</code>，通过 <a href="https://sideloadly.io">Sideloadly</a> 安装。</p>
+        <p class="warn">使用免费 Apple ID 时，它会在 7 天后过期，而且重新签名会让 Siri 短语失效。可改为在快捷指令中使用 <code>lenslink://start</code>。</p>
+      </li>
+
+      <li data-app="xcode">
+        <h2>构建 App <span class="tag">Xcode</span></h2>
+        <pre><code>brew install xcodegen
+cd ios-app &amp;&amp; xcodegen generate &amp;&amp; open LensLink.xcodeproj</code></pre>
+      </li>
+
+      <li data-link="usb" data-os="windows">
+        <h2>安装 iTunes <span class="tag">Windows</span> <span class="tag">USB</span></h2>
+        <p>它提供 Apple 的设备驱动程序。没有它，USB 就无法识别手机。</p>
+      </li>
+
+      <li data-link="usb" data-os="linux">
+        <h2>确认已安装 usbmuxd <span class="tag">Linux</span> <span class="tag">USB</span></h2>
+        <p>插件会连接到 <code>/var/run/usbmuxd</code>。大多数桌面系统都自带它；如果没有，安装 <code>usbmuxd</code> 软件包即可。</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>插上数据线并轻点“信任” <span class="tag">USB</span></h2>
+        <p>先解锁手机，并使用数据线。</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>让两台设备连接同一网络 <span class="tag">Wi-Fi</span></h2>
+        <p>访客网络和客户端隔离会阻止连接。</p>
+      </li>
+
+      <li>
+        <h2>在手机上打开 LensLink</h2>
+        <p data-mode="camera">选择镜头、分辨率、帧率和编码格式。</p>
+        <p data-link="wifi">主界面会显示手机的地址，轻点即可复制。</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>允许“本地网络”权限 <span class="tag">Wi-Fi</span></h2>
+        <p>手机要按名称出现在列表中，就需要这项权限。不开启也可以直接输入 IP。</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>添加来源 <span class="tag">摄像头</span></h2>
+        <p><strong>源 → + → LensLink Camera</strong>。每部手机一个。</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>添加来源 <span class="tag">屏幕</span></h2>
+        <p><strong>源 → + → LensLink Screen</strong>。</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>让来源指向手机 <span class="tag">USB</span></h2>
+        <p>将<strong>连接</strong>设为 <strong>USB 线</strong>。</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>让来源指向手机 <span class="tag">Wi-Fi</span></h2>
+        <p>在<strong>手机</strong>下拉菜单中选择它，或输入 IP。</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>启动摄像头 <span class="tag">摄像头</span></h2>
+        <p>轻点<strong>启动摄像头</strong>，或者让 App 保持打开，由 OBS 替你启动。</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>开始屏幕直播 <span class="tag">屏幕</span></h2>
+        <p><strong>镜像屏幕</strong> → <strong>LensLink Screen</strong> → <strong>开始直播</strong>。之后你可以离开 App。</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>固定来源尺寸 <span class="tag">屏幕</span></h2>
+        <p>右键点击 → <strong>变换 → 编辑变换…</strong>，将<strong>边框类型</strong>设为<strong>等比缩放到框内</strong>，这样切换 App 时就不会改变你的布局尺寸。</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>对齐你的麦克风 <span class="tag">摄像头</span></h2>
+        <p>可选：在<strong>音画同步音频来源</strong>中选择它，启用延迟和<strong>自动校准</strong>，在 App 中打开<strong>自动音画同步参考</strong>，然后说话十五秒。<a href="/docs/audio/">详情</a>。</p>
+      </li>
+
+    </ol>
+
+    <p class="guide-foot">
+      你的回答保存在地址栏中，复制地址即可把这套设置原样发给别人。遇到问题？来源的<strong>状态</strong>行会指出出错的环节：<a href="/docs/connect/#reading-the-status-field">每种状态的含义</a>。更完整的说明见<a href="/docs/install/">安装</a>和<a href="/docs/connect/">连接</a>。
+    </p>
+  </div>
+</section>
