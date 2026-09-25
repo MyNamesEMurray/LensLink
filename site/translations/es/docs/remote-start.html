@@ -1,0 +1,108 @@
+title: Inicio remoto
+description: Inicia y detén la cámara del teléfono desde OBS, un botón del navegador, Siri, un atajo o una URL, para que un teléfono montado nunca tenga que bajar de su soporte.
+source: 3b19eded1e63
+---
+<h1>Inicio remoto</h1>
+<p class="lede">
+  Un teléfono sujeto detrás de un monitor no debería tener que bajar de ahí para
+  que alguien toque Iniciar. Mientras la app está abierta y sin transmitir, OBS
+  puede iniciar la cámara por su cuenta.
+</p>
+
+<h2>Por qué la app tiene que estar abierta</h2>
+<p>
+  iOS solo mantiene en marcha la cámara y la escucha de conexiones de LensLink
+  mientras la app está en pantalla. Todo lo que sigue existe por eso: cuando está
+  abierta y sin transmitir, la app anuncia que está <strong>en espera</strong>, y
+  OBS se encarga del resto.
+</p>
+<p>
+  Por eso también las vías de Siri y Atajos abren primero la app, y por eso el
+  teléfono no se bloquea automáticamente mientras está en espera: el bloqueo
+  suspendería la escucha. La pantalla de preparación se atenúa al cabo de un
+  minuto, en ámbar y no en verde: preparada, no en vivo.
+</p>
+<div class="callout">
+  <p>El inicio remoto está activado de forma predeterminada. Desactívalo con
+  <strong>Inicio remoto desde OBS</strong> en las <strong>Opciones</strong> de la
+  app.</p>
+</div>
+
+<h2>Las cuatro formas de iniciar</h2>
+
+<h3>Automáticamente, al conectarse la fuente</h3>
+<p>
+  <strong>Iniciar automáticamente la cámara del teléfono cuando esté
+  lista</strong> está activado de forma predeterminada: abres la app y aparece el
+  video, sin hacer nada más. Tampoco te lleva la contraria: OBS solo inicia la
+  cámara automáticamente cuando la app acaba de estar disponible, no después de
+  que hayas pulsado Detener.
+</p>
+
+<h3>Desde OBS</h3>
+<p>
+  <strong>Iniciar la cámara en el teléfono</strong> y <strong>Detener la cámara
+  en el teléfono</strong>, en las propiedades de la fuente, siempre que la app
+  esté conectada.
+</p>
+
+<h3>Desde el panel del navegador</h3>
+<p>
+  <a href="/docs/web-panel/">El panel</a> en
+  <code>http://localhost:9980</code> muestra <strong>Iniciar cámara</strong>
+  mientras la app está sin transmitir y un botón rojo <strong>Detener
+  cámara</strong> mientras está en vivo, cada uno con un interruptor de
+  <strong>Inicio automático</strong> al lado.
+</p>
+
+<h3>Desde Siri, Atajos o una URL</h3>
+<ul>
+  <li><strong>Siri (iOS 16 o posterior):</strong> <em>“Oye Siri, empieza a transmitir con LensLink”.</em></li>
+  <li><strong>Atajos:</strong> las acciones <strong>Iniciar transmisión de cámara</strong> y <strong>Detener transmisión de cámara</strong>, útiles en automatizaciones, como empezar cuando el teléfono se conecta a un cargador concreto.</li>
+  <li><strong>Esquema de URL:</strong> <code>lenslink://start</code> y <code>lenslink://stop</code>. Es la vía para iOS 15, y funciona en todas partes.</li>
+</ul>
+<div class="callout warn">
+  <p><strong>Las frases de Siri y la instalación manual (sideload) no se llevan
+  bien.</strong> Al volver a firmar la app se reescribe el identificador de
+  paquete (bundle ID), lo que deja huérfanos los datos compilados de las frases:
+  Siri se niega aunque la misma acción funcione desde Atajos. Usa la versión de la
+  App Store o <code>lenslink://start</code>. Comprueba también que la app se haya
+  abierto al menos una vez y que “Usar con Siri” esté activado en
+  <strong>Configuración → Siri y búsqueda → LensLink</strong>.</p>
+</div>
+
+<h2>Cambiar de escena también lo inicia y lo detiene</h2>
+<p>
+  Con <strong>Desconectar cuando esta fuente no se muestre en ninguna
+  parte</strong>, al ocultar la fuente se detiene la cámara del teléfono y al
+  mostrarla se vuelve a iniciar. Junto con el inicio automático, el teléfono solo
+  codifica mientras la fuente está visible en algún sitio.
+</p>
+
+<h2>Automatizarlo con scripts</h2>
+<p>El endpoint del panel es un simple POST de HTTP:</p>
+<pre><code>curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"start_stream"}'
+
+curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"stop_stream"}'</code></pre>
+<p>
+  Con más de un teléfono, añade el id de la fuente obtenido de
+  <code>/api/sources</code> como <code>?src=</code>. La API completa está en
+  <a href="/docs/web-panel/#the-http-api">panel del navegador</a>.
+</p>
+
+<h2>Qué esperar en el teléfono</h2>
+<table>
+  <tbody>
+    <tr><td>App abierta, OBS no conectado</td><td>Punto gris, “No conectado”.</td></tr>
+    <tr><td>App abierta, OBS conectado, cámara sin transmitir</td><td>Punto ámbar, “OBS conectado: listo”. En espera: inicio remoto preparado.</td></tr>
+    <tr><td>En espera, sin tocar durante un minuto</td><td>La pantalla se atenúa y muestra un icono ámbar para reactivarla. Cualquier toque la reactiva; la escucha nunca se detiene.</td></tr>
+    <tr><td>Iniciada</td><td>Pantalla En vivo, punto verde, “En vivo”.</td></tr>
+  </tbody>
+</table>
+<p>
+  La atenuación en espera solo ocurre cuando <strong>Vista en reposo</strong>
+  está en <strong>Atenuar pantalla</strong>, y nunca mientras estás tocando la
+  pantalla o tienes una hoja abierta.
+</p>
