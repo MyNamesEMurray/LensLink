@@ -33,6 +33,7 @@ jobs:
       plugin: ${{ steps.diff.outputs.plugin }}
       ios: ${{ steps.diff.outputs.ios }}
       site: ${{ steps.diff.outputs.site }}
+      l10n: ${{ steps.diff.outputs.l10n }}
       workflows: ${{ steps.diff.outputs.workflows }}
     steps:
       - uses: actions/checkout@v7
@@ -47,6 +48,7 @@ jobs:
             echo "plugin=true" >> "$GITHUB_OUTPUT"
             echo "ios=true" >> "$GITHUB_OUTPUT"
             echo "site=true" >> "$GITHUB_OUTPUT"
+            echo "l10n=true" >> "$GITHUB_OUTPUT"
             echo "workflows=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -72,6 +74,12 @@ jobs:
             echo "site=true" >> "$GITHUB_OUTPUT"
           else
             echo "site=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$CHANGED" | \
+             grep -qE '^(ios-app/|obs-plugin/|site/|tools/(check-l10n|l10n_)|\.github/workflows/build\.yml)'; then
+            echo "l10n=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "l10n=false" >> "$GITHUB_OUTPUT"
           fi
           if echo "$CHANGED" | grep -qE '^\.github/workflows/'; then
             echo "workflows=true" >> "$GITHUB_OUTPUT"
@@ -122,6 +130,17 @@ jobs:
       - name: Check internal links
         run: python3 check-links.py
         working-directory: site
+
+  l10n:
+    name: Localization
+    needs: changes
+    if: needs.changes.outputs.l10n == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check localized strings
+        run: python3 tools/check-l10n.py
 
   obs-plugin-linux:
     name: OBS plugin (Linux)
