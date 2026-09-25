@@ -39,6 +39,8 @@ TRANSLATIONS = os.path.join(ROOT, "translations")
 SITE_URL = "https://lenslink.cam"
 REPO_URL = "https://github.com/MyNamesEMurray/LensLink"
 TESTFLIGHT_URL = "https://testflight.apple.com/join/N7Rth6m3"
+APPSTORE_URL = "https://apps.apple.com/app/lenslink-camera/id6790673163"
+APPSTORE_ID = "6790673163"
 
 LANGS = [
     ("", "en", "English", "en_US"),
@@ -437,6 +439,7 @@ def shell(page):
         '<meta name="twitter:card" content="summary_large_image">',
         '<link rel="icon" href="/img/icon.png" type="image/png">',
         '<link rel="apple-touch-icon" href="/img/icon.png">',
+        '<meta name="apple-itunes-app" content="app-id=%s">' % APPSTORE_ID,
         '<link rel="stylesheet" href="/css/site.css">',
     ]
     if meta.get("script"):
@@ -553,6 +556,7 @@ def write(path, text):
 
 def render_body(body, feed_class, feed_style):
     return (body.replace("{{TESTFLIGHT}}", TESTFLIGHT_URL)
+                .replace("{{APPSTORE}}", APPSTORE_URL)
                 .replace("{{REPO}}", REPO_URL)
                 .replace("{{FEED}}", feed_class)
                 .replace("{{FEED_STYLE}}", feed_style))

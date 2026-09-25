@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-PLACEHOLDERS = ("{{REPO}}", "{{TESTFLIGHT}}", "{{FEED}}", "{{FEED_STYLE}}")
+PLACEHOLDERS = ("{{REPO}}", "{{TESTFLIGHT}}", "{{APPSTORE}}", "{{FEED}}", "{{FEED_STYLE}}")
 STRING_PLACEHOLDER = re.compile(r"\{[A-Za-z_][A-Za-z0-9_]*\}|%[sd]")
 HREF = re.compile(r'(?<![\w-])href="([^"]*)"')
 ID = re.compile(r'(?<![\w-])id="([^"]*)"')

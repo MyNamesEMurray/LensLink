@@ -45,8 +45,8 @@ builds the "On this page" list from the `<h2>`s, and writes clean URLs
    that one list drives the sidebar, the previous/next footer links and
    the sitemap.
 
-`{{REPO}}` and `{{TESTFLIGHT}}` in page bodies expand to the GitHub and
-TestFlight URLs, so those live in one place.
+`{{REPO}}`, `{{APPSTORE}}` and `{{TESTFLIGHT}}` in page bodies expand to the
+GitHub, App Store and TestFlight URLs, so those live in one place.
 
 A new doc page's sidebar label is a key, not a string: add it to
 `i18n/en.json` (and every other language file) next to the others.
