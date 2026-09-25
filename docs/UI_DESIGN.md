@@ -91,8 +91,13 @@ touch resets the fuse, and it can't trigger while a sheet is open (the
 overlay would sit behind the sheet with its tap-to-wake unreachable).
 
 The status **word and colour are defined once** (`Streamer.Status.displayName`
-/ `.tint` in the app) and reused by every view; the web panel maps the
-plugin's status string to the same palette.
+/ `.tint` in the app) and reused by every view. The web panel colours its
+pill from the `tone` the plugin reports with every status in
+`/api/status` (`idle` grey, `wait` and `ready` amber, `live` green,
+`error` red), never from the status text, which is translated. A stream
+paused on the phone reports `ready`, and the moment between the TCP
+connect and the phone's HELLO reports `wait`, so the pill never flashes
+green before settling on standby.
 
 ### Tally (screen border)
 
