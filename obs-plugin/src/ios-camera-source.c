@@ -260,6 +260,7 @@ struct ios_camera_source {
 
 	pthread_mutex_t status_mutex;
 	struct dstr status;
+	enum ios_camera_status_tone status_tone;
 
 	/* --- GPU (beta) pipeline state; used only in sync-source mode --- */
 	/* Newest decoded frame from the dial thread, and the frame the
@@ -323,6 +324,29 @@ void ios_camera_copy_name(struct ios_camera_source *s, char *buf, size_t size)
 {
 	const char *name = obs_source_get_name(s->source);
 	snprintf(buf, size, "%s", name ? name : "LensLink");
+}
+
+static void copy_utf8(char *buf, size_t size, const char *src)
+{
+	if (!size)
+		return;
+	if (!src)
+		src = "";
+	snprintf(buf, size, "%s", src);
+	size_t n = strlen(buf);
+	if (src[n] == 0)
+		return;
+	size_t k = n;
+	while (k > 0 && ((unsigned char)buf[k - 1] & 0xC0) == 0x80)
+		k--;
+	if (k == 0)
+		return;
+	unsigned char lead = (unsigned char)buf[k - 1];
+	if (lead < 0xC0)
+		return;
+	size_t need = lead >= 0xF0 ? 4 : lead >= 0xE0 ? 3 : 2;
+	if (n - (k - 1) < need)
+		buf[k - 1] = 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -398,8 +422,7 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		snprintf(h->decoder, sizeof(h->decoder), "%s", s->stat_decoder);
 		h->latency_ms = (int)(s->last_video_latency_ns / 1000000);
 		snprintf(h->device, sizeof(h->device), "%s", s->stat_device);
-		snprintf(h->status, sizeof(h->status), "%s",
-			 s->status.array ? s->status.array : "");
+		copy_utf8(h->status, sizeof(h->status), s->status.array);
 		pthread_mutex_unlock(&s->status_mutex);
 		snprintf(h->transport, sizeof(h->transport), "%s",
 			 s->conn_mode == CONN_DIAL_USB ? "USB" : "Wi-Fi");
@@ -446,13 +469,15 @@ static enum connection_mode parse_mode(const char *mode)
 
 /* ------------------------------------------------------------------ */
 
-static void set_status(struct ios_camera_source *s, const char *fmt, ...)
+static void set_status(struct ios_camera_source *s,
+		       enum ios_camera_status_tone tone, const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
 
 	pthread_mutex_lock(&s->status_mutex);
 	dstr_vprintf(&s->status, fmt, args);
+	s->status_tone = tone;
 	pthread_mutex_unlock(&s->status_mutex);
 
 	va_end(args);
@@ -478,10 +503,12 @@ void ios_camera_enqueue_control(struct ios_camera_source *s, const char *json,
 }
 
 void ios_camera_copy_status(struct ios_camera_source *s, char *buf,
-			    size_t size)
+			    size_t size, enum ios_camera_status_tone *tone)
 {
 	pthread_mutex_lock(&s->status_mutex);
-	snprintf(buf, size, "%s", s->status.array ? s->status.array : "");
+	copy_utf8(buf, size, s->status.array);
+	if (tone)
+		*tone = s->status_tone;
 	pthread_mutex_unlock(&s->status_mutex);
 }
 
@@ -875,6 +902,11 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 static const char *paused_suffix(struct ios_camera_source *s)
 {
 	return s->stream_paused ? T_("Status.StreamPaused") : "";
+}
+
+static enum ios_camera_status_tone connected_tone(struct ios_camera_source *s)
+{
+	return s->stream_paused ? STATUS_TONE_READY : STATUS_TONE_LIVE;
 }
 
 static const char *green_screen_suffix(struct ios_camera_source *s)
@@ -1571,8 +1603,10 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		     "[lenslink] capture->decode latency: avg %u ms "
 		     "(min %u / max %u), link rtt %u ms, %u frames",
 		     avg_ms, min_ms, max_ms, rtt_ms, (unsigned)t->count);
-		set_status(s, "%s %s — ~%u ms%s%s", T_("Status.Connected"),
-			   c->name[0] ? c->name : "iOS device", avg_ms,
+		set_status(s, connected_tone(s), "%s %s — ~%u ms%s%s",
+			   T_("Status.Connected"),
+			   c->name[0] ? c->name
+				      : T_("Status.UnknownDevice"), avg_ms,
 			   green_screen_suffix(s), paused_suffix(s));
 
 		/* Only steer audio sync from stable measurements: a
@@ -1743,15 +1777,17 @@ static void client_disconnect(struct ios_camera_source *s,
 	s->stat_connected = false;
 	s->stat_device[0] = 0;
 	pthread_mutex_unlock(&s->status_mutex);
+	s->stream_paused = false;
 
 	/* A kind-mismatch rejection needs its actionable status to survive
 	 * the disconnect — "Disconnected" would hide what to fix. */
 	if (c->wrong_kind)
-		set_status(s, "%s",
+		set_status(s, STATUS_TONE_ERROR, "%s",
 			   s->is_screen_source ? T_("Status.CameraOnScreen")
 					       : T_("Status.ScreenOnCamera"));
 	else
-		set_status(s, "%s", T_("Status.Disconnected"));
+		set_status(s, STATUS_TONE_ERROR, "%s",
+			   T_("Status.Disconnected"));
 }
 
 static void extract_json_string(const char *json, const char *key, char *out,
@@ -1910,15 +1946,18 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				     "camera remotely");
 				send_control_cmd(c,
 						 "{\"cmd\":\"start_stream\"}");
-				set_status(s, "%s",
+				set_status(s, STATUS_TONE_READY, "%s",
 					   T_("Status.StartingCamera"));
 			} else {
-				set_status(s, "%s", T_("Status.Standby"));
+				set_status(s, STATUS_TONE_READY, "%s",
+					   T_("Status.Standby"));
 			}
 			break;
 		}
-		set_status(s, "%s %s%s%s", T_("Status.Connected"),
-			   c->name[0] ? c->name : "iOS device",
+		set_status(s, connected_tone(s), "%s %s%s%s",
+			   T_("Status.Connected"),
+			   c->name[0] ? c->name
+				      : T_("Status.UnknownDevice"),
 			   green_screen_suffix(s), paused_suffix(s));
 		break;
 	}
@@ -1952,8 +1991,10 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			pthread_mutex_lock(&s->status_mutex);
 			s->standby = false;
 			pthread_mutex_unlock(&s->status_mutex);
-			set_status(s, "%s %s", T_("Status.Connected"),
-				   c->name[0] ? c->name : "iOS device");
+			set_status(s, connected_tone(s), "%s %s",
+				   T_("Status.Connected"),
+				   c->name[0] ? c->name
+					      : T_("Status.UnknownDevice"));
 		}
 		enum AVCodecID id = strcmp(codec, "hevc") == 0
 					    ? AV_CODEC_ID_HEVC
@@ -2070,7 +2111,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			if (!c->decoder) {
 				c->next_decoder_attempt =
 					now + 5000000000ULL;
-				set_status(s, "%s",
+				set_status(s, STATUS_TONE_ERROR, "%s",
 					   T_("Status.DecoderFailed"));
 				break;
 			}
@@ -2213,8 +2254,10 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		 * the GPU pipeline keeps frames in textures. All this side
 		 * does now is say so in the status line. */
 		if (paused_changed)
-			set_status(s, "%s %s%s%s", T_("Status.Connected"),
-				   c->name[0] ? c->name : "iOS device",
+			set_status(s, connected_tone(s), "%s %s%s%s",
+				   T_("Status.Connected"),
+				   c->name[0] ? c->name
+					      : T_("Status.UnknownDevice"),
 				   green_screen_suffix(s), paused_suffix(s));
 		if (green_screen && !ten_bit && !s->is_screen_source)
 			ensure_chroma_key_filter(s);
@@ -2551,7 +2594,8 @@ static void dial_loop(struct ios_camera_source *s)
 				claimed = false;
 				claimed_key[0] = 0;
 			}
-			set_status(s, "%s", T_("Status.Paused"));
+			set_status(s, STATUS_TONE_IDLE, "%s",
+				   T_("Status.Paused"));
 			sleep_ms_interruptible(s, 300);
 			continue;
 		}
@@ -2604,7 +2648,11 @@ static void dial_loop(struct ios_camera_source *s)
 					pinned[0] ? T_("Status.WaitingPinned")
 					: n > 0	  ? T_("Status.DeviceBusy")
 						  : T_(WAITING_USB_KEY);
-				set_status(s, "%s", why);
+				set_status(s,
+					   !pinned[0] && n > 0
+						   ? STATUS_TONE_ERROR
+						   : STATUS_TONE_WAIT,
+					   "%s", why);
 				/* Phone not reachable: re-arm auto-start so
 				 * it fires when the app comes (back) up. */
 				if (++s->dial_failures >= 2)
@@ -2616,10 +2664,12 @@ static void dial_loop(struct ios_camera_source *s)
 			/* Distinct from WaitingUSB: the phone IS here, we're
 			 * waiting for something on it to listen (camera app
 			 * started, or a screen broadcast running). */
-			set_status(s, "%s", T_("Status.USBFound"));
+			set_status(s, STATUS_TONE_WAIT, "%s",
+				   T_("Status.USBFound"));
 			sock = usbmux_connect_device(usb_id, OBSC_USB_PORT);
 		} else if (!s->host[0]) {
-			set_status(s, "%s", T_("Status.NoHost"));
+			set_status(s, STATUS_TONE_IDLE, "%s",
+				   T_("Status.NoHost"));
 			sleep_ms_interruptible(s, 2000);
 			continue;
 		} else {
@@ -2627,7 +2677,7 @@ static void dial_loop(struct ios_camera_source *s)
 				char k[192];
 				snprintf(k, sizeof(k), "net:%s", s->host);
 				if (!device_claim(k, s)) {
-					set_status(s, "%s",
+					set_status(s, STATUS_TONE_ERROR, "%s",
 						   T_("Status.DeviceBusy"));
 					sleep_ms_interruptible(s, 1000);
 					continue;
@@ -2636,7 +2686,8 @@ static void dial_loop(struct ios_camera_source *s)
 				snprintf(claimed_key, sizeof(claimed_key), "%s",
 					 k);
 			}
-			set_status(s, "%s %s", T_("Status.Dialing"), s->host);
+			set_status(s, STATUS_TONE_WAIT, "%s %s",
+				   T_("Status.Dialing"), s->host);
 			s->last_dial_error = 0;
 			sock = tcp_dial(&s->last_dial_error, s->host,
 					OBSC_USB_PORT, &s->stop);
@@ -2657,7 +2708,7 @@ static void dial_loop(struct ios_camera_source *s)
 		s->dial_failures = 0;
 		blog(LOG_INFO, "[lenslink] connected to device (%s)",
 		     usb ? "USB" : "network");
-		set_status(s, "%s", T_("Status.Connected"));
+		set_status(s, STATUS_TONE_WAIT, "%s", T_("Status.Connected"));
 
 		struct client_state client = {.sock = sock};
 
@@ -3085,16 +3136,18 @@ static void fill_usb_devices(obs_property_t *list, const char *current)
 		size_t len = strlen(devs[i].udid);
 		const char *tail =
 			devs[i].udid + (len > 6 ? len - 6 : 0);
-		char label[96];
-		snprintf(label, sizeof(label), "iPhone/iPad (…%s)", tail);
+		char label[192];
+		snprintf(label, sizeof(label), "%s (…%s)",
+			 T_("UsbDevice.Device"), tail);
 		obs_property_list_add_string(list, label, devs[i].udid);
 		if (current && strcmp(current, devs[i].udid) == 0)
 			current_seen = true;
 	}
 	/* Keep a pinned-but-unplugged device selectable. */
 	if (!current_seen) {
-		char label[96];
-		snprintf(label, sizeof(label), "%s (not connected)", current);
+		char label[192];
+		snprintf(label, sizeof(label), "%s (%s)", current,
+			 T_("UsbDevice.NotConnected"));
 		obs_property_list_add_string(list, label, current);
 	}
 }

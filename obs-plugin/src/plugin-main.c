@@ -3,15 +3,14 @@
 #include "net-compat.h"
 #include "plugin-settings.h"
 #include "pipeline-bench.h"
+#include "web-control.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("lenslink", "en-US")
 
 MODULE_EXPORT const char *obs_module_description(void)
 {
-	return "LensLink — use an iPhone or iPad camera, or mirror its "
-	       "screen, as a video source over Wi-Fi or USB (LensLink "
-	       "companion app required)";
+	return obs_module_text("Description");
 }
 
 extern struct obs_source_info ios_camera_source_info;
@@ -57,6 +56,7 @@ void obs_module_unload(void)
 #ifdef LENSLINK_FRONTEND
 	lenslink_frontend_shutdown();
 #endif
+	web_control_shutdown();
 	lenslink_bench_shutdown();
 	lenslink_settings_shutdown();
 	net_shutdown();
