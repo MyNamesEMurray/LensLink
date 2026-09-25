@@ -1,0 +1,101 @@
+title: Einstellungsreferenz
+description: Alle LensLink-Einstellungen an einem Ort: die Eigenschaften der OBS-Quelle, der Dialog für pluginweite Einstellungen und die Optionen der App.
+source: 1afb7c72d111
+---
+<h1>Einstellungsreferenz</h1>
+<p class="lede">
+  Eigenschaften einzelner Quellen liegen an der Quelle, pluginweite
+  Einstellungen unter Werkzeuge, und alles, was das Smartphone betrifft, in der
+  App.
+</p>
+
+<h2>Eigenschaften der Quelle (LensLink Camera)</h2>
+<p>Rechtsklick auf die Quelle → <strong>Eigenschaften</strong>.</p>
+<table>
+  <thead><tr><th>Eigenschaft</th><th>Funktion</th></tr></thead>
+  <tbody>
+    <tr><td>Status</td><td>Nur lesbar: die aktuelle Phase, bei bestehender Verbindung dazu Gerät, Format und gemessene Latenz. <a href="/docs/connect/#reading-the-status-field">Statustabelle</a>.</td></tr>
+    <tr><td>Verbindung</td><td><strong>Wi-Fi – IP des Smartphones eingeben</strong> oder <strong>USB-Kabel</strong>.</td></tr>
+    <tr><td>Telefon</td><td>Nur Wi-Fi. Wähle ein Smartphone nach Namen oder tippe seine IP ein.</td></tr>
+    <tr><td>USB-Gerät</td><td>Nur USB. <strong>Auto</strong> oder ein bestimmtes Gerät, damit immer dasselbe Smartphone diese Quelle beliefert.</td></tr>
+    <tr><td>Modus für niedrige Latenz</td><td>Das neueste Bild sofort rendern, statt zu glätten. Standardmäßig an.</td></tr>
+    <tr><td>Hardware-Decodierung (GPU)</td><td>Auf der GPU decodieren, mit automatischem Rückfall auf Software. Standardmäßig an.</td></tr>
+    <tr><td>Trennen, wenn diese Quelle nirgends angezeigt wird</td><td>Ausgeblendet (Auge aus oder in keiner sichtbaren Szene, Vorschau oder keinem Projektor) heißt getrennt, sodass das Smartphone nicht mehr codiert – das spart Akku und macht es für eine andere Quelle frei. Verbindet sich wieder, sobald die Quelle angezeigt wird; mit aktivem Autostart stoppt und startet es auch die Kamera.</td></tr>
+    <tr><td>Kamera des Smartphones automatisch starten, sobald es bereit ist</td><td>Fernstart, wenn die App geöffnet und im Leerlauf ist. Standardmäßig an.</td></tr>
+    <tr><td>Kamera auf dem Smartphone starten / stoppen</td><td>Schaltflächen: sofort ausführen, einmalig.</td></tr>
+    <tr><td>Stream pausieren / fortsetzen</td><td>Schaltflächen. Pausieren hält den Stream an – das Smartphone bleibt verbunden, OBS zeigt ein unscharfes Standbild mit Pause-Symbol –, und Fortsetzen kehrt zum Live-Bild zurück. Auch auf dem Live-Bildschirm des Smartphones und im Browser-Steuerfeld.</td></tr>
+    <tr><td>Audioquelle für Lippensynchronität</td><td>Dein echtes Mikrofon – das, das abgeglichen werden soll.</td></tr>
+    <tr><td>Diese Audioquelle automatisch verzögern …</td><td>Wendet die gemessene Kameralatenz auf diese Audioquelle an.</td></tr>
+    <tr><td>Automatisch kalibrieren</td><td>Den Versatz anhand der Mikrofon-Referenz des Smartphones messen. Setzt voraus, dass <strong>Automatische Lippensynchron-Referenz</strong> in der App an ist; ignoriert die manuelle Latenz weiter unten.</td></tr>
+    <tr><td>Automatische Videoverzögerung für langsame Mikrofone</td><td>Verzögert stattdessen das Video, für Mikrofone, die langsamer sind als der Stream.</td></tr>
+    <tr><td>Eigene Latenz des Audiogeräts</td><td>Nur im manuellen Modus. Wird von der Verzögerung abgezogen.</td></tr>
+  </tbody>
+</table>
+<p>
+  Eine Quelle <strong>LensLink Screen</strong> hat nur die Eigenschaften für
+  Verbindung, Decodierung und Diagnose.
+</p>
+
+<h2>Plugin-Einstellungen (Werkzeuge → LensLink-Einstellungen)</h2>
+<p>Ein Wert für das ganze Plugin, nie pro Quelle wiederholt.</p>
+<table>
+  <thead><tr><th>Einstellung</th><th>Funktion</th></tr></thead>
+  <tbody>
+    <tr><td>GPU-Decodier-Pipeline (Beta)</td><td>Hält das decodierte Video auf der Grafikkarte. Gilt für alle Quellen, <strong>nach einem Neustart von OBS</strong>; fällt pro Quelle zurück, wo Texturen nicht geteilt werden können. <a href="/docs/performance/#the-gpu-decode-pipeline-beta">Details</a>.</td></tr>
+    <tr><td>Browser-Steuerfeld</td><td>Stellt das <a href="/docs/web-panel/">Steuerfeld</a> über Loopback bereit. Standardmäßig an.</td></tr>
+    <tr><td>Port des Steuerfelds</td><td>Standard <code>9980</code>.</td></tr>
+    <tr><td>Ausführliche Diagnose im OBS-Log</td><td>Deutlich mehr Details pro Verbindung. An, um einen Fehler zu reproduzieren, danach wieder aus.</td></tr>
+    <tr><td>Empfangenes Video auf die Festplatte schreiben</td><td>Speichert den Rohstream, damit sich ein Decodierproblem ohne das Gerät reproduzieren lässt.</td></tr>
+    <tr><td>Diagnosebericht kopieren</td><td>Legt Versionen, Hardware, Einstellungen und den Verbindungszustand jeder Quelle in die Zwischenablage – und ins OBS-Log – für einen Fehlerbericht. Kein Video, kein Ton, keine persönlichen Daten.</td></tr>
+    <tr><td>Pipeline-Benchmark aufzeichnen</td><td>Alle 5 Sekunden eine Zusammenfassung im Log und pro Sekunde ein CSV-Messwert im Konfigurationsordner des Plugins.</td></tr>
+  </tbody>
+</table>
+
+<h2>Optionen der App</h2>
+<p>Die Zeile <strong>Optionen</strong> unten auf dem Einrichtungsbildschirm.</p>
+<table>
+  <thead><tr><th>Option</th><th>Funktion</th></tr></thead>
+  <tbody>
+    <tr><td>Fernstart durch OBS</td><td>Lässt OBS die Kamera starten, während die App geöffnet und im Leerlauf ist. Das Smartphone bleibt dabei wach; es zu sperren oder die App zu verlassen, beendet die Bereitschaft.</td></tr>
+    <tr><td>Ruheansicht</td><td>Was 10 Sekunden nach deiner letzten Berührung aus dem Live-Bildschirm wird. <strong>Standard</strong> behält die Bedienelemente; <strong>Sauberes Bild</strong> zeigt nur das Bild (schalte vorher Statistik im Statusmenü ein, damit die Zustandszeile bleibt); <strong>Bildschirm abdunkeln</strong> blendet ihn aus, senkt die Helligkeit und zeigt den Akkustand – und dunkelt als einzige Option auch die Fernstart-Bereitschaft ab, nach einer Minute. Jedes Tippen bringt die Bedienelemente zurück.</td></tr>
+    <tr><td>Hohe Bildrate</td><td>Experimentell: ergänzt 120 und 240 fps im Format-Fenster, wo die Kamera sie bietet (1080p und 720p auf aktuellen iPhones). Die Bitrate steigt mit, das Smartphone wird wärmer, und eine OBS-Leinwand mit 60 zeigt bestenfalls jedes zweite Bild – passe die Leinwand an, nutze möglichst USB. Ausschalten setzt die Rate wieder auf 60.</td></tr>
+    <tr><td>Systemvideoeffekte erlauben</td><td>Experimentell: erlaubt iOS, die Aufnahme-Bildrate zu senken, was die Effekte im Kontrollzentrum voraussetzen können. Greift beim nächsten Kamerastart.</td></tr>
+    <tr><td>Tally-Licht</td><td>Farben, Prioritätsreihenfolge, Ausschalter pro Status und welche Status pulsieren. Siehe unten.</td></tr>
+    <tr><td>Kameraeinstellungen merken</td><td>Behält Belichtung, Weißabgleich, Zoom und Fokus jeder Kamera von einem Stream zum nächsten, pro Objektiv. Ausschalten löscht das Gespeicherte. <a href="/docs/camera/#remembered">Gespeicherte Einstellungen</a>.</td></tr>
+    <tr><td>Smartphone-Mikro an OBS senden</td><td>Macht das Smartphone zum Ton der Kameraquelle – ein drahtloses Mikrofon.</td></tr>
+    <tr><td>Automatische Lippensynchron-Referenz</td><td>Sendet das Mikrofon nur als Timing-Referenz; nie zu hören. Schließt sich mit der Zeile darüber gegenseitig aus.</td></tr>
+    <tr><td>Kameradiagnose</td><td>Alle Formate dieses Geräts und welche davon Effekte im Kontrollzentrum, 10-Bit-HDR oder Apple Log unterstützen. Füge sie in einen Fehlerbericht ein.</td></tr>
+  </tbody>
+</table>
+
+<h3>Tally-Licht</h3>
+<p>
+  Der farbige Rahmen um den Live-Bildschirm. Der höchste Status, der zutrifft und
+  eine Farbe hat, gewinnt; stellst du einen auf <strong>Aus</strong>, kommen
+  niedrigere zum Vorschein.
+</p>
+<table>
+  <thead><tr><th>Status</th><th>Standard</th><th>Bedeutung</th></tr></thead>
+  <tbody>
+    <tr><td>Auf Sendung</td><td>Rot, 6 pt</td><td>In der Live-Ausgabe von OBS.</td></tr>
+    <tr><td>In der Vorschau</td><td>Bernstein, 4 pt</td><td>In OBS sichtbar, aber nicht live.</td></tr>
+    <tr><td>Verbindung verloren</td><td>Aus</td><td>Streamt, aber die Verbindung zu OBS ist abgerissen.</td></tr>
+    <tr><td>Lippensynchronität wird kalibriert</td><td>Aus</td><td>Misst oder misst neu.</td></tr>
+    <tr><td>Lippensynchronität fixiert</td><td>Aus</td><td>Kalibrierung eingerastet.</td></tr>
+    <tr><td>Akku schwach</td><td>Aus</td><td>Stromsparmodus oder 20 % und weniger, ohne Netzteil.</td></tr>
+  </tbody>
+</table>
+<p>
+  Farben: Rot, Bernstein, Grün, Blau, Lila, Weiß, Aus. Auf Sendung behält die
+  dickste Linie, egal in welcher Farbe. Jeder leuchtende Status kann pulsieren
+  statt konstant zu leuchten (standardmäßig aus), und „Bewegung reduzieren“
+  macht aus jedem Pulsieren einen konstanten Rahmen in derselben Farbe –
+  weniger Bewegung, nie weniger Warnung.
+</p>
+
+<h2>Wo eine Einstellung nicht ist</h2>
+<ul>
+  <li><strong>Auflösung, Bildrate, Codec und Farbe</strong> liegen auf dem Smartphone, weil nur es weiß, was seine Kameras können. Andere Oberflächen können sie während des Streams ändern, aber die Liste gehört der App.</li>
+  <li><strong>Globale Schalter</strong> werden nie pro Quelle wiederholt. Was nicht an der Quelle ist, findest du unter <strong>Werkzeuge → LensLink-Einstellungen</strong>.</li>
+  <li><strong>Alles, was sich an mehreren Stellen einstellen lässt</strong>, liest denselben zwischengespeicherten Zustand, sodass die drei Oberflächen nie voneinander abweichen.</li>
+</ul>

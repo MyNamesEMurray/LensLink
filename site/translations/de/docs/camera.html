@@ -1,0 +1,155 @@
+title: Kamera, Objektive und Bild
+description: Objektive, Auflösungen, Bildraten und Codecs, manuelle Belichtung und manueller Weißabgleich, HDR und Apple Log, der virtuelle Greenscreen und gespeicherte Einstellungen.
+source: 32ffbd58274b
+---
+<h1>Kamera, Objektive und Bild</h1>
+<p class="lede">
+  Das Bild entsteht auf dem Smartphone, vor der Codierung. Das Plugin decodiert,
+  was es bekommt, und verändert nichts.
+</p>
+
+<h2>Objektiv, Auflösung, Bildrate und Codec wählen</h2>
+<p>
+  Vier Auswahlfelder im Abschnitt <strong>Kamera</strong> des
+  Einrichtungsbildschirms, jeweils gefiltert auf das, was das gewählte Objektiv
+  kann. Eine Kombination, die nicht aufgeführt ist, unterstützt die Hardware
+  nicht.
+</p>
+<table>
+  <thead><tr><th>Einstellung</th><th>Hinweise</th></tr></thead>
+  <tbody>
+    <tr><td>Objektiv</td><td>Haupt, Ultraweitwinkel, Tele oder Frontkamera. Während des Streams umschaltbar.</td></tr>
+    <tr><td>Auflösung</td><td>Bis zu 3840×2160. Höher ist nicht automatisch besser: Für die meisten Talking-Head-Aufnahmen ist 1080p60 besser als 4K30.</td></tr>
+    <tr><td>Bildrate</td><td>30 oder 60. Passe sie an deine OBS-Leinwand an. <strong>Optionen → Hohe Bildrate</strong> (experimentell) ergänzt 120 und 240, wo die Kamera sie bietet.</td></tr>
+    <tr><td>Codec</td><td>HEVC sieht genauso aus wie H.264, braucht aber rund 40 % weniger Daten. Nutze es, außer dein OBS-Build kann es nicht decodieren.</td></tr>
+    <tr><td>Qualität</td><td><strong>Ausgewogen</strong> streamt mit einer Bitrate, die in gewöhnlichem Wi-Fi sicher ist. <strong>Maximal</strong> tastet sich weiter nach oben, solange die Verbindung sauber bleibt, bis etwa zum Sechsfachen davon über USB und zum Vierfachen über Wi-Fi, und pendelt sich knapp unter dem ein, was die Verbindung trägt. Außerdem stellt es den Encoder auf qualitätsorientierte Einstellungen um und streamt mit dem vollen Sensorauslesebereich. Mehr Daten und mehr Wärme; dafür ist USB der richtige Ort.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p>Wenn die Quelle <em>„Verbunden, aber dieser OBS-Build kann den Stream nicht
+  decodieren“</em> meldet, fehlt diesem Build ein HEVC-Decoder. Stell die App
+  auf H.264 um; sonst ändert sich nichts.</p>
+</div>
+
+<h3>Einstellungen während des Streams ändern</h3>
+<p>
+  Objektiv, Auflösung, Bildrate und Codec lassen sich alle ändern, während der
+  Stream läuft, über das Browser-Steuerfeld oder die Eigenschaften der Quelle.
+  Ein Objektivwechsel erfolgt sofort; bei einem Formatwechsel gibt es eine kurze
+  Pause, während die Kamera neu startet.
+</p>
+
+<h2>Kamerasteuerung im Live-Betrieb</h2>
+<p>
+  Dieselben Bedienelemente gibt es auf dem Live-Bildschirm der App, im
+  <a href="/docs/web-panel/">Browser-Steuerfeld</a> und (teilweise) in den
+  Eigenschaften der Quelle – überall in derselben Reihenfolge, und eine Änderung
+  an einer Stelle aktualisiert die anderen.
+</p>
+<p>
+  Auf dem Smartphone zeigt der Live-Bildschirm das Bild, die Statusanzeige,
+  Pausieren, Stoppen und die Objektivtasten <strong>.5</strong>,
+  <strong>1×</strong> und <strong>2</strong> wie in der Kamera-App. Mit zwei
+  Fingern zoomen, zum Fokussieren tippen, und mit einem Wisch nach oben oder
+  unten über das Bild wird die Aufnahme heller oder dunkler. Der Pfeil
+  öffnet die <strong>Einstellleiste</strong>: ein Regler und ein Chip für alles,
+  was er steuern kann. Ein gelbes <strong>A</strong> auf einem Chip bedeutet,
+  dass diese Einstellung automatisch ist; bewegst du den Regler, wird sie
+  manuell, tippst du erneut auf den aktiven Chip, wird sie wieder automatisch.
+  Das Browser-Steuerfeld ordnet dieselben Bedienelemente in Zeilen an.
+</p>
+<table>
+  <thead><tr><th>Bedienelement</th><th>Funktion</th></tr></thead>
+  <tbody>
+    <tr><td>Zoom</td><td>1× bis zum Maximum des Objektivs. Auf dem Live-Bildschirm mit zwei Fingern zoomen, eine Objektivtaste antippen oder den Zoom-Chip bzw. den Schieberegler im Steuerfeld nutzen.</td></tr>
+    <tr><td>Belichtung</td><td>Im Automatikmodus ein Regler für die Belichtungskorrektur (auf dem Smartphone über das Bild wischen). Bewege <strong>Verschluss</strong>, um die Belichtung manuell zu steuern – der Belichtungs-Chip wird dann zu <strong>ISO</strong> –, oder wähle im Steuerfeld <strong>Manuell</strong>. Bei Kameras ohne diese Möglichkeit ist Manuell ausgeblendet.</td></tr>
+    <tr><td>Fokus</td><td>Automatisch oder gesperrt mit einem Regler von nah bis fern. Im Automatikmodus folgt die Kamera Gesichtern (Optionen → Auf Gesichter fokussieren). Tippe auf die Vorschau, um dort zu fokussieren und zu belichten, bis sich die Szene ändert; halte den Finger darauf, um Fokus und Belichtung an dieser Stelle zu sperren.</td></tr>
+    <tr><td>Weißabgleich</td><td>Automatisch oder gesperrt mit einem Regler von 2500–8000 K.</td></tr>
+    <tr><td>Taschenlampe</td><td>An oder aus. Ein hartes Fülllicht aus der Nähe, mehr nicht. Auf dem Smartphone in der unteren Reihe der Einstellleiste.</td></tr>
+    <tr><td>Objektiv</td><td>Die echten Objektive des Geräts: auf dem Smartphone die Objektivtasten, im Steuerfeld ein Menü.</td></tr>
+    <tr><td>Kamera wechseln</td><td>Von vorne nach hinten und zurück. Auf dem Smartphone in der unteren Reihe der Einstellleiste.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>Sperre Fokus und Weißabgleich, sobald die Einstellung steht.</strong>
+  Autofokus und automatischer Weißabgleich fangen an zu suchen, wenn jemand
+  vorbeigeht oder sich das Licht ändert, und diese Suche sieht man im Stream.
+  Das ist der größte Qualitätsgewinn auf dieser Seite.</p>
+</div>
+
+<h2>Farbe: HDR und Apple Log</h2>
+<p>
+  <strong>Farbe</strong> befindet sich im Format-Fenster der App und bietet nur
+  an, was dieses Smartphone aufnehmen kann. Beide Optionen funktionieren nur mit
+  HEVC und greifen beim nächsten Kamerastart; das Fenster kennzeichnet sie mit
+  „Nur HEVC“, und wer dort H.264 wählt, setzt Farbe auf Standard zurück.
+</p>
+<h3>HDR (HLG)</h3>
+<p>
+  10-Bit-HLG-Aufnahme. OBS wendet für eine SDR-Leinwand Tone-Mapping an; eine
+  HDR-Leinwand bekommt das echte HDR-Bild. Standardmäßig aus.
+</p>
+<h3>Apple Log</h3>
+<p>
+  Auf Pro-iPhones (iOS 17+) ein flaches 10-Bit-Bild für das Color Grading: Füge
+  der Quelle einen Filter <strong>LUT anwenden</strong> hinzu und lade eine
+  Apple-Log-LUT. Das Plugin selbst wendet nichts an.
+</p>
+<div class="callout warn">
+  <p>Log wirkt ausgewaschen, bis es gegradet ist. Wenn du keine LUT verwendest,
+  nimm Standard.</p>
+</div>
+
+<h2>Virtueller Greenscreen</h2>
+<p>
+  Alles außer dir wird einfarbig grün übermalt, <em>bevor</em> das Video das
+  Smartphone verlässt; beim Einschalten wird Farbe auf Standard gesetzt. Die
+  Quelle fügt dann in OBS einen abgestimmten Chroma-Key-Filter hinzu, allerdings
+  nur einmal: Löschst du ihn oder stimmst du ihn nach, bleibt das so.
+</p>
+<ul>
+  <li><strong>Tiefenunterstützung</strong> schärft die Freistellung mit echten Tiefendaten: die Frontkamera auf Smartphones mit Face ID, das hintere Hauptobjektiv auf Pro-Smartphones (LiDAR). Andere Objektive nutzen nur die Formerkennung, die jede Person im Bild behält. Die Tiefenunterstützung schaltet außerdem den Folgemodus und die übrigen Systemeffekte aus.</li>
+  <li><strong>Motivabstand</strong> erscheint, während die Tiefenunterstützung läuft: Alles jenseits der Grenze wird zum Hintergrund, so blendest du jemanden aus, der hinter dir vorbeigeht. Ziehe, um 0,5–5,0 m einzustellen, oder tippe auf den Wert, um <strong>Alle</strong> zu wählen.</li>
+</ul>
+
+
+<h2 id="remembered">Gespeicherte Einstellungen</h2>
+<p>
+  <strong>Belichtung, Weißabgleich, Zoom und Fokus</strong> jeder Kamera bleiben
+  von einem Stream zum nächsten erhalten, pro Objektiv, sodass eine einmal
+  eingestellte Aufnahme eingestellt bleibt. Sperrst du heute den Weißabgleich
+  auf dem Hauptobjektiv, ist er morgen wieder gesperrt; wechselst du während des
+  Streams zum Ultraweitwinkel, kommt <em>dieses</em> so, wie du es zuletzt
+  verlassen hast. Es gibt nichts zu benennen oder zu speichern: Die
+  Einstellleiste zeigt, was wiederhergestellt wurde, und ein Tippen auf einen
+  Chip gibt ihn frei.
+</p>
+<p><strong>Optionen → Kameraeinstellungen merken</strong> schaltet das ab und vergisst dabei auch, was gespeichert war.</p>
+
+<h2>Videoeffekte im Kontrollzentrum</h2>
+<p>
+  Porträt, Studiolicht und die übrigen Effekte sind iOS-Funktionen, die du im
+  Kontrollzentrum einschaltest, während eine App die Kamera nutzt. iOS bietet sie
+  nur für bestimmte Kameras und Formate an – meist die Frontkamera, nichts über
+  1920×1440 –, und auf vielen iPhones bekommen die rückseitigen Kameras keinen
+  davon.
+</p>
+<ul>
+  <li><strong>Optionen → Kameradiagnose</strong> listet auf, was dein Gerät pro Kamera und Format anbietet.</li>
+  <li>LensLink wählt ein effektfähiges Format, wann immer deine Einstellungen das zulassen.</li>
+  <li>Ein Schalter, der erscheint, aber ausgegraut ist, bedeutet, dass die Bildrate zu hoch ist: Senke sie und schalte <strong>Optionen → Systemvideoeffekte erlauben</strong> ein, damit iOS sie anpassen kann.</li>
+</ul>
+<p>
+  Die Filter der Kamera-App und die Fotografischen Stile von Apple stehen keiner
+  Drittanbieter-App zur Verfügung. Für einen bestimmten Look nimmst du
+  OBS-Filter (Rechtsklick auf die Quelle → <strong>Filter</strong>).
+</p>
+
+<h2>Das Smartphone halten</h2>
+<p>
+  Die Oberfläche folgt der Drehung des Smartphones (außer die
+  Ausrichtungssperre ist aktiv), und die Live-Ansicht bleibt in jeder
+  Ausrichtung aufrecht. OBS erhält immer das native Querformat des Sensors,
+  sodass das Drehen des Smartphones die Größe der Quelle in deiner Szene nie
+  ändert.
+</p>

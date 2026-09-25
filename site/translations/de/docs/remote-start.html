@@ -1,0 +1,109 @@
+title: Fernstart
+description: Starte und stoppe die Kamera des Smartphones aus OBS, per Browser-Schaltfläche, Siri, Kurzbefehl oder URL, damit ein montiertes Smartphone nie abgenommen werden muss.
+source: 3b19eded1e63
+---
+<h1>Fernstart</h1>
+<p class="lede">
+  Ein Smartphone, das hinter einem Monitor festgeklemmt ist, sollte nicht
+  abgenommen werden müssen, nur damit jemand auf Starten tippt. Solange die App
+  geöffnet und im Leerlauf ist, kann OBS die Kamera selbst starten.
+</p>
+
+<h2>Warum die App geöffnet sein muss</h2>
+<p>
+  iOS lässt die Kamera und den Listener von LensLink nur laufen, solange die App
+  auf dem Bildschirm ist. Alles Folgende gibt es genau deshalb: Die App meldet
+  <strong>Bereitschaft</strong>, wenn sie geöffnet und im Leerlauf ist, und OBS
+  übernimmt ab da.
+</p>
+<p>
+  Deshalb öffnen auch die Wege über Siri und Kurzbefehle zuerst die App, und
+  deshalb verhindert das Smartphone die automatische Sperre, solange die
+  Bereitschaft aktiv ist – das Sperren würde den Listener anhalten. Der
+  Einrichtungsbildschirm wird nach einer Minute abgedunkelt, in Bernstein statt
+  Grün: scharfgeschaltet, nicht live.
+</p>
+<div class="callout">
+  <p>Der Fernstart ist standardmäßig aktiv. Ausschalten kannst du ihn mit
+  <strong>Fernstart durch OBS</strong> in den <strong>Optionen</strong> der
+  App.</p>
+</div>
+
+<h2>Die vier Wege zum Start</h2>
+
+<h3>Automatisch, wenn die Quelle sich verbindet</h3>
+<p>
+  <strong>Kamera des Smartphones automatisch starten, sobald es bereit
+  ist</strong> ist standardmäßig aktiv: App öffnen, und das Video erscheint, ohne
+  weiteres Zutun. Es spielt auch kein Ping-Pong mit dir: OBS startet nur
+  automatisch, wenn die App gerade erreichbar geworden ist, nicht nachdem du auf
+  Stoppen gedrückt hast.
+</p>
+
+<h3>Aus OBS</h3>
+<p>
+  <strong>Kamera auf dem Smartphone starten</strong> und <strong>Kamera auf dem
+  Smartphone stoppen</strong> in den Eigenschaften der Quelle, sobald die App
+  verbunden ist.
+</p>
+
+<h3>Aus dem Browser-Steuerfeld</h3>
+<p>
+  <a href="/docs/web-panel/">Das Steuerfeld</a> unter
+  <code>http://localhost:9980</code> zeigt <strong>Kamera starten</strong>,
+  solange die App im Leerlauf ist, und ein rotes <strong>Kamera stoppen</strong>,
+  solange sie live ist, jeweils mit einem Schalter <strong>Autostart</strong>
+  daneben.
+</p>
+
+<h3>Per Siri, Kurzbefehl oder URL</h3>
+<ul>
+  <li><strong>Siri (iOS 16+):</strong> <em>„Hey Siri, starte den Stream mit LensLink.“</em></li>
+  <li><strong>Kurzbefehle:</strong> die Aktionen <strong>Kamerastream starten</strong> und <strong>Kamerastream stoppen</strong> – nützlich in Automationen, etwa um zu starten, sobald das Smartphone mit einem bestimmten Ladegerät verbunden wird.</li>
+  <li><strong>URL-Schema:</strong> <code>lenslink://start</code> und <code>lenslink://stop</code>. Der Weg für iOS 15, und er funktioniert überall.</li>
+</ul>
+<div class="callout warn">
+  <p><strong>Siri-Befehle und Sideloading vertragen sich nicht.</strong> Beim
+  Neusignieren wird die Bundle-ID umgeschrieben, wodurch die kompilierten
+  Befehlsdaten verwaisen: Siri verweigert den Dienst, obwohl dieselbe Aktion in
+  Kurzbefehle funktioniert. Nutze den Build aus dem App Store oder
+  <code>lenslink://start</code>. Prüfe außerdem, dass die App mindestens einmal
+  gestartet wurde und dass „Mit Siri verwenden“ unter <strong>Einstellungen →
+  Siri &amp; Suchen → LensLink</strong> aktiviert ist.</p>
+</div>
+
+<h2>Auch ein Szenenwechsel startet und stoppt sie</h2>
+<p>
+  Mit <strong>Trennen, wenn diese Quelle nirgends angezeigt wird</strong> stoppt
+  das Ausblenden der Quelle die Kamera des Smartphones, und das Einblenden
+  startet sie wieder. Zusammen mit Autostart codiert das Smartphone nur, solange
+  es irgendwo im Bild ist.
+</p>
+
+<h2>Per Skript steuern</h2>
+<p>Der Endpunkt des Steuerfelds nimmt einen einfachen HTTP-POST entgegen:</p>
+<pre><code>curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"start_stream"}'
+
+curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"stop_stream"}'</code></pre>
+<p>
+  Bei mehr als einem Smartphone hängst du die Quellen-ID aus
+  <code>/api/sources</code> als <code>?src=</code> an. Vollständige API:
+  <a href="/docs/web-panel/#the-http-api">Browser-Steuerfeld</a>.
+</p>
+
+<h2>Was du auf dem Smartphone siehst</h2>
+<table>
+  <tbody>
+    <tr><td>App geöffnet, OBS nicht verbunden</td><td>Grauer Punkt, „Nicht verbunden“.</td></tr>
+    <tr><td>App geöffnet, OBS verbunden, Kamera im Leerlauf</td><td>Bernsteinfarbener Punkt, „OBS verbunden – bereit“. Bereitschaft: Fernstart scharfgeschaltet.</td></tr>
+    <tr><td>Bereitschaft, eine Minute lang unberührt</td><td>Der Bildschirm wird mit einem bernsteinfarbenen Weck-Symbol abgedunkelt. Jedes Tippen weckt ihn; der Listener stoppt nie.</td></tr>
+    <tr><td>Gestartet</td><td>Live-Bildschirm, grüner Punkt, „Live“.</td></tr>
+  </tbody>
+</table>
+<p>
+  Das Abdunkeln in der Bereitschaft passiert nur, wenn <strong>Ruheansicht</strong>
+  auf <strong>Bildschirm abdunkeln</strong> steht, und nie, während du den
+  Bildschirm berührst oder ein Fenster geöffnet hast.
+</p>

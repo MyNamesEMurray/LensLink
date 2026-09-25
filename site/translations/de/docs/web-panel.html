@@ -1,0 +1,112 @@
+title: Browser-Steuerfeld
+description: Das LensLink-Steuerfeld unter localhost:9980: dieselbe Kamerasteuerung in einem Browser auf deinem Computer, dazu die HTTP-API dahinter.
+source: 441ba810e72e
+---
+<h1>Browser-Steuerfeld</h1>
+<p class="lede">
+  Das Plugin stellt die Kamerasteuerung des Live-Bildschirms unter
+  <a href="http://localhost:9980"><code>http://localhost:9980</code></a> bereit,
+  in einem Browserfenster, das du neben OBS parken kannst. Niemand muss das
+  Smartphone anfassen.
+</p>
+
+<h2>Öffnen</h2>
+<p>
+  Öffne <code>http://localhost:9980</code> auf dem Computer, auf dem OBS läuft.
+  Das Steuerfeld ist standardmäßig aktiv; der Schalter dafür ist
+  <strong>Werkzeuge → LensLink-Einstellungen → Browser-Steuerfeld</strong>.
+</p>
+<div class="callout">
+  <p><strong>Nur Loopback.</strong> Das Steuerfeld bindet sich an
+  <code>127.0.0.1</code>, sodass nichts im Netzwerk es erreichen kann. Das ist
+  Absicht, denn es kann Kameras starten und hat keine Authentifizierung.</p>
+</div>
+<p>
+  <strong>Port des Steuerfelds</strong> (Standard <code>9980</code>) ist eine
+  pluginweite Einstellung, falls dieser Port schon belegt ist.
+</p>
+
+<h2>Was es bietet</h2>
+<p>Dieselben Bedienelemente wie das Live-Panel der App, in derselben Reihenfolge:</p>
+<ul>
+  <li><strong>Statusanzeige</strong> mit Punkt, Statuswort und Latenz. Eine zweite Anzeige erscheint, während die Kalibrierung der Lippensynchronität läuft, und bietet nach dem Fixieren <strong>Neu kalibrieren</strong> an.</li>
+  <li><strong>Quellen-Tabs</strong>, wenn mehr als eine Kameraquelle live ist – eine Seite steuert jedes Smartphone.</li>
+  <li><strong>Zoom</strong>, <strong>Belichtung</strong> (AE-Korrektur oder manuell ISO und Verschlusszeit), <strong>Fokus</strong>, <strong>Weißabgleich</strong>.</li>
+  <li><strong>Taschenlampe, Objektiv, Kamera wechseln.</strong></li>
+  <li><strong>Formatwechsel während des Streams</strong>: Auflösung, Bildrate, Codec, Mikrofon.</li>
+  <li><strong>Motivabstand</strong>, während der Greenscreen mit Tiefenunterstützung läuft.</li>
+  <li><strong>Kamera starten</strong> im Leerlauf, ein rotes <strong>Kamera stoppen</strong> im Live-Betrieb, jeweils mit einem Schalter <strong>Autostart</strong>.</li>
+  <li><strong>Pausieren</strong> hält den Stream an, ohne ihn zu beenden: Das Smartphone bleibt verbunden und seine Kamera läuft weiter, OBS behält die Quelle und zeigt ein abgedunkeltes, unscharfes Standbild mit Pause-Symbol, und <strong>Fortsetzen</strong> macht nahtlos weiter. Der Ton läuft weiter, sodass ein Smartphone, das zugleich als Mikrofon dient, nicht aussetzt.</li>
+</ul>
+<p>
+  Es übernimmt Änderungen, die auf dem Smartphone gemacht werden, und pausiert
+  dabei, solange du ziehst, damit es dir nie in die Quere kommt. Eine Quelle
+  <strong>LensLink Screen</strong> hat keine Kamerasteuerung, und das
+  Steuerfeld sagt das, statt funktionslose Schieberegler anzuzeigen.
+</p>
+
+<h2>Die HTTP-API</h2>
+<p>
+  Das Steuerfeld ist ein Client einer kleinen HTTP-API auf demselben Port; ein
+  Stream Deck oder ein Skript kann ein weiterer sein. Jeder Endpunkt akzeptiert
+  ein optionales <code>?src=&lt;id&gt;</code>; ohne wählt das Plugin die erste
+  passende Quelle.
+</p>
+
+<h3>Zustand abfragen</h3>
+<table>
+  <thead><tr><th>Anfrage</th><th>Liefert</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/sources</code></td><td>Jede Quelle: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>screen</code>.</td></tr>
+    <tr><td><code>GET /api/status</code></td><td>Den <code>status</code>-Text (in der Sprache von OBS), seinen <code>tone</code> (<code>idle</code>, <code>wait</code>, <code>ready</code>, <code>live</code> oder <code>error</code>, um ihn einzufärben, ohne den Text zu lesen), dazu <code>screen</code>, <code>standby</code>, <code>connected</code>, <code>autoStart</code> und die Lippensynchron-Stufe <code>sync</code>.</td></tr>
+    <tr><td><code>GET /api/diagnostics</code></td><td>Den ganzen Diagnosebericht als reinen Text: Versionen, Hardware, Einstellungen und Zustand jeder Quelle. Derselbe Inhalt wie über die Schaltfläche unter Werkzeuge → LensLink-Einstellungen.</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>Den letzten Kamerazustand, den das Smartphone gemeldet hat: Objektive, Zoom, Belichtung, Fokus, Weißabgleich, unterstützte Formate. Derselbe Cache, den die Eigenschaften der Quelle lesen, und so bleiben die drei Oberflächen im Gleichschritt.</td></tr>
+  </tbody>
+</table>
+
+<h3>Befehle senden</h3>
+<p>
+  <code>POST /api/control</code> nimmt einen JSON-Befehl pro Anfrage entgegen.
+  Unbekannte Befehle werden bewusst ignoriert, sodass ein neueres Steuerfeld mit
+  einer älteren App eingeschränkt funktioniert, statt auszufallen.
+</p>
+<pre><code>POST /api/control
+{ "cmd": "zoom",          "value": 2.0 }
+{ "cmd": "exposure_bias", "value": -0.5 }
+{ "cmd": "exposure",      "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
+{ "cmd": "exposure",      "mode": "auto" }
+{ "cmd": "focus",         "mode": "locked", "lensPosition": 0.42 }
+{ "cmd": "focus",         "mode": "auto" }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "flashlight",    "on": true }
+{ "cmd": "flip" }
+{ "cmd": "start_stream" }
+{ "cmd": "stop_stream" }
+{ "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "mic",           "id": "builtin:2" }
+{ "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
+<table>
+  <thead><tr><th>Anfrage</th><th>Wirkung</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code> – dieselbe Eigenschaft, die das Autostart-Kontrollkästchen ändert. Ein leerer Body wird abgelehnt und nicht als false gewertet.</td></tr>
+    <tr><td><code>POST /api/recalibrate</code></td><td>Kein Body. Startet eine neue Messung der Lippensynchronität.</td></tr>
+  </tbody>
+</table>
+
+<h3>Beispiele</h3>
+<pre><code># Start the camera on the only connected phone
+curl -X POST http://localhost:9980/api/control -d '{"cmd":"start_stream"}'
+
+# Zoom the source with id 2 to 3x
+curl -X POST 'http://localhost:9980/api/control?src=2' -d '{"cmd":"zoom","value":3.0}'
+
+# What is connected right now?
+curl -s http://localhost:9980/api/sources</code></pre>
+
+<h2>Ausschalten</h2>
+<p>
+  Deaktiviere <strong>Browser-Steuerfeld</strong> unter <strong>Werkzeuge →
+  LensLink-Einstellungen</strong>. Der Port wird sofort geschlossen; alles
+  andere bleibt unberührt.
+</p>

@@ -1,0 +1,107 @@
+title: Audio und Lippensynchronität
+description: Nutze das Smartphone als drahtloses Mikrofon, oder sende sein Mikrofon als Timing-Referenz, damit das Plugin dein eigenes Mikrofon automatisch auf das Video abstimmt.
+source: 257918f25fc6
+---
+<h1>Audio und Lippensynchronität</h1>
+<p class="lede">
+  Das Mikrofon des Smartphones kann zwei Aufgaben übernehmen, aber nur eine davon
+  gleichzeitig: <strong>der Ton sein, den man hört</strong>, oder eine
+  <strong>Timing-Referenz</strong>, mit der das Mikrofon abgeglichen wird, das du
+  tatsächlich verwendest. Wer das eine einschaltet, schaltet das andere aus.
+</p>
+
+<h2>Das Smartphone als Mikrofon</h2>
+<p>
+  <strong>Optionen → Smartphone-Mikro an OBS senden</strong> lässt die
+  Kameraquelle das Mikrofon des Smartphones mitübertragen – im Grunde ein
+  drahtloses Mikrofon. Standardmäßig aus, da die meisten Streamer ihr eigenes
+  Mikrofon verwenden und es stattdessen abgleichen.
+</p>
+<p>Eine Zeile <strong>Mikrofon</strong> unter dem Schalter auf dem Einrichtungsbildschirm der App und eine Mikrofonzeile im Browser-Steuerfeld legen fest, welches:</p>
+<table>
+  <thead><tr><th>Auswahl</th><th>Ergebnis</th></tr></thead>
+  <tbody>
+    <tr><td>Auto</td><td>Das Standard-Routing von iOS – normalerweise das Mikrofon <em>Unten</em>, egal welche Kamera aktiv ist, da iOS die beiden nicht miteinander verknüpft. Ein Headset oder Bluetooth-Mikrofon übernimmt automatisch.</td></tr>
+    <tr><td>Vorne</td><td>Die vordere Mikrofongruppe, ungefähr dorthin ausgerichtet, wohin die Frontkamera blickt.</td></tr>
+    <tr><td>Hinten</td><td>Das hintere Mikrofon, ausgerichtet auf das, was die rückseitige Kamera sieht.</td></tr>
+  </tbody>
+</table>
+<p>Der Wechsel erfolgt live.</p>
+
+<h2>Automatische Lippensynchronität</h2>
+<p>
+  Video kommt immer etwas verspätet an, deshalb ist ein separates Mikrofon ihm
+  gegenüber zu früh dran – wie bei einem nachsynchronisierten Film. Die
+  übliche Lösung: in OBS eine Verzögerung schätzen und nachjustieren. LensLink
+  misst sie stattdessen.
+</p>
+
+<h3>Einrichtung</h3>
+<ol class="walk">
+  <li>
+    <strong>In den Eigenschaften der Quelle</strong>
+    <p>Wähle unter <strong>Audioquelle für Lippensynchronität</strong> dein echtes Mikrofon und aktiviere dann <strong>Diese Audioquelle automatisch verzögern …</strong> und <strong>Automatisch kalibrieren</strong>.</p>
+  </li>
+  <li>
+    <strong>In den Optionen der App</strong>
+    <p>Schalte <strong>Automatische Lippensynchron-Referenz</strong> ein. Das Mikrofon des Smartphones ist jetzt nur noch ein Timing-Signal: nie abgespielt, nie aufgezeichnet, nie in deinem Stream.</p>
+  </li>
+  <li>
+    <strong>Sprich etwa fünfzehn Sekunden lang</strong>
+    <p>Das Plugin vergleicht die beiden Streams, misst den Versatz und korrigiert ihn. Live-Bildschirm und Browser-Steuerfeld zeigen den Stand an: erst <strong>Synchronisation wird gemessen</strong>, dann <strong>Synchronisation fixiert</strong>.</p>
+  </li>
+</ol>
+
+<h3>Sobald sie fixiert ist</h3>
+<p>
+  Die Eigenverzögerung deines Mikrofons ist jetzt bekannt, deshalb folgt die
+  Korrektur der Latenz der Kamera von selbst – auch in Sprechpausen und direkt
+  nach einer erneuten Verbindung – und kalibriert neu, wenn du mitten im Stream
+  deine Audiotechnik wechselst.
+</p>
+<p>
+  Um eine neue Messung zu erzwingen, tippe in der Sync-Anzeige auf
+  <strong>Neu kalibrieren</strong>, auf dem Smartphone oder im
+  Browser-Steuerfeld. Die Schaltfläche erscheint nur im fixierten Zustand, dem
+  einzigen, in dem sie etwas bewirkt.
+</p>
+<table>
+  <thead><tr><th>Anzeige</th><th>Bedeutung</th></tr></thead>
+  <tbody>
+    <tr><td>Keine Anzeige</td><td>Die automatische Kalibrierung läuft nicht.</td></tr>
+    <tr><td>Synchronisation wird gemessen</td><td>Sprich weiter.</td></tr>
+    <tr><td>Synchronisation fixiert</td><td>Versatz angewendet und nachgeführt.</td></tr>
+    <tr><td>Wird neu kalibriert</td><td>Neue Messung nach einer Änderung. Kein Fehler.</td></tr>
+  </tbody>
+</table>
+
+<h3>Wenn dein Mikrofon das langsame ist</h3>
+<p>
+  Manche USB-Audiointerfaces verursachen so viel Latenz, dass das Mikrofon
+  <em>nach</em> dem Video ankommt; es noch weiter zu verzögern hilft dann nicht.
+  <strong>Automatische Videoverzögerung für langsame Mikrofone</strong>
+  verzögert stattdessen das Video.
+</p>
+
+<h3>Eine feste Korrektur, ohne automatische Kalibrierung</h3>
+<p>
+  Ist <strong>Automatisch kalibrieren</strong> aus, verschiebt das
+  Verzögerungs-Kontrollkästchen allein dein Mikrofon um die gemessene
+  Kameralatenz. Eine bekannte Geräteverzögerung trägst du unter
+  <strong>Eigene Latenz des Audiogeräts</strong> ein; sie wird abgezogen.
+</p>
+
+<div class="callout">
+  <p><strong>Warum nicht einfach eine Zahl in OBS eintragen?</strong> Die
+  Kameralatenz ist keine Konstante – sie hängt von Auflösung, Codec, Verbindung
+  und Netzwerk ab. Ein gemessener Versatz übersteht den Wechsel von 1080p60 über
+  Wi-Fi zu 4K30 über USB. Ein eingetippter nicht.</p>
+</div>
+
+<h2>Ton der Bildschirmspiegelung</h2>
+<p>
+  Die Quelle <strong>LensLink Screen</strong> überträgt echten, abspielbaren
+  App- und Systemton, keine Timing-Referenz. iOS schaltet DRM-Apps während einer
+  Übertragung stumm, und dein Mikrofon ist nicht enthalten:
+  <a href="/docs/screen-mirroring/#audio">Bildschirmspiegelung</a>.
+</p>
