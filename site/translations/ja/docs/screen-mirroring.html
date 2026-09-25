@@ -34,7 +34,7 @@ source: 241eae9c8fb9
   <li><strong>マイクの音声は送信されません。</strong>マイクはOBS側で用意してください。（カメラのソースはスマートフォンのマイクを送れますが、このソースはあえて送りません。）</li>
 </ul>
 <p>
-  録音するだけでなく<em>聞く</em>には、OBSのオーディオの詳細プロパティで、そのソースの<strong>音声モニタリング</strong>を<strong>モニターと出力</strong>に設定してください。
+  録音するだけでなく<em>聞く</em>には、OBSのオーディオの詳細プロパティで、そのソースの<strong>音声モニタリング</strong>を<strong>モニタリング有効</strong>に設定してください。
 </p>
 
 <h2>ソースのサイズを固定する</h2>
@@ -43,11 +43,11 @@ source: 241eae9c8fb9
 </p>
 <ol>
   <li>ソースを右クリック → <strong>変換</strong> → <strong>変換の編集…</strong></li>
-  <li><strong>バウンディングボックスの種類</strong>を<strong>境界の内側に合わせる</strong>（「内側に合わせる」）に設定します。</li>
+  <li><strong>境界の種類</strong>を<strong>内側に合わせる</strong>に設定します。</li>
   <li>バウンディングボックスを、ミラー映像に使いたいサイズに設定します。</li>
 </ol>
 <figure>
-  <img src="/img/screen-fit-transform.png" alt="バウンディングボックスの種類を「境界の内側に合わせる」に設定したOBSの変換の編集ダイアログ" width="544" loading="lazy">
+  <img src="/img/screen-fit-transform.png" alt="境界の種類を「内側に合わせる」に設定したOBSの変換の編集ダイアログ" width="544" loading="lazy">
   <figcaption>これでOBSは、レイアウトのサイズを変える代わりに、受信した映像を枠に収まるよう拡大縮小します。</figcaption>
 </figure>
 

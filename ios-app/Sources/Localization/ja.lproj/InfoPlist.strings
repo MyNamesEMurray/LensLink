@@ -1,0 +1,8 @@
+/* Camera permission prompt */
+"NSCameraUsageDescription" = "LensLinkは、カメラの映像をコンピュータのOBSにストリーミングします。";
+
+/* Local Network permission prompt */
+"NSLocalNetworkUsageDescription" = "LensLinkは、カメラの映像を送信するために、ローカルネットワーク上のOBS Studioに接続します。";
+
+/* Microphone permission prompt */
+"NSMicrophoneUsageDescription" = "LensLinkはマイクの音声をOBSに送信できます。オンにした場合はカメラの音声として、またはお使いのマイクを映像に自動で同期させるためのタイミングの基準としてのみ使用します。";

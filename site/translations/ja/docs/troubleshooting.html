@@ -48,7 +48,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 
 <h2>「Hey Siri、LensLinkでストリーミングを開始」が認識されない（サイドロードのみ）</h2>
 <p>
-  再署名するとバンドルIDが書き換わり、コンパイル済みのフレーズデータとの関連が失われます。そのため、ショートカットからは同じアクションが動作するのに、Siriは応じません。App Store版を使うか、<code>lenslink://start</code>を使うショートカットを利用してください。また、アプリを一度以上起動していること、<strong>設定 → Siriと検索 → LensLink</strong>で「Use with Siri」がオンになっていることも確認してください。
+  再署名するとバンドルIDが書き換わり、コンパイル済みのフレーズデータとの関連が失われます。そのため、ショートカットからは同じアクションが動作するのに、Siriは応じません。App Store版を使うか、<code>lenslink://start</code>を使うショートカットを利用してください。また、アプリを一度以上起動していること、<strong>設定 → Siriと検索 → LensLink</strong>でSiriでの使用がオンになっていることも確認してください。
 </p>
 
 <h2>コントロールセンターのビデオエフェクトが表示されない、またはグレーアウトしている</h2>
@@ -74,7 +74,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 <h2>音声が出ない、または聞こえない</h2>
 <ul>
   <li><strong>ブロードキャスト中はDRMアプリの音声が出ません：</strong>iOSがApple Music、Spotify、Netflixをミュートします。ゲーム、アプリ、ブラウザの音声は問題ありません。</li>
-  <li><strong>録音はされるが聞こえない：</strong>OBSのオーディオの詳細プロパティで、<strong>音声モニタリング</strong>を<strong>モニターと出力</strong>に設定してください。</li>
+  <li><strong>録音はされるが聞こえない：</strong>OBSのオーディオの詳細プロパティで、<strong>音声モニタリング</strong>を<strong>モニタリング有効</strong>に設定してください。</li>
   <li><strong>OBSにスマートフォンのマイク音声が届かない：</strong><strong>スマートフォンのマイクをOBSに送信</strong>をオンにしてください。<strong>自動リップシンク用リファレンス</strong>がオンの場合は送信されません。マイク1つにつき、役割は1つです。</li>
 </ul>
 

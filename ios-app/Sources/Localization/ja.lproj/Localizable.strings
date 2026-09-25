@@ -1,0 +1,564 @@
+/* ===== AudioReference.swift ===== */
+
+/* Microphone picker: the choice that follows iOS's own input routing */
+"Auto (iOS default)" = "自動（iOS標準）";
+
+/* ===== BroadcastButton.swift ===== */
+
+/* Setup screen: button that starts the screen broadcast (also its VoiceOver label) [also used in ContentView.swift] */
+"Mirror Screen" = "画面をミラーリング";
+
+/* Voice Control: a shorter name the user can say for the Mirror Screen button (never shown) */
+"Mirror" = "ミラーリング";
+
+/* ===== BroadcastProbe.swift ===== */
+
+/* Setup screen warning: the screen-broadcast extension is missing from a sideloaded install */
+"No PlugIns folder — the sideloader stripped the extension" = "PlugInsフォルダがありません：サイドロードツールが拡張機能を削除しました";
+
+/* Setup screen warning: the screen-broadcast extension is missing from the installed app */
+"Extension missing from app bundle — re-sideload with app extensions enabled" = "Appバンドルに拡張機能がありません：App拡張機能を有効にしてサイドロードし直してください";
+
+/* Diagnostics line: the screen-broadcast extension is installed; %@ = its file name(s) */
+"Extension installed: %@" = "拡張機能はインストール済み：%@";
+
+/* ===== CameraManager.swift ===== */
+
+/* Camera (lens) name: the front camera */
+"Front" = "前面";
+
+/* Camera (lens) name: the ultra-wide back lens */
+"Ultra Wide (0.5×)" = "超広角（0.5×）";
+
+/* Camera (lens) name: the telephoto back lens */
+"Telephoto" = "望遠";
+
+/* Camera (lens) name: the main (wide) back lens */
+"Main (Wide)" = "メイン（広角）";
+
+/* Status line error: the chosen camera can't be opened */
+"Camera not available" = "カメラを使用できません";
+
+/* Status line error. %1$@ = resolution (e.g. 4K), %2$lld = frame rate, %3$@ = camera name */
+"%1$@ at %2$lld fps is not supported by the %3$@ camera" = "%3$@カメラは%1$@・%2$lld fpsに対応していません";
+
+/* Status line error: the camera couldn't be attached to the capture session */
+"Cannot add camera input" = "カメラ入力を追加できません";
+
+/* Status line error: the video output couldn't be attached to the capture session */
+"Cannot add video output" = "ビデオ出力を追加できません";
+
+/* ===== ContentView.swift ===== */
+
+/* Toolbar button that closes a sheet; Voice Control: another name the user can say for the Live screen button that closes the adjust tray [also used in OptionsView.swift, StreamingView.swift] */
+"Done" = "完了";
+
+/* Dimmed Setup screen while the app waits for OBS to start the camera */
+"Ready for remote start — tap to wake" = "リモート開始の準備完了：タップして復帰";
+
+/* Voice Control: the word the user can say to wake a dimmed screen (never shown) [also used in StreamingView.swift] */
+"Wake" = "復帰";
+
+/* Connection card button: start the camera stream now */
+"Start" = "開始";
+
+/* Setup screen warning when Local Network permission is off */
+"Not visible by name in OBS — tap to allow Local Network in Settings. Connecting by IP still works." = "OBSに名前で表示されません：タップして、設定でローカルネットワークを許可してください。IPでの接続は引き続き使えます。";
+
+/* Setup screen: header of the collapsible setup instructions */
+"How to connect" = "接続方法";
+
+/* Setup instructions, step 1 (Markdown: keep the ** markers; LensLink Camera and LensLink Screen are OBS source names) */
+"Install the LensLink plugin in OBS (GitHub link below), then add a **LensLink Camera** or **LensLink Screen** source." = "OBSにLensLinkプラグインをインストールし（GitHubへのリンクは下にあります）、**LensLink Camera**または**LensLink Screen**ソースを追加します。";
+
+/* Setup instructions, step 2. %@ = the phone's Wi-Fi IP address (Markdown: keep the ** markers; Phone IP, Connection and USB cable are OBS source settings) */
+"Enter **%@** as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes)." = "ソースの「スマートフォン」に**%@**を入力します（同じWi-Fi）。または、USBで接続して「接続」を「USBケーブル」に設定します（WindowsではiTunesが必要です）。";
+
+/* Setup instructions, step 2 when the phone has no Wi-Fi address (Connection and USB cable are OBS source settings) */
+"No Wi-Fi address — join Wi-Fi, or plug in USB and set the source's Connection to \"USB cable\" (Windows needs iTunes)." = "Wi-Fiアドレスがありません：Wi-Fiに接続するか、USBで接続してソースの「接続」を「USBケーブル」に設定してください（WindowsではiTunesが必要です）。";
+
+/* Setup screen row: camera (lens) picker */
+"Camera" = "カメラ";
+
+/* Setup screen row and sheet title: resolution, frame rate, codec and color */
+"Format" = "フォーマット";
+
+/* Setup screen toggle; Documentation section header [also used in DocumentationView.swift] */
+"Green screen" = "グリーンバック";
+
+/* Setup screen button shown when camera or microphone access was denied */
+"Camera access denied — open Settings" = "カメラへのアクセスが拒否されています：設定を開く";
+
+/* Frame rate value, e.g. "60 fps" */
+"%lld fps" = "%lld fps";
+
+/* Format row summary: short name of the Apple Log color setting */
+"Log" = "Log";
+
+/* Format row summary: short name of the Maximum quality setting */
+"Max" = "最高";
+
+/* Setup screen: main button that starts the camera stream */
+"Start Camera" = "カメラを開始";
+
+/* Setup screen toggle: use the phone's microphone as the OBS source's audio */
+"Send phone mic to OBS" = "スマートフォンのマイクをOBSに送信";
+
+/* Setup screen picker choosing which microphone to use; Documentation section header [also used in DocumentationView.swift] */
+"Microphone" = "マイク";
+
+/* Setup screen toggle: send the mic only as a timing reference for lip-sync */
+"Auto lip-sync reference" = "自動リップシンク用リファレンス";
+
+/* Setup screen row that opens the Options sheet; the sheet's title; Documentation section header [also used in DocumentationView.swift, OptionsView.swift] */
+"Options" = "オプション";
+
+/* Setup screen row that opens the in-app manual; the manual's title [also used in DocumentationView.swift] */
+"Documentation" = "ドキュメント";
+
+/* Setup screen link to the bug-report form */
+"Report a problem" = "問題を報告";
+
+/* Setup screen link to the project page */
+"LensLink on GitHub" = "GitHubのLensLink";
+
+/* Format sheet: resolution picker */
+"Resolution" = "解像度";
+
+/* Format sheet: frame rate picker */
+"Frame rate" = "フレームレート";
+
+/* Format sheet section header: video codec */
+"Codec" = "コーデック";
+
+/* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
+"Balanced" = "バランス";
+
+/* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
+"Maximum" = "最高";
+
+/* Small tag next to a choice that is still in beta */
+"Beta" = "ベータ";
+
+/* Format sheet section header: stream quality */
+"Quality" = "画質";
+
+/* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
+"Standard" = "標準";
+
+/* Format sheet: HDR color choice */
+"HDR (HLG)" = "HDR（HLG）";
+
+/* Format sheet: note under a color choice that needs the HEVC codec */
+"HEVC only" = "HEVCのみ";
+
+/* Format sheet: Apple Log color choice (Apple's name for its log profile) */
+"Apple Log" = "Apple Log";
+
+/* Format sheet section header; Documentation section header [also used in DocumentationView.swift] */
+"Color" = "カラー";
+
+/* ===== DesignSystem.swift ===== */
+
+/* VoiceOver value of an on/off control (the Flashlight button, a tally pulse switch) [also used in TallyLightOptions.swift] */
+"On" = "オン";
+
+/* VoiceOver value of an on/off control; Tally: no status lights the border / a status's color is none [also used in OptionsView.swift, TallyLightOptions.swift] */
+"Off" = "オフ";
+
+/* ===== DocumentationView.swift ===== */
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"The camera streams to a **LensLink Camera** source in OBS; the screen broadcast streams to a **LensLink Screen** source. Add the source in OBS, enter the phone's Wi-Fi address as its Phone IP — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes)." = "カメラはOBSの**LensLink Camera**ソースに、画面ブロードキャストは**LensLink Screen**ソースにストリーミングされます。OBSでソースを追加し、その「スマートフォン」にこのスマートフォンのWi-Fiアドレスを入力します。または、USBで接続して「接続」を「USBケーブル」に設定します（WindowsではiTunesが必要です）。";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "OBSが接続すると、上部のカードにコンピュータの名前が、OBSのバージョンやUSBとWi-Fiのどちらで接続したかとともに表示されます。OBSが接続済みでカメラがアイドル状態のときは、カードの**開始**ボタンでここからストリームを開始できます。それ以外のときは、OBSに必要なスマートフォンのアドレスがカードに表示されます。";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**フォーマット**は、解像度、フレームレート、コーデック、カラーをまとめた1つの行で、タップすると選択肢が表示されます。解像度とフレームレートには、選択中のカメラが対応しているものだけが表示されます。コーデックとカラーは互いに制約し合います。HDRとApple LogはHEVCのみなので、H.264を選ぶとカラーは標準に戻り、HDRまたはLogを選ぶとコーデックはHEVCに切り替わります。";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"**Quality**, in the Format sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**画質**は「フォーマット」シートにあります。**バランス**は一般的なWi-Fiでも安全なビットレートで配信し、そこから下げることはあっても上げることはありません。**最高**はより高いビットレートで始まり、接続が安定している間は上限を探り続けます（USBではバランスの約6倍、Wi-Fiでは約4倍まで）。フレームが滞留したりドロップしたりした瞬間に下げ、回線が運べる上限のすぐ下で落ち着きます。さらに、エンコーダを画質優先の設定に切り替え、システムのビデオエフェクトを許可していなければ、ビニングされたフォーマットではなくセンサーの全画素読み出しで配信します。データ量も発熱も増えるので、初回は統計の行を確認してください。";
+
+/* Documentation section header */
+"Connecting" = "接続";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR（HLG）**は10ビットカラーで配信します。SDRのシーンではOBSがトーンマッピングし、HDRキャンバスでは本来のHDRのまま扱われます。";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT." = "**Apple Log**（ProモデルのiPhone、iOS 17以降）は、グレーディング用のフラットな10ビット映像を配信します。OBSでソースに**LUT を適用**フィルタを追加し、Apple Log用のLUTを読み込んでください。";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture." = "どちらもHEVCのみで、次にカメラが起動したときに反映されます。カラーは「フォーマット」シートにあり、このスマートフォンで撮影できるものだけが表示されます。";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**グリーンバック**は、映像がスマートフォンから送り出される前に、あなた以外のすべてを緑一色で塗りつぶします。オンにするとカラーは標準になります。OBSの**LensLink Camera**ソースは、緑を抜く調整済みのフィルタを追加します。追加は一度だけなので、OBSで削除したり調整し直したりした結果はそのまま保たれます。";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects." = "**深度アシスト**は、実際の深度情報を使って切り抜きを鮮明にします。Face ID搭載機種では前面カメラ、Pro（LiDAR搭載）機種では背面のメインレンズが対象です。そのほかのレンズでは形状検出だけを使い、フレーム内の人物は全員残ります。センターフレームなどのシステムのビデオエフェクトもオフになります。";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "**被写体**は、深度アシストの動作中にライブ画面の調整トレイに表示されます。ダイヤルで設定した距離より奥にあるものはすべて背景になるので、背後を通り過ぎる人を消すことができます。被写体のチップをもう一度タップすると、**すべて**（制限なし）に戻ります。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens." = "ストリーミング中の画面には、映像、ステータス表示、一時停止と停止、そしてレンズボタン（**.5**、**1×**、**2**）が表示されます。レンズボタンはカメラアプリと同じようにカメラを切り替えます。各レンズの範囲内ではピンチでズームします。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "映像を**タップ**すると、その位置にフォーカスと露出を合わせます。黄色の四角形が位置を示し、シーンが変わるまでその位置を保ってから自動に戻ります。映像を**長押し**すると、その位置でフォーカスと露出をロックします（AE/AFロック）。ピントのチップはロック状態になり、露出のチップはISOに変わります。どちらかのチップをタップすると解除されます。映像のどこでも上下に**ドラッグ**すると、明るさを調整できます（露出が自動のときの露出補正）。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Exposure, Shutter, WB, Focus, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**シェブロン**をタップすると調整トレイが開きます。ダイヤルが1つと、そのダイヤルで操作できる項目ごとのチップが並びます。ズーム、露出、SS（シャッタースピード）、WB、ピント、そして深度アシスト付きのグリーンバックの動作中は被写体です。チップに黄色の**A**が付いていれば、その設定は自動です。ダイヤルをドラッグするとマニュアルになり、選択中のチップをもう一度タップすると自動に戻ります。露出が自動のときは露出補正のダイヤルです。SSをドラッグすると露出がマニュアルになり、露出のチップはISOに変わります。フラッシュライトとカメラの切り替えもトレイにあります。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"Tap the **status pill** for Stats — a health line of fps, Mb/s and dropped frames — and, when an idle view is set, to engage it now instead of waiting 10 seconds." = "**ステータス表示**をタップすると、統計（fps、Mb/s、ドロップしたフレーム数を示す状態の行）を表示できます。アイドル表示を設定している場合は、10秒待たずにすぐ切り替えることもできます。";
+
+/* Documentation section header (the screen shown while streaming) */
+"Live screen" = "ライブ画面";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"**Send phone mic** makes this phone the camera's audio in OBS — a wireless mic. The **Microphone** row beneath it picks which one — Auto follows iOS's own routing; a headset or Bluetooth mic takes over on its own." = "**スマートフォンのマイクをOBSに送信**をオンにすると、このスマートフォンがOBSでのカメラの音声になります。つまりワイヤレスマイクです。その下の**マイク**の行で使うマイクを選びます。自動はiOS自身の経路に従い、ヘッドセットやBluetoothマイクを接続すると自動的にそちらに切り替わります。";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"**Auto lip-sync** sends the mic only as a timing reference for aligning your real microphone; it's never heard." = "**自動リップシンク用リファレンス**は、実際に使うマイクを合わせるためのタイミングの基準としてのみ、マイクの音声を送信します。音声として聞こえることはありません。";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"One mic, one role — turning one on turns the other off." = "マイク1つにつき役割は1つです。一方をオンにすると、もう一方はオフになります。";
+
+/* Documentation sheet, Screen mirror section (Markdown: keep the ** markers) */
+"Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual." = "画面全体をアプリの音声ごと**LensLink Screen**ソースにストリーミングします。モバイルゲームやアプリのデモに最適です。iOSはDRM付きの音声（Apple Music、Netflix）をミュートし、マイクの音声は送信されません。マイクはいつもどおりOBS側で用意してください。";
+
+/* Documentation section header */
+"Screen mirror" = "画面ミラーリング";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Focus on faces** keeps focus and exposure on the faces the camera sees while focus is on auto, the way the Camera app does — a tap on the picture outranks it until the scene changes, and a lock ignores it. Off, the camera weights the centre of the frame." = "**顔にフォーカス**は、フォーカスが自動のとき、カメラアプリと同じように、カメラが捉えた顔にフォーカスと露出を合わせ続けます。映像をタップすると、シーンが変わるまではタップした位置が優先され、ロック中は顔を無視します。オフのときは、フレームの中央を重視します。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Remote start from OBS**: while the app is open and idle, OBS can start the camera for you. The phone stays awake while it waits — locking it or leaving the app ends remote start. Siri: \"Start streaming with LensLink.\"" = "**OBSからリモート開始**：アプリが開いていて待機中のときに、OBSがカメラを開始できます。待機中はスマートフォンがスリープしません。ロックするかアプリを離れると、リモート開始は終了します。Siri：「LensLinkでストリーミングを開始」";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Idle view** is what the Live screen becomes 10 seconds after you last touch it, for a phone that's mounted and out of reach. **Standard** leaves the controls up. **Clean feed** hides everything but the picture — turn Stats on (status pill) before you stop touching it to keep the health readout. **Dim screen** blanks the screen and drops the brightness to save battery, and is the only one that also dims remote-start standby, a minute in. Any tap brings the controls back." = "**アイドル表示**は、最後に触れてから10秒後にライブ画面をどう表示するかを決めます。固定していて手が届かないスマートフォンのための機能です。**標準**は操作項目を表示したままにします。**クリーン表示**は映像以外をすべて隠します。状態の行を残すには、触れるのをやめる前に統計をオンにしてください（ステータス表示）。**画面を暗くする**は画面を消して輝度を下げ、バッテリーを節約します。リモート開始のスタンバイ中も1分後に暗くなるのは、これを選んだ場合だけです。どこかをタップすると操作項目が戻ります。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Pause** holds a stream without ending it — the phone stays connected, the camera stays on, and OBS shows a dimmed, blurred still with a pause symbol instead of a frozen picture. The pause button sits on the Live screen next to Stop, and the same control is in OBS (source properties) and the web panel. Audio keeps going, so the phone can still be your microphone while the picture is held." = "**一時停止**は、ストリームを終了せずに止めます。スマートフォンは接続されたままでカメラも動き続け、OBSには固まった映像ではなく、一時停止マークの付いた暗くぼかした静止画が表示されます。一時停止ボタンはライブ画面の停止ボタンの隣にあり、同じ操作はOBS（ソースのプロパティ）とWebパネルにもあります。音声は流れ続けるので、映像を止めている間もスマートフォンをマイクとして使えます。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60." = "**高フレームレート**は試験的機能です。このカメラが対応していれば、「フォーマット」シートに120 fpsと240 fpsを追加します（最近のiPhoneでは1080pと720p。240はセンサーのビニングを使うフォーマットです）。ストリームのビットレートはそれに応じて増え、スマートフォンの発熱とバッテリー消費も増えます。60に設定したOBSキャンバスでは、よくても1フレームおきにしか表示されません。キャンバスを合わせ、できればUSBを使ってください。オフにするとフレームレートは60に戻ります。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Remember camera settings** keeps each camera's exposure, white balance, zoom and focus from one stream to the next — a shot dialled in once stays dialled in, per lens. Turn it off and every camera starts on auto, and what was stored is forgotten." = "**カメラ設定を記憶**は、各カメラの露出、ホワイトバランス、ズーム、フォーカスを次の配信へ引き継ぎます。一度合わせた設定は、レンズごとにそのまま残ります。オフにするとすべてのカメラが自動で始まり、保存済みの内容は消去されます。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**システムのビデオエフェクトを許可**は試験的機能です。iOSが自らフレームレートを下げられるようにします。コントロールセンターのビデオエフェクト（ポートレート、スタジオ照明）ではこれが必要になることがあります。次にカメラが起動したときに反映されます。";
+
+/* Documentation sheet, Tally light section (Markdown: keep the ** markers) */
+"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "ストリーミング中にライブ画面の周囲に表示される色付きの枠です。色、優先順位、ステータスごとのオフ設定は、オプション → タリーランプで変更できます。色の横にある波のボタンをオンにすると、そのステータスは点灯し続ける代わりに点滅します。見張っていなくても気づくべきことには、動きが目を引きます。";
+
+/* Documentation sheet, Tally light section (Markdown: keep the ** markers); %lld%% = the low-battery threshold (20%) */
+"**Low battery** is one of the statuses you can light: it turns on with iOS Low Power Mode, or at %lld%% and below, and clears the moment you plug in. While the screen is dimmed the battery level also shows large under the wake hint — so a phone across the room can be read at a glance, without touching it." = "**バッテリー残量低下**は、点灯させられるステータスの1つです。iOSの低電力モードがオンになるか、残量が%lld%%以下になると点灯し、電源に接続するとすぐに消えます。画面が暗くなっている間は、復帰のヒントの下にバッテリー残量も大きく表示されるので、離れた場所にあるスマートフォンでも触れずにひと目で確認できます。";
+
+/* Options row, its screen title, and Documentation section header: the colored border shown while streaming [also used in OptionsView.swift, TallyLightOptions.swift] */
+"Tally light" = "タリーランプ";
+
+/* Documentation sheet, Diagnostics section (Markdown: keep the ** markers) */
+"**Camera diagnostics** lists the camera's formats — which resolutions support the Control Center video effects, and which are 10-bit HDR or Apple Log capable. Paste it into a bug report if something is missing." = "**カメラ診断**は、カメラのフォーマットを一覧表示します。コントロールセンターのビデオエフェクトに対応する解像度や、10ビットHDRやApple Logに対応するものがわかります。何かが足りない場合は、バグ報告に貼り付けてください。";
+
+/* Documentation section header */
+"Diagnostics" = "診断";
+
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; VoiceOver, Switch Control are the iOS feature names) */
+"**VoiceOver** and **Switch Control**: while either is on, the Live screen never dims or hides its controls by itself, and remote-start standby never dims. The status pill's menu still does it when you ask. VoiceOver also says when the stream goes live, pauses, goes on air, loses its connection to OBS, or locks lip-sync." = "**VoiceOver**と**スイッチコントロール**：どちらかがオンの間は、ライブ画面が自動的に暗くなったり操作項目を隠したりすることはなく、リモート開始のスタンバイ中も暗くなりません。ステータス表示のメニューからは、必要なときに引き続き実行できます。また、ストリームがライブになったとき、一時停止したとき、オンエアになったとき、OBSとの接続が切れたとき、リップシンクがロックされたときには、VoiceOverが読み上げます。";
+
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; name the iOS setting as iOS shows it) */
+"**Differentiate Without Color** (iOS Settings, Accessibility) adds the lit tally status's name as a small badge at the top of the Live screen, so the border never has to be read by its color alone." = "**カラー以外で区別**（iOSの設定 → アクセシビリティ）をオンにすると、点灯しているタリーランプのステータス名がライブ画面の上部に小さなバッジで表示されるので、枠を色だけで判断する必要がなくなります。";
+
+/* Documentation section header */
+"Accessibility" = "アクセシビリティ";
+
+/* ===== OptionsView.swift ===== */
+
+/* Options toggle: let OBS start the camera while the app is open */
+"Remote start from OBS" = "OBSからリモート開始";
+
+/* Options picker: what the Live screen becomes after 10 seconds untouched */
+"Idle view" = "アイドル表示";
+
+/* Options toggle */
+"Focus on faces" = "顔にフォーカス";
+
+/* Options toggle */
+"Remember camera settings" = "カメラ設定を記憶";
+
+/* Options toggle (experimental 120/240 fps) */
+"High frame rate" = "高フレームレート";
+
+/* Options toggle (experimental) */
+"Allow system video effects" = "システムのビデオエフェクトを許可";
+
+/* Options row and screen title: the camera format table */
+"Camera diagnostics" = "カメラ診断";
+
+/* Camera diagnostics toolbar button after the report was copied */
+"Copied" = "コピー済み";
+
+/* Camera diagnostics toolbar button: copy the report */
+"Copy" = "コピー";
+
+/* ===== RemoteStartIntents.swift ===== */
+
+/* Shortcuts/Siri action name */
+"Start Camera Stream" = "カメラ配信を開始";
+
+/* Shortcuts action description */
+"Opens LensLink and starts streaming the camera to OBS." = "LensLinkを開き、OBSへのカメラ配信を開始します。";
+
+/* Shortcuts/Siri action name */
+"Stop Camera Stream" = "カメラ配信を停止";
+
+/* Shortcuts action description */
+"Stops the LensLink camera stream." = "LensLinkのカメラ配信を停止します。";
+
+/* ===== StreamClient.swift ===== */
+
+/* Status line error: the app couldn't open the network port OBS connects to (USB and Wi-Fi) */
+"Could not open USB listener" = "USBの待ち受けを開始できませんでした";
+
+/* ===== Streamer.swift ===== */
+
+/* Status word: nothing is connected */
+"Not connected" = "未接続";
+
+/* Status word: OBS is connected and can start the camera */
+"OBS connected — ready" = "OBS接続済み・準備完了";
+
+/* Status word: streaming, waiting for OBS to connect */
+"Waiting for OBS…" = "OBSを待機中…";
+
+/* Status word: streaming to OBS */
+"Live" = "ライブ";
+
+/* Status word: the stream is held without ending it */
+"Paused" = "一時停止中";
+
+/* Idle view choice: hide everything but the picture */
+"Clean feed" = "クリーン表示";
+
+/* Idle view choice: blank the screen and lower the brightness */
+"Dim screen" = "画面を暗くする";
+
+/* Status line: iOS paused the camera because another app is on screen (iPad Split View) */
+"Camera paused — this iPad can't share the camera on screen" = "カメラ一時停止中：このiPadは画面上でカメラを共有できません";
+
+/* Status line: iOS paused the camera because the app went to the background */
+"Camera paused — app left the screen" = "カメラ一時停止中：アプリが画面から離れました";
+
+/* Status line: iOS paused the camera because the device is overheating */
+"Camera paused — device too hot" = "カメラ一時停止中：デバイスが高温になっています";
+
+/* Status line: iOS paused the camera because another app took it */
+"Camera paused — in use by another app" = "カメラ一時停止中：別のアプリが使用中です";
+
+/* Status line error: camera permission was denied */
+"Camera access denied — enable it in Settings" = "カメラへのアクセスが拒否されています：設定で許可してください";
+
+/* Lip-sync pill: calibration finished (tap to recalibrate); also spoken by VoiceOver when it happens [also used in StreamingView.swift] */
+"Sync locked" = "同期ロック済み";
+
+/* ===== StreamingView.swift ===== */
+
+/* Dimmed Live screen hint; also the VoiceOver label of the invisible wake area over the clean feed */
+"Streaming — tap to wake" = "ストリーミング中：タップして復帰";
+
+/* Dimmed Live screen: battery level, e.g. "80%" */
+"%lld%%" = "%lld%%";
+
+/* VoiceOver: battery level while charging */
+"Battery %lld percent, charging" = "バッテリー残量%lldパーセント、充電中";
+
+/* VoiceOver: battery level */
+"Battery %lld percent" = "バッテリー残量%lldパーセント";
+
+/* Status pill menu: show or hide the stream health line */
+"Stats" = "統計";
+
+/* Status pill menu: switch to the clean feed idle view immediately */
+"Clean feed now" = "今すぐクリーン表示";
+
+/* Status pill menu: dim the screen immediately */
+"Dim screen now" = "今すぐ画面を暗くする";
+
+/* Lip-sync pill: calibration in progress */
+"Measuring sync" = "同期を測定中";
+
+/* Lip-sync pill: calibrating again */
+"Recalibrating" = "再キャリブレーション中";
+
+/* Stream health line: %1$lld = frames per second, %2$.1f = megabits per second, %3$lld = dropped frames */
+"%1$lld fps · %2$.1f Mb/s · %3$lld dropped" = "%1$lld fps · %2$.1f Mb/s · ドロップ%3$lld";
+
+/* VoiceOver label of the button that opens the camera adjust tray */
+"Adjust camera" = "カメラを調整";
+
+/* Voice Control: a shorter name the user can say for the Adjust camera button (never shown) */
+"Adjust" = "調整";
+
+/* VoiceOver label of the Live screen button that holds the stream */
+"Pause" = "一時停止";
+
+/* VoiceOver label of the Live screen button that resumes a held stream */
+"Resume" = "再開";
+
+/* VoiceOver label of the Live screen red Stop button */
+"Stop camera" = "カメラを停止";
+
+/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) */
+"Stop" = "停止";
+
+/* Voice Control: another name the user can say for the status pill menu (never shown) */
+"Status" = "ステータス";
+
+/* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
+"Recalibrate" = "再キャリブレーション";
+
+/* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
+"Flashlight" = "フラッシュライト";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown; use the everyday word for it) */
+"Torch" = "懐中電灯";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown) */
+"Light" = "ライト";
+
+/* VoiceOver label of the Live screen button that switches front/back camera */
+"Flip camera" = "カメラを切り替え";
+
+/* Voice Control: another name the user can say for the Flip camera button (never shown) */
+"Switch camera" = "カメラ反転";
+
+/* Voice Control: a shorter name the user can say for the Flip camera button (never shown) */
+"Flip" = "切り替え";
+
+/* VoiceOver label of the Live screen button that closes the adjust tray */
+"Close" = "閉じる";
+
+/* One-letter badge on a Live screen chip: the setting is on Auto */
+"A" = "A";
+
+/* VoiceOver: a camera setting chip that is on auto; %@ = chip name */
+"%@, auto" = "%@、自動";
+
+/* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
+"%@, manual" = "%@、マニュアル";
+
+/* Live screen chip: zoom */
+"Zoom" = "ズーム";
+
+/* Live screen chip: exposure */
+"Exposure" = "露出";
+
+/* Live screen chip: shutter speed */
+"Shutter" = "SS";
+
+/* Live screen chip: white balance (keep it short) */
+"WB" = "WB";
+
+/* Live screen chip: focus */
+"Focus" = "ピント";
+
+/* Live screen chip: green screen subject distance */
+"Subject" = "被写体";
+
+/* Live screen adjust tray hint */
+"Pinch the picture to zoom" = "映像をピンチしてズーム";
+
+/* Live screen adjust tray hint: exposure on auto */
+"Auto · drag the picture up or down" = "自動 · 映像を上下にドラッグ";
+
+/* Live screen adjust tray hint: focus on auto with face tracking */
+"Auto · faces first · hold the picture to lock" = "自動 · 顔を優先 · 映像を長押しでロック";
+
+/* Live screen adjust tray hint: focus on auto */
+"Auto · tap the picture · hold to lock" = "自動 · 映像をタップ · 長押しでロック";
+
+/* Live screen adjust tray hint: a subject distance cutoff is set (Subject = the chip name) */
+"Cutoff · tap Subject for all" = "カットオフ · 被写体をタップで「すべて」";
+
+/* Live screen adjust tray hint: no subject distance cutoff */
+"All · drag to set a cutoff" = "すべて · ドラッグでカットオフを設定";
+
+/* Live screen adjust tray hint: setting on auto */
+"Auto · drag to set by hand" = "自動 · ドラッグでマニュアル設定";
+
+/* Live screen adjust tray hint: setting set by hand; %@ = chip name */
+"Manual · tap %@ for auto" = "マニュアル · %@をタップで自動";
+
+/* Live screen dial readout: the setting is automatic */
+"Auto" = "自動";
+
+/* Live screen dial readout: subject distance in meters */
+"%.1f m" = "%.1f m";
+
+/* Live screen dial readout: no subject distance cutoff */
+"All" = "すべて";
+
+/* Tag under the focus square after a long press (camera app term) */
+"AE/AF Lock" = "AE/AFロック";
+
+/* ===== TallyLightOptions.swift ===== */
+
+/* Tally status: the camera is on the program output */
+"On air" = "オンエア";
+
+/* Tally status: the camera is visible in OBS but not on air */
+"In preview" = "プレビュー中";
+
+/* Tally status: the link to OBS dropped mid-stream */
+"Connection lost" = "接続が切れました";
+
+/* Tally status */
+"Calibrating lip-sync" = "リップシンクをキャリブレーション中";
+
+/* Tally status */
+"Lip-sync locked" = "リップシンクロック済み";
+
+/* Tally status */
+"Low battery" = "バッテリー残量低下";
+
+/* Tally border color */
+"Red" = "赤";
+
+/* Tally border color */
+"Amber" = "アンバー";
+
+/* Tally border color */
+"Green" = "緑";
+
+/* Tally border color */
+"Blue" = "青";
+
+/* Tally border color */
+"Purple" = "紫";
+
+/* Tally border color */
+"White" = "白";
+
+/* VoiceOver label of the switch that makes a tally color pulse */
+"Pulse" = "点滅";
+
+/* Voice Control: the name the user can say for one row's pulse switch; %@ = the tally status, e.g. "Pulse On air" (never shown) */
+"Pulse %@" = "%@を点滅";
+
+/* Tally light screen: list header */
+"Statuses, highest priority first" = "ステータス（優先度の高い順）";
+
+/* Tally light screen: list footer (Off and Edit are on-screen labels) */
+"The highest status here that's currently true sets the border color; Off skips it. Tap Edit to reorder." = "現在当てはまるステータスのうち、この一覧で最も上にあるものが枠の色を決めます。オフにしたステータスはスキップされます。「編集」をタップすると並べ替えられます。";
+
+/* Tally light screen button */
+"Reset to defaults" = "デフォルトに戻す";
+
+/* ===== VideoEncoder.swift ===== */
+
+/* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
+"%1$@ encoder unavailable (%2$lld)" = "%1$@エンコーダを使用できません（%2$lld）";
