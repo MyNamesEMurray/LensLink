@@ -187,7 +187,8 @@ and everywhere at once rather than drifting.
 | Paused | Pausiert | En pausa | En pause | 一時停止中 | Pausado | 已暂停 |
 | Measuring sync | Synchronisation wird gemessen | Midiendo la sincronía | Mesure de la synchro | 同期を測定中 | Medindo a sincronia | 正在测量同步 |
 | Sync locked | Synchronisation fixiert | Sincronía fijada | Synchro verrouillée | 同期ロック済み | Sincronia travada | 同步已锁定 |
-| Recalibrating | Wird neu kalibriert | Recalibrando | Recalibrage | 再調整中 | Recalibrando | 正在重新校准 |
+| Recalibrating | Wird neu kalibriert | Recalibrando | Recalibrage | 再キャリブレーション中 | Recalibrando | 正在重新校准 |
+| Calibrate / auto-calibrate | Kalibrieren / Automatisch kalibrieren | Calibrar / Calibración automática | Calibrer / Calibration auto | キャリブレーション / 自動キャリブレーション | Calibrar / Calibrar automaticamente | 校准 / 自动校准 |
 | On air | Auf Sendung | Al aire | À l’antenne | オンエア | No ar | 播出中 |
 | In preview | In der Vorschau | En vista previa | En aperçu | プレビュー中 | Na pré-visualização | 预览中 |
 | Connection lost | Verbindung verloren | Conexión perdida | Connexion perdue | 接続が切れました | Conexão perdida | 连接已断开 |
