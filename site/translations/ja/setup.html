@@ -1,0 +1,178 @@
+title: LensLinkのセットアップ
+description: 4つの質問に答えるだけで、お使いのコンピュータ、接続方法、OBSで使いたい内容に合ったセットアップ手順がわかります。関係のない手順は表示しません。
+nav: setup
+script: /js/setup.js
+source: bcb74f465811
+---
+<section class="setup">
+  <div class="wrap">
+    <h1>LensLinkのセットアップ</h1>
+
+    <form class="wizard" id="wizard">
+      <fieldset>
+        <legend>お使いのコンピュータ</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="os" value="windows" checked><span>Windows</span></label>
+          <label><input type="radio" name="os" value="macos"><span>macOS</span></label>
+          <label><input type="radio" name="os" value="linux"><span>Linux</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>スマートフォンの接続方法</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="link" value="usb" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V7"/><circle cx="12" cy="4" r="1.6"/><path d="M12 13l4-3 .8 2.4"/><path d="M12 16l-4-3v-2.2"/></svg> USBケーブル <em class="rec">おすすめ</em></span></label>
+          <label><input type="radio" name="link" value="wifi"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5a12 12 0 0 1 16 0"/><path d="M7.5 15a7 7 0 0 1 9 0"/><circle cx="12" cy="18.6" r="1.2" fill="currentColor" stroke="none"/></svg> Wi-Fi</span></label>
+          <label><input type="radio" name="link" value="unsure"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2-2.5 3.6"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg> わからない</span></label>
+        </div>
+        <p class="q-answer" id="unsure-note" hidden>
+          ケーブルを使ってください。以下はUSB用の手順です。ケーブルが届かない場所にスマートフォンを置く必要がある場合は、<strong>Wi-Fi</strong>に切り替えてください。
+        </p>
+      </fieldset>
+
+      <fieldset>
+        <legend>OBSで使いたいもの</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="mode" value="camera" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="M15.5 11.5l6-3.2v7.4l-6-3.2z"/></svg> スマートフォンのカメラ</span></label>
+          <label><input type="radio" name="mode" value="screen"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg> スマートフォンの画面</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>アプリのインストール方法</legend>
+        <div class="seg-choice">
+          <label><input type="radio" name="app" value="appstore" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 18.5h15"/></svg> App Store <em class="rec">おすすめ</em></span></label>
+          <label><input type="radio" name="app" value="sideload"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12 8v6"/><path d="M9.5 11.5L12 14l2.5-2.5"/></svg> サイドロード</span></label>
+          <label><input type="radio" name="app" value="xcode"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5-8.5 8.5H6v-5z"/><path d="M12.5 6.5l5 5"/></svg> Xcode</span></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <p class="nojs" id="nojs">
+      すべての手順を下に表示し、それぞれに対象のセットアップを示すタグを付けています。JavaScriptを有効にすると、手順を絞り込めます。
+    </p>
+
+    <p class="needs" id="needs" hidden></p>
+
+    <ol class="guide" id="guide">
+
+      <li>
+        <h2>OBSが32以降か確認</h2>
+        <p>ヘルプ → OBS Studioについて。</p>
+      </li>
+
+      <li data-os="windows">
+        <h2>プラグインをインストール <span class="tag">Windows</span></h2>
+        <p><a href="/download/">ダウンロードページ</a>から<code>LensLink-installer-windows-x64.exe</code>を実行します。</p>
+      </li>
+
+      <li data-os="macos">
+        <h2>プラグインをインストール <span class="tag">macOS</span></h2>
+        <p><a href="/download/">ダウンロードページ</a>から入手した<code>LensLink-installer-macos-universal.pkg</code>を、<strong>右クリック → 開く</strong>で開きます。公証されていないため、ダブルクリックでは開けません。</p>
+      </li>
+
+      <li data-os="linux">
+        <h2>プラグインをインストール <span class="tag">Linux</span></h2>
+        <pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+      </li>
+
+      <li>
+        <h2>OBSを再起動</h2>
+        <p><strong>ソース → +</strong>にLensLink CameraとLensLink Screenが表示されるようになります。</p>
+      </li>
+
+      <li data-app="appstore">
+        <h2>アプリをインストール <span class="tag">App Store</span></h2>
+        <p>App Storeから<a href="{{APPSTORE}}">LensLink Camera</a>をインストールします。App Storeより先に新しいバージョンを使いたい場合は、代わりに<a href="{{TESTFLIGHT}}">TestFlightベータに参加</a>してください。</p>
+      </li>
+
+      <li data-app="sideload">
+        <h2>アプリをインストール <span class="tag">サイドロード</span></h2>
+        <p><a href="{{REPO}}/releases/latest">最新リリース</a>の<code>LensLink-unsigned.ipa</code>を、<a href="https://sideloadly.io">Sideloadly</a>でインストールします。</p>
+        <p class="warn">無料のApple IDでは7日で期限切れになり、再署名するとSiriのフレーズが使えなくなります。ショートカットで<code>lenslink://start</code>を使ってください。</p>
+      </li>
+
+      <li data-app="xcode">
+        <h2>アプリをビルド <span class="tag">Xcode</span></h2>
+        <pre><code>brew install xcodegen
+cd ios-app &amp;&amp; xcodegen generate &amp;&amp; open LensLink.xcodeproj</code></pre>
+      </li>
+
+      <li data-link="usb" data-os="windows">
+        <h2>iTunesをインストール <span class="tag">Windows</span> <span class="tag">USB</span></h2>
+        <p>Appleのデバイスドライバが含まれています。これがないと、USBでスマートフォンを認識できません。</p>
+      </li>
+
+      <li data-link="usb" data-os="linux">
+        <h2>usbmuxdがインストールされているか確認 <span class="tag">Linux</span> <span class="tag">USB</span></h2>
+        <p>プラグインは<code>/var/run/usbmuxd</code>に接続します。ほとんどのデスクトップ環境には含まれていますが、ない場合は<code>usbmuxd</code>パッケージをインストールしてください。</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>接続して「信頼」をタップ <span class="tag">USB</span></h2>
+        <p>先にスマートフォンのロックを解除し、データ通信に対応したケーブルを使ってください。</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>両方を同じネットワークに接続 <span class="tag">Wi-Fi</span></h2>
+        <p>ゲストネットワークやクライアント分離が有効なネットワークでは接続できません。</p>
+      </li>
+
+      <li>
+        <h2>スマートフォンでLensLinkを開く</h2>
+        <p data-mode="camera">レンズ、解像度、フレームレート、コーデックを選びます。</p>
+        <p data-link="wifi">セットアップ画面にアドレスが表示されます。タップするとコピーできます。</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>ローカルネットワークへのアクセスを許可 <span class="tag">Wi-Fi</span></h2>
+        <p>スマートフォンを名前で表示するのに必要です。IPを直接入力する場合は不要です。</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>ソースを追加 <span class="tag">カメラ</span></h2>
+        <p><strong>ソース → + → LensLink Camera</strong>。スマートフォン1台につき1つです。</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>ソースを追加 <span class="tag">画面</span></h2>
+        <p><strong>ソース → + → LensLink Screen</strong>。</p>
+      </li>
+
+      <li data-link="usb">
+        <h2>スマートフォンを指定 <span class="tag">USB</span></h2>
+        <p><strong>接続</strong>を<strong>USBケーブル</strong>に設定します。</p>
+      </li>
+
+      <li data-link="wifi">
+        <h2>スマートフォンを指定 <span class="tag">Wi-Fi</span></h2>
+        <p><strong>スマートフォン</strong>のドロップダウンから選ぶか、IPを入力します。</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>カメラを開始 <span class="tag">カメラ</span></h2>
+        <p><strong>カメラを開始</strong>をタップします。または、アプリを開いたままにしておけばOBSが開始します。</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>ブロードキャストを開始 <span class="tag">画面</span></h2>
+        <p><strong>画面をミラーリング</strong> → <strong>LensLink Screen</strong> → <strong>ブロードキャストを開始</strong>。開始後はアプリを離れてもかまいません。</p>
+      </li>
+
+      <li data-mode="screen">
+        <h2>ソースのサイズを固定 <span class="tag">画面</span></h2>
+        <p>右クリック → <strong>変換 → 変換の編集…</strong>で<strong>境界の種類</strong>を<strong>内側に合わせる</strong>に設定します。これで、アプリを切り替えてもレイアウトのサイズが変わりません。</p>
+      </li>
+
+      <li data-mode="camera">
+        <h2>マイクのタイミングを合わせる <span class="tag">カメラ</span></h2>
+        <p>任意の手順です。<strong>リップシンク用音声ソース</strong>でマイクを選び、遅延と<strong>自動キャリブレーション</strong>を有効にし、アプリで<strong>自動リップシンク用リファレンス</strong>をオンにして、15秒ほど話します。<a href="/docs/audio/">詳細</a>。</p>
+      </li>
+
+    </ol>
+
+    <p class="guide-foot">
+      回答内容はアドレスバーに入っています。コピーして送れば、このセットアップをそのまま共有できます。うまくいかない場合は、ソースの<strong>ステータス</strong>の行に失敗している段階が表示されます。<a href="/docs/connect/#reading-the-status-field">それぞれの意味</a>を確認してください。さらに詳しくは<a href="/docs/install/">インストール</a>と<a href="/docs/connect/">接続</a>をご覧ください。
+    </p>
+  </div>
+</section>

@@ -1,0 +1,61 @@
+title: LensLinkドキュメント
+description: スマートフォンをカメラソースにするOBS StudioプラグインとiPhoneアプリ、LensLinkのインストール、接続、運用に関するすべて。
+source: 05e0e6803736
+---
+<h1>ドキュメント</h1>
+<p class="lede">
+  互いに通信する2つのプログラム、つまりOBSのプラグインとスマートフォンのアプリで構成されています。このドキュメントでは、両方のインストール、接続方法、そしてそれぞれのすべての設定を説明します。
+</p>
+
+<div class="callout">
+  <p><strong>お急ぎの場合：</strong><a href="/setup/">セットアップガイド</a>が4つの質問をして、回答に合った手順だけを表示します。または<a href="/docs/install/">インストール</a>、<a href="/docs/connect/">接続</a>の順に読んでください。内容は同じで、すべてを詳しく説明しています。</p>
+</div>
+
+<h2>全体の仕組み</h2>
+<p>
+  アプリは映像をキャプチャしてハードウェアでH.264またはHEVCにエンコードし、TCPポート<code>9979</code>で待ち受けます。プラグインはネットワーク経由、またはAppleのUSBデバイスサービス経由でそのポートに接続し、可能な場合はGPUでデコードして、通常のソースとしてOBSにフレームを渡します。
+</p>
+<p>
+  クラウドサービスもアカウントも不要です。両者が互いに見えていれば、LensLinkは動作します。
+</p>
+<table>
+  <thead><tr><th>構成要素</th><th>動作する場所</th><th>役割</th></tr></thead>
+  <tbody>
+    <tr><td>LensLinkアプリ</td><td>iPhone / iPad</td><td>キャプチャ、エンコード、待ち受け。画面に表示されている間（対応iPadでは別のアプリと並べて表示している間も）ストリーミングします。</td></tr>
+    <tr><td>LensLink Camera</td><td>OBSソース</td><td>カメラのストリーム、その操作、リップシンク。</td></tr>
+    <tr><td>LensLink Screen</td><td>OBSソース</td><td>システム音声付きのiOS画面ブロードキャスト。</td></tr>
+    <tr><td>ブラウザパネル</td><td>http://localhost:9980</td><td>同じカメラ操作をコンピュータ上で。</td></tr>
+  </tbody>
+</table>
+
+<h2>はじめに</h2>
+<ul class="doccards">
+  <li><a href="/docs/install/"><strong>インストール</strong><span>Windows、macOS、Linuxへのプラグインのインストール。App Store、TestFlight、サイドロード、Xcodeによるアプリのインストール。</span></a></li>
+  <li><a href="/docs/connect/"><strong>OBSとスマートフォンを接続</strong><span>Wi-Fi、USB、複数台のスマートフォン、すべてのステータスメッセージの意味。</span></a></li>
+  <li><a href="/docs/camera/"><strong>カメラ、レンズ、画質</strong><span>フォーマット、マニュアル露出、HDR、Apple Log、グリーンバック、設定の記憶。</span></a></li>
+  <li><a href="/docs/screen-mirroring/"><strong>画面ミラーリング</strong><span>画面と音声のブロードキャスト、ソースのサイズの固定。</span></a></li>
+  <li><a href="/docs/audio/"><strong>音声とリップシンク</strong><span>スマートフォンをマイクとして使う方法と、お使いのマイクの自動タイミング調整。</span></a></li>
+  <li><a href="/docs/remote-start/"><strong>リモート開始</strong><span>OBS、Siri、ショートカット、URLからカメラを開始する。</span></a></li>
+  <li><a href="/docs/web-panel/"><strong>ブラウザコントロールパネル</strong><span>ポート9980のパネルと、その裏にあるHTTP API。</span></a></li>
+  <li><a href="/docs/settings/"><strong>設定リファレンス</strong><span>すべてのソースのプロパティ、プラグインの設定、アプリのオプション。</span></a></li>
+  <li><a href="/docs/performance/"><strong>遅延とパフォーマンス</strong><span>遅延の内訳と、GPUデコードパイプライン。</span></a></li>
+  <li><a href="/docs/troubleshooting/"><strong>トラブルシューティング</strong><span>症状ごとに、探すべきログ行とあわせて解説します。</span></a></li>
+</ul>
+
+<h2>用語</h2>
+<p>以下の用語は、アプリ、プラグイン、このドキュメント全体を通じて、それぞれ特定の1つのものを指します。</p>
+<table>
+  <tbody>
+    <tr><td>セットアップ画面</td><td>アプリの最初の画面。ストリーミングを始める前の、コンピュータのカード、カメラの各行、2つの開始ボタンがある画面です。</td></tr>
+    <tr><td>ライブ画面</td><td>ストリーミング中の全画面表示。映像、レンズボタン、ワンタップで開ける調整トレイがあります。</td></tr>
+    <tr><td>スタンバイ</td><td>アプリが開いたままアイドル状態で、OBSが接続済みでカメラを開始できる状態。アンバーで表示されます。</td></tr>
+    <tr><td>タリーランプ</td><td>ソースがOBSでどうなっているかを示す色付きの枠。オンエア、プレビュー中、その他選択したステータスを表示します。</td></tr>
+    <tr><td>アイドル表示</td><td>最後に触れてから10秒後にライブ画面が切り替わる表示。</td></tr>
+    <tr><td>リップシンク用リファレンス</td><td>タイミング信号としてのみ送られるスマートフォンのマイク音声。配信で聞こえることはありません。</td></tr>
+  </tbody>
+</table>
+
+<h2>ヘルプ</h2>
+<p>
+  <a href="/docs/troubleshooting/">トラブルシューティング</a>では、既知の失敗パターンを、それぞれが出力するログ行とあわせて解説しています。新しい問題は<a href="{{REPO}}/issues">GitHub</a>でissueを作成し、OBSのログ（<strong>ヘルプ → ログファイル</strong>）と<strong>オプション → カメラ診断</strong>を添付してください。
+</p>

@@ -1,0 +1,212 @@
+title: LensLink：iPhoneをOBS Studioのカメラに
+description: LensLinkは、iPhoneやiPadをWi-FiまたはUSB経由でOBS Studioの高画質なカメラソースにします。H.264またはHEVCで最大4K60、カメラのライブ操作、自動リップシンクに対応。無料のオープンソースです。
+nav: home
+source: d5c6fc00fbbc
+---
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>無料のオープンソース · GPL-2.0-or-later</span>
+      <h1>手元でいちばん良いカメラは、もうiPhoneです。<em>それをOBSに。</em></h1>
+      <p class="lede">
+        カメラと画面ミラーの2つのOBSソースを、Wi-FiまたはUSBでiPhoneやiPadに直接つなぎます。仮想カメラドライバも、RTMPサーバも、サブスクリプションも不要です。
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="/download/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          ダウンロード
+        </a>
+        <a class="btn ghost" href="/setup/">ガイド付きセットアップ</a>
+      </div>
+      <p class="meta">
+        <span>OBS Studio 32以降</span><span>Windows、macOS、Linux</span><span>iOS/iPadOS 15以降</span>
+      </p>
+    </div>
+
+    <div>
+      <!-- The app's Live screen, rebuilt from the same design tokens the
+           app and the plugin's browser panel use. -->
+      <div class="device">
+        <div class="screen{{FEED}}"{{FEED_STYLE}}>
+          <div class="topgroup">
+            <div class="toprow">
+            <span class="pill"><span class="dot live"></span>ライブ<span class="chev">⌄</span></span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span>
+            <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
+            </div>
+            <span class="pill health">60 fps · 11.9 Mb/s · ドロップ0</span>
+          </div>
+          <div class="panelmock">
+            <div class="chiprow">
+              <span class="chp">ズーム</span>
+              <span class="chp on">露出</span>
+              <span class="chp">シャッター<i>A</i></span>
+              <span class="chp">WB<i>A</i></span>
+              <span class="chp">フォーカス<i>A</i></span>
+            </div>
+            <div class="dial">
+              <span class="ro yl">+0.3 EV</span>
+              <span class="track yl"><i style="width:58%"></i></span>
+            </div>
+            <div class="row">
+              <span class="mode">自動 · 映像を上下にドラッグ</span>
+              <span class="chips">
+                <span class="chip on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h11l-2-2M20 16H9l2 2"/><circle cx="12" cy="12" r="2"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 10 6 6 6-6"/></svg></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">調整トレイを開いた状態のアプリのライブ画面です。ダイヤルは1つで、チップで操作対象を切り替えます。赤い枠はタリーランプで、このソースがオンエア中であることを示します。ここにある操作はすべて、コンピュータのブラウザからも行えます。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">セットアップ</p>
+      <h2>3ステップ、約3分</h2>
+      <p>コンピュータにプラグイン、スマートフォンにアプリ、OBSにソース。ルーターの設定もアカウントも不要です。</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>OBSプラグインをインストール</h3>
+        <p>WindowsとmacOSにはインストーラ、Linuxにはtarballを用意しています。今お使いのOBSに2つのソースが追加されます。</p>
+      </li>
+      <li>
+        <h3>iPhoneアプリをインストール</h3>
+        <p><a href="{{APPSTORE}}">App Store</a>で無料で入手できます。TestFlightベータへの参加、署名なしビルドのサイドロード、自分でのビルドも可能です。</p>
+      </li>
+      <li>
+        <h3>OBSにソースを追加</h3>
+        <p><strong>ソース → + → LensLink Camera</strong>を選び、スマートフォンを選択するかケーブルを接続します。1〜2秒で映像が表示されます。</p>
+      </li>
+    </ol>
+    <div class="cta">
+      <a class="btn ghost small" href="/setup/">4つの質問に答えて進める</a>
+      <a class="btn ghost small" href="/docs/install/">詳しいインストールガイド</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">できること</p>
+      <h2>Webカメラの代用品ではない、本物のカメラソース</h2>
+      <p>スマートフォンがハードウェアでエンコードし、プラグインがGPUでデコードしてOBSにフレームを渡します。接続は1本だけで、間に何も挟みません。</p>
+    </div>
+    <div class="grid three">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="m17 12 5-3v9l-5-3z"/></svg>
+        <h3>最大4K・60 fps</h3>
+        <p>H.264またはHEVC。選択肢には、お使いのカメラが実際に対応している組み合わせだけが表示されます。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/><path d="M2 9a15 15 0 0 1 20 0"/></svg>
+        <h3>Wi-FiまたはUSB</h3>
+        <p>USBはネットワーク不要で遅延が最も安定し、ストリーミング中にスマートフォンを充電できます。Wi-Fiならケーブルが要りません。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        <h3>コンピュータから操作</h3>
+        <p>ズーム、露出、ISOとシャッターのマニュアル設定、フォーカス、ホワイトバランス、フラッシュライト、レンズ、カメラの切り替えを、スマートフォン、ブラウザのパネル、ソースのプロパティから操作できます。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h2l2-5 3 10 3-13 3 16 2-8h3"/></svg>
+        <h3>自動リップシンク</h3>
+        <p>プラグインが実際の遅延を測定し、お使いのマイクを映像に合わせます。約15秒で安定し、その後は維持されます。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>
+        <h3>画面ミラーリング</h3>
+        <p>もう1つのソースタイプで、iOS標準のブロードキャスト機能を使い、画面全体を音声ごとミラーリングします。モバイルゲームやアプリのデモに最適です。</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v9"/><path d="M7.5 6.5a7 7 0 1 0 9 0"/></svg>
+        <h3>リモート開始</h3>
+        <p>OBSがカメラを自動で開始するので、固定したスマートフォンを外す必要はありません。Siriやショートカットからも操作できます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">さらに踏み込んで</p>
+      <h2>Webカメラにはできないこと</h2>
+      <p>どれも必要なときだけオンにする機能です。何も変えなければ、ソースは普通のSDRカメラです。</p>
+    </div>
+    <div class="grid two">
+      <div>
+        <h3>Apple Log（ベータ）</h3>
+        <p>ProモデルのiPhone（iOS 17以降）で、フラットな10ビットのLog映像を配信し、OBSの「LUT を適用」フィルタでグレーディングできます。プラグインは忠実にデコードし、それ以外は映像に手を加えません。</p>
+      </div>
+      <div>
+        <h3>HLGによるHDR（ベータ）</h3>
+        <p>対応カメラでは、HEVCで10ビットHLGを配信できます。OBSはSDRキャンバスでもHDRキャンバスでも正しく描画します。</p>
+      </div>
+      <div>
+        <h3>バーチャルグリーンバック（ベータ）</h3>
+        <p>スマートフォンがエンコード前に人物以外をすべて緑一色で塗りつぶし、プラグインが調整済みのクロマキーフィルタを追加します。Face IDやLiDARの深度情報があれば、距離によるカットオフで背後を通る人を除外できます。</p>
+      </div>
+      <div>
+        <h3>すべてのレンズをライブで切り替え</h3>
+        <p>メイン、超広角、望遠、前面を、配信中にOBSソースを途切れさせずに切り替えられます。</p>
+      </div>
+      <div>
+        <h3>GPUデコードパイプライン（ベータ）</h3>
+        <p>デコードした映像をシステムメモリに往復させず、グラフィックカード上に保持します。CPU負荷と遅延が下がり、特に4Kで効果が大きくなります。</p>
+      </div>
+      <div>
+        <h3>状態が見える</h3>
+        <p>デコードしたフレームレート、転送ビットレート、測定した遅延を、スマートフォンごとに毎秒、OBSのステータスバーとドッキング可能なパネルに表示します。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">概要</p>
+      <h2>仕様</h2>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr><td>映像</td><td>最大<span class="num">3840×2160</span>・<span class="num">60 fps</span>、H.264またはHEVC。HDR（HLG）とApple Logはベータ版です。</td></tr>
+        <tr><td>遅延</td><td>USBでは1080pでも4Kでも約<span class="num">60 ms</span>。Wi-Fiではそれより大きく、変動も大きくなります。</td></tr>
+        <tr><td>転送方式</td><td>USBまたはローカルWi-Fi。TCP接続1本で、クラウド中継はありません。</td></tr>
+        <tr><td>音声</td><td>スマートフォンのマイクをソースの音声として使うか、リップシンク用のタイミング基準として使うかを選べます（任意）。画面ミラーリングではシステム音声を送ります。</td></tr>
+        <tr><td>コンピュータ</td><td>Windows、macOS、LinuxのOBS Studio 32以降。WindowsでUSBを使うには、Appleのドライバを含むiTunesが必要です。</td></tr>
+        <tr><td>スマートフォン</td><td>iOS/iPadOS 15以降のiPhoneまたはiPad。</td></tr>
+        <tr><td>カメラ</td><td>複数台を同時に使用可能。スマートフォン1台につき1ソースで、それぞれ個別に操作できます。</td></tr>
+        <tr><td>価格</td><td>無料、GPL-2.0-or-later。アカウント、透かし、上位プランはありません。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">ドキュメント</p>
+      <h2>疑問に答えるためのドキュメント</h2>
+      <p>すべての画面、設定、失敗のパターンを扱っています。ブロードキャスト中にiOSがDRM付きの音声をミュートする理由や、WindowsのUSB接続にiTunesが必要な理由といった厄介な点も含みます。</p>
+    </div>
+    <ul class="doccards">
+      <li><a href="/docs/install/"><strong>インストール</strong><span>プラグインとアプリを全プラットフォームに。ソースからのビルドも含みます。</span></a></li>
+      <li><a href="/docs/connect/"><strong>接続</strong><span>Wi-Fi、USB、複数台のスマートフォン、すべてのステータスメッセージの意味。</span></a></li>
+      <li><a href="/docs/camera/"><strong>カメラと画質</strong><span>レンズ、フォーマット、マニュアル露出、HDR、Apple Log、グリーンバック、設定の記憶。</span></a></li>
+      <li><a href="/docs/troubleshooting/"><strong>トラブルシューティング</strong><span>症状ごとに、確認すべきログ行とあわせて解説します。</span></a></li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="/download/">LensLinkをダウンロード</a>
+      <a class="btn ghost" href="/docs/">すべてのドキュメントを見る</a>
+    </div>
+  </div>
+</section>

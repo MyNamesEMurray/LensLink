@@ -1,0 +1,130 @@
+title: LensLinkのインストール
+description: Windows、macOS、LinuxのOBS StudioにLensLinkプラグインを、iPhoneまたはiPadにLensLinkアプリを、App Store、TestFlight、サイドロード、Xcodeのいずれかでインストールします。
+source: f21e1532e735
+---
+<h1>インストール</h1>
+<p class="lede">
+  OBSのプラグインとスマートフォンのアプリ、両方が必要です。お使いの環境に合った手順だけを見たい場合は、<a href="/setup/">セットアップガイド</a>を使ってください。
+</p>
+
+<h2>動作要件</h2>
+<ul>
+  <li><strong>OBS Studio 32以降</strong>（<strong>ヘルプ → OBS Studioについて</strong>）。古いバージョンではプラグインが読み込まれません。</li>
+  <li><strong>iOSまたはiPadOS 15以降。</strong></li>
+  <li><strong>USB接続の場合：</strong>WindowsではiTunes（Appleのデバイスドライバが含まれています）、Linuxでは<code>usbmuxd</code>デーモンが必要です。macOSには標準で組み込まれており、Wi-Fiではどれも不要です。</li>
+</ul>
+<p><a class="btn small ghost" href="/download/">ダウンロードページ</a></p>
+
+<h2>プラグイン</h2>
+<p>どの方法でも、インストール後にOBSを再起動してください。<strong>ソース → +</strong>に<strong>LensLink Camera</strong>と<strong>LensLink Screen</strong>が表示されるはずです。</p>
+
+<h3>Windows</h3>
+<p>
+  <code>LensLink-installer-windows-x64.exe</code>を実行します。OBSのフォルダを自動で見つけ、1.0より前のバージョンのプラグインがあれば削除します。
+</p>
+<p>
+  手動でインストールする場合は、<code>lenslink-windows-x64.zip</code>を<code>C:\Program Files\obs-studio\</code>に展開し、<code>obs-plugins</code>フォルダと<code>data</code>フォルダを統合します。
+</p>
+
+<h3>macOS</h3>
+<p>
+  <code>LensLink-installer-macos-universal.pkg</code>を開きます。パッケージは公証されていないため、初回は<strong>右クリック → 開く</strong>で開く必要があります。ユニバーサルビルドなので、Appleシリコン搭載機とIntel搭載機の両方で動作します。
+</p>
+<p>zipからインストールする場合は、<code>~/Library/Application Support/obs-studio/plugins/</code>に展開し、隔離フラグを解除してください。解除しないとOBSが読み込みを拒否します。</p>
+<pre><code>xattr -dr com.apple.quarantine \
+  ~/Library/Application\ Support/obs-studio/plugins/lenslink.plugin</code></pre>
+
+<h3>Linux</h3>
+<pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+<p>
+  プラグインが表示されず、ログに<code>libavcodec.so.60: cannot open shared object file</code>と出る場合は、1.8より前のリリースを使っています。そのtarballはビルドマシンのFFmpegにリンクされていました。アップデートするか、ソースからビルドしてください。
+</p>
+
+<h3>ソースから</h3>
+<p>詳しい手順：<a href="{{REPO}}/blob/main/obs-plugin/BUILDING.md"><code>obs-plugin/BUILDING.md</code></a>。Debian系のシステムでは次のとおりです。</p>
+<pre><code>sudo apt install cmake build-essential pkg-config \
+     libobs-dev libavcodec-dev libavutil-dev qt6-base-dev
+
+cd obs-plugin
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build</code></pre>
+<p>
+  <code>qt6-base-dev</code>は任意です。ステータスバーの表示とドッキング可能なパネルが追加されます。それ以外はQtなしでビルドできます。
+</p>
+
+<h2>アプリ</h2>
+
+<h3>App Store（おすすめ）</h3>
+<p>
+  App Storeから<a href="{{APPSTORE}}">LensLink Camera</a>をインストールします。無料で、アップデートは自動で届き、Siriのフレーズも使えます。
+</p>
+
+<h3>TestFlightベータ</h3>
+<p>
+  App Storeより先に新しいバージョンを使うには、<a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a>から参加してください。すべてのリリースはまずTestFlightに配信され、Appleがアップデートを承認するとApp Storeにも配信されます。
+</p>
+
+<h3>サイドロード</h3>
+<p>
+  <a href="{{REPO}}/releases/latest">最新リリース</a>の<code>LensLink-unsigned.ipa</code>を、<a href="https://sideloadly.io">Sideloadly</a>などのツールでインストールします。
+</p>
+<div class="callout warn">
+  <p><strong>この方法には、Appleによる制限が2つあります。</strong>無料のApple IDでは、サイドロードしたアプリは<strong>7日</strong>で期限切れになります。再インストールすれば更新でき、設定は保持されます。</p>
+  <p>また、再署名するとバンドルIDが書き換わるため、コンパイル済みのSiriフレーズのデータが使えなくなります。ショートカットからは同じアクションが動作するのに、<em>「Hey Siri、LensLinkでストリーミングを開始」</em>には汎用的な拒否の応答が返ります。ショートカットで<code>lenslink://start</code>を使うか、App Storeからインストールしてください。</p>
+</div>
+
+<h3>Xcode</h3>
+<p><code>.xcodeproj</code>はリポジトリに含まれていません。XcodeGenで生成します。</p>
+<pre><code>brew install xcodegen
+cd ios-app && xcodegen generate && open LensLink.xcodeproj</code></pre>
+<p>署名と古いXcodeに関する注意：<a href="{{REPO}}/blob/main/ios-app/BUILDING.md"><code>ios-app/BUILDING.md</code></a>。</p>
+
+<h2>OSによる違い</h2>
+<p>
+  アプリ、プロトコル、すべてのカメラ機能は、OBSがどこで動いていても同じです。違うのは、プラグインがUSB経由でスマートフォンにアクセスする方法と、デコードしたフレームをGPUに渡す方法です。
+</p>
+<table>
+  <thead><tr><th></th><th>Windows</th><th>macOS</th><th>Linux</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>USBに必要なもの</td>
+      <td>iTunes（Apple Mobile Device Serviceのため）</td>
+      <td>なし（OSに組み込み済み）</td>
+      <td><code>usbmuxd</code>デーモン。ほとんどのデスクトップディストリビューションはスマートフォンへのアクセス用に同梱しています。ソースがデバイスなしと報告する場合は<code>usbmuxd</code>パッケージをインストールしてください。</td>
+    </tr>
+    <tr>
+      <td>ハードウェアデコード</td>
+      <td>D3D11VA、次にDXVA2</td>
+      <td>VideoToolbox</td>
+      <td>VAAPI、次にVDPAU</td>
+    </tr>
+    <tr>
+      <td><a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPUパイプライン</a>の要件</td>
+      <td>Windows 10 1909以降</td>
+      <td>macOS 13以降</td>
+      <td>EGLで動作するOBSと、VAAPIドライバ</td>
+    </tr>
+    <tr>
+      <td>GPUパイプラインでの10ビット</td>
+      <td>対応（P010として）</td>
+      <td>非対応。VideoToolboxが自ら8ビットに変換するため、HDRは標準パイプラインで描画されます</td>
+      <td>対応（P010として）</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+  それ以外の解像度、コーデック、HDRとApple Logのキャプチャ、グリーンバック、リップシンク、リモート開始、ブラウザパネルなどはすべて、スマートフォン側か共通のコードで処理されるため、3つのOSで同じように動作します。
+</p>
+
+<h2>アップデート</h2>
+<p>
+  新しいプラグインのインストーラを古いものの上から実行し、OBSを再起動します。アプリはApp StoreかTestFlightでアップデートするか、新しい<code>.ipa</code>を再インストールします。両者はプロトコルのバージョンをネゴシエートするため、少し古いアプリと新しいプラグインの組み合わせでも動作します。両方の更新が必要なリリースでは、リリースノートにその旨を記載します。
+</p>
+
+<h2>アンインストール</h2>
+<ul>
+  <li><strong>Windows：</strong>インストーラのアンインストール項目を使うか、<code>obs-plugins\64bit\lenslink.dll</code>と<code>data\obs-plugins\lenslink\</code>を削除します。</li>
+  <li><strong>macOS：</strong><code>~/Library/Application Support/obs-studio/plugins/lenslink.plugin</code>を削除します。</li>
+  <li><strong>Linux：</strong><code>~/.config/obs-studio/plugins/</code>から展開したファイルを削除します。</li>
+  <li><strong>アプリ：</strong>通常どおり削除します。コンピュータには何も残りません。</li>
+</ul>
