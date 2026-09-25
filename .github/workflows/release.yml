@@ -476,7 +476,7 @@ jobs:
               echo "| Component | This release |"
               echo "|-----------|--------------|"
               row "OBS plugin" "$plugin_since" "Updated — install it below." "nothing to reinstall."
-              row "iPhone / iPad app" "$app_since" "Updated — TestFlight updates it automatically." "the app you have is current."
+              row "iPhone / iPad app" "$app_since" "Updated. TestFlight has it now; the App Store gets it once Apple approves the update." "the app you have is current."
               echo
             fi
             echo "SUMMARY"
@@ -513,7 +513,7 @@ jobs:
             | **Windows** | [Installer](${{ env.DL }}/LensLink-installer-windows-x64.exe) | Run it (finds your OBS folder automatically), restart OBS. |
             | **macOS** | [Installer](${{ env.DL }}/LensLink-installer-macos-universal.pkg) | Right-click → **Open** (not notarized), restart OBS. |
             | **Linux** | [Plugin tarball](${{ env.DL }}/lenslink-linux-x86_64.tar.gz) | Extract into `~/.config/obs-studio/plugins/`. |
-            | **iPhone / iPad** | [TestFlight beta](https://testflight.apple.com/join/N7Rth6m3) | Installs via TestFlight, updates automatically. |
+            | **iPhone / iPad** | [App Store](https://apps.apple.com/app/lenslink-camera/id6790673163) | Free, updates automatically. Want builds before App Review? [TestFlight beta](https://testflight.apple.com/join/N7Rth6m3). |
 
             Plugin builds match OBS Studio 32.x; the macOS build is universal (macOS 13+).
 

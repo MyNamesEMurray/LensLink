@@ -207,7 +207,11 @@ backgrounding section, the site's FAQ and this note.
 - [ ] App Privacy questionnaire answered (Data Not Collected).
 - [ ] Age rating questionnaire answered (4+).
 - [ ] The build chosen is a **stable** release, not a `-beta.N`.
-- [ ] After approval: switch the TestFlight links in the README, the
+- [x] After approval: switch the TestFlight links in the README, the
       site (download, setup) and the release-notes install table to the
-      App Store link, and set `Release-Skip`-free stable releases to
-      keep TestFlight as the beta channel.
+      App Store link, and keep TestFlight as the beta channel.
+
+The app is live: [LensLink Camera](https://apps.apple.com/app/lenslink-camera/id6790673163)
+(app id `6790673163`). Every stable release still uploads to App Store
+Connect and TestFlight automatically; putting it on the App Store is a
+manual **Add for Review** of that build.
