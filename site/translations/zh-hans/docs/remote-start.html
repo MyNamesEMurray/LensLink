@@ -1,0 +1,75 @@
+title: 远程启动
+description: 通过 OBS、浏览器按钮、Siri、快捷指令或 URL 启动和停止手机摄像头，固定好的手机再也不用取下来。
+source: 3b19eded1e63
+---
+<h1>远程启动</h1>
+<p class="lede">
+  夹在显示器后面的手机，不该为了点一下“开始”就得取下来。只要 App 已打开且处于空闲状态，OBS 就能自己启动摄像头。
+</p>
+
+<h2>为什么 App 必须保持打开</h2>
+<p>
+  iOS 只在 App 显示在屏幕上时才运行摄像头和 LensLink 的监听程序。下面的一切都源于此：App 打开且空闲时会宣告<strong>待机</strong>，之后交给 OBS 处理。
+</p>
+<p>
+  这也是 Siri 和快捷指令会先打开 App 的原因，以及待机就绪时手机会暂缓自动锁定的原因：锁屏会挂起监听程序。主界面在一分钟后变暗，显示为琥珀色而不是绿色：已就绪，但未直播。
+</p>
+<div class="callout">
+  <p>远程启动默认开启。可在 App 的<strong>选项</strong>中通过<strong>从 OBS 远程启动</strong>将其关闭。</p>
+</div>
+
+<h2>四种启动方式</h2>
+
+<h3>来源连接时自动启动</h3>
+<p>
+  <strong>手机就绪时自动启动其摄像头</strong>默认开启：打开 App，画面就会出现，无需其他操作。它也不会和你来回拉锯：只有当 App 刚变为可连接时 OBS 才会自动启动，而不是在你按下“停止”之后。
+</p>
+
+<h3>从 OBS 启动</h3>
+<p>
+  只要 App 已连接，就可以使用来源属性中的<strong>启动手机上的摄像头</strong>和<strong>停止手机上的摄像头</strong>。
+</p>
+
+<h3>从浏览器面板启动</h3>
+<p>
+  位于 <code>http://localhost:9980</code> 的<a href="/docs/web-panel/">面板</a>在 App 空闲时显示<strong>启动摄像头</strong>，直播时显示红色的<strong>停止摄像头</strong>，旁边各有一个<strong>自动启动</strong>开关。
+</p>
+
+<h3>通过 Siri、快捷指令或 URL 启动</h3>
+<ul>
+  <li><strong>Siri（iOS 16+）：</strong><em>“嘿 Siri，用 LensLink 开始推流。”</em></li>
+  <li><strong>快捷指令：</strong><strong>开始摄像头推流</strong>和<strong>停止摄像头推流</strong>操作，适合用在自动化中，例如手机连接到某个特定充电器时自动开始。</li>
+  <li><strong>URL scheme：</strong><code>lenslink://start</code> 和 <code>lenslink://stop</code>。这是 iOS 15 上的方式，而且在任何系统上都能用。</li>
+</ul>
+<div class="callout warn">
+  <p><strong>Siri 语句与侧载不兼容。</strong>重新签名会改写 Bundle ID，使编译好的语句数据失去对应：即使同一操作在快捷指令中可用，Siri 也会拒绝执行。改用 App Store 版本，或 <code>lenslink://start</code>。另外，确认 App 至少启动过一次，并且在<strong>设置 → Siri 与搜索 → LensLink</strong> 中打开了“Use with Siri”。</p>
+</div>
+
+<h2>切换场景也会启动和停止</h2>
+<p>
+  启用<strong>此来源未在任何位置显示时断开连接</strong>后，隐藏来源会停止手机摄像头，重新显示则会再次启动。配合自动启动，手机只在画面出现在某处时才进行编码。
+</p>
+
+<h2>用脚本控制</h2>
+<p>面板的接口是一个普通的 HTTP POST：</p>
+<pre><code>curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"start_stream"}'
+
+curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"stop_stream"}'</code></pre>
+<p>
+  有多台手机时，把 <code>/api/sources</code> 中的来源 id 作为 <code>?src=</code> 加上。完整 API 见<a href="/docs/web-panel/#the-http-api">浏览器面板</a>。
+</p>
+
+<h2>手机上会看到什么</h2>
+<table>
+  <tbody>
+    <tr><td>App 已打开，OBS 未连接</td><td>灰色圆点，“未连接”。</td></tr>
+    <tr><td>App 已打开，OBS 已连接，摄像头空闲</td><td>琥珀色圆点，“OBS 已连接，就绪”。待机：远程启动已就绪。</td></tr>
+    <tr><td>待机状态下一分钟未操作</td><td>屏幕变暗，显示琥珀色的唤醒图标。轻点任意位置即可唤醒；监听程序始终不会停止。</td></tr>
+    <tr><td>已启动</td><td>直播界面，绿色圆点，“直播中”。</td></tr>
+  </tbody>
+</table>
+<p>
+  只有当<strong>空闲显示</strong>设为<strong>调暗屏幕</strong>时，待机才会变暗；你正在触摸屏幕或打开了面板时则永远不会变暗。
+</p>

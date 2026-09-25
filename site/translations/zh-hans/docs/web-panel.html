@@ -1,0 +1,94 @@
+title: 浏览器控制面板
+description: 位于 localhost:9980 的 LensLink 控制面板：在电脑浏览器中使用同样的摄像头控制，以及其背后的 HTTP API。
+source: 441ba810e72e
+---
+<h1>浏览器控制面板</h1>
+<p class="lede">
+  插件在 <a href="http://localhost:9980"><code>http://localhost:9980</code></a> 上提供直播界面中的摄像头控制，你可以把这个浏览器窗口放在 OBS 旁边。谁都不用去碰手机。
+</p>
+
+<h2>打开面板</h2>
+<p>
+  在运行 OBS 的电脑上打开 <code>http://localhost:9980</code>。面板默认开启，开关位于<strong>工具 → LensLink 设置 → 浏览器控制面板</strong>。
+</p>
+<div class="callout">
+  <p><strong>仅限本机回环。</strong>面板绑定在 <code>127.0.0.1</code> 上，网络上的任何设备都无法访问它。这是有意为之，因为它能启动摄像头，而且没有身份验证。</p>
+</div>
+<p>
+  如果该端口已被其他程序占用，可以修改<strong>面板端口</strong>（默认 <code>9980</code>），这是一项插件全局设置。
+</p>
+
+<h2>面板上有什么</h2>
+<p>与 App 直播界面的控制项相同，顺序也相同：</p>
+<ul>
+  <li><strong>状态标签</strong>，包含圆点、状态文字和延迟。音画同步校准进行时会出现第二个标签，锁定后提供<strong>重新校准</strong>。</li>
+  <li><strong>来源标签页</strong>，在有多个摄像头来源处于直播状态时出现，一个页面即可控制所有手机。</li>
+  <li><strong>变焦</strong>、<strong>曝光</strong>（AE 偏移，或手动 ISO 和快门）、<strong>对焦</strong>、<strong>白平衡</strong>。</li>
+  <li><strong>手电筒、镜头、切换摄像头。</strong></li>
+  <li><strong>推流中更改格式</strong>：分辨率、帧率、编码格式、麦克风。</li>
+  <li><strong>主体距离</strong>，在绿幕配合深度辅助运行时出现。</li>
+  <li>空闲时显示<strong>启动摄像头</strong>，直播时显示红色的<strong>停止摄像头</strong>，旁边各有一个<strong>自动启动</strong>开关。</li>
+  <li><strong>暂停</strong>会保持视频流而不结束它：手机保持连接，摄像头继续运行，OBS 保留该来源并显示一张调暗、模糊的静止画面和暂停符号，按<strong>继续</strong>即可立即恢复。音频不会中断，因此兼作麦克风的手机不会断声。</li>
+</ul>
+<p>
+  面板会同步手机上所做的更改，你拖动时则暂停同步，因此不会和你的操作较劲。<strong>LensLink Screen</strong> 来源没有摄像头控制，面板会直接说明这一点，而不是显示无效的滑块。
+</p>
+
+<h2>HTTP API</h2>
+<p>
+  面板只是同一端口上一个小型 HTTP API 的客户端之一；Stream Deck 类设备或脚本也可以是另一个客户端。每个接口都接受可选的 <code>?src=&lt;id&gt;</code>；不带它时，插件会选择第一个合适的来源。
+</p>
+
+<h3>读取状态</h3>
+<table>
+  <thead><tr><th>请求</th><th>返回</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/sources</code></td><td>所有来源：<code>id</code>、<code>name</code>、<code>connected</code>、<code>standby</code>、<code>screen</code>。</td></tr>
+    <tr><td><code>GET /api/status</code></td><td><code>status</code> 文本（使用 OBS 的界面语言）及其 <code>tone</code>（<code>idle</code>、<code>wait</code>、<code>ready</code>、<code>live</code> 或 <code>error</code>，用于在不读取文本的情况下为其着色），另有 <code>screen</code>、<code>standby</code>、<code>connected</code>、<code>autoStart</code> 以及音画同步阶段 <code>sync</code>。</td></tr>
+    <tr><td><code>GET /api/diagnostics</code></td><td>纯文本形式的完整诊断报告：版本、硬件、设置以及每个来源的状态。内容与“工具 → LensLink 设置”中的按钮相同。</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>手机最近一次的摄像头状态快照：镜头、变焦、曝光、对焦、白平衡、支持的格式。来源属性读取的也是同一份缓存，三个界面正是靠它保持同步。</td></tr>
+  </tbody>
+</table>
+
+<h3>发送命令</h3>
+<p>
+  <code>POST /api/control</code> 每次请求接受一条 JSON 命令。未知命令会被有意忽略，因此较新的面板配合较旧的 App 时只会功能降级，而不会出错。
+</p>
+<pre><code>POST /api/control
+{ "cmd": "zoom",          "value": 2.0 }
+{ "cmd": "exposure_bias", "value": -0.5 }
+{ "cmd": "exposure",      "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
+{ "cmd": "exposure",      "mode": "auto" }
+{ "cmd": "focus",         "mode": "locked", "lensPosition": 0.42 }
+{ "cmd": "focus",         "mode": "auto" }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "flashlight",    "on": true }
+{ "cmd": "flip" }
+{ "cmd": "start_stream" }
+{ "cmd": "stop_stream" }
+{ "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "mic",           "id": "builtin:2" }
+{ "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
+<table>
+  <thead><tr><th>请求</th><th>效果</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code>：与自动启动复选框修改的是同一个属性。空请求体会被拒绝，而不会被当作 false。</td></tr>
+    <tr><td><code>POST /api/recalibrate</code></td><td>无请求体。开始一次新的音画同步测量。</td></tr>
+  </tbody>
+</table>
+
+<h3>示例</h3>
+<pre><code># Start the camera on the only connected phone
+curl -X POST http://localhost:9980/api/control -d '{"cmd":"start_stream"}'
+
+# Zoom the source with id 2 to 3x
+curl -X POST 'http://localhost:9980/api/control?src=2' -d '{"cmd":"zoom","value":3.0}'
+
+# What is connected right now?
+curl -s http://localhost:9980/api/sources</code></pre>
+
+<h2>关闭面板</h2>
+<p>
+  在<strong>工具 → LensLink 设置</strong>中取消勾选<strong>浏览器控制面板</strong>。端口会立即关闭，其他一切不受影响。
+</p>
