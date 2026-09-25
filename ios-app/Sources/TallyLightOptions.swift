@@ -202,6 +202,8 @@ final class TallySettings: ObservableObject {
 /// Options → Tally light: color per status, drag to set priority.
 struct TallyLightOptionsView: View {
     @ObservedObject private var settings = TallySettings.shared
+    @Environment(\.accessibilityDifferentiateWithoutColor)
+    private var differentiateWithoutColor
 
     var body: some View {
         List {
@@ -210,7 +212,7 @@ struct TallyLightOptionsView: View {
                     HStack {
                         Text(entry.status.displayName)
                         Spacer()
-                        Picker("", selection: $entry.color) {
+                        Picker(entry.status.displayName, selection: $entry.color) {
                             ForEach(TallyColor.allCases, id: \.self) { c in
                                 Label {
                                     Text(c.displayName)
@@ -239,10 +241,11 @@ struct TallyLightOptionsView: View {
                                            height: Theme.controlButton)
                             }
                             .buttonStyle(.borderless)
-                            .foregroundColor(entry.pulse
-                                             ? Theme.accent : .secondary)
+                            .foregroundColor(pulseForeground(entry.pulse))
+                            .background(pulseBackground(entry.pulse))
                             .accessibilityLabel("Pulse")
                             .accessibilityValue(entry.pulse ? L("On") : L("Off"))
+                            .accessibilityInputLabels([L("Pulse %@", entry.status.displayName)])
                         }
                     }
                 }
@@ -265,5 +268,18 @@ struct TallyLightOptionsView: View {
         .navigationTitle("Tally light")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { EditButton() }
+    }
+
+    private func pulseForeground(_ on: Bool) -> Color {
+        guard on else { return .secondary }
+        return differentiateWithoutColor ? .white : Theme.accent
+    }
+
+    @ViewBuilder private func pulseBackground(_ on: Bool) -> some View {
+        if on && differentiateWithoutColor {
+            Circle()
+                .fill(Theme.accent)
+                .frame(width: 32, height: 32)
+        }
     }
 }

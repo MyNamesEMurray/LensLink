@@ -30,6 +30,8 @@ struct ContentView: View {
     @State private var dimmed = false
     @State private var lastInteraction = Date()
     @State private var previousBrightness: CGFloat = UIScreen.main.brightness
+    @ObservedObject private var assistive = AssistiveTech.shared
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private static let dimAfterSeconds: TimeInterval = 60
 
@@ -130,6 +132,7 @@ struct ContentView: View {
                 // with no visible way back.
                 if streamer.standbyActive
                     && streamer.idleAppearance == .dim &&
+                    !assistive.suspendsIdle &&
                     !showOptions && !showDocs && !showFormat && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
@@ -138,6 +141,13 @@ struct ContentView: View {
                     // fired, toggle turned off, port lost) — wake up.
                     undim()
                 }
+            }
+        }
+        .onChange(of: assistive.suspendsIdle) { on in
+            if on && dimmed {
+                undim()
+            } else {
+                lastInteraction = Date()
             }
         }
         .onDisappear {
@@ -169,9 +179,13 @@ struct ContentView: View {
             VStack(spacing: 8) {
                 Image(systemName: "video.fill")
                     .foregroundColor(Theme.connectAmber.opacity(0.6))
+                    .accessibilityHidden(true)
                 Text("Ready for remote start — tap to wake")
                     .font(.footnote)
                     .foregroundColor(.gray)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityInputLabels([L("Wake")])
+                    .accessibilityAction { undim() }
             }
         }
         .contentShape(Rectangle())
@@ -216,42 +230,18 @@ struct ContentView: View {
     /// finds this phone). Setup instructions collapse away once read.
     private var connectionSection: some View {
         Section {
-            HStack(spacing: Theme.Space.m) {
-                Image(systemName: computerSymbol)
-                    .font(.system(size: 26, weight: .regular))
-                    .foregroundColor(streamer.status.tint)
-                    .frame(width: 40)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(connectionTitle)
-                        .font(.headline)
-                        .lineLimit(1)
-                    HStack(spacing: Theme.Space.xs + 2) {
-                        Circle()
-                            .fill(streamer.status.tint)
-                            .frame(width: 8, height: 8)
-                        Text(connectionSubtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .lineLimit(2)
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: Theme.Space.s) {
+                        connectionSummary
+                        connectionAction
                     }
-                }
-                Spacer(minLength: Theme.Space.s)
-                if streamer.status == .standby {
-                    Button {
-                        Task { await streamer.start() }
-                    } label: {
-                        Text("Start")
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, Theme.Space.l)
-                            .padding(.vertical, Theme.Space.s)
-                            .background(Theme.accent, in: Capsule())
-                            .foregroundColor(.white)
+                } else {
+                    HStack(spacing: Theme.Space.m) {
+                        connectionSummary
+                        Spacer(minLength: Theme.Space.s)
+                        connectionAction
                     }
-                    .buttonStyle(.plain)
-                } else if let ip = wifiIP {
-                    Text(ip)
-                        .font(.callout.monospacedDigit().bold())
-                        .textSelection(.enabled)
                 }
             }
             .padding(.vertical, Theme.Space.xs)
@@ -292,6 +282,51 @@ struct ContentView: View {
                     Image(systemName: "2.circle")
                 }
             }
+        }
+    }
+
+    private var connectionSummary: some View {
+        HStack(spacing: Theme.Space.m) {
+            Image(systemName: computerSymbol)
+                .font(.system(size: 26, weight: .regular))
+                .foregroundColor(streamer.status.tint)
+                .frame(width: 40)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(connectionTitle)
+                    .font(.headline)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                HStack(spacing: Theme.Space.xs + 2) {
+                    Circle()
+                        .fill(streamer.status.tint)
+                        .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                    Text(connectionSubtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var connectionAction: some View {
+        if streamer.status == .standby {
+            Button {
+                Task { await streamer.start() }
+            } label: {
+                Text("Start")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, Theme.Space.l)
+                    .padding(.vertical, Theme.Space.s)
+                    .background(Theme.accent, in: Capsule())
+                    .foregroundColor(.white)
+            }
+            .buttonStyle(.plain)
+        } else if let ip = wifiIP {
+            Text(ip)
+                .font(.callout.monospacedDigit().bold())
+                .textSelection(.enabled)
         }
     }
 
@@ -351,6 +386,7 @@ struct ContentView: View {
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
                         .foregroundColor(.secondary)
+                        .accessibilityHidden(true)
                 }
                 .contentShape(Rectangle())
             }
@@ -421,6 +457,7 @@ struct ContentView: View {
                 ActionRowLabel(title: L("Mirror Screen"),
                                systemImage: "rectangle.on.rectangle",
                                style: .secondary)
+                    .accessibilityHidden(true)
                 BroadcastPickerOverlay()
             }
             .listRowInsets(EdgeInsets())
@@ -508,6 +545,7 @@ struct ContentView: View {
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
                 .foregroundColor(.secondary)
+                .accessibilityHidden(true)
         }
         .contentShape(Rectangle())
     }

@@ -961,7 +961,9 @@ final class Streamer: ObservableObject {
     }
 
     // State
-    @Published private(set) var status: Status = .idle
+    @Published private(set) var status: Status = .idle {
+        didSet { noteFeedbackChange(status: oldValue) }
+    }
     @Published private(set) var isStreaming = false
 
     /// Held, not ended: the connection, the camera and the encoder all
@@ -1073,7 +1075,9 @@ final class Streamer: ObservableObject {
 
     /// Pushed by the plugin on change only, so these cost nothing while
     /// they're steady.
-    @Published private(set) var tally: Tally = .off
+    @Published private(set) var tally: Tally = .off {
+        didSet { noteFeedbackChange(tally: oldValue) }
+    }
     /// What the plugin said about itself on connect (`identify`): the
     /// computer's host name, its OBS version, and the transport it dialed
     /// over ("usb" or "lan"). nil until told, and cleared with the
@@ -1081,7 +1085,65 @@ final class Streamer: ObservableObject {
     @Published private(set) var obsHost: String?
     @Published private(set) var obsVersion: String?
     @Published private(set) var obsTransport: String?
-    @Published private(set) var syncState: SyncState = .off
+    @Published private(set) var syncState: SyncState = .off {
+        didSet { noteFeedbackChange(sync: oldValue) }
+    }
+
+    private struct FeedbackBaseline {
+        var status: Status
+        var tally: Tally
+        var sync: SyncState
+    }
+
+    private var feedbackBaseline: FeedbackBaseline?
+
+    private func noteFeedbackChange(status oldStatus: Status? = nil,
+                                    tally oldTally: Tally? = nil,
+                                    sync oldSync: SyncState? = nil) {
+        guard feedbackBaseline == nil else { return }
+        feedbackBaseline = FeedbackBaseline(status: oldStatus ?? status,
+                                            tally: oldTally ?? tally,
+                                            sync: oldSync ?? syncState)
+        Task { @MainActor [weak self] in
+            self?.deliverFeedback()
+        }
+    }
+
+    private func deliverFeedback() {
+        guard let before = feedbackBaseline else { return }
+        feedbackBaseline = nil
+
+        if before.status != status {
+            switch status {
+            case .streaming:
+                AssistiveTech.announce(status.displayName)
+                if before.status != .paused {
+                    AssistiveTech.haptic(.success)
+                }
+            case .paused:
+                AssistiveTech.announce(status.displayName)
+            case .error:
+                AssistiveTech.announce(status.displayName)
+                if before.status == .streaming || before.status == .paused {
+                    AssistiveTech.haptic(.warning)
+                }
+            case .connecting:
+                if isStreaming,
+                   before.status == .streaming || before.status == .paused {
+                    AssistiveTech.announce(TallyStatus.connectionLost.displayName)
+                    AssistiveTech.haptic(.warning)
+                }
+            case .idle, .standby:
+                break
+            }
+        }
+        if isStreaming, before.tally != .live, tally == .live {
+            AssistiveTech.announce(TallyStatus.onAir.displayName)
+        }
+        if isStreaming, before.sync != .locked, syncState == .locked {
+            AssistiveTech.announce(L("Sync locked"))
+        }
+    }
 
     /// Asks the plugin to drop its locked mic latency and calibrate afresh
     /// (the sync pill's tap). Optimistically shows "Recalibrating" so the

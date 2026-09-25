@@ -8,6 +8,9 @@
 /* Setup screen: button that starts the screen broadcast (also its VoiceOver label) [also used in ContentView.swift] */
 "Mirror Screen" = "Mirror Screen";
 
+/* Voice Control: a shorter name the user can say for the Mirror Screen button (never shown) */
+"Mirror" = "Mirror";
+
 /* ===== BroadcastProbe.swift ===== */
 
 /* Setup screen warning: the screen-broadcast extension is missing from a sideloaded install */
@@ -47,11 +50,14 @@
 
 /* ===== ContentView.swift ===== */
 
-/* Toolbar button that closes a sheet [also used in OptionsView.swift] */
+/* Toolbar button that closes a sheet; Voice Control: another name the user can say for the Live screen button that closes the adjust tray [also used in OptionsView.swift, StreamingView.swift] */
 "Done" = "Done";
 
 /* Dimmed Setup screen while the app waits for OBS to start the camera */
 "Ready for remote start — tap to wake" = "Ready for remote start — tap to wake";
+
+/* Voice Control: the word the user can say to wake a dimmed screen (never shown) [also used in StreamingView.swift] */
+"Wake" = "Wake";
 
 /* Connection card button: start the camera stream now */
 "Start" = "Start";
@@ -151,6 +157,14 @@
 
 /* Format sheet section header; Documentation section header [also used in DocumentationView.swift] */
 "Color" = "Color";
+
+/* ===== DesignSystem.swift ===== */
+
+/* VoiceOver value of an on/off control (the Flashlight button, a tally pulse switch) [also used in TallyLightOptions.swift] */
+"On" = "On";
+
+/* VoiceOver value of an on/off control; Tally: no status lights the border / a status's color is none [also used in OptionsView.swift, TallyLightOptions.swift] */
+"Off" = "Off";
 
 /* ===== DocumentationView.swift ===== */
 
@@ -253,6 +267,15 @@
 /* Documentation section header */
 "Diagnostics" = "Diagnostics";
 
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; VoiceOver, Switch Control are the iOS feature names) */
+"**VoiceOver** and **Switch Control**: while either is on, the Live screen never dims or hides its controls by itself, and remote-start standby never dims. The status pill's menu still does it when you ask. VoiceOver also says when the stream goes live, pauses, goes on air, loses its connection to OBS, or locks lip-sync." = "**VoiceOver** and **Switch Control**: while either is on, the Live screen never dims or hides its controls by itself, and remote-start standby never dims. The status pill's menu still does it when you ask. VoiceOver also says when the stream goes live, pauses, goes on air, loses its connection to OBS, or locks lip-sync.";
+
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; name the iOS setting as iOS shows it) */
+"**Differentiate Without Color** (iOS Settings, Accessibility) adds the lit tally status's name as a small badge at the top of the Live screen, so the border never has to be read by its color alone." = "**Differentiate Without Color** (iOS Settings, Accessibility) adds the lit tally status's name as a small badge at the top of the Live screen, so the border never has to be read by its color alone.";
+
+/* Documentation section header */
+"Accessibility" = "Accessibility";
+
 /* ===== OptionsView.swift ===== */
 
 /* Options toggle: let OBS start the camera while the app is open */
@@ -275,9 +298,6 @@
 
 /* Options row and screen title: the camera format table */
 "Camera diagnostics" = "Camera diagnostics";
-
-/* Tally: no status lights the border / a status's color is none; VoiceOver value of a switch [also used in TallyLightOptions.swift] */
-"Off" = "Off";
 
 /* Camera diagnostics toolbar button after the report was copied */
 "Copied" = "Copied";
@@ -342,9 +362,12 @@
 /* Status line error: camera permission was denied */
 "Camera access denied — enable it in Settings" = "Camera access denied — enable it in Settings";
 
+/* Lip-sync pill: calibration finished (tap to recalibrate); also spoken by VoiceOver when it happens [also used in StreamingView.swift] */
+"Sync locked" = "Sync locked";
+
 /* ===== StreamingView.swift ===== */
 
-/* Dimmed Live screen hint */
+/* Dimmed Live screen hint; also the VoiceOver label of the invisible wake area over the clean feed */
 "Streaming — tap to wake" = "Streaming — tap to wake";
 
 /* Dimmed Live screen: battery level, e.g. "80%" */
@@ -368,9 +391,6 @@
 /* Lip-sync pill: calibration in progress */
 "Measuring sync" = "Measuring sync";
 
-/* Lip-sync pill: calibration finished (tap to recalibrate) */
-"Sync locked" = "Sync locked";
-
 /* Lip-sync pill: calibrating again */
 "Recalibrating" = "Recalibrating";
 
@@ -379,6 +399,48 @@
 
 /* VoiceOver label of the button that opens the camera adjust tray */
 "Adjust camera" = "Adjust camera";
+
+/* Voice Control: a shorter name the user can say for the Adjust camera button (never shown) */
+"Adjust" = "Adjust";
+
+/* VoiceOver label of the Live screen button that holds the stream */
+"Pause" = "Pause";
+
+/* VoiceOver label of the Live screen button that resumes a held stream */
+"Resume" = "Resume";
+
+/* VoiceOver label of the Live screen red Stop button */
+"Stop camera" = "Stop camera";
+
+/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) */
+"Stop" = "Stop";
+
+/* Voice Control: another name the user can say for the status pill menu (never shown) */
+"Status" = "Status";
+
+/* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
+"Recalibrate" = "Recalibrate";
+
+/* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
+"Flashlight" = "Flashlight";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown; use the everyday word for it) */
+"Torch" = "Torch";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown) */
+"Light" = "Light";
+
+/* VoiceOver label of the Live screen button that switches front/back camera */
+"Flip camera" = "Flip camera";
+
+/* Voice Control: another name the user can say for the Flip camera button (never shown) */
+"Switch camera" = "Switch camera";
+
+/* Voice Control: a shorter name the user can say for the Flip camera button (never shown) */
+"Flip" = "Flip";
+
+/* VoiceOver label of the Live screen button that closes the adjust tray */
+"Close" = "Close";
 
 /* One-letter badge on a Live screen chip: the setting is on Auto */
 "A" = "A";
@@ -484,8 +546,8 @@
 /* VoiceOver label of the switch that makes a tally color pulse */
 "Pulse" = "Pulse";
 
-/* VoiceOver value of a switch */
-"On" = "On";
+/* Voice Control: the name the user can say for one row's pulse switch; %@ = the tally status, e.g. "Pulse On air" (never shown) */
+"Pulse %@" = "Pulse %@";
 
 /* Tally light screen: list header */
 "Statuses, highest priority first" = "Statuses, highest priority first";

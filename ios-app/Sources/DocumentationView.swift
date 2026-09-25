@@ -80,6 +80,13 @@ struct DocumentationView: View {
             } header: {
                 Text("Diagnostics")
             }
+
+            Section {
+                Text("**VoiceOver** and **Switch Control**: while either is on, the Live screen never dims or hides its controls by itself, and remote-start standby never dims. The status pill's menu still does it when you ask. VoiceOver also says when the stream goes live, pauses, goes on air, loses its connection to OBS, or locks lip-sync.")
+                Text("**Differentiate Without Color** (iOS Settings, Accessibility) adds the lit tally status's name as a small badge at the top of the Live screen, so the border never has to be read by its color alone.")
+            } header: {
+                Text("Accessibility")
+            }
         }
         .navigationTitle("Documentation")
         .navigationBarTitleDisplayMode(.inline)
