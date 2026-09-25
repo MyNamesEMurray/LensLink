@@ -260,7 +260,7 @@ and everywhere at once rather than drifting.
 | filter (OBS) | Filter | filtro | filtre | フィルタ | filtro | 滤镜 |
 | dock (OBS) | Dock | panel | dock | ドック | painel | 停靠窗口 |
 | Settings (iOS app) | Einstellungen | Configuración | Réglages | 設定 | Ajustes | 设置 |
-| LensLink Settings (plugin, Tools menu), settings in general | LensLink-Einstellungen | Configuración de LensLink | Paramètres LensLink | LensLink設定 | Configurações do LensLink | LensLink 设置 |
+| LensLink Settings (plugin, Tools menu), settings in general | LensLink-Einstellungen | Ajustes de LensLink | Paramètres LensLink | LensLink設定 | Configurações do LensLink | LensLink 设置 |
 | Local Network (iOS permission) | Lokales Netzwerk | Red local | Réseau local | ローカルネットワーク | Rede Local | 本地网络 |
 | Trust (this computer) | Vertrauen | Confiar | Se fier | 信頼 | Confiar | 信任 |
 | Control Center | Kontrollzentrum | Centro de control | Centre de contrôle | コントロールセンター | Central de Controle | 控制中心 |

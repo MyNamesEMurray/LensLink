@@ -1,0 +1,172 @@
+title: Installer LensLink
+description: Installez le plugin LensLink dans OBS Studio sous Windows, macOS ou Linux, et l’app LensLink sur votre iPhone ou iPad depuis l’App Store, TestFlight, par installation manuelle ou avec Xcode.
+source: f21e1532e735
+---
+<h1>Installer</h1>
+<p class="lede">
+  Les deux moitiés sont nécessaires : le plugin dans OBS, l’app sur le téléphone.
+  Pour n’obtenir que les étapes qui correspondent à votre configuration, utilisez
+  le <a href="/setup/">guide de configuration</a>.
+</p>
+
+<h2>Prérequis</h2>
+<ul>
+  <li><strong>OBS Studio 32 ou plus récent</strong> (<strong>Aide → À propos</strong>). Les versions plus anciennes ne chargent pas le plugin.</li>
+  <li><strong>iOS ou iPadOS 15 ou ultérieur.</strong></li>
+  <li><strong>Pour l’USB :</strong> iTunes sous Windows (il fournit le pilote de périphérique d’Apple), ou le démon <code>usbmuxd</code> sous Linux. macOS l’intègre d’office, et le Wi-Fi n’a besoin de rien de tout cela.</li>
+</ul>
+<p><a class="btn small ghost" href="/download/">Page de téléchargement</a></p>
+
+<h2>Le plugin</h2>
+<p>Redémarrez OBS après chacune de ces méthodes. <strong>Sources → +</strong> doit alors proposer <strong>LensLink Camera</strong> et <strong>LensLink Screen</strong>.</p>
+
+<h3>Windows</h3>
+<p>
+  Lancez <code>LensLink-installer-windows-x64.exe</code>. Il trouve votre dossier
+  OBS et supprime toute copie du plugin antérieure à la version 1.0.
+</p>
+<p>
+  Méthode manuelle : décompressez <code>lenslink-windows-x64.zip</code> dans
+  <code>C:\Program Files\obs-studio\</code>, en fusionnant les dossiers
+  <code>obs-plugins</code> et <code>data</code>.
+</p>
+
+<h3>macOS</h3>
+<p>
+  Ouvrez <code>LensLink-installer-macos-universal.pkg</code>. Le paquet n’est pas
+  notarié : la première fois, il faut passer par <strong>clic droit → Ouvrir</strong>.
+  Le build est universel (Apple silicon et Intel).
+</p>
+<p>Vous partez plutôt du zip ? Extrayez-le dans
+<code>~/Library/Application Support/obs-studio/plugins/</code> et retirez
+l’attribut de quarantaine, sinon OBS refusera de le charger :</p>
+<pre><code>xattr -dr com.apple.quarantine \
+  ~/Library/Application\ Support/obs-studio/plugins/lenslink.plugin</code></pre>
+
+<h3>Linux</h3>
+<pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+<p>
+  Si le plugin n’apparaît pas et que le journal indique
+  <code>libavcodec.so.60: cannot open shared object file</code>, vous utilisez
+  une version antérieure à 1.8, dont l’archive était liée au FFmpeg de la machine
+  de compilation. Mettez à jour, ou compilez depuis les sources.
+</p>
+
+<h3>Depuis les sources</h3>
+<p>Instructions complètes :
+<a href="{{REPO}}/blob/main/obs-plugin/BUILDING.md"><code>obs-plugin/BUILDING.md</code></a>.
+Sur un système de la famille Debian :</p>
+<pre><code>sudo apt install cmake build-essential pkg-config \
+     libobs-dev libavcodec-dev libavutil-dev qt6-base-dev
+
+cd obs-plugin
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build</code></pre>
+<p>
+  <code>qt6-base-dev</code> est facultatif : il ajoute l’indicateur de la barre
+  d’état et le dock. Tout le reste se compile sans Qt.
+</p>
+
+<h2>L’app</h2>
+
+<h3>App Store (recommandé)</h3>
+<p>
+  Installez <a href="{{APPSTORE}}">LensLink Camera</a> depuis l’App Store. Elle
+  est gratuite, les mises à jour arrivent toutes seules et les phrases Siri
+  fonctionnent.
+</p>
+
+<h3>Bêta TestFlight</h3>
+<p>
+  Pour obtenir les nouvelles versions avant leur arrivée sur l’App Store,
+  rejoignez la bêta sur
+  <a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a>. Chaque
+  version arrive d’abord dans TestFlight ; l’App Store la reçoit une fois la
+  mise à jour approuvée par Apple.
+</p>
+
+<h3>Installation manuelle (sideload)</h3>
+<p>
+  Installez <code>LensLink-unsigned.ipa</code> depuis la
+  <a href="{{REPO}}/releases/latest">dernière version</a> avec
+  <a href="https://sideloadly.io">Sideloadly</a> ou un outil similaire.
+</p>
+<div class="callout warn">
+  <p><strong>Cette méthode s’accompagne de deux limites imposées par Apple.</strong>
+  Avec un compte Apple gratuit, les apps installées manuellement expirent au bout
+  de <strong>7 jours</strong> : réinstallez l’app pour la renouveler, les réglages
+  sont conservés.</p>
+  <p>La re-signature modifie aussi l’identifiant du bundle, ce qui rend orphelines
+  les données compilées des phrases Siri : <em>« Dis Siri, lance le streaming avec
+  LensLink »</em> reçoit un refus générique, alors que la même action fonctionne
+  depuis Raccourcis. Utilisez <code>lenslink://start</code> dans un raccourci, ou
+  installez l’app depuis l’App Store.</p>
+</div>
+
+<h3>Xcode</h3>
+<p>Aucun <code>.xcodeproj</code> n’est versionné ; XcodeGen le génère.</p>
+<pre><code>brew install xcodegen
+cd ios-app && xcodegen generate && open LensLink.xcodeproj</code></pre>
+<p>Signature et notes pour les anciennes versions de Xcode :
+<a href="{{REPO}}/blob/main/ios-app/BUILDING.md"><code>ios-app/BUILDING.md</code></a>.</p>
+
+<h2>Ce qui change selon le système d’exploitation</h2>
+<p>
+  L’app, le protocole et toutes les fonctions de caméra sont identiques, quel que
+  soit le système sur lequel tourne OBS. Ce qui change, c’est la façon dont le
+  plugin atteint le téléphone en USB et dont il transfère les images décodées
+  vers le GPU.
+</p>
+<table>
+  <thead><tr><th></th><th>Windows</th><th>macOS</th><th>Linux</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>L’USB nécessite</td>
+      <td>iTunes, pour Apple Mobile Device Service</td>
+      <td>Rien : c’est intégré au système</td>
+      <td>Le démon <code>usbmuxd</code>. La plupart des distributions de bureau le fournissent pour l’accès aux téléphones ; installez le paquet <code>usbmuxd</code> si la source ne signale aucun appareil.</td>
+    </tr>
+    <tr>
+      <td>Décodage matériel</td>
+      <td>D3D11VA, puis DXVA2</td>
+      <td>VideoToolbox</td>
+      <td>VAAPI, puis VDPAU</td>
+    </tr>
+    <tr>
+      <td>Le <a href="/docs/performance/#the-gpu-decode-pipeline-beta">pipeline GPU</a> nécessite</td>
+      <td>Windows 10 1909+</td>
+      <td>macOS 13+</td>
+      <td>OBS sous EGL, et un pilote VAAPI</td>
+    </tr>
+    <tr>
+      <td>10 bits sur le pipeline GPU</td>
+      <td>Oui, en P010</td>
+      <td>Non : VideoToolbox convertit lui-même en 8 bits, donc le HDR passe par le chemin standard</td>
+      <td>Oui, en P010</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+  Tout le reste (résolutions, codecs, capture HDR et Apple Log, écran vert,
+  synchronisation labiale, démarrage à distance, panneau de contrôle web) est
+  géré sur le téléphone ou dans du code commun, et se comporte de la même façon
+  sur les trois systèmes.
+</p>
+
+<h2>Mise à jour</h2>
+<p>
+  Lancez le nouveau programme d’installation du plugin par-dessus l’ancien et
+  redémarrez OBS ; l’app se met à jour via l’App Store ou TestFlight, ou en
+  réinstallant le nouveau <code>.ipa</code>.
+  Les deux moitiés négocient une version de protocole : une app un peu plus
+  ancienne et un plugin plus récent continuent donc de fonctionner ensemble. Si
+  une version exige un jour les deux côtés à jour, ses notes le précisent.
+</p>
+
+<h2>Désinstallation</h2>
+<ul>
+  <li><strong>Windows :</strong> l’entrée de désinstallation du programme d’installation, ou supprimez <code>obs-plugins\64bit\lenslink.dll</code> et <code>data\obs-plugins\lenslink\</code>.</li>
+  <li><strong>macOS :</strong> supprimez <code>~/Library/Application Support/obs-studio/plugins/lenslink.plugin</code>.</li>
+  <li><strong>Linux :</strong> supprimez les fichiers extraits de <code>~/.config/obs-studio/plugins/</code>.</li>
+  <li><strong>App :</strong> supprimez-la comme d’habitude. Rien ne reste sur l’ordinateur.</li>
+</ul>

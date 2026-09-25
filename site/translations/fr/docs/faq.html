@@ -1,0 +1,126 @@
+title: Questions fréquentes
+description: Prix, confidentialité, appareils compatibles, Android, utilisation comme caméra virtuelle, batterie, et comparaison de LensLink avec une carte d’acquisition ou une webcam USB.
+source: 11108b31c9b2
+---
+<h1>Questions fréquentes</h1>
+
+<h2>Est-ce vraiment gratuit ?</h2>
+<p>
+  Oui, sous licence <a href="{{REPO}}/blob/main/LICENSE">GPL-2.0-or-later</a>, la même
+  que celle d’OBS Studio. Aucun compte, aucun filigrane, aucune limite de
+  résolution, aucune offre payante. Les deux moitiés sont sur <a href="{{REPO}}">GitHub</a>.
+</p>
+
+<h2>Ma vidéo passe-t-elle par Internet ?</h2>
+<p>
+  Non. Le plugin se connecte directement au téléphone, par votre réseau ou par
+  le câble : aucun relais, aucun service cloud, aucune télémétrie. Le flux n’est
+  pas chiffré ; il est donc conçu pour des réseaux domestiques et de studio de
+  confiance, pas pour un Wi-Fi public partagé.
+</p>
+
+<h2>Quels appareils sont compatibles ?</h2>
+<p>
+  Tout iPhone ou iPad sous <strong>iOS/iPadOS 15+</strong>, avec OBS Studio
+  <strong>32+</strong> sous Windows, macOS ou Linux. Les téléphones récents
+  apportent davantage d’objectifs et de formats ; les fonctions sont les mêmes.
+</p>
+
+<h2>Existe-t-il une version Android ?</h2>
+<p>
+  Non. L’app repose sur AVFoundation et VideoToolbox, et la connexion USB passe
+  par le service de périphériques d’Apple. Une app Android serait un programme
+  distinct, qui ne partagerait que le protocole réseau.
+</p>
+
+<h2>Wi-Fi ou USB : lequel choisir ?</h2>
+<p>
+  L’USB, dès que le câble ne gêne pas : pas de réseau, la latence la plus stable,
+  aucune sensibilité à la congestion, et il recharge le téléphone. Le Wi-Fi sert
+  quand le téléphone doit se trouver hors de portée d’un câble.
+</p>
+
+<h2>Puis-je l’utiliser comme webcam dans Zoom, Teams ou Discord ?</h2>
+<p>
+  Pas directement : c’est une source OBS, pas un pilote de caméra virtuelle.
+  Utilisez la caméra virtuelle d’OBS : ajoutez la source à une scène, cliquez sur
+  <strong>Démarrer la caméra virtuelle</strong>, puis choisissez OBS Virtual
+  Camera dans l’autre application. Au passage, vous profitez des scènes, des
+  filtres et des incrustations.
+</p>
+
+<h2>Combien de téléphones puis-je utiliser à la fois ?</h2>
+<p>
+  Autant que votre machine peut en décoder. Une source par téléphone, chacune
+  connectée, pilotée et surveillée indépendamment. C’est le
+  <a href="/docs/performance/#the-gpu-decode-pipeline-beta">pipeline de décodage
+  GPU</a> qui rend confortable l’utilisation de plusieurs sources 4K.
+</p>
+
+<h2>Est-ce que ça vide ma batterie ?</h2>
+<p>
+  Oui : l’encodage vidéo est exigeant, alors prévoyez un câble pour une longue
+  diffusion. L’USB règle la question en rechargeant le téléphone pendant la
+  diffusion. Sinon, la vue au repos <strong>Assombrir l’écran</strong> baisse la
+  luminosité et arrête le rendu de l’aperçu au bout de 10 secondes, et
+  <strong>Déconnecter quand cette source n’est affichée nulle part</strong> arrête
+  l’encodage dès que la source est masquée.
+</p>
+
+<h2>Le téléphone doit-il rester déverrouillé et l’app à l’écran ?</h2>
+<p>
+  Oui : iOS arrête la capture de la caméra dès qu’une app n’est plus à l’écran ;
+  verrouiller le téléphone ou quitter LensLink met donc fin à une diffusion de la
+  caméra. C’est pour cela que le <a href="/docs/remote-start/">démarrage à
+  distance</a> existe. Seule exception : un iPad qui prend en charge l’accès à la
+  caméra en multitâche, où LensLink continue de diffuser à côté d’une autre app
+  en Split View, en Slide Over ou avec Stage Manager. Une <em>diffusion</em> de
+  l’écran est encore un cas à part : elle continue d’une app à l’autre.
+</p>
+
+<h2>Puis-je enregistrer en Apple Log ou en HDR ?</h2>
+<p>
+  Vous pouvez diffuser les deux sur du matériel compatible et enregistrer le
+  résultat comme n’importe quelle autre source. Apple Log nécessite un iPhone Pro
+  sous iOS 17+ et une LUT dans OBS ; le HDR, c’est du HLG en HEVC. Les deux sont
+  en bêta et désactivés par défaut :
+  <a href="/docs/camera/#color-hdr-and-apple-log">Couleur</a>.
+</p>
+
+<h2>En quoi est-ce différent d’une carte d’acquisition avec un adaptateur HDMI ?</h2>
+<p>
+  Une carte d’acquisition fournit une image propre sans aucune app, pour le prix
+  d’un adaptateur, d’un câble, d’une carte et de quelques centaines de dollars.
+  LensLink ne coûte rien, ajoute des commandes de caméra que vous pilotez depuis
+  l’ordinateur, et mesure sa propre latence pour que votre micro puisse être
+  aligné automatiquement. En USB, le délai est comparable.
+</p>
+
+<h2>Et la Caméra de continuité intégrée à macOS ?</h2>
+<p>
+  La Caméra de continuité est excellente et ne demande aucune installation, mais
+  elle est réservée à macOS et vous donne ce qu’Apple décide de vous donner.
+  LensLink fonctionne aussi sous Windows et Linux, expose les commandes de la
+  caméra, vous laisse choisir le codec et le format, et assure la
+  synchronisation labiale automatique.
+</p>
+
+<h2>Puis-je piloter la caméra sans toucher au téléphone ?</h2>
+<p>
+  Oui : avec le <a href="/docs/web-panel/">panneau de contrôle web</a> sur
+  <code>localhost:9980</code>, et la même API HTTP qui le sous-tend, pour les
+  contrôleurs de type Stream Deck et les scripts.
+</p>
+
+<h2>Comment signaler un bug ou demander une fonctionnalité ?</h2>
+<p>
+  Ouvrez un ticket sur <a href="{{REPO}}/issues">GitHub</a>. Pour un bug, joignez
+  le journal d’OBS et <strong>Options → Diagnostic de la caméra</strong> :
+  <a href="/docs/troubleshooting/#nothing-here-matches">ce qu’il faut inclure</a>.
+</p>
+
+<h2>Puis-je contribuer ?</h2>
+<p>
+  Oui : il y a des <a href="{{REPO}}/blob/main/CONTRIBUTING.md">règles de contribution</a>,
+  un guide de l’architecture, un protocole réseau documenté et une feuille de route.
+</p>
