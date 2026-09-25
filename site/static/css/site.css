@@ -118,6 +118,37 @@ kbd {
 	.menu { display: block; }
 }
 
+.vh {
+	position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+	overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.langpick { position: relative; flex: none; margin-left: -12px; }
+.langpick summary {
+	list-style: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+	color: var(--txt2); font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+	padding: 8px 10px; border-radius: 10px;
+}
+.langpick summary::-webkit-details-marker { display: none; }
+.langpick summary:hover, .langpick[open] summary { color: var(--txt); background: rgba(255, 255, 255, 0.06); }
+.langpick .globe { width: 16px; height: 16px; flex: none; }
+.langpick ul {
+	position: absolute; right: 0; top: calc(100% + 8px); z-index: 45;
+	min-width: 208px; margin: 0; padding: 6px; list-style: none;
+	background: var(--bg-raised); border: 1px solid var(--hair); border-radius: var(--r-chip);
+	box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.9);
+}
+.langpick li a {
+	display: block; padding: 7px 12px; border-radius: 8px;
+	color: var(--txt2); font-size: 14.5px;
+}
+.langpick li a:hover { color: var(--txt); background: rgba(255, 255, 255, 0.06); text-decoration: none; }
+.langpick li a[aria-current] { color: var(--txt); background: rgba(61, 123, 255, 0.10); }
+
+@media (max-width: 900px) {
+	.langpick { display: none; }
+}
+
 /* ------------------------------------------------------------------ hero */
 
 /* The hero is a <section>, but it owns its vertical rhythm through
@@ -539,6 +570,38 @@ h2:hover .anchor, h3:hover .anchor, .anchor:focus { opacity: 1; text-decoration:
 	.foot .wrap { grid-template-columns: 1fr; gap: 32px; }
 	.foot-cols { grid-template-columns: repeat(2, 1fr); }
 }
+
+.langs { grid-column: 1 / -1; flex-basis: 100%; display: flex; align-items: flex-start; gap: 10px; }
+.foot .foot-legal { row-gap: 20px; }
+.langs .globe { width: 16px; height: 16px; flex: none; margin-top: 6px; color: var(--txt3); }
+.langs ul { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.langs a {
+	display: inline-block; color: var(--txt2); font-size: 13.5px; line-height: 1.5;
+	padding: 3px 10px; border: 1px solid var(--hair); border-radius: 999px;
+}
+.langs a:hover { color: var(--txt); border-color: rgba(255, 255, 255, 0.2); text-decoration: none; }
+.langs a[aria-current] { color: var(--txt); border-color: var(--accent); }
+
+.l10n-note {
+	margin: 0 0 28px; padding: 10px 16px; color: var(--txt2); font-size: 14.5px;
+	border-left: 3px solid var(--accent); background: rgba(61, 123, 255, 0.06);
+	border-radius: 0 var(--r-chip) var(--r-chip) 0;
+}
+main > .wrap > .l10n-note { margin: 24px 0 0; }
+
+.langbar {
+	position: fixed; z-index: 50; right: 16px; bottom: 16px; max-width: calc(100% - 32px);
+	display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px;
+	background: var(--bg-raised); border: 1px solid var(--hair); border-radius: 999px;
+	font-size: 14.5px; box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.9);
+}
+.langbar a { color: var(--txt); font-weight: 600; min-width: 0; }
+.langbar button {
+	flex: none; width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer;
+	background: rgba(255, 255, 255, 0.09); color: var(--txt2);
+	font: inherit; font-size: 18px; line-height: 1;
+}
+.langbar button:hover { color: var(--txt); background: rgba(255, 255, 255, 0.14); }
 
 /* 404 */
 .notfound { padding: 120px 0; text-align: center; }

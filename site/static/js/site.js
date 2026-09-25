@@ -3,6 +3,14 @@
 (function () {
 	"use strict";
 
+	var strings = {};
+	try {
+		strings = JSON.parse(document.getElementById("i18n").textContent) || {};
+	} catch (e) { strings = {}; }
+	function t(key, fallback) {
+		return typeof strings[key] === "string" && strings[key] ? strings[key] : fallback;
+	}
+
 	var menu = document.querySelector(".menu");
 	var drop = document.getElementById("sitenav");
 	if (menu && drop) {
@@ -21,13 +29,74 @@
 		toggle.className = "sidetoggle";
 		toggle.type = "button";
 		toggle.setAttribute("aria-expanded", "false");
-		toggle.textContent = "All documentation pages";
+		toggle.textContent = t("docs.all_pages", "All documentation pages");
 		side.classList.add("collapsed");
 		side.insertBefore(toggle, side.firstChild);
 		toggle.addEventListener("click", function () {
 			var open = !side.classList.toggle("collapsed");
 			toggle.setAttribute("aria-expanded", open ? "true" : "false");
 		});
+	}
+
+	var pick = document.querySelector(".langpick");
+	if (pick) {
+		document.addEventListener("click", function (e) {
+			if (pick.open && !pick.contains(e.target)) pick.open = false;
+		});
+		pick.addEventListener("keydown", function (e) {
+			if (e.key === "Escape" && pick.open) {
+				pick.open = false;
+				pick.querySelector("summary").focus();
+			}
+		});
+	}
+
+	var DISMISSED = "lenslink.lang-suggest";
+	function dismissed() {
+		try { return window.localStorage.getItem(DISMISSED) === "1"; } catch (e) { return false; }
+	}
+	function suggestion() {
+		var root = (document.documentElement.lang || "").toLowerCase();
+		if (root !== "en" && root.indexOf("en-") !== 0) return null;
+		var offers = [].slice.call(document.querySelectorAll(".langs a[data-suggest]"));
+		if (!offers.length || dismissed()) return null;
+		var prefs = navigator.languages && navigator.languages.length ?
+			navigator.languages : [navigator.language || ""];
+		for (var i = 0; i < prefs.length; i++) {
+			var want = String(prefs[i] || "").toLowerCase();
+			var primary = want.split("-")[0];
+			if (!primary || primary === "en") return null;
+			if (primary === "zh" && /^zh-(tw|hk|mo)\b|hant/.test(want)) continue;
+			var loose = null;
+			for (var j = 0; j < offers.length; j++) {
+				var code = (offers[j].getAttribute("hreflang") || "").toLowerCase();
+				if (code === want) return offers[j];
+				if (!loose && code.split("-")[0] === primary) loose = offers[j];
+			}
+			if (loose) return loose;
+		}
+		return null;
+	}
+	var offer = suggestion();
+	if (offer) {
+		var bar = document.createElement("div");
+		bar.className = "langbar";
+		bar.lang = offer.getAttribute("lang") || "";
+		var go = document.createElement("a");
+		go.href = offer.getAttribute("href");
+		go.hreflang = offer.getAttribute("hreflang") || "";
+		go.textContent = offer.getAttribute("data-suggest");
+		var close = document.createElement("button");
+		close.type = "button";
+		close.setAttribute("aria-label", offer.getAttribute("data-dismiss") || "Dismiss");
+		close.textContent = "\u00d7";
+		close.addEventListener("click", function () {
+			try { window.localStorage.setItem(DISMISSED, "1"); } catch (e) {}
+			bar.parentNode.removeChild(bar);
+		});
+		bar.appendChild(go);
+		bar.appendChild(close);
+		document.body.appendChild(bar);
 	}
 
 	var links = [].slice.call(document.querySelectorAll(".toc a"));
