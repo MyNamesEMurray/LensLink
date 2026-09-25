@@ -158,7 +158,8 @@ when one is missing.
 - Chinese puts a space between Chinese and Latin text or numbers
   ("OBS 已连接"); Japanese does not ("OBSに接続済み").
 - Never translate product and technical names: LensLink, LensLink
-  Camera, LensLink Screen, OBS, OBS Studio, iPhone, iPad, Wi-Fi, USB,
+  Camera, LensLink Screen, OBS, OBS Studio, iPhone, iPad, Wi-Fi (German
+  says WLAN, as iOS and OBS do there), USB,
   HEVC, H.264, HDR, HLG, Apple Log, ISO, AE, AWB, AF, fps, ms, Mb/s,
   resolution names (1080p, 4K).
 - Name things on other people's screens exactly as they appear there in
@@ -255,6 +256,10 @@ and everywhere at once rather than drifting.
 | Connection | Verbindung | Conexión | Connexion | 接続 | Conexão | 连接 |
 | USB cable | USB-Kabel | Cable USB | Câble USB | USBケーブル | Cabo USB | USB 线 |
 | source (OBS) | Quelle | fuente | source | ソース | fonte | 来源 |
+| Sources (OBS panel, in menu paths) | Quellen | Fuentes | Sources | ソース | Fontes | 源 |
+| View menu (OBS) | Ansicht | Vista | Affichage | 表示 | Visualizar | 视图 |
+| Wi-Fi | WLAN | Wi-Fi | Wi-Fi | Wi-Fi | Wi-Fi | Wi-Fi |
+| tap (touch) | tippen | tocar | toucher | タップ | tocar | 轻点 |
 | Properties (OBS) | Eigenschaften | Propiedades | Propriétés | プロパティ | Propriedades | 属性 |
 | Tools menu (OBS) | Werkzeuge | Herramientas | Outils | ツール | Ferramentas | 工具 |
 | filter (OBS) | Filter | filtro | filtre | フィルタ | filtro | 滤镜 |
