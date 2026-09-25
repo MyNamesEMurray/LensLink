@@ -1,0 +1,104 @@
+title: Audio et synchronisation labiale
+description: Utilisez le téléphone comme micro sans fil, ou envoyez son micro comme référence de synchronisation pour que le plugin aligne automatiquement votre propre micro sur la vidéo.
+source: 257918f25fc6
+---
+<h1>Audio et synchronisation labiale</h1>
+<p class="lede">
+  Le micro du téléphone peut remplir deux rôles, mais un seul à la fois : être
+  <strong>l’audio que vous entendez</strong>, ou une <strong>référence de
+  synchronisation</strong> qui aligne le micro que vous utilisez réellement.
+  Activer l’un désactive l’autre.
+</p>
+
+<h2>Le téléphone comme micro</h2>
+<p>
+  <strong>Options → Envoyer le micro du téléphone à OBS</strong> fait transporter
+  le micro du téléphone par la source caméra : un micro sans fil, en somme.
+  Désactivé par défaut, car la plupart des streamers utilisent leur propre micro
+  et l’alignent plutôt.
+</p>
+<p>Une ligne <strong>Microphone</strong> sous cette option, sur l’écran de configuration de l’app, et une ligne micro dans le panneau web permettent de choisir lequel :</p>
+<table>
+  <thead><tr><th>Choix</th><th>Résultat</th></tr></thead>
+  <tbody>
+    <tr><td>Auto</td><td>Le routage par défaut d’iOS : normalement le micro du <em>bas</em>, quelle que soit la caméra active, car iOS ne lie pas les deux. Un casque ou un micro Bluetooth prend le relais automatiquement.</td></tr>
+    <tr><td>Avant</td><td>Le réseau de micros avant, orienté à peu près vers ce que filme la caméra avant.</td></tr>
+    <tr><td>Arrière</td><td>Le micro arrière, orienté vers ce que voit la caméra arrière.</td></tr>
+  </tbody>
+</table>
+<p>Le changement s’applique en direct.</p>
+
+<h2>Synchronisation labiale automatique</h2>
+<p>
+  La vidéo arrive toujours un peu en retard, si bien qu’un micro séparé est en
+  avance sur elle : l’effet film doublé. La solution habituelle consiste à
+  deviner un délai dans OBS puis à l’ajuster à tâtons. LensLink le mesure.
+</p>
+
+<h3>Mise en place</h3>
+<ol class="walk">
+  <li>
+    <strong>Dans les propriétés de la source</strong>
+    <p>Choisissez votre vrai micro sous <strong>Source audio de synchro labiale</strong>, puis activez <strong>Retarder automatiquement cette source audio…</strong> et <strong>Calibrage auto</strong>.</p>
+  </li>
+  <li>
+    <strong>Dans les Options de l’app</strong>
+    <p>Activez <strong>Référence de synchro labiale auto</strong>. Le micro du téléphone n’est plus qu’un signal de synchronisation : jamais lu, jamais enregistré, jamais dans votre diffusion.</p>
+  </li>
+  <li>
+    <strong>Parlez pendant une quinzaine de secondes</strong>
+    <p>Le plugin compare les deux flux, mesure le décalage et le corrige. L’écran de direct et le panneau web indiquent l’étape : <strong>Mesure de la synchro</strong>, puis <strong>Synchro verrouillée</strong>.</p>
+  </li>
+</ol>
+
+<h3>Une fois verrouillée</h3>
+<p>
+  Le délai propre de votre micro étant désormais connu, la correction suit
+  d’elle-même la latence de la caméra (y compris pendant les silences et juste
+  après une reconnexion) et se recalibre si vous changez de matériel audio en
+  cours de diffusion.
+</p>
+<p>
+  Pour forcer une nouvelle mesure, touchez <strong>Recalibrer</strong> dans la
+  pastille de synchro, sur le téléphone ou dans le panneau web. Le bouton n’est
+  proposé qu’une fois la synchro verrouillée, seul état où il a un effet.
+</p>
+<table>
+  <thead><tr><th>Affichage</th><th>Signification</th></tr></thead>
+  <tbody>
+    <tr><td>Rien d’affiché</td><td>Le calibrage auto ne tourne pas.</td></tr>
+    <tr><td>Mesure de la synchro</td><td>Continuez à parler.</td></tr>
+    <tr><td>Synchro verrouillée</td><td>Décalage appliqué et suivi.</td></tr>
+    <tr><td>Recalibrage</td><td>Nouvelle mesure après un changement. Ce n’est pas une erreur.</td></tr>
+  </tbody>
+</table>
+
+<h3>Quand c’est votre micro qui est lent</h3>
+<p>
+  Certaines interfaces USB ajoutent tant de latence que le micro arrive
+  <em>après</em> la vidéo, et le retarder davantage ne sert à rien.
+  <strong>Retard vidéo auto pour micros lents</strong> retarde alors la vidéo.
+</p>
+
+<h3>Une correction fixe, sans calibrage auto</h3>
+<p>
+  Avec <strong>Calibrage auto</strong> désactivé, la case de retard seule décale
+  votre micro de la latence mesurée de la caméra. Un délai connu du périphérique
+  se saisit dans <strong>Latence propre du périphérique audio</strong> et est
+  soustrait.
+</p>
+
+<div class="callout">
+  <p><strong>Pourquoi ne pas simplement saisir une valeur dans OBS ?</strong> La
+  latence de la caméra n’est pas constante : elle varie avec la résolution, le
+  codec, la liaison et le réseau. Un décalage mesuré résiste au passage de
+  1080p60 en Wi-Fi à 4K30 en USB. Un décalage saisi à la main, non.</p>
+</div>
+
+<h2>Audio de la recopie de l’écran</h2>
+<p>
+  La source <strong>LensLink Screen</strong> transporte le véritable audio des
+  apps et du système, audible, et non une référence de synchronisation. iOS coupe
+  les apps protégées par DRM pendant une diffusion, et votre micro n’est pas
+  inclus : <a href="/docs/screen-mirroring/#audio">recopie de l’écran</a>.
+</p>

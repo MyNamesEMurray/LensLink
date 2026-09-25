@@ -1,0 +1,108 @@
+title: Démarrage à distance
+description: Démarrez et arrêtez la caméra du téléphone depuis OBS, un bouton dans le navigateur, Siri, un raccourci ou une URL : un téléphone fixé sur son support n’a jamais besoin d’être décroché.
+source: 3b19eded1e63
+---
+<h1>Démarrage à distance</h1>
+<p class="lede">
+  Un téléphone fixé derrière un écran ne devrait pas avoir à être décroché pour
+  qu’on touche Démarrer. Tant que l’app est ouverte et inactive, OBS peut
+  démarrer la caméra lui-même.
+</p>
+
+<h2>Pourquoi l’app doit être ouverte</h2>
+<p>
+  iOS ne fait tourner la caméra et l’écoute réseau de LensLink que lorsque l’app
+  est à l’écran. Tout ce qui suit en découle : l’app se signale en
+  <strong>veille</strong> lorsqu’elle est ouverte et inactive, et OBS prend le
+  relais.
+</p>
+<p>
+  C’est aussi pour cela que les chemins Siri et Raccourcis ouvrent d’abord l’app,
+  et que le téléphone retarde le verrouillage automatique tant que la veille est
+  armée : le verrouillage suspendrait l’écoute. L’écran de configuration
+  s’assombrit au bout d’une minute, en ambre plutôt qu’en vert : armé, pas en
+  direct.
+</p>
+<div class="callout">
+  <p>Le démarrage à distance est activé par défaut. Désactivez-le avec
+  <strong>Démarrage à distance depuis OBS</strong> dans les
+  <strong>Options</strong> de l’app.</p>
+</div>
+
+<h2>Quatre façons de démarrer</h2>
+
+<h3>Automatiquement, quand la source se connecte</h3>
+<p>
+  <strong>Démarrer automatiquement la caméra du téléphone quand il est prêt</strong>
+  est activé par défaut : ouvrez l’app et la vidéo apparaît, sans autre action.
+  Pas de ping-pong non plus : OBS ne démarre automatiquement que lorsque l’app
+  vient de devenir joignable, pas après que vous avez appuyé sur Arrêter.
+</p>
+
+<h3>Depuis OBS</h3>
+<p>
+  <strong>Démarrer la caméra sur le téléphone</strong> et <strong>Arrêter la
+  caméra sur le téléphone</strong> dans les propriétés de la source, dès que
+  l’app est connectée.
+</p>
+
+<h3>Depuis le panneau web</h3>
+<p>
+  <a href="/docs/web-panel/">Le panneau</a>, à l’adresse
+  <code>http://localhost:9980</code>, affiche <strong>Démarrer la caméra</strong>
+  quand l’app est inactive et un bouton rouge <strong>Arrêter la caméra</strong>
+  pendant le direct, chacun accompagné d’un interrupteur
+  <strong>Démarrage auto</strong>.
+</p>
+
+<h3>Depuis Siri, Raccourcis ou une URL</h3>
+<ul>
+  <li><strong>Siri (iOS 16+) :</strong> <em>« Dis Siri, lance le streaming avec LensLink. »</em></li>
+  <li><strong>Raccourcis :</strong> les actions <strong>Démarrer le flux caméra</strong> et <strong>Arrêter le flux caméra</strong>, utiles dans les automatisations, par exemple pour démarrer quand le téléphone se branche sur un chargeur précis.</li>
+  <li><strong>Schéma d’URL :</strong> <code>lenslink://start</code> et <code>lenslink://stop</code>. La voie prévue pour iOS 15, et elle fonctionne partout.</li>
+</ul>
+<div class="callout warn">
+  <p><strong>Les phrases Siri et l’installation manuelle ne font pas bon ménage.</strong>
+  La re-signature réécrit l’identifiant de bundle, ce qui rend orphelines les
+  données de phrases compilées : Siri refuse, alors que la même action fonctionne
+  depuis Raccourcis. Utilisez la version App Store, ou
+  <code>lenslink://start</code>. Vérifiez aussi que l’app a été lancée au moins
+  une fois et que « Utiliser avec Siri » est activé dans <strong>Réglages → Siri
+  et recherche → LensLink</strong>.</p>
+</div>
+
+<h2>Changer de scène la démarre et l’arrête aussi</h2>
+<p>
+  Avec <strong>Se déconnecter quand cette source n’est affichée nulle part</strong>,
+  masquer la source arrête la caméra du téléphone et l’afficher la redémarre.
+  Combiné au démarrage auto, le téléphone n’encode que lorsque la source est
+  visible quelque part.
+</p>
+
+<h2>L’automatiser par script</h2>
+<p>Le point d’accès du panneau est une simple requête HTTP POST :</p>
+<pre><code>curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"start_stream"}'
+
+curl -X POST http://localhost:9980/api/control \
+     -d '{"cmd":"stop_stream"}'</code></pre>
+<p>
+  Avec plusieurs téléphones, ajoutez l’identifiant de la source, obtenu via
+  <code>/api/sources</code>, sous la forme <code>?src=</code>. API complète :
+  <a href="/docs/web-panel/#the-http-api">panneau web</a>.
+</p>
+
+<h2>Ce que vous voyez sur le téléphone</h2>
+<table>
+  <tbody>
+    <tr><td>App ouverte, OBS non connecté</td><td>Point gris, « Non connecté ».</td></tr>
+    <tr><td>App ouverte, OBS connecté, caméra inactive</td><td>Point ambre, « OBS connecté – prêt ». Veille : démarrage à distance armé.</td></tr>
+    <tr><td>En veille, sans interaction pendant une minute</td><td>L’écran s’assombrit et affiche une icône de réveil ambre. Il suffit de toucher l’écran pour le réveiller ; l’écoute ne s’arrête jamais.</td></tr>
+    <tr><td>Démarré</td><td>Écran de direct, point vert, « En direct ».</td></tr>
+  </tbody>
+</table>
+<p>
+  L’assombrissement en veille n’a lieu que si <strong>Vue au repos</strong> est
+  réglée sur <strong>Assombrir l’écran</strong>, et jamais pendant que vous
+  touchez l’écran ou qu’un panneau est ouvert.
+</p>

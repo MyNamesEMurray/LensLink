@@ -1,0 +1,82 @@
+title: Recopie de l’écran
+description: Recopiez tout l’écran de votre iPhone ou iPad dans OBS avec son audio, grâce à la source LensLink Screen et à la diffusion intégrée d’iOS.
+source: 241eae9c8fb9
+---
+<h1>Recopie de l’écran</h1>
+<p class="lede">
+  <strong>LensLink Screen</strong> reçoit une diffusion d’écran iOS (l’écran
+  entier avec son audio, depuis n’importe quelle app), encodée en HEVC.
+</p>
+
+<h2>Mise en place</h2>
+<ol class="walk">
+  <li>
+    <strong>Ajoutez la source dans OBS</strong>
+    <p><strong>Sources → + → LensLink Screen</strong>, puis dirigez-la vers le téléphone exactement comme une source caméra.</p>
+  </li>
+  <li>
+    <strong>Lancez la diffusion sur le téléphone</strong>
+    <p><strong>Recopier l’écran</strong>, choisissez <strong>LensLink Screen</strong>, touchez <strong>Commencer la diffusion</strong>. iOS impose ici son propre sélecteur.</p>
+  </li>
+  <li>
+    <strong>Quittez l’app</strong>
+    <p>Contrairement à la caméra, une diffusion continue quand vous passez d’une app à l’autre : c’est tout son intérêt.</p>
+  </li>
+</ol>
+
+<div class="callout">
+  <p>Chaque type de source n’accepte que son propre flux. En cas d’erreur, le
+  champ État indique vers quelle source basculer, au lieu de ne rien afficher.</p>
+</div>
+
+<h2>Audio</h2>
+<ul>
+  <li><strong>L’audio des apps et du système passe</strong> : son des jeux, vidéos du navigateur, effets sonores des apps.</li>
+  <li><strong>iOS coupe l’audio protégé par DRM</strong> pendant toute diffusion (Apple Music, Spotify, Netflix). Cela vaut pour toutes les extensions de diffusion de la plateforme ; LensLink ne peut pas y échapper.</li>
+  <li><strong>Votre micro n’est pas transmis.</strong> Captez votre voix dans OBS. (La source caméra peut transporter le micro du téléphone ; celle-ci ne le fait délibérément pas.)</li>
+</ul>
+<p>
+  Pour l’<em>entendre</em> et pas seulement l’enregistrer, réglez le
+  <strong>Monitoring audio</strong> de la source sur <strong>Monitoring et
+  sortie</strong> dans les Propriétés audio avancées d’OBS.
+</p>
+
+<h2>Fixer la taille de la source</h2>
+<p>
+  Une recopie annonce la résolution qu’iOS diffuse, et celle-ci change selon les
+  apps et l’orientation : la source peut donc se redimensionner en cours de
+  diffusion et déranger votre mise en page. Fixez-la dans un cadre :
+</p>
+<ol>
+  <li>Clic droit sur la source → <strong>Transformer</strong> → <strong>Éditer la transformation…</strong></li>
+  <li>Réglez <strong>Type de Cadre</strong> sur <strong>Mettre à l’échelle à partir des dimensions intérieures</strong> (« Ajuster »).</li>
+  <li>Donnez au cadre la taille que la recopie doit occuper.</li>
+</ol>
+<figure>
+  <img src="/img/screen-fit-transform.png" alt="Boîte de dialogue Éditer la transformation d’OBS, avec Type de Cadre réglé sur Mettre à l’échelle à partir des dimensions intérieures" width="544" loading="lazy">
+  <figcaption>OBS adapte alors chaque taille reçue à votre cadre au lieu de redimensionner votre mise en page.</figcaption>
+</figure>
+
+<h2>Ce que la source Screen n’a pas</h2>
+<p>
+  Ni commandes de caméra ni panneau web : il n’y a rien à zoomer ni à mettre au
+  point. Ses propriétés se limitent à la connexion, au décodage et au diagnostic.
+</p>
+
+<h2>Partager un téléphone entre deux sources</h2>
+<p>
+  Un téléphone n’alimente qu’une source à la fois. Activez <strong>Se déconnecter
+  quand cette source n’est affichée nulle part</strong> sur les deux : une source
+  masquée libère le téléphone, et changer de scène le fait passer d’une source à
+  l’autre.
+</p>
+
+<h2>Quand la diffusion ne se connecte pas</h2>
+<p>
+  L’extension de diffusion est un processus séparé, ses défaillances sont donc
+  difficiles à voir. Deux points à vérifier :
+</p>
+<ul>
+  <li>Sur une version <strong>installée manuellement (sideload)</strong>, la re-signature peut supprimer ou casser l’extension : c’est une conséquence connue de la réécriture des identifiants de bundle. Sur l’écran d’accueil de l’app, la section Recopie de l’écran signale quand l’extension manque dans l’app installée. Les versions TestFlight et App Store ne sont pas concernées.</li>
+  <li>Si la diffusion démarre sur le téléphone mais qu’OBS n’affiche rien, c’est la connexion qui est en cause : voir <a href="/docs/connect/#reading-the-status-field">Lire le champ État</a>.</li>
+</ul>
