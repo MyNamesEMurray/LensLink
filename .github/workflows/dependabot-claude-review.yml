@@ -21,12 +21,13 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     # Dependabot here only ever bumps GitHub Actions (.github/dependabot.yml
-    # watches nothing else), so its PRs always touch workflow files. The
-    # filter stops this workflow from creating a skipped run on every other
-    # PR event in the repo. If dependabot.yml ever grows more ecosystems,
-    # widen or drop this filter to match.
+    # watches nothing else), so its PRs always touch workflow or composite
+    # action files. The filter stops this workflow from creating a skipped
+    # run on every other PR event in the repo. If dependabot.yml ever grows
+    # more ecosystems, widen or drop this filter to match.
     paths:
       - ".github/workflows/**"
+      - ".github/actions/**"
 
 permissions:
   contents: write # gh pr merge --auto
@@ -56,7 +57,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@756cc22e19660d20e8cc9496b4f242475a7f7790 # v1.0.235
         if: steps.guard.outputs.run == 'true'
         env:
           # The action wires GITHUB_TOKEN into its *own* API calls, but a
@@ -83,7 +84,7 @@ jobs:
             You are reviewing Dependabot PR #${{ github.event.pull_request.number }} in ${{ github.repository }} — a dependency version bump.
 
             1. Read the diff (`gh pr diff ${{ github.event.pull_request.number }}`) and the release notes Dependabot quotes in the PR body (`gh pr view ${{ github.event.pull_request.number }}`).
-            2. This repo's Dependabot only bumps GitHub Actions. For each bump, judge whether it is routine: patch/minor releases, or major releases whose notes show no breaking changes for the inputs/behaviors our workflows in .github/workflows/ actually use (the checkout is this PR's tree — read the workflows to confirm usage).
+            2. This repo's Dependabot only bumps GitHub Actions. For each bump, judge whether it is routine: patch/minor releases, or major releases whose notes show no breaking changes for the inputs/behaviors our workflows in .github/workflows/ and composite actions in .github/actions/ actually use (the checkout is this PR's tree — read them to confirm usage).
             3. If EVERY bump is routine:
                gh pr review ${{ github.event.pull_request.number }} --approve --body "<one short paragraph: what was bumped and what you checked>"
                gh pr merge ${{ github.event.pull_request.number }} --auto --merge

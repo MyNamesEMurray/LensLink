@@ -90,26 +90,45 @@ H.264/HEVC Annex B access units; timestamps in nanoseconds). Full spec in
 
 ## Continuous integration
 
-Pull requests run [`.github/workflows/build.yml`](../.github/workflows/build.yml):
+Pull requests run [`.github/workflows/build.yml`](../.github/workflows/build.yml),
+which builds only the areas the PR touches:
 
-- **OBS plugin** — built on Ubuntu and Windows against libobs + FFmpeg with
-  `-Wall -Wextra -Werror`.
-- **iOS app** — the Xcode project is generated with XcodeGen and compiled
-  for the iOS Simulator on a macOS runner (validates the Swift; installable
-  device builds must be signed).
-- **Localization** — `tools/check-l10n.py` checks the app, plugin, web
+- **OBS plugin**: built on Ubuntu, Windows and macOS exactly as a release
+  builds it (static FFmpeg, installers included), plus a Linux build
+  against the distro's FFmpeg with `-Wall -Wextra -Werror` (macOS uses
+  the same flags).
+- **iOS app**: the Xcode project is generated with XcodeGen and built as
+  an unsigned device IPA twice: with the runner image's default Xcode
+  (the oldest one we support) and with Xcode 27, which ships to
+  TestFlight. PRs that change the app icon also get rendered previews.
+- **Website**: `site/build.py` plus `site/check-links.py`.
+- **Localization**: `tools/check-l10n.py` checks the app, plugin, web
   panel and website strings against their English sources (see
   [`LOCALIZATION.md`](LOCALIZATION.md)).
+- **Workflow files lint**: `actionlint` over the workflows whenever a
+  workflow or composite action changes.
 
-PRs merge automatically once the required Build checks pass (branch
-protection on `main`).
+The build steps themselves live in composite actions under
+[`.github/actions/`](../.github/actions/) (`plugin-linux`,
+`plugin-windows`, `plugin-macos`, `unsigned-ipa`, plus `libobs`,
+`static-ffmpeg` and `xcode-project` beneath them), shared by `build.yml`
+and `release.yml`: a PR builds what a release ships, and a build change
+is made once. The libobs and static FFmpeg builds are cached, but only
+runs on `main` (the releases) save the cache; pull requests restore it.
+That keeps per-PR copies from filling the repository's cache quota and
+evicting the ones every PR needs. The downloaded FFmpeg source and OBS
+dependency bundles are checked against pinned checksums, so a new FFmpeg
+version or `deps-tag` needs its checksums added next to the pin.
+
+A maintainer enables auto-merge on a PR; it then merges once the
+required Build checks pass (branch protection on `main`).
 
 ## Releases
 
 Every merge to `main` that touches `obs-plugin/`, `ios-app/`, or
 `installer/` automatically tags a version and publishes a GitHub Release
-with ready-to-install builds (Windows plugin zip, Linux plugin tarball,
-unsigned IPA), via
+with ready-to-install builds (Windows and macOS plugin installers and
+zips, Linux plugin tarball, unsigned IPA), via
 [`.github/workflows/auto-release.yml`](../.github/workflows/auto-release.yml).
 The TestFlight upload piggybacks on that release, but only when the merge
 touched `ios-app/`.
@@ -213,7 +232,8 @@ verifies the built module has no `avcodec`/`avutil` runtime dependency
 before packaging (`readelf` / `dumpbin /dependents` / `otool -L`).
 Local/source builds are unaffected — they link the system FFmpeg via
 pkg-config, which always matches the machine they run on. The
-`OBS_REF`/`DEPS_TAG` pins in the workflows now only choose the libobs
+`obs-ref`/`deps-tag` pins in
+[`.github/actions/libobs`](../.github/actions/libobs/action.yml) now only choose the libobs
 and Qt6 the plugin builds against; they no longer have to track the
 FFmpeg inside whatever OBS release users run.
 

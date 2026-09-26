@@ -1,0 +1,125 @@
+name: OBS plugin (macOS)
+description: >-
+  Builds the universal lenslink.plugin against libobs with the static
+  decode-only FFmpeg, verifies it, and packages
+  lenslink-macos-universal.zip and LensLink-installer-macos-universal.pkg
+  in the workspace root. Shared by build.yml and release.yml, so a pull
+  request builds exactly what a release ships.
+
+inputs:
+  version:
+    description: >-
+      Release tag (v1.8.2) or version; a leading v is dropped. Empty for
+      pull requests: the binary then reports "dev" and the bundle and
+      installer 0.0.0.
+    required: false
+    default: ""
+  strict:
+    description: Compile the C sources with -Wall -Wextra -Werror.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/libobs
+
+    - name: Build static FFmpeg (H.264/HEVC decode only)
+      uses: ./.github/actions/static-ffmpeg
+
+    # The grep guard: the status-bar/dock UI degrades *silently* when Qt6
+    # or obs-frontend-api.h is missing (that's how releases shipped
+    # without it once), so the build must fail instead.
+    # DISABLE_FIND_PACKAGE_PkgConfig: the runner ships a pkg-config,
+    # and CMake feeds it CMAKE_PREFIX_PATH (obs-deps) — without this
+    # the build could silently resolve OBS's shared FFmpeg instead of
+    # the static one. The verify step backstops it.
+    - name: Build plugin
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        STRICT: ${{ inputs.strict }}
+      run: |
+        set -o pipefail
+        version="${VERSION#v}"
+        extra=()
+        if [ -n "$version" ]; then
+          extra+=("-DLENSLINK_VERSION=$version")
+        fi
+        if [ "$STRICT" = true ]; then
+          extra+=("-DCMAKE_C_FLAGS=-Wall -Wextra -Werror")
+        fi
+        cmake -S obs-plugin -B plugin-build \
+          -DCMAKE_BUILD_TYPE=Release \
+          "${extra[@]}" \
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+          -DCMAKE_PREFIX_PATH="$PWD/obs-deps" \
+          -DOBS_FRONTEND_API_HINT="$PWD/obs-studio/frontend/api;$PWD/obs-studio/UI/obs-frontend-api" \
+          -DLIBOBS_INCLUDE_DIR="$PWD/obs-studio/libobs;$PWD/libobs-sdk/config" \
+          -DLIBOBS_LIBRARY="$PWD/libobs-sdk/libobs/Release/libobs.framework" \
+          -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON \
+          -DFFMPEG_INCLUDE_DIR="$PWD/ffmpeg-static/include" \
+          -DAVCODEC_LIBRARY="$PWD/ffmpeg-static/lib/libavcodec.a" \
+          -DAVUTIL_LIBRARY="$PWD/ffmpeg-static/lib/libavutil.a" \
+          | tee configure.log
+        grep -q "frontend UI enabled" configure.log
+        cmake --build plugin-build
+
+    # A lenslink.so referencing libavcodec.NN.dylib only loads while
+    # OBS ships that exact FFmpeg major — the next OBS update breaks
+    # it (the macOS twin of Windows issues #91, #93). The libobs check
+    # keeps the negative check honest. Plain `if grep`, not `! grep`:
+    # a `!` line that isn't last is non-fatal under bash -e.
+    - name: Verify FFmpeg linked statically
+      shell: bash
+      run: |
+        otool -L plugin-build/lenslink.so | tee deps.log
+        if grep -E "libav(codec|util)" deps.log; then
+          echo "::error::lenslink.so links OBS's shared FFmpeg dylibs"
+          exit 1
+        fi
+        grep -q "libobs" deps.log
+
+    # Ad-hoc signature only: without an Apple Developer ID the bundle
+    # can't be notarized, so users clear the quarantine flag once (the
+    # release notes explain how).
+    - name: Package (extract into ~/Library/Application Support/obs-studio/plugins)
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        version="${VERSION#v}"
+        version="${version:-0.0.0}"
+        mkdir -p stage/lenslink.plugin/Contents/MacOS \
+                 stage/lenslink.plugin/Contents/Resources
+        cp plugin-build/lenslink.so stage/lenslink.plugin/Contents/MacOS/lenslink
+        sed "s/@VERSION@/$version/" installer/macos/Info.plist \
+          > stage/lenslink.plugin/Contents/Info.plist
+        plutil -lint stage/lenslink.plugin/Contents/Info.plist
+        cp -R obs-plugin/data/ stage/lenslink.plugin/Contents/Resources/
+        codesign --force --sign - --deep stage/lenslink.plugin
+        ditto -c -k --keepParent stage/lenslink.plugin lenslink-macos-universal.zip
+
+    # One-click alternative to the zip: pkgbuild makes the component,
+    # productbuild wraps it in a distribution that installs to the
+    # *user's* OBS plugin folder (see installer/macos/distribution.xml
+    # for why that path is mandatory on Apple Silicon).
+    - name: Build installer
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        version="${VERSION#v}"
+        version="${version:-0.0.0}"
+        mkdir -p pkgroot
+        cp -R stage/lenslink.plugin pkgroot/
+        pkgbuild --root pkgroot \
+          --identifier com.lenslink.obs-plugin \
+          --version "$version" \
+          --install-location "/Library/Application Support/obs-studio/plugins" \
+          --component-plist installer/macos/component.plist \
+          lenslink-component.pkg
+        sed "s/@VERSION@/$version/" installer/macos/distribution.xml > distribution.xml
+        productbuild --distribution distribution.xml --package-path . \
+          LensLink-installer-macos-universal.pkg

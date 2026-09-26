@@ -39,14 +39,18 @@ on:
         required: false
         type: string
 
-concurrency:
-  group: testflight
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
   upload:
     name: Build & upload to TestFlight
     runs-on: xcode-27
+    concurrency:
+      group: testflight
+      cancel-in-progress: false
+    outputs:
+      build_number: ${{ steps.buildnum.outputs.build_number }}
     steps:
       - uses: actions/checkout@v7
 
@@ -59,29 +63,9 @@ jobs:
             exit 1
           fi
 
-      # App Store Connect rejects uploads built with older SDKs ("must be
-      # built with the iOS 26 SDK or later"), so pick the release Xcode
-      # 27.0 on the image, never one of its betas.
-      - name: Select Xcode 27
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_27.0*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
-          if [ -z "$XCODE" ]; then
-            XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
-          fi
-          if [ -z "$XCODE" ]; then
-            echo "::error::No release Xcode 27 on this runner image. Installed:"
-            ls /Applications | grep -i xcode || true
-            exit 1
-          fi
-          sudo xcode-select -s "$XCODE"
-          xcodebuild -version
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode project
-        run: xcodegen generate
-        working-directory: ios-app
+      - uses: ./.github/actions/xcode-project
+        with:
+          xcode: "27"
 
       - name: Write App Store Connect API key
         env:
@@ -108,7 +92,6 @@ jobs:
           BUNDLE_ID: com.exaltedpixels.LensLinkCamera
         run: |
           # Homebrew python3 is PEP 668 "externally managed" — venv it.
-          # The "What to Test" step reuses this venv.
           python3 -m venv "$RUNNER_TEMP/asc-venv"
           "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet PyJWT cryptography
           "$RUNNER_TEMP/asc-venv/bin/python" \
@@ -182,6 +165,21 @@ jobs:
             -allowProvisioningUpdates
         working-directory: ios-app
 
+      - name: Clean up API key
+        if: always()
+        run: rm -f ~/private_keys/AuthKey_*.p8
+
+  distribute:
+    name: What to Test & test groups
+    needs: upload
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install PyJWT
+        run: pip install --quiet PyJWT cryptography
+
       # Fills the TestFlight "What to Test" box from the latest GitHub
       # release's "What's Changed" notes, then assigns the build to the
       # beta groups named in the ASC_BETA_GROUPS repository variable
@@ -189,7 +187,6 @@ jobs:
       # the build is already uploaded; worst case the box stays empty
       # and testers are pointed at the build by hand.
       - name: Set "What to Test" and distribute to test groups
-        continue-on-error: true
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -223,12 +220,6 @@ jobs:
           else
             ASSIGN_GROUPS="$STABLE_GROUPS"
           fi
-          # Reuses the venv the build-number step set up.
           ASC_BETA_GROUPS="$ASSIGN_GROUPS" \
-            BUILD_NUMBER="${{ steps.buildnum.outputs.build_number }}" \
-            "$RUNNER_TEMP/asc-venv/bin/python" \
-            .github/scripts/testflight_whats_to_test.py
-
-      - name: Clean up API key
-        if: always()
-        run: rm -f ~/private_keys/AuthKey_*.p8
+            BUILD_NUMBER="${{ needs.upload.outputs.build_number }}" \
+            python3 .github/scripts/testflight_whats_to_test.py

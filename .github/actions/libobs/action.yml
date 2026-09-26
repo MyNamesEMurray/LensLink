@@ -1,0 +1,145 @@
+name: libobs (Windows / macOS)
+description: >-
+  Fetches the obs-studio source and the OBS prebuilt dependency bundle
+  (with Qt6), and builds libobs, cached between runs. Leaves obs-studio/
+  (headers), obs-deps/ (CMAKE_PREFIX_PATH) and libobs-sdk/ (the built
+  library and its generated config headers, laid out as in the libobs
+  build tree) in the workspace root.
+
+inputs:
+  obs-ref:
+    description: >-
+      obs-studio tag the plugin compiles/links against. FFmpeg
+      deliberately does NOT come from OBS: the plugin links its own
+      static decode-only FFmpeg (.github/actions/static-ffmpeg), so an
+      OBS update swapping its bundled FFmpeg can't break plugin loading
+      (issues #91, #93).
+    required: false
+    default: "32.1.2"
+  deps-tag:
+    description: >-
+      obs-deps release (libobs dependencies plus the Qt6 bundle for the
+      status-bar/dock UI). Its SHA-256 checksums are pinned in the
+      download step below.
+    required: false
+    default: "2025-08-23"
+
+runs:
+  using: composite
+  steps:
+    # No submodules here: cache-hit runs only need in-tree headers
+    # (libobs/, deps/w32-pthreads/). The recursive fetch is minutes of
+    # overhead, so it moves into the cache-miss build step below.
+    - name: Checkout obs-studio (for libobs)
+      uses: actions/checkout@v7
+      with:
+        repository: obsproject/obs-studio
+        ref: ${{ inputs.obs-ref }}
+        path: obs-studio
+
+    # Qt6 (same bundle OBS itself builds with): needed only for the
+    # plugin's status-bar/dock UI. The plugin links Qt but resolves
+    # obs-frontend-api symbols at runtime, so libobs alone still
+    # suffices for the rest of the build.
+    - name: Download OBS prebuilt dependencies (for libobs; Qt6)
+      shell: bash
+      env:
+        DEPS_TAG: ${{ inputs.deps-tag }}
+      run: |
+        sums="
+        8de229cff6f1981508c0eb646b35e644633a5855787b9f5d3b90ae2aeb87ffc1  windows-deps-2025-08-23-x64.zip
+        c62e82483bc7c0bf199e8ac3220c66a85a6e8a0cd69a05b6d44f873b830e415f  windows-deps-qt6-2025-08-23-x64.zip
+        9403bb43fb0a9bb215739a5659ca274fe884dbbbcd22bd9ca781c961fb041c42  macos-deps-2025-08-23-universal.tar.xz
+        990f11638b80a4509e14e8c315f6e4caa0861e37fcd3113a256fbff835ffca29  macos-deps-qt6-2025-08-23-universal.tar.xz
+        "
+        case "$RUNNER_OS" in
+          Windows) files=("windows-deps-$DEPS_TAG-x64.zip" "windows-deps-qt6-$DEPS_TAG-x64.zip") ;;
+          macOS) files=("macos-deps-$DEPS_TAG-universal.tar.xz" "macos-deps-qt6-$DEPS_TAG-universal.tar.xz") ;;
+          *) echo "::error::libobs action supports Windows and macOS only"; exit 1 ;;
+        esac
+        sha256() {
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "$1" | cut -d' ' -f1
+          else
+            shasum -a 256 "$1" | cut -d' ' -f1
+          fi
+        }
+        mkdir -p obs-deps
+        for f in "${files[@]}"; do
+          want=$(awk -v f="$f" '$2 == f { print $1 }' <<< "$sums")
+          if [ -z "$want" ]; then
+            echo "::error::No pinned checksum for $f: add it to .github/actions/libobs/action.yml"
+            exit 1
+          fi
+          curl -fL --retry 5 --retry-delay 2 --retry-all-errors -o "$f" \
+            "https://github.com/obsproject/obs-deps/releases/download/$DEPS_TAG/$f"
+          got=$(sha256 "$f")
+          if [ "$got" != "$want" ]; then
+            echo "::error::$f checksum mismatch (got $got)"
+            exit 1
+          fi
+          case "$f" in
+            *.zip) 7z x -y "$f" -oobs-deps > /dev/null ;;
+            *.tar.xz) tar -xJf "$f" -C obs-deps ;;
+          esac
+        done
+
+    - name: Restore libobs build
+      id: cache
+      uses: actions/cache/restore@v6
+      with:
+        path: libobs-sdk
+        key: libobs-${{ runner.os }}-${{ inputs.obs-ref }}-${{ inputs.deps-tag }}-${{ hashFiles('.github/actions/libobs/**') }}
+
+    - name: Build libobs (Windows)
+      if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        git -C obs-studio submodule update --init --recursive
+        cmake -S obs-studio -B obs-build -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}\obs-deps" `
+          -DENABLE_UI=OFF -DENABLE_FRONTEND=OFF -DENABLE_PLUGINS=OFF `
+          -DENABLE_BROWSER=OFF -DENABLE_SCRIPTING=OFF -DENABLE_WEBSOCKET=OFF `
+          -DENABLE_AJA=OFF
+        cmake --build obs-build --target libobs --config Release
+
+    # Xcode generator: obs-studio's macOS CMake requires it. Universal
+    # (arm64 + x86_64) to match the deps bundle and the official OBS app.
+    - name: Build libobs (macOS)
+      if: runner.os == 'macOS' && steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        git -C obs-studio submodule update --init --recursive
+        # libobs-metal is a pure-Swift target added unconditionally on
+        # macOS; without obs-studio's own presets the Swift language is
+        # never enabled and CMake's generate step fails. We only need
+        # libobs, so drop it from the build.
+        sed -i '' 's|add_subdirectory(libobs-metal)||' obs-studio/CMakeLists.txt
+        cmake -S obs-studio -B obs-build -G Xcode \
+          -DCMAKE_PREFIX_PATH="$PWD/obs-deps" \
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+          -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="-" \
+          -DENABLE_UI=OFF -DENABLE_FRONTEND=OFF -DENABLE_PLUGINS=OFF \
+          -DENABLE_BROWSER=OFF -DENABLE_SCRIPTING=OFF
+        cmake --build obs-build --target libobs --config Release
+
+    - name: Copy what the plugin links against
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        keep=(config libobs/Release)
+        if [ "$RUNNER_OS" = Windows ]; then
+          keep+=(deps/w32-pthreads/Release)
+        fi
+        mkdir -p libobs-sdk
+        tar -C obs-build --exclude='*.pdb' -cf - "${keep[@]}" | tar -C libobs-sdk -xf -
+        du -sh libobs-sdk
+
+    - name: Save libobs build
+      if: >-
+        steps.cache.outputs.cache-hit != 'true'
+        && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      uses: actions/cache/save@v6
+      with:
+        path: libobs-sdk
+        key: ${{ steps.cache.outputs.cache-primary-key }}

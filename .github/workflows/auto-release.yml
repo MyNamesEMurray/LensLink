@@ -29,7 +29,7 @@ on:
       - "installer/**"
 
 permissions:
-  contents: write
+  contents: read
 
 # Two merges in quick succession must version sequentially: without this,
 # both runs read the same latest tag, compute the same next version, and
@@ -42,6 +42,8 @@ jobs:
   version:
     name: Tag next version
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       tag: ${{ steps.bump.outputs.tag }}
       ios: ${{ steps.bump.outputs.ios }}

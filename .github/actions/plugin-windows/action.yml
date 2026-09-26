@@ -1,0 +1,100 @@
+name: OBS plugin (Windows)
+description: >-
+  Builds lenslink.dll against libobs with the static decode-only FFmpeg,
+  verifies it, and packages lenslink-windows-x64.zip and
+  LensLink-installer-windows-x64.exe in the workspace root. Shared by
+  build.yml and release.yml, so a pull request builds exactly what a
+  release ships.
+
+inputs:
+  version:
+    description: >-
+      Release tag (v1.8.2) or version; a leading v is dropped. Empty for
+      pull requests: the binary then reports "dev" and the installer
+      0.0.0.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/libobs
+
+    - name: Build static FFmpeg (H.264/HEVC decode only)
+      uses: ./.github/actions/static-ffmpeg
+
+    # The Select-String guard: the status-bar/dock UI degrades *silently*
+    # when Qt6 or obs-frontend-api.h is missing (that's how releases
+    # shipped without it once), so the build must fail instead.
+    # DISABLE_FIND_PACKAGE_PkgConfig: if a pkg-config on the runner
+    # ever resolved FFmpeg from the obs-deps bundle, the DLL would
+    # silently regress to importing OBS's avcodec-NN.dll; force the
+    # explicit static paths instead. The verify step backstops it.
+    - name: Build plugin
+      shell: pwsh
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        $version = "$env:VERSION".TrimStart("v")
+        $versionArgs = @()
+        if ($version) { $versionArgs = @("-DLENSLINK_VERSION=$version") }
+        cmake -S obs-plugin -B plugin-build -G "Visual Studio 17 2022" -A x64 @versionArgs `
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}\obs-deps" `
+          -DLIBOBS_INCLUDE_DIR="${{ github.workspace }}\obs-studio\libobs;${{ github.workspace }}\libobs-sdk\config;${{ github.workspace }}\obs-studio\deps\w32-pthreads" `
+          -DLIBOBS_LIBRARY="${{ github.workspace }}\libobs-sdk\libobs\Release\obs.lib;${{ github.workspace }}\libobs-sdk\deps\w32-pthreads\Release\w32-pthreads.lib" `
+          -DOBS_FRONTEND_API_HINT="${{ github.workspace }}\obs-studio\frontend\api;${{ github.workspace }}\obs-studio\UI\obs-frontend-api" `
+          -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON `
+          -DFFMPEG_INCLUDE_DIR="${{ github.workspace }}\ffmpeg-static\include" `
+          -DAVCODEC_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avcodec.lib" `
+          -DAVUTIL_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avutil.lib" `
+          | Tee-Object -FilePath configure.log
+        if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
+        if (-not (Select-String -Quiet -SimpleMatch "frontend UI enabled" -Path configure.log)) {
+          throw "status-bar/dock UI missing from this build (Qt6/obs-frontend-api not found)"
+        }
+        cmake --build plugin-build --config Release
+
+    # A lenslink.dll that imports avcodec-NN.dll/avutil-NN.dll only
+    # loads while OBS ships that exact FFmpeg major — the next OBS
+    # update breaks it with LoadLibrary error 126 (issues #91, #93).
+    # The obs.dll check keeps the negative check honest: an empty or
+    # misread dependents dump would otherwise pass it vacuously.
+    - name: Verify FFmpeg linked statically
+      shell: pwsh
+      run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $dumpbin = & $vswhere -latest -products * `
+          -find "VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe" |
+          Select-Object -First 1
+        $deps = & $dumpbin /dependents plugin-build\Release\lenslink.dll | Out-String
+        Write-Host $deps
+        if ($deps -match "avcodec|avutil") {
+          throw "lenslink.dll imports OBS's FFmpeg DLLs (breaks on OBS updates)"
+        }
+        if ($deps -notmatch "obs\.dll") {
+          throw "obs.dll import missing - dependents dump looks wrong"
+        }
+
+    - name: Package (extract into C:\Program Files\obs-studio)
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path stage\obs-plugins\64bit | Out-Null
+        New-Item -ItemType Directory -Force -Path stage\data\obs-plugins\lenslink | Out-Null
+        Copy-Item plugin-build\Release\lenslink.dll stage\obs-plugins\64bit\
+        Copy-Item -Recurse obs-plugin\data\* stage\data\obs-plugins\lenslink\
+        Compress-Archive -Path stage\* -DestinationPath lenslink-windows-x64.zip
+
+    # One-click alternative to the zip: detects the OBS folder from the
+    # registry and registers an uninstaller. Inno Setup is preinstalled
+    # on the runner image; the guard covers image changes.
+    - name: Build installer
+      shell: pwsh
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+          choco install innosetup -y --no-progress
+        }
+        $version = "$env:VERSION".TrimStart("v")
+        if (-not $version) { $version = "0.0.0" }
+        iscc /DAppVersion=$version installer\windows\lenslink.iss

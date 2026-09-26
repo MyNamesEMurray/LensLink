@@ -17,10 +17,10 @@ surfaces follow).
 
 ## Pull requests
 
-- Keep a PR to one topic. CI builds only what the PR touches — the plugin
-  on Ubuntu and Windows with `-Wall -Wextra -Werror`, the app for the iOS
-  Simulator on macOS — and PRs merge automatically once the required
-  checks pass.
+- Keep a PR to one topic. CI builds only what the PR touches: the plugin
+  on Ubuntu, Windows and macOS exactly as a release builds it, and the
+  app as an unsigned device build on macOS. A maintainer reviews the PR,
+  and it merges once the required checks pass.
 - Match the style around you: the C code follows OBS conventions (tabs),
   Swift uses 4 spaces. An `.editorconfig` covers the basics.
 - Say how you tested. Much of LensLink is a live A/V path CI can't
@@ -33,8 +33,8 @@ surfaces follow).
 
 ## Releases
 
-Merging to `main` releases automatically when `obs-plugin/` or `ios-app/`
-changed: a patch bump by default, or the bump named by a
+Merging to `main` releases automatically when `obs-plugin/`, `ios-app/`
+or `installer/` changed: a patch bump by default, or the bump named by a
 `Release-Bump: minor` / `Release-Bump: major` trailer line in a commit of
 the PR (`Release-Skip: true` suppresses it). `Release-Beta: true` publishes
 it as a pre-release instead — same builds, still uploaded to TestFlight,

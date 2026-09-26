@@ -332,9 +332,9 @@ which is what lets it cast a shadow onto the lens ring.
 | Clear | drawn entirely by the system |
 
 Icon Composer isn't needed to change it: edit `make-icon.py` and rerun
-it. The **iOS app (Xcode 27)** CI job renders all six renditions with
-Apple's `ictool` and uploads them as the `app-icon-previews` artifact;
-check those after any icon change.
+it. On pull requests that change the icon, the **iOS app (Xcode 27)** CI
+job renders all six renditions with Apple's `ictool` and uploads them as
+the `app-icon-previews` artifact; check those after any icon change.
 
 ---
 
