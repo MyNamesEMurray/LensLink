@@ -20,11 +20,14 @@ Outputs (run from the repo root):
   assets/banner.png      icon + wordmark on transparent (README)
   assets/social-preview.png  1280x640 GitHub social preview (opaque)
   ios-app/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024{,-dark,-tinted}.png
+  ios-app/Sources/AppIcon.icon   layered Liquid Glass icon (iOS 26+)
 """
 
 import collections
+import json
 import math
 import os
+import shutil
 
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
@@ -147,6 +150,70 @@ def make_mark(size, palette=BRAND):
     return mark
 
 
+def icon_color(rgb):
+    return "srgb:%.5f,%.5f,%.5f,1.00000" % tuple(c / 255 for c in rgb)
+
+
+def solid_fills(light, dark):
+    return [{"value": {"solid": icon_color(light)}},
+            {"appearance": "dark", "value": {"solid": icon_color(dark)}}]
+
+
+def gradient_fills(light, dark):
+    return [{"value": {"linear-gradient": [icon_color(c) for c in light]}},
+            {"appearance": "dark",
+             "value": {"linear-gradient": [icon_color(c) for c in dark]}}]
+
+
+def write_icon_package(path):
+    px = SIZE * S
+    white = Image.new("RGBA", (px, px), (255, 255, 255, 255))
+    big = ring_mask(px, BIG_C, BIG_R_OUT, BIG_R_IN)
+    keyline = ImageChops.multiply(circle_mask(px, SMALL_C, SMALL_R_OUT + 22), big)
+    shapes = {
+        "link-ring.png": ring_mask(px, SMALL_C, SMALL_R_OUT, SMALL_R_IN),
+        "lens-ring.png": ImageChops.subtract(big, keyline),
+        "aperture.png": circle_mask(px, BIG_C, DOT_R),
+    }
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    os.makedirs(os.path.join(path, "Assets"))
+    for name, mask in shapes.items():
+        layer = Image.new("RGBA", (px, px), (0, 0, 0, 0))
+        layer.paste(white, (0, 0), mask)
+        layer.resize((SIZE, SIZE), Image.LANCZOS).save(
+            os.path.join(path, "Assets", name))
+
+    glass = {"lighting": "individual", "specular": True,
+             "shadow": {"kind": "neutral", "opacity": 0.5},
+             "translucency": {"enabled": True, "value": 0.4}}
+    document = {
+        "fill-specializations": gradient_fills(
+            (LIGHT_BG_TOP, LIGHT_BG_BOTTOM), (BG_TOP, BG_BOTTOM)),
+        "groups": [
+            dict(glass, name="Link", layers=[{
+                "name": "Link ring", "image-name": "link-ring.png",
+                "glass": True,
+                "fill-specializations": solid_fills(
+                    LIGHT.link, DARK.link)}]),
+            dict(glass, name="Lens", layers=[
+                {"name": "Lens ring", "image-name": "lens-ring.png",
+                 "glass": True,
+                 "fill-specializations": solid_fills(LIGHT.ring, DARK.ring)},
+                {"name": "Aperture", "image-name": "aperture.png",
+                 "glass": True,
+                 "fill-specializations": gradient_fills(
+                     (LIGHT.aperture_hi, LIGHT.aperture_lo),
+                     (DARK.aperture_hi, DARK.aperture_lo))},
+            ]),
+        ],
+        "supported-platforms": {"squares": "shared"},
+    }
+    with open(os.path.join(path, "icon.json"), "w") as fh:
+        json.dump(document, fh, indent=2, sort_keys=True)
+        fh.write("\n")
+
+
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     assets = os.path.join(root, "assets")
@@ -246,10 +313,13 @@ def main():
 
     social_preview(os.path.join(assets, "social-preview.png"))
 
+    write_icon_package(os.path.join(root, "ios-app", "Sources", "AppIcon.icon"))
+
     print("wrote assets/icon-1024{,-dark,-tinted}.png, assets/logo.png,")
     print("assets/banner-*.png, assets/social-preview.png,")
     print("and the same three icons in",
-          os.path.relpath(appiconset, root))
+          os.path.relpath(appiconset, root) + ",")
+    print("and the layered ios-app/Sources/AppIcon.icon")
 
 
 if __name__ == "__main__":

@@ -6,6 +6,10 @@ options:
   deploymentTarget:
     iOS: "15.0"
   createIntermediateGroups: true
+  fileTypes:
+    icon:
+      file: true
+      buildPhase: resources
   # Keep the generated project openable by older Xcode (14.x). If your
   # Xcode still complains about a "future project file format", generate
   # with XcodeGen 2.38.0 instead of the latest (see BUILDING.md).
