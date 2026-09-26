@@ -1,4 +1,4 @@
-/* ===== SampleHandler.swift ===== */
+/* ===== ScreenStreamPipeline.swift ===== */
 
 /* Alert iOS shows when the screen broadcast fails to start; %@ = the system's error text */
 "Could not open the streaming port (%@). If the LensLink camera is streaming, stop it first — a device can send the camera or the screen, not both." = "Could not open the streaming port (%@). If the LensLink camera is streaming, stop it first — a device can send the camera or the screen, not both.";

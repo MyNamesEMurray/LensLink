@@ -107,7 +107,8 @@ cd ios-app && xcodegen generate && open LensLink.xcodeproj
 New files under `Sources/` are picked up automatically, but anything the
 **broadcast extension** also needs must be listed explicitly under
 `LensLinkBroadcast.sources` in `ios-app/project.yml` (today: `Protocol.swift`,
-`StreamClient.swift`, `VideoEncoder.swift`, `Localization.swift`). Details (signing, older Xcode):
+`StreamClient.swift`, `VideoEncoder.swift`, `Localization.swift`,
+`ScreenStreamPipeline.swift`). Details (signing, older Xcode):
 `ios-app/BUILDING.md`.
 
 ### Localized strings: check (works in this Linux environment)
@@ -214,10 +215,18 @@ and idle, waiting for remote start". Points that shape the code:
   `StreamClient` (Network.framework listener on 9979, packet framing,
   Bonjour advertising). Its `Status` enum defines the canonical status
   word and colour that every UI surface reuses.
-- `BroadcastExtension/SampleHandler.swift` is the ReplayKit
-  broadcast-upload extension for screen mirroring — a separate process
-  that reuses `StreamClient`/`VideoEncoder` and speaks the same protocol
-  with `kind: "screen"` (system audio only, no mic, by design).
+- Screen mirroring: `ScreenStreamPipeline.swift` is the shared pipeline
+  (`StreamClient` listener with `kind: "screen"`, `VideoEncoder`, system
+  audio to SCREEN_AUDIO; no mic, by design). Up to iOS 26 it runs in
+  `BroadcastExtension/SampleHandler.swift`, the ReplayKit
+  broadcast-upload extension (a separate process). On iOS 27 and later
+  the app runs it in-process from `ScreenMirror.swift` (ScreenCaptureKit
+  via `SCContentSharingPicker`, `screen-capture` background mode), and
+  `Streamer.setScreenMirrorActive` keeps standby off port 9979 meanwhile.
+  All ScreenCaptureKit code sits in `#if canImport(ScreenCaptureKit)` +
+  `@available(iOS 27.0, *)` with `@_weakLinked import`, so an iOS 26 SDK
+  build compiles it out and the app still launches on iOS 15 to 26, where
+  the framework doesn't exist. Don't add it to `OTHER_LDFLAGS`.
 - The app only streams while foregrounded (iOS suspends background camera
   capture); the remote-start machinery (standby HELLO + `start_stream`)
   exists because of this.

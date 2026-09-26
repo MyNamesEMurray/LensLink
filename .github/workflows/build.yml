@@ -475,3 +475,58 @@ jobs:
         with:
           name: LensLink-unsigned-ipa
           path: ios-app/LensLink-unsigned.ipa
+
+  ios-app-xcode27:
+    name: iOS app (Xcode 27)
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode 27
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_27.0*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then
+            XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+          fi
+          if [ -z "$XCODE" ]; then
+            echo "::error::No release Xcode 27 on this runner image. Installed:"
+            ls /Applications | grep -i xcode || true
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+        working-directory: ios-app
+
+      # Unsigned device build packaged as an .ipa: proves every Swift
+      # source compiles for the real platform, so a separate Simulator
+      # build would just double the (10x-billed) macOS minutes. The .ipa
+      # can't be installed as-is: sideload it with a tool that re-signs
+      # with your Apple ID (Sideloadly / AltStore).
+      - name: Build unsigned device IPA
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project LensLink.xcodeproj \
+            -scheme LensLink \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO
+          mkdir -p Payload
+          cp -R DerivedData/Build/Products/Release-iphoneos/LensLink.app Payload/
+          zip -ry LensLink-unsigned.ipa Payload
+        working-directory: ios-app
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: LensLink-unsigned-ipa-xcode27
+          path: ios-app/LensLink-unsigned.ipa

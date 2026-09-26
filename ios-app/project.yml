@@ -75,6 +75,8 @@ targets:
           - CFBundleURLName: com.exaltedpixels.LensLinkCamera
             CFBundleURLSchemes:
               - lenslink
+        UIBackgroundModes:
+          - screen-capture
     settings:
       base:
         # Explicit (not derived from bundleIdPrefix): com.exaltedpixels.LensLink
@@ -98,7 +100,8 @@ targets:
   # Screen mirroring: a ReplayKit broadcast-upload extension captures the
   # whole screen + system audio and streams it to the plugin over the same
   # wire protocol as the camera (so USB via usbmuxd works unchanged). It
-  # shares the protocol/network/encoder code with the app.
+  # shares the protocol/network/encoder code and the streaming pipeline
+  # (ScreenStreamPipeline) with the app.
   LensLinkBroadcast:
     type: app-extension
     platform: iOS
@@ -108,6 +111,7 @@ targets:
       - path: Sources/StreamClient.swift
       - path: Sources/VideoEncoder.swift
       - path: Sources/Localization.swift
+      - path: Sources/ScreenStreamPipeline.swift
     info:
       path: BroadcastExtension/Info.plist
       properties:

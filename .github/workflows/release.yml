@@ -369,9 +369,23 @@ jobs:
 
   ios-app:
     name: iOS app (unsigned IPA)
-    runs-on: macos-15
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v7
+
+      - name: Select Xcode 27
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_27.0*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then
+            XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+          fi
+          if [ -z "$XCODE" ]; then
+            echo "::error::No release Xcode 27 on this runner image. Installed:"
+            ls /Applications | grep -i xcode || true
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
 
       - name: Install XcodeGen
         run: brew install xcodegen

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var streamer: Streamer
+    @EnvironmentObject private var screenMirror: ScreenMirrorController
 
     // Cached per change, not per render: a Form body re-evaluates on any
     // published change, and these hit AVCaptureDevice discovery/format
@@ -289,7 +290,7 @@ struct ContentView: View {
         HStack(spacing: Theme.Space.m) {
             Image(systemName: computerSymbol)
                 .font(.system(size: 26, weight: .regular))
-                .foregroundColor(streamer.status.tint)
+                .foregroundColor(cardStatus.tint)
                 .frame(width: 40)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
@@ -298,7 +299,7 @@ struct ContentView: View {
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                 HStack(spacing: Theme.Space.xs + 2) {
                     Circle()
-                        .fill(streamer.status.tint)
+                        .fill(cardStatus.tint)
                         .frame(width: 8, height: 8)
                         .accessibilityHidden(true)
                     Text(connectionSubtitle)
@@ -311,7 +312,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var connectionAction: some View {
-        if streamer.status == .standby {
+        if cardStatus == .standby {
             Button {
                 Task { await streamer.start() }
             } label: {
@@ -340,12 +341,19 @@ struct ContentView: View {
         streamer.obsHost ?? "OBS Studio"
     }
 
+    private var cardStatus: Streamer.Status {
+        if screenMirror.isActive {
+            return screenMirror.obsConnected ? .streaming : .connecting
+        }
+        return streamer.status
+    }
+
     /// Status word first (docs/UI_DESIGN.md §2), then what the plugin
     /// said about itself: version and transport, only while it is here
     /// to say it.
     private var connectionSubtitle: String {
-        var parts = [streamer.status.displayName]
-        if streamer.status != .idle, !streamer.isStreaming {
+        var parts = [cardStatus.displayName]
+        if cardStatus != .idle, !streamer.isStreaming {
             if let version = streamer.obsVersion {
                 parts.append("OBS \(version)")
             }
@@ -427,17 +435,25 @@ struct ContentView: View {
     @State private var extensionStatus = ""
 
     /// The two things this screen exists to start, stacked: the camera
-    /// (accent) and the screen broadcast (the quieter fill). The
-    /// broadcast button's face is ours; the (invisible) system broadcast
-    /// picker stretched over it receives the tap, because iOS won't
-    /// start a broadcast any other way.
+    /// (accent) and the screen broadcast (the quieter fill). Before iOS
+    /// 27 the broadcast button's face is ours; the (invisible) system
+    /// broadcast picker stretched over it receives the tap, because iOS
+    /// won't start a broadcast any other way. From iOS 27 the app
+    /// mirrors in-process (ScreenMirror.swift) and it is a plain button.
     private var startSection: some View {
         Section {
-            // Surface a broken extension unconditionally (sideloading can
-            // silently drop it); the healthy state and the broadcast-link
-            // probe live in Options → Diagnostics.
-            if !extensionStatus.isEmpty && !extensionStatus.hasPrefix("✓") {
+            // Surface a broken extension whenever the extension is the
+            // mirror path (sideloading can silently drop it); the healthy
+            // state and the broadcast-link probe live in Options →
+            // Diagnostics.
+            if !ScreenMirrorController.isAvailable
+                && !extensionStatus.isEmpty && !extensionStatus.hasPrefix("✓") {
                 Text(extensionStatus)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+            if let mirrorError = screenMirror.lastError {
+                Text(mirrorError)
                     .font(.caption)
                     .foregroundColor(.red)
             }
@@ -453,15 +469,37 @@ struct ContentView: View {
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
 
-            ZStack {
-                ActionRowLabel(title: L("Mirror Screen"),
-                               systemImage: "rectangle.on.rectangle",
-                               style: .secondary)
-                    .accessibilityHidden(true)
-                BroadcastPickerOverlay()
+            if ScreenMirrorController.isAvailable {
+                Button {
+                    if screenMirror.isActive {
+                        screenMirror.stop()
+                    } else {
+                        screenMirror.start()
+                    }
+                } label: {
+                    ActionRowLabel(title: screenMirror.isActive
+                                       ? L("Stop Mirroring") : L("Mirror Screen"),
+                                   systemImage: screenMirror.isActive
+                                       ? "stop.fill" : "rectangle.on.rectangle",
+                                   style: .secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityInputLabels(screenMirror.isActive
+                                              ? [L("Stop Mirroring"), L("Stop")]
+                                              : [L("Mirror Screen"), L("Mirror")])
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            } else {
+                ZStack {
+                    ActionRowLabel(title: L("Mirror Screen"),
+                                   systemImage: "rectangle.on.rectangle",
+                                   style: .secondary)
+                        .accessibilityHidden(true)
+                    BroadcastPickerOverlay()
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
         }
         .onAppear {
             // Whether the extension survived sideloading — the broadcast

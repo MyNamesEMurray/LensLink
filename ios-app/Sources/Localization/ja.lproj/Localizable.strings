@@ -104,6 +104,9 @@
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "カメラを開始";
 
+/* Setup screen (iOS 27+): the Mirror Screen button while the screen is being mirrored; stops it (also its VoiceOver label) */
+"Stop Mirroring" = "ミラーリングを停止";
+
 /* Setup screen toggle: use the phone's microphone as the OBS source's audio */
 "Send phone mic to OBS" = "スマートフォンのマイクをOBSに送信";
 
@@ -229,7 +232,7 @@
 "One mic, one role — turning one on turns the other off." = "マイク1つにつき役割は1つです。一方をオンにすると、もう一方はオフになります。";
 
 /* Documentation sheet, Screen mirror section (Markdown: keep the ** markers) */
-"Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual." = "画面全体をアプリの音声ごと**LensLink Screen**ソースにストリーミングします。モバイルゲームやアプリのデモに最適です。iOSはDRM付きの音声（Apple Music、Netflix）をミュートし、マイクの音声は送信されません。マイクはいつもどおりOBS側で用意してください。";
+"Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual. On iOS 27 and later, **Mirror Screen** uses the system screen-sharing picker, and mirroring keeps running in the background until you stop it (from LensLink or the system's screen-sharing indicator)." = "画面全体をアプリの音声ごと**LensLink Screen**ソースにストリーミングします。モバイルゲームやアプリのデモに最適です。iOSはDRM付きの音声（Apple Music、Netflix）をミュートし、マイクの音声は送信されません。マイクはいつもどおりOBS側で用意してください。iOS 27以降では、**画面をミラーリング**はシステムの画面共有ピッカーを使います。ミラーリングは停止するまで（LensLinkから、またはシステムの画面共有インジケータから）バックグラウンドで続きます。";
 
 /* Documentation section header */
 "Screen mirror" = "画面ミラーリング";
@@ -321,6 +324,14 @@
 
 /* Shortcuts action description */
 "Stops the LensLink camera stream." = "LensLinkのカメラ配信を停止します。";
+
+/* ===== ScreenStreamPipeline.swift ===== */
+
+/* Screen mirror failure (an alert from the broadcast extension, or the red caption under the Setup screen buttons on iOS 27+); %@ = the system's error text */
+"Could not open the streaming port (%@). If the LensLink camera is streaming, stop it first — a device can send the camera or the screen, not both." = "ストリーミング用のポートを開けませんでした（%@）。LensLinkのカメラがストリーミング中の場合は、先に停止してください。1台のデバイスが送信できるのは、カメラと画面のどちらか一方だけです。";
+
+/* Screen mirror failure when OBS never connects (alert or red caption, as above); %@ = technical listener state for bug reports */
+"OBS did not connect within 30 seconds [%@]. Check OBS has a LensLink Screen source pointing at this phone (USB, or this phone's Wi-Fi IP) — a LensLink Camera source won't accept a screen broadcast — and the camera stream isn't running." = "30秒以内にOBSが接続しませんでした［%@］。このスマートフォン（USB、またはこのスマートフォンのWi-Fi IP）を指定したLensLink ScreenソースがOBSにあること、カメラのストリームが動作していないことを確認してください。LensLink Cameraソースは画面ブロードキャストを受け付けません。";
 
 /* ===== StreamClient.swift ===== */
 
@@ -418,7 +429,7 @@
 /* VoiceOver label of the Live screen red Stop button */
 "Stop camera" = "カメラを停止";
 
-/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) */
+/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) [also used in ContentView.swift, for Stop Mirroring] */
 "Stop" = "停止";
 
 /* Voice Control: another name the user can say for the status pill menu (never shown) */

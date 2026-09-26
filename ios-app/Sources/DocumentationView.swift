@@ -51,7 +51,7 @@ struct DocumentationView: View {
             }
 
             Section {
-                Text("Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual.")
+                Text("Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual. On iOS 27 and later, **Mirror Screen** uses the system screen-sharing picker, and mirroring keeps running in the background until you stop it (from LensLink or the system's screen-sharing indicator).")
             } header: {
                 Text("Screen mirror")
             }

@@ -37,6 +37,9 @@ APERTURE_HI = (0x6F, 0xA0, 0xFF)   # aperture dot, highlight side
 APERTURE_LO = (0x2E, 0x5F, 0xD6)   # aperture dot, shadow side
 BG_TOP = (0x17, 0x1A, 0x22)
 BG_BOTTOM = (0x0D, 0x0E, 0x12)
+LIGHT_BG_TOP = (0xFF, 0xFF, 0xFF)
+LIGHT_BG_BOTTOM = (0xEC, 0xF0, 0xF7)
+LINK_DEEP = (0x2E, 0x5F, 0xD6)
 
 # The four inks of the mark, so it can be re-coloured per icon appearance.
 Palette = collections.namedtuple("Palette", "ring link aperture_hi aperture_lo")
@@ -51,6 +54,8 @@ def shade(colour, factor):
 def grey(v):
     return (v, v, v)
 
+
+LIGHT = Palette(ACCENT, LINK_DEEP, APERTURE_HI, APERTURE_LO)
 
 # Dark appearance: the artwork sits on iOS's own dark backdrop with no
 # gradient of ours to sit against, and a dark home screen makes saturated
@@ -154,8 +159,8 @@ def main():
 
     # --- App icon, default (light) appearance: opaque RGB ---------------
     # The only variant with a background of ours; iOS forbids alpha here.
-    icon = vertical_gradient(SIZE * S, BG_TOP, BG_BOTTOM).convert("RGBA")
-    icon.alpha_composite(mark_big)
+    icon = vertical_gradient(SIZE * S, LIGHT_BG_TOP, LIGHT_BG_BOTTOM).convert("RGBA")
+    icon.alpha_composite(make_mark(SIZE, LIGHT))
     icon = icon.resize((SIZE, SIZE), Image.LANCZOS).convert("RGB")
     icon.save(os.path.join(assets, "icon-1024.png"))
     icon.save(os.path.join(appiconset, "icon-1024.png"))
