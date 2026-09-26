@@ -3,14 +3,12 @@ import SwiftUI
 @main
 struct LensLinkApp: App {
     @StateObject private var streamer = Streamer.shared
-    @StateObject private var screenMirror = ScreenMirrorController()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(streamer)
-                .environmentObject(screenMirror)
                 // lenslink://start and lenslink://stop, for Shortcuts
                 // automations on iOS 15 (16+ also gets App Intents).
                 .onOpenURL { url in

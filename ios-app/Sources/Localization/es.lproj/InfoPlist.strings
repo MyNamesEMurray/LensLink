@@ -6,6 +6,3 @@
 
 /* Microphone permission prompt */
 "NSMicrophoneUsageDescription" = "LensLink puede enviar tu micrófono a OBS, como audio de la cámara si lo activas o solo como referencia de tiempo para sincronizar automáticamente tu micrófono real con el video.";
-
-/* Screen recording permission prompt */
-"NSScreenCaptureUsageDescription" = "LensLink duplica tu pantalla en OBS en tu computadora.";

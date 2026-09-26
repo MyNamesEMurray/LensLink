@@ -60,9 +60,8 @@ jobs:
           fi
 
       # App Store Connect rejects uploads built with older SDKs ("must be
-      # built with the iOS 26 SDK or later"), and in-app screen mirroring
-      # (ScreenCaptureKit) needs the iOS 27 SDK, so pick the release
-      # Xcode 27.0 on the image, never one of its betas.
+      # built with the iOS 26 SDK or later"), so pick the release Xcode
+      # 27.0 on the image, never one of its betas.
       - name: Select Xcode 27
         run: |
           XCODE=$(ls -d /Applications/Xcode_27.0*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)

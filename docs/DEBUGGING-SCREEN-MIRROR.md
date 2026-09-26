@@ -85,7 +85,7 @@ Screen mirroring encodes in HEVC by default — screen content compresses
 encoding (pre-A10, i.e. older than iPhone 7) fall back to H.264
 automatically, and the plugin decodes whichever codec the config
 announces. To A/B against H.264, it's a one-line switch in
-`ios-app/Sources/ScreenStreamPipeline.swift` (shared by both mirror paths):
+`ios-app/BroadcastExtension/ScreenStreamPipeline.swift`:
 
 ```swift
 private static let preferHEVC = true   // set false to test H.264
@@ -93,33 +93,16 @@ private static let preferHEVC = true   // set false to test H.264
 
 The heartbeat's `codec` field confirms which one is live.
 
-## iOS 27 and later: in-app mirroring
+## iOS 27: why there is no in-app mirror
 
-From iOS 27, Mirror Screen doesn't use the broadcast extension. The app
-presents the system screen-sharing picker (`SCContentSharingPicker`) and
-captures the screen itself with ScreenCaptureKit (`ScreenMirror.swift`),
-feeding the same `ScreenStreamPipeline` the extension uses. The wire
-traffic, the heartbeats above and the plugin side are identical; what
-differs:
-
-- `samp` counts only complete ScreenCaptureKit frames (`SCFrameStatus`
-  `.complete`); idle or blank frames are skipped, so a static screen
-  can hold `samp` still without anything being wrong.
-- The phone's os_log subsystem is `com.exaltedpixels.LensLinkCamera.screen`
-  (the extension logs as `.broadcast`).
-- Failures show under the Mirror Screen button in red instead of as a
-  system alert: the port hand-off with remote-start standby
-  (`Streamer.setScreenMirrorActive`), the 30 s "OBS did not connect"
-  watchdog, or the stream stopping with an error. Stopping from the
-  system's screen-sharing indicator ends mirroring without an error.
-- Mirroring survives backgrounding through the `screen-capture` background
-  mode; Apple's ScreenCaptureKit docs also require the
-  `NSScreenCaptureUsageDescription` purpose string. When iOS suspends the
-  app on leaving it, OBS freezes on the last frame, every heartbeat stops
-  (not just `enc`), and the connection drops a while later. Check the
-  built app's Info.plist has both keys.
-- The extension-missing warning is hidden on iOS 27, since the extension
-  isn't used there.
+iOS 27 brought ScreenCaptureKit to iPhone and iPad, and one release
+mirrored in-process with it (the system screen-sharing picker, the
+`screen-capture` background mode and `NSScreenCaptureUsageDescription`).
+iOS still suspended the app the moment it left the screen: OBS froze on
+the last frame, every heartbeat stopped at once, and the connection
+dropped a while later. It was removed, and the broadcast extension is
+the screen mirror on every iOS version again. It is deprecated in
+iOS 27 but still works there.
 
 ## Collecting a report
 

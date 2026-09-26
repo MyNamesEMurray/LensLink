@@ -6,6 +6,3 @@
 
 /* Microphone permission prompt */
 "NSMicrophoneUsageDescription" = "LensLinkはマイクの音声をOBSに送信できます。オンにした場合はカメラの音声として、またはお使いのマイクを映像に自動で同期させるためのタイミングの基準としてのみ使用します。";
-
-/* Screen recording permission prompt */
-"NSScreenCaptureUsageDescription" = "LensLinkは、画面をコンピュータのOBSにミラーリングします。";

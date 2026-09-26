@@ -379,12 +379,7 @@ Symbol) and a title — top to bottom:
    accent, **Mirror Screen** in the system's secondary fill (the system
    broadcast picker is stretched invisibly over the button face — iOS
    won't start a broadcast any other way). A broken broadcast extension
-   warns above them. On iOS 27 and later the app mirrors in-process:
-   Mirror Screen is a plain button that opens the system screen-sharing
-   picker and reads **Stop Mirroring** while mirroring, the extension
-   warning is hidden, a mirroring failure shows in the same red caption,
-   and the connection card shows the mirror's status ("Live" once OBS is
-   connected, "Waiting for OBS…" before).
+   warns above them.
 5. **Microphone** — see below.
 6. **Tail** — **Options** and **Documentation** rows that present their
    sheets, **Report a problem**, the GitHub link, and the version line in
@@ -619,9 +614,7 @@ breaks one breaks a claim on the store page.
   label and the readout as its value.
 - The Mirror Screen button's name sits on the system broadcast picker's
   own button, and our styled face under it is hidden, so VoiceOver
-  finds one button, not two. On iOS 27 and later it is our own button,
-  named "Mirror Screen" or "Stop Mirroring", with "Mirror" or "Stop" as
-  the short Voice Control names.
+  finds one button, not two.
 
 ### Assistive technology suspends idle
 
