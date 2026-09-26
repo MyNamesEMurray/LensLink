@@ -205,7 +205,7 @@
 "**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "深度辅助运行时，直播界面的调节栏中会出现**主体**：比转盘上的距离更远的一切都会成为背景，这样就能去掉从你身后走过的人。再次轻点“主体”按钮即可恢复为**全部**（不限距离）。";
 
 /* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
-"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens." = "推流时，屏幕上显示画面、状态标签、暂停和停止按钮，以及镜头按钮 **.5**、**1×**、**2**，它们像在相机 App 中一样切换摄像头。双指捏合可在当前镜头内变焦。";
+"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "推流时，屏幕上显示画面、状态标签、暂停和停止按钮，以及镜头按钮 **.5**、**1×**、**2**，它们像在相机 App 中一样切换摄像头。双指捏合可在当前镜头内变焦。再次轻点当前镜头按钮可重置其变焦。在有两个前置摄像头的设备上，前置摄像头也会显示这些按钮。";
 
 /* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
 "**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光锁定在该处（AE/AF 锁定）：“对焦”按钮变为锁定，“曝光”按钮变为 ISO，轻点其中任一按钮即可解除。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
@@ -402,6 +402,9 @@
 
 /* VoiceOver label of the button that opens the camera adjust tray */
 "Adjust camera" = "调节摄像头";
+
+/* VoiceOver hint on the active lens button when zoomed in: tapping it returns the lens to its own zoom */
+"Resets the zoom" = "重置变焦";
 
 /* Voice Control: a shorter name the user can say for the Adjust camera button (never shown) */
 "Adjust" = "调节";

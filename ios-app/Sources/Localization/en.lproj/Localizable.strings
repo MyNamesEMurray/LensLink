@@ -205,7 +205,7 @@
 "**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit).";
 
 /* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
-"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens." = "While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens.";
+"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera.";
 
 /* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
 "**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto.";
@@ -402,6 +402,9 @@
 
 /* VoiceOver label of the button that opens the camera adjust tray */
 "Adjust camera" = "Adjust camera";
+
+/* VoiceOver hint on the active lens button when zoomed in: tapping it returns the lens to its own zoom */
+"Resets the zoom" = "Resets the zoom";
 
 /* Voice Control: a shorter name the user can say for the Adjust camera button (never shown) */
 "Adjust" = "Adjust";

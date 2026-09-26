@@ -205,7 +205,7 @@
 "**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "**Motiv** erscheint in der Einstellleiste des Live-Bildschirms, während die Tiefenunterstützung läuft: Alles, was weiter entfernt ist als der Abstand auf dem Regler, wird zum Hintergrund – so blendest du jemanden aus, der hinter dir vorbeigeht. Tippe erneut auf den Chip Motiv, um zu **Alle** (keine Grenze) zurückzukehren.";
 
 /* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
-"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens." = "Während des Streamens zeigt der Bildschirm das Bild, die Statusanzeige, Pausieren und Stoppen sowie die Objektivtasten – **.5**, **1×**, **2** –, die wie in der Kamera-App zwischen den Kameras wechseln. Mit zwei Fingern zoomst du innerhalb eines Objektivs.";
+"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "Während des Streamens zeigt der Bildschirm das Bild, die Statusanzeige, Pausieren und Stoppen sowie die Objektivtasten – **.5**, **1×**, **2** –, die wie in der Kamera-App zwischen den Kameras wechseln. Mit zwei Fingern zoomst du innerhalb eines Objektivs. Tippe erneut auf das aktive Objektiv, um seinen Zoom zurückzusetzen. Hat ein Gerät zwei Frontkameras, bekommt die Frontkamera dieselben Tasten.";
 
 /* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
 "**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Tippe** ins Bild, um dort zu fokussieren und zu belichten – ein gelbes Quadrat markiert die Stelle, und die Kamera hält diesen Punkt, bis sich die Szene ändert, und kehrt dann zur Automatik zurück. **Halte** den Finger auf dem Bild, um Fokus und Belichtung dort zu sperren (AE/AF-Sperre): Der Fokus-Chip wird gesperrt, der Belichtungs-Chip wird zu ISO, und ein Tippen auf einen der beiden Chips hebt die Sperre auf. **Ziehe** irgendwo darauf nach oben oder unten, um die Aufnahme heller oder dunkler zu machen – die Belichtungskorrektur, solange die Belichtung automatisch ist.";
@@ -402,6 +402,9 @@
 
 /* VoiceOver label of the button that opens the camera adjust tray */
 "Adjust camera" = "Kamera einstellen";
+
+/* VoiceOver hint on the active lens button when zoomed in: tapping it returns the lens to its own zoom */
+"Resets the zoom" = "Setzt den Zoom zurück";
 
 /* Voice Control: a shorter name the user can say for the Adjust camera button (never shown) */
 "Adjust" = "Einstellen";

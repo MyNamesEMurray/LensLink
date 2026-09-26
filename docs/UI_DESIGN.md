@@ -279,7 +279,7 @@ surfaces.
 | Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported |
 | White balance | web: segmented **AWB / Lock**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). Hidden if unsupported |
 | Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
-| Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each back lens's magnification relative to Main, the active one in `cameraYellow` carrying the live zoom (`2.4×`) |
+| Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one resets its zoom |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
 | Pause       | `pause.fill` / `play.fill`                 | Amber `glassChipOn` while paused; between the status pill and Stop |
@@ -397,12 +397,14 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
 - **Notice row:** one row under the status bar for whatever needs saying
   — today the lip-sync readout. Nothing is drawn when there is nothing
   to say; never two pills stacked.
-- **Lens buttons** (bottom centre, back cameras only, as in the Camera
-  app): one round button per back lens labelled with its magnification
-  relative to Main (`.5`, `2`, `3`); the active one larger, in
-  `cameraYellow`, carrying the live zoom (`1×`, `2.4×`). Tapping switches
-  the physical lens. Hidden while the front camera is selected, and on
-  single-lens devices.
+- **Lens buttons** (bottom centre, as in the Camera app): one round
+  button per lens on the selected side, labelled with its magnification
+  relative to Main (`.5`, `2`, `3`); front lenses are measured against
+  the regular front camera instead (an iPad Pro's front ultra wide reads
+  about `.7`). The active one is larger, in `cameraYellow`, carrying the
+  live zoom (`1×`, `2.4×`). Tapping another switches the physical lens;
+  tapping the active one returns it to its own zoom (`1×` of that lens).
+  Hidden when the selected side has only one camera.
 - **Chevron** (`chevron.up` in a glass capsule) under the lens buttons
   opens the tray.
 - **Gestures:** pinch = zoom within the lens; **tap** = focus/expose at

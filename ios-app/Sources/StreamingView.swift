@@ -671,11 +671,11 @@ struct StreamingView: View {
     // MARK: - Glance layer
 
     /// What sits at the bottom of the screen while the tray is closed:
-    /// the lens buttons (back cameras only, as in the Camera app) and the
-    /// chevron that opens the tray.
+    /// the lens buttons (for whichever side has more than one camera) and
+    /// the chevron that opens the tray.
     private var glanceControls: some View {
         VStack(spacing: Theme.Space.l) {
-            if streamer.selectedLens.position == .back, backLenses.count > 1 {
+            if sideLenses.count > 1 {
                 lensButtons
             }
             Button {
@@ -696,17 +696,18 @@ struct StreamingView: View {
         }
     }
 
-    /// Back lenses in magnification order (.5 · 1× · 2), the Camera
-    /// app's order, rather than the device list's Main-first order.
-    private var backLenses: [CameraManager.Lens] {
+    /// The selected side's lenses in magnification order (.5 · 1× · 2),
+    /// the Camera app's order, rather than the device list's Main-first
+    /// order.
+    private var sideLenses: [CameraManager.Lens] {
         streamer.availableLenses
-            .filter { $0.position == .back }
+            .filter { $0.position == streamer.selectedLens.position }
             .sorted { (lensFactors[$0.id] ?? 1) < (lensFactors[$1.id] ?? 1) }
     }
 
     private func refreshLensFactors() {
         var factors: [String: Double] = [:]
-        for lens in backLenses {
+        for lens in streamer.availableLenses {
             factors[lens.id] = CameraManager.zoomFactorRelativeToMain(lens)
         }
         lensFactors = factors
@@ -715,14 +716,19 @@ struct StreamingView: View {
     /// The Camera app's lens row: one round button per back lens, the
     /// active one larger and yellow with the live zoom on it, so ".5 · 1× ·
     /// 2" reads exactly as it does in the app everyone already knows.
-    /// Tapping switches the physical lens; pinching still zooms within it.
+    /// Tapping switches the physical lens; pinching still zooms within it,
+    /// and tapping the active lens returns it to its own zoom.
     private var lensButtons: some View {
         HStack(spacing: Theme.Space.s) {
-            ForEach(backLenses) { lens in
+            ForEach(sideLenses) { lens in
                 let active = lens == streamer.selectedLens
                 Button {
                     touched()
-                    streamer.selectedLens = lens
+                    if active {
+                        if streamer.zoom != 1 { streamer.zoom = 1 }
+                    } else {
+                        streamer.selectedLens = lens
+                    }
                 } label: {
                     Text(lensButtonLabel(lens, active: active))
                         .font(.system(size: active ? 13 : 11, weight: .bold,
@@ -738,6 +744,7 @@ struct StreamingView: View {
                 }
                 .accessibilityLabel(lens.displayLabel)
                 .accessibilityValue(lensAccessibilityValue(lens, active: active))
+                .accessibilityHint(lensAccessibilityHint(active: active))
                 .accessibilityAddTraits(active ? .isSelected : [])
                 .accessibilityShowsLargeContentViewer {
                     Text(lensButtonLabel(lens, active: active))
@@ -757,6 +764,11 @@ struct StreamingView: View {
         let text = Self.compactFactor(factor)
         // Camera app spelling: the ultra-wide is ".5", not "0.5".
         return text.hasPrefix("0.") ? String(text.dropFirst()) : text
+    }
+
+    private func lensAccessibilityHint(active: Bool) -> String {
+        guard active, streamer.zoom != 1 else { return "" }
+        return L("Resets the zoom")
     }
 
     private func lensAccessibilityValue(_ lens: CameraManager.Lens,

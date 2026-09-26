@@ -236,9 +236,11 @@ final class CameraManager: NSObject {
     /// the wide at 2 and the telephoto at 6, so relative to the wide that
     /// is 0.5, 1 and 3. The field-of-view ratio is the fallback for a
     /// device with no virtual camera; it lands on .57 and 3.2 rather than
-    /// .5 and 3, so it is rounded to the nearest half. nil for the front
-    /// camera or where the device is missing.
+    /// .5 and 3, so it is rounded to the nearest half. A front lens is
+    /// measured against the regular front camera instead, to the nearest
+    /// tenth. nil where a device is missing.
     static func zoomFactorRelativeToMain(_ lens: Lens) -> Double? {
+        if lens.position == .front { return frontFactor(for: lens) }
         guard lens.position == .back else { return nil }
         if let exact = switchOverFactor(for: lens) { return exact }
         guard let lensDevice = Self.device(for: lens),
@@ -248,6 +250,18 @@ final class CameraManager: NSObject {
         guard fov > 0, mainFov > 0 else { return nil }
         let ratio = tan(mainFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
         return max(0.5, (ratio * 2).rounded() / 2)
+    }
+
+    private static func frontFactor(for lens: Lens) -> Double? {
+        guard let lensDevice = Self.device(for: lens),
+              let frontDevice = AVCaptureDevice.default(
+                .builtInWideAngleCamera, for: .video, position: .front)
+        else { return nil }
+        let fov = Double(lensDevice.activeFormat.videoFieldOfView)
+        let frontFov = Double(frontDevice.activeFormat.videoFieldOfView)
+        guard fov > 0, frontFov > 0 else { return nil }
+        let ratio = tan(frontFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
+        return max(0.1, (ratio * 10).rounded() / 10)
     }
 
     private static func switchOverFactor(for lens: Lens) -> Double? {
