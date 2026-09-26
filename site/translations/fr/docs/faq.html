@@ -1,6 +1,6 @@
 title: Questions fréquentes
 description: Prix, confidentialité, appareils compatibles, Android, utilisation comme caméra virtuelle, batterie, et comparaison de LensLink avec une carte d’acquisition ou une webcam USB.
-source: 11108b31c9b2
+source: de29eb0c21eb
 ---
 <h1>Questions fréquentes</h1>
 
@@ -63,7 +63,7 @@ source: 11108b31c9b2
   diffusion. L’USB règle la question en rechargeant le téléphone pendant la
   diffusion. Sinon, la vue au repos <strong>Assombrir l’écran</strong> baisse la
   luminosité et arrête le rendu de l’aperçu au bout de 10 secondes, et
-  <strong>Déconnecter quand cette source n’est affichée nulle part</strong> arrête
+  <strong>Se déconnecter quand cette source n’est affichée nulle part</strong> arrête
   l’encodage dès que la source est masquée.
 </p>
 
@@ -82,7 +82,7 @@ source: 11108b31c9b2
 <p>
   Vous pouvez diffuser les deux sur du matériel compatible et enregistrer le
   résultat comme n’importe quelle autre source. Apple Log nécessite un iPhone Pro
-  sous iOS 17+ et une LUT dans OBS ; le HDR, c’est du HLG en HEVC. Les deux sont
+  sous iOS 17+ et un LUT dans OBS ; le HDR, c’est du HLG en HEVC. Les deux sont
   en bêta et désactivés par défaut :
   <a href="/docs/camera/#color-hdr-and-apple-log">Couleur</a>.
 </p>
@@ -110,6 +110,19 @@ source: 11108b31c9b2
   Oui : avec le <a href="/docs/web-panel/">panneau de contrôle web</a> sur
   <code>localhost:9980</code>, et la même API HTTP qui le sous-tend, pour les
   contrôleurs de type Stream Deck et les scripts.
+</p>
+
+<h2>Est-ce compatible avec VoiceOver et les autres réglages d’accessibilité ?</h2>
+<p>
+  Oui. Chaque commande de l’app a un nom énoncé pour VoiceOver et le Contrôle
+  vocal, et VoiceOver annonce quand le flux passe en direct, se met en pause,
+  passe à l’antenne ou perd OBS. Tant que VoiceOver ou le Contrôle de sélection
+  est activé, l’écran de direct ne s’assombrit jamais et ne masque jamais ses
+  commandes de lui-même. L’app respecte Texte plus grand, Réduire les
+  animations, Réduire la transparence, Augmenter le contraste et Différencier
+  sans couleur, qui ajoute le nom de l’état tally à côté de la bordure colorée.
+  Le <a href="/docs/web-panel/">panneau de contrôle web</a> étiquette lui aussi
+  ses commandes pour les lecteurs d’écran.
 </p>
 
 <h2>Comment signaler un bug ou demander une fonctionnalité ?</h2>

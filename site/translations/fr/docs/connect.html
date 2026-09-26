@@ -89,7 +89,7 @@ source: 15367c815715
 <div class="callout">
   <p><strong>Un téléphone n’alimente qu’une source à la fois.</strong> Une seconde
   source pointée vers le même appareil indique qu’il est déjà utilisé. Exception :
-  avec <strong>Déconnecter quand cette source n’est affichée nulle part</strong>,
+  avec <strong>Se déconnecter quand cette source n’est affichée nulle part</strong>,
   une source masquée libère le téléphone. Une source Camera dans une scène et une
   source Screen dans une autre peuvent ainsi se le partager.</p>
 </div>
@@ -108,11 +108,11 @@ source: 15367c815715
     <tr><td>Tentative de connexion au téléphone à l’adresse …</td><td>Adresse erronée ou injoignable, ou l’app n’est pas au premier plan.</td></tr>
     <tr><td>Saisissez l’adresse IP du téléphone</td><td>Aucun hôte défini sur une source Wi-Fi.</td></tr>
     <tr><td>Aucun appareil détecté en USB</td><td>Vérifiez le câble et touchez Se fier. Sous Windows, vérifiez qu’iTunes est installé.</td></tr>
-    <tr><td>Appareil trouvé, mais l’app LensLink est injoignable</td><td>Le câble fonctionne. Déverrouillez le téléphone et mettez l’app au premier plan.</td></tr>
-    <tr><td>En attente de l’appareil USB sélectionné</td><td>Associée à un appareil qui n’est pas connecté.</td></tr>
+    <tr><td>Appareil détecté, mais l’app LensLink est injoignable</td><td>Le câble fonctionne. Déverrouillez le téléphone et mettez l’app au premier plan.</td></tr>
+    <tr><td>En attente de la connexion de l’appareil USB sélectionné</td><td>Associée à un appareil qui n’est pas connecté.</td></tr>
     <tr><td>Cet appareil est déjà utilisé par une autre source LensLink</td><td>Deux sources, un seul téléphone. Voir plus haut.</td></tr>
     <tr><td>Déconnecté – reconnexion</td><td>Liaison perdue ; la source se reconnecte.</td></tr>
-    <tr><td>En pause – la source est masquée</td><td><strong>Déconnecter quand cette source n’est affichée nulle part</strong> est activé et rien n’affiche la source.</td></tr>
+    <tr><td>En pause – la source est masquée</td><td><strong>Se déconnecter quand cette source n’est affichée nulle part</strong> est activé et rien n’affiche la source.</td></tr>
     <tr><td>Le téléphone envoie une diffusion de l’écran</td><td>Mauvais type de source : utilisez une source <strong>LensLink Screen</strong> pour une diffusion.</td></tr>
     <tr><td>Connecté, mais cette version d’OBS ne peut pas décoder le flux</td><td>Pas de décodeur HEVC dans cette version. Passez l’app en H.264.</td></tr>
   </tbody>
@@ -120,9 +120,9 @@ source: 15367c815715
 
 <h2>Garder une connexion saine</h2>
 <ul>
-  <li><strong>Surveillez les chiffres.</strong> La barre d’état d’OBS affiche une ligne par téléphone (<code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>), et <strong>Affichage → Docks → LensLink</strong> présente la même chose sous forme de panneau.</li>
+  <li><strong>Surveillez les chiffres.</strong> La barre d’état d’OBS affiche une ligne par téléphone (<code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>), et <strong>Afficher → Docks → LensLink</strong> présente la même chose sous forme de panneau.</li>
   <li><strong>La congestion se gère toute seule.</strong> L’app baisse brièvement la qualité puis la rétablit, au lieu d’accumuler de la latence.</li>
-  <li><strong>Économisez la batterie</strong> avec <strong>Déconnecter quand cette source n’est affichée nulle part</strong> : le téléphone cesse d’encoder dès que la source est masquée.</li>
+  <li><strong>Économisez la batterie</strong> avec <strong>Se déconnecter quand cette source n’est affichée nulle part</strong> : le téléphone cesse d’encoder dès que la source est masquée.</li>
   <li><strong>Le flux n’est pas chiffré</strong> sur votre réseau : il est conçu pour des réseaux domestiques et de studio de confiance.</li>
 </ul>
 

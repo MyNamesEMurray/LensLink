@@ -1,0 +1,564 @@
+/* ===== AudioReference.swift ===== */
+
+/* Microphone picker: the choice that follows iOS's own input routing */
+"Auto (iOS default)" = "Auto (par défaut d’iOS)";
+
+/* ===== BroadcastButton.swift ===== */
+
+/* Setup screen: button that starts the screen broadcast (also its VoiceOver label) [also used in ContentView.swift] */
+"Mirror Screen" = "Recopier l’écran";
+
+/* Voice Control: a shorter name the user can say for the Mirror Screen button (never shown) */
+"Mirror" = "Recopier";
+
+/* ===== BroadcastProbe.swift ===== */
+
+/* Setup screen warning: the screen-broadcast extension is missing from a sideloaded install */
+"No PlugIns folder — the sideloader stripped the extension" = "Aucun dossier PlugIns – l’outil d’installation manuelle a supprimé l’extension";
+
+/* Setup screen warning: the screen-broadcast extension is missing from the installed app */
+"Extension missing from app bundle — re-sideload with app extensions enabled" = "Extension absente de l’app installée – réinstallez-la manuellement avec les extensions d’app activées";
+
+/* Diagnostics line: the screen-broadcast extension is installed; %@ = its file name(s) */
+"Extension installed: %@" = "Extension installée : %@";
+
+/* ===== CameraManager.swift ===== */
+
+/* Camera (lens) name: the front camera */
+"Front" = "Avant";
+
+/* Camera (lens) name: the ultra-wide back lens */
+"Ultra Wide (0.5×)" = "Ultra grand-angle (0,5×)";
+
+/* Camera (lens) name: the telephoto back lens */
+"Telephoto" = "Téléobjectif";
+
+/* Camera (lens) name: the main (wide) back lens */
+"Main (Wide)" = "Principal (grand-angle)";
+
+/* Status line error: the chosen camera can't be opened */
+"Camera not available" = "Caméra non disponible";
+
+/* Status line error. %1$@ = resolution (e.g. 4K), %2$lld = frame rate, %3$@ = camera name */
+"%1$@ at %2$lld fps is not supported by the %3$@ camera" = "%1$@ à %2$lld fps n’est pas pris en charge par la caméra %3$@";
+
+/* Status line error: the camera couldn't be attached to the capture session */
+"Cannot add camera input" = "Impossible d’ajouter l’entrée de la caméra";
+
+/* Status line error: the video output couldn't be attached to the capture session */
+"Cannot add video output" = "Impossible d’ajouter la sortie vidéo";
+
+/* ===== ContentView.swift ===== */
+
+/* Toolbar button that closes a sheet; Voice Control: another name the user can say for the Live screen button that closes the adjust tray [also used in OptionsView.swift, StreamingView.swift] */
+"Done" = "OK";
+
+/* Dimmed Setup screen while the app waits for OBS to start the camera */
+"Ready for remote start — tap to wake" = "Prêt pour le démarrage à distance – touchez pour réveiller";
+
+/* Voice Control: the word the user can say to wake a dimmed screen (never shown) [also used in StreamingView.swift] */
+"Wake" = "Réveiller";
+
+/* Connection card button: start the camera stream now */
+"Start" = "Démarrer";
+
+/* Setup screen warning when Local Network permission is off */
+"Not visible by name in OBS — tap to allow Local Network in Settings. Connecting by IP still works." = "Non visible par son nom dans OBS – touchez pour autoriser Réseau local dans Réglages. La connexion par IP fonctionne toujours.";
+
+/* Setup screen: header of the collapsible setup instructions */
+"How to connect" = "Comment se connecter";
+
+/* Setup instructions, step 1 (Markdown: keep the ** markers; LensLink Camera and LensLink Screen are OBS source names) */
+"Install the LensLink plugin in OBS (GitHub link below), then add a **LensLink Camera** or **LensLink Screen** source." = "Installez le plugin LensLink dans OBS (lien GitHub ci-dessous), puis ajoutez une source **LensLink Camera** ou **LensLink Screen**.";
+
+/* Setup instructions, step 2. %@ = the phone's Wi-Fi IP address (Markdown: keep the ** markers; Phone IP, Connection and USB cable are OBS source settings) */
+"Enter **%@** as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes)." = "Saisissez **%@** dans le champ Téléphone de la source (même Wi-Fi) – ou branchez l’USB et réglez Connexion sur « Câble USB » (Windows nécessite iTunes).";
+
+/* Setup instructions, step 2 when the phone has no Wi-Fi address (Connection and USB cable are OBS source settings) */
+"No Wi-Fi address — join Wi-Fi, or plug in USB and set the source's Connection to \"USB cable\" (Windows needs iTunes)." = "Pas d’adresse Wi-Fi – connectez-vous au Wi-Fi, ou branchez l’USB et réglez la Connexion de la source sur « Câble USB » (Windows nécessite iTunes).";
+
+/* Setup screen row: camera (lens) picker */
+"Camera" = "Caméra";
+
+/* Setup screen row and sheet title: resolution, frame rate, codec and color */
+"Format" = "Format";
+
+/* Setup screen toggle; Documentation section header [also used in DocumentationView.swift] */
+"Green screen" = "Écran vert";
+
+/* Setup screen button shown when camera or microphone access was denied */
+"Camera access denied — open Settings" = "Accès à la caméra refusé – ouvrir Réglages";
+
+/* Frame rate value, e.g. "60 fps" */
+"%lld fps" = "%lld fps";
+
+/* Format row summary: short name of the Apple Log color setting */
+"Log" = "Log";
+
+/* Format row summary: short name of the Maximum quality setting */
+"Max" = "Max";
+
+/* Setup screen: main button that starts the camera stream */
+"Start Camera" = "Démarrer la caméra";
+
+/* Setup screen toggle: use the phone's microphone as the OBS source's audio */
+"Send phone mic to OBS" = "Envoyer le micro du téléphone à OBS";
+
+/* Setup screen picker choosing which microphone to use; Documentation section header [also used in DocumentationView.swift] */
+"Microphone" = "Microphone";
+
+/* Setup screen toggle: send the mic only as a timing reference for lip-sync */
+"Auto lip-sync reference" = "Référence de synchro labiale auto";
+
+/* Setup screen row that opens the Options sheet; the sheet's title; Documentation section header [also used in DocumentationView.swift, OptionsView.swift] */
+"Options" = "Options";
+
+/* Setup screen row that opens the in-app manual; the manual's title [also used in DocumentationView.swift] */
+"Documentation" = "Documentation";
+
+/* Setup screen link to the bug-report form */
+"Report a problem" = "Signaler un problème";
+
+/* Setup screen link to the project page */
+"LensLink on GitHub" = "LensLink sur GitHub";
+
+/* Format sheet: resolution picker */
+"Resolution" = "Résolution";
+
+/* Format sheet: frame rate picker */
+"Frame rate" = "Fréquence d’images";
+
+/* Format sheet section header: video codec */
+"Codec" = "Codec";
+
+/* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
+"Balanced" = "Équilibrée";
+
+/* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
+"Maximum" = "Maximale";
+
+/* Small tag next to a choice that is still in beta */
+"Beta" = "Bêta";
+
+/* Format sheet section header: stream quality */
+"Quality" = "Qualité";
+
+/* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
+"Standard" = "Standard";
+
+/* Format sheet: HDR color choice */
+"HDR (HLG)" = "HDR (HLG)";
+
+/* Format sheet: note under a color choice that needs the HEVC codec */
+"HEVC only" = "HEVC uniquement";
+
+/* Format sheet: Apple Log color choice (Apple's name for its log profile) */
+"Apple Log" = "Apple Log";
+
+/* Format sheet section header; Documentation section header [also used in DocumentationView.swift] */
+"Color" = "Couleur";
+
+/* ===== DesignSystem.swift ===== */
+
+/* VoiceOver value of an on/off control (the Flashlight button, a tally pulse switch) [also used in TallyLightOptions.swift] */
+"On" = "Activé";
+
+/* VoiceOver value of an on/off control; Tally: no status lights the border / a status's color is none [also used in OptionsView.swift, TallyLightOptions.swift] */
+"Off" = "Désactivé";
+
+/* ===== DocumentationView.swift ===== */
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"The camera streams to a **LensLink Camera** source in OBS; the screen broadcast streams to a **LensLink Screen** source. Add the source in OBS, enter the phone's Wi-Fi address as its Phone IP — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes)." = "La caméra diffuse vers une source **LensLink Camera** dans OBS ; la diffusion de l’écran, vers une source **LensLink Screen**. Ajoutez la source dans OBS et saisissez l’adresse Wi-Fi du téléphone dans son champ Téléphone – ou branchez l’USB et réglez Connexion sur « Câble USB » (Windows nécessite iTunes).";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "Une fois OBS connecté, la carte du haut affiche le nom de votre ordinateur, sa version d’OBS et la liaison utilisée, USB ou Wi-Fi. Tant qu’OBS est connecté et que la caméra est inactive, son bouton **Démarrer** lance le flux d’ici ; sinon, la carte affiche l’adresse du téléphone, celle dont OBS a besoin.";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**Format** tient en une ligne – résolution, fréquence d’images, codec et couleur – avec les choix derrière. La résolution et la fréquence d’images ne proposent que ce que la caméra choisie prend en charge. Codec et Couleur dépendent l’un de l’autre : HDR et Apple Log sont réservés au HEVC, donc choisir H.264 ramène Couleur sur Standard, et choisir HDR ou Log passe le codec en HEVC.";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"**Quality**, in the Format sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Qualité**, dans le panneau Format. **Équilibrée** diffuse à un débit sans risque sur un Wi-Fi ordinaire et ne fait que le réduire si besoin. **Maximale** part plus haut et continue de monter tant que la connexion reste propre – jusqu’à environ six fois le débit équilibré en USB, quatre fois en Wi-Fi – puis recule dès que des images s’accumulent ou sont perdues, et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité et, sauf si les effets vidéo du système sont autorisés, diffuse à partir de la lecture complète du capteur plutôt que du format binné. Plus de données et plus de chaleur : surveillez la ligne Statistiques la première fois.";
+
+/* Documentation section header */
+"Connecting" = "Connexion";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** diffuse une couleur 10 bits. OBS applique un mappage tonal pour les scènes SDR, et les canevas HDR en profitent pleinement.";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT." = "**Apple Log** (iPhone Pro, iOS 17+) diffuse une image plate en 10 bits destinée à l’étalonnage – ajoutez un filtre **Appliquer un LUT** à la source dans OBS et chargez un LUT Apple Log.";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture." = "Les deux sont réservés au HEVC et prennent effet au prochain démarrage de la caméra. Couleur se trouve dans le panneau Format et ne propose que ce que ce téléphone peut capturer.";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**Écran vert** vous garde dans l’image et peint tout le reste en vert uni avant que la vidéo quitte le téléphone – l’activer règle Couleur sur Standard. La source **LensLink Camera** ajoute dans OBS un filtre déjà réglé qui retire le vert ; il n’est ajouté qu’une fois, donc si vous le supprimez ou le réglez autrement dans OBS, votre choix est conservé.";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects." = "**Assistance profondeur** affine le détourage grâce à la profondeur réelle – la caméra avant sur les téléphones à Face ID, ou l’objectif Principal arrière sur les téléphones Pro (LiDAR). Les autres objectifs s’appuient sur la seule détection de silhouettes, qui garde chaque personne dans le cadre. Elle désactive aussi Cadre centré et les autres effets vidéo du système.";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "**Sujet** apparaît dans le tiroir de réglages de l’écran de direct quand l’assistance profondeur est active : tout ce qui est plus loin que la distance réglée sur la molette devient l’arrière-plan – de quoi effacer quelqu’un qui passe derrière vous. Touchez de nouveau la puce Sujet pour revenir à **Tout** (aucune limite).";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens." = "Pendant la diffusion, l’écran affiche l’image, la pastille d’état, les boutons Pause et Arrêt, et les boutons d’objectif – **.5**, **1×**, **2** – qui changent de caméra comme dans l’app Appareil photo. Pincez pour zoomer au sein d’un objectif.";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Touchez** l’image pour faire la mise au point et l’exposition à cet endroit – un carré jaune marque le point, et la caméra le conserve jusqu’à ce que la scène change, puis revient en automatique. **Maintenez** le doigt sur l’image pour y verrouiller la mise au point et l’exposition (Verrouillage AE/AF) : la puce MAP passe en verrouillé et la puce Expo devient ISO ; toucher l’une ou l’autre les libère. **Faites glisser** vers le haut ou le bas n’importe où sur l’image pour éclaircir ou assombrir le plan – la correction d’exposition, tant que l’exposition est en automatique.";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Exposure, Shutter, WB, Focus, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "Le **chevron** ouvre le tiroir de réglages : une molette, et une puce pour chaque paramètre qu’elle peut piloter – Zoom, Expo (exposition), Vitesse (d’obturation), BB (balance des blancs), MAP (mise au point), et Sujet quand l’écran vert fonctionne avec l’assistance profondeur. Un **A** jaune sur une puce signifie que ce réglage est en automatique. Faites glisser la molette et il passe en manuel ; touchez de nouveau la puce active et il revient en automatique. En automatique, Expo est la molette de correction ; faites glisser Vitesse pour passer l’exposition en manuel, et la puce Expo devient ISO. La lampe torche et le changement de caméra se trouvent aussi dans le tiroir.";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"Tap the **status pill** for Stats — a health line of fps, Mb/s and dropped frames — and, when an idle view is set, to engage it now instead of waiting 10 seconds." = "Touchez la **pastille d’état** pour Statistiques – une ligne de santé avec les fps, les Mb/s et les images perdues – et, si une vue au repos est définie, pour l’activer tout de suite au lieu d’attendre 10 secondes.";
+
+/* Documentation section header (the screen shown while streaming) */
+"Live screen" = "Écran de direct";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"**Send phone mic** makes this phone the camera's audio in OBS — a wireless mic. The **Microphone** row beneath it picks which one — Auto follows iOS's own routing; a headset or Bluetooth mic takes over on its own." = "**Envoyer le micro du téléphone** fait de ce téléphone l’audio de la caméra dans OBS – un micro sans fil. La ligne **Microphone** juste en dessous choisit lequel – Auto suit le routage d’iOS ; un casque ou un micro Bluetooth prend le relais de lui-même.";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"**Auto lip-sync** sends the mic only as a timing reference for aligning your real microphone; it's never heard." = "**Synchro labiale auto** envoie le micro uniquement comme référence temporelle pour aligner votre vrai micro ; il n’est jamais entendu.";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"One mic, one role — turning one on turns the other off." = "Un micro, un rôle – activer l’un désactive l’autre.";
+
+/* Documentation sheet, Screen mirror section (Markdown: keep the ** markers) */
+"Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual." = "Diffuse tout votre écran, avec l’audio des apps, vers une source **LensLink Screen** – idéal pour les jeux mobiles ou les démos d’apps. iOS coupe l’audio protégé par DRM (Apple Music, Netflix), et votre micro n’est pas transmis – captez votre voix dans OBS comme d’habitude.";
+
+/* Documentation section header */
+"Screen mirror" = "Recopie de l’écran";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Focus on faces** keeps focus and exposure on the faces the camera sees while focus is on auto, the way the Camera app does — a tap on the picture outranks it until the scene changes, and a lock ignores it. Off, the camera weights the centre of the frame." = "**Mise au point sur les visages** garde la mise au point et l’exposition sur les visages que voit la caméra tant que la mise au point est en automatique, comme dans l’app Appareil photo – toucher l’image prend le dessus jusqu’à ce que la scène change, et un verrouillage l’ignore. Désactivée, la caméra privilégie le centre de l’image.";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Remote start from OBS**: while the app is open and idle, OBS can start the camera for you. The phone stays awake while it waits — locking it or leaving the app ends remote start. Siri: \"Start streaming with LensLink.\"" = "**Démarrage à distance depuis OBS** : tant que l’app est ouverte et inactive, OBS peut démarrer la caméra pour vous. Le téléphone reste éveillé pendant l’attente – le verrouiller ou quitter l’app met fin au démarrage à distance. Siri : « Lance le streaming avec LensLink. »";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Idle view** is what the Live screen becomes 10 seconds after you last touch it, for a phone that's mounted and out of reach. **Standard** leaves the controls up. **Clean feed** hides everything but the picture — turn Stats on (status pill) before you stop touching it to keep the health readout. **Dim screen** blanks the screen and drops the brightness to save battery, and is the only one that also dims remote-start standby, a minute in. Any tap brings the controls back." = "**Vue au repos** détermine ce que devient l’écran de direct 10 secondes après votre dernier contact, pour un téléphone fixé hors de portée. **Standard** conserve les commandes. **Image seule** masque tout sauf l’image – activez Statistiques (pastille d’état) avant de cesser d’y toucher pour garder la ligne de santé. **Assombrir l’écran** masque l’image et baisse la luminosité pour économiser la batterie ; c’est le seul choix qui assombrit aussi la veille du démarrage à distance, au bout d’une minute. Un simple toucher fait revenir les commandes.";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Pause** holds a stream without ending it — the phone stays connected, the camera stays on, and OBS shows a dimmed, blurred still with a pause symbol instead of a frozen picture. The pause button sits on the Live screen next to Stop, and the same control is in OBS (source properties) and the web panel. Audio keeps going, so the phone can still be your microphone while the picture is held." = "**Mettre en pause** suspend un flux sans y mettre fin – le téléphone reste connecté, la caméra reste allumée, et OBS affiche une image fixe assombrie et floutée avec un symbole de pause au lieu d’une image figée. Le bouton Pause se trouve sur l’écran de direct à côté d’Arrêt, et la même commande existe dans OBS (propriétés de la source) et dans le panneau web. L’audio continue, donc le téléphone peut rester votre micro pendant que l’image est suspendue.";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60." = "**Fréquence d’images élevée** (expérimental) ajoute 120 et 240 fps au panneau Format quand cette caméra les propose (1080p et 720p sur les iPhone récents ; 240 utilise un format binné du capteur). Le débit du flux augmente d’autant, le téléphone chauffe davantage et se décharge plus vite, et un canevas OBS réglé sur 60 affiche au mieux une image sur deux – réglez le canevas en conséquence, et privilégiez l’USB. La désactiver ramène la fréquence à 60.";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Remember camera settings** keeps each camera's exposure, white balance, zoom and focus from one stream to the next — a shot dialled in once stays dialled in, per lens. Turn it off and every camera starts on auto, and what was stored is forgotten." = "**Mémoriser les réglages de la caméra** conserve l’exposition, la balance des blancs, le zoom et la mise au point de chaque caméra d’une diffusion à l’autre – un plan réglé une fois le reste, objectif par objectif. Désactivez l’option et chaque caméra démarre en automatique ; ce qui était enregistré est oublié.";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**Autoriser les effets vidéo du système** (expérimental) permet à iOS de baisser lui-même la fréquence d’images, ce que les effets vidéo du Centre de contrôle (Portrait, Éclairage de studio) peuvent exiger. S’applique au prochain démarrage de la caméra.";
+
+/* Documentation sheet, Tally light section (Markdown: keep the ** markers) */
+"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "La bordure colorée autour de l’écran de direct pendant la diffusion. Couleurs, ordre de priorité et désactivation état par état se règlent dans Options → Voyant tally. Le bouton en forme d’onde à côté d’une couleur fait pulser cet état au lieu de le laisser fixe – le mouvement attire l’œil sur ce que vous devez remarquer sans le guetter.";
+
+/* Documentation sheet, Tally light section (Markdown: keep the ** markers); %lld%% = the low-battery threshold (20%) */
+"**Low battery** is one of the statuses you can light: it turns on with iOS Low Power Mode, or at %lld%% and below, and clears the moment you plug in. While the screen is dimmed the battery level also shows large under the wake hint — so a phone across the room can be read at a glance, without touching it." = "**Batterie faible** fait partie des états que vous pouvez allumer : il s’active avec le mode Économie d’énergie d’iOS, ou à %lld %% et moins, et disparaît dès que vous branchez le téléphone. Quand l’écran est assombri, le niveau de batterie s’affiche aussi en grand sous l’indication de réveil – un téléphone à l’autre bout de la pièce se lit ainsi d’un coup d’œil, sans y toucher.";
+
+/* Options row, its screen title, and Documentation section header: the colored border shown while streaming [also used in OptionsView.swift, TallyLightOptions.swift] */
+"Tally light" = "Voyant tally";
+
+/* Documentation sheet, Diagnostics section (Markdown: keep the ** markers) */
+"**Camera diagnostics** lists the camera's formats — which resolutions support the Control Center video effects, and which are 10-bit HDR or Apple Log capable. Paste it into a bug report if something is missing." = "**Diagnostic de la caméra** liste les formats de la caméra – les résolutions compatibles avec les effets vidéo du Centre de contrôle, et celles qui gèrent le HDR 10 bits ou Apple Log. Collez-le dans un rapport de bug s’il manque quelque chose.";
+
+/* Documentation section header */
+"Diagnostics" = "Diagnostic";
+
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; VoiceOver, Switch Control are the iOS feature names) */
+"**VoiceOver** and **Switch Control**: while either is on, the Live screen never dims or hides its controls by itself, and remote-start standby never dims. The status pill's menu still does it when you ask. VoiceOver also says when the stream goes live, pauses, goes on air, loses its connection to OBS, or locks lip-sync." = "**VoiceOver** et **Contrôle de sélection** : tant que l’un des deux est activé, l’écran de direct ne s’assombrit jamais et ne masque jamais ses commandes de lui-même, et la veille du démarrage à distance ne s’assombrit jamais. Le menu de la pastille d’état le fait quand même si vous le demandez. VoiceOver annonce aussi quand le flux passe en direct, se met en pause, passe à l’antenne, perd sa connexion à OBS ou verrouille la synchro labiale.";
+
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; name the iOS setting as iOS shows it) */
+"**Differentiate Without Color** (iOS Settings, Accessibility) adds the lit tally status's name as a small badge at the top of the Live screen, so the border never has to be read by its color alone." = "**Différencier sans couleur** (Réglages iOS, Accessibilité) ajoute le nom de l’état tally allumé sous forme de petit badge en haut de l’écran de direct, pour que la bordure n’ait jamais à être lue par sa seule couleur.";
+
+/* Documentation section header */
+"Accessibility" = "Accessibilité";
+
+/* ===== OptionsView.swift ===== */
+
+/* Options toggle: let OBS start the camera while the app is open */
+"Remote start from OBS" = "Démarrage à distance depuis OBS";
+
+/* Options picker: what the Live screen becomes after 10 seconds untouched */
+"Idle view" = "Vue au repos";
+
+/* Options toggle */
+"Focus on faces" = "Mise au point sur les visages";
+
+/* Options toggle */
+"Remember camera settings" = "Mémoriser les réglages de la caméra";
+
+/* Options toggle (experimental 120/240 fps) */
+"High frame rate" = "Fréquence d’images élevée";
+
+/* Options toggle (experimental) */
+"Allow system video effects" = "Autoriser les effets vidéo du système";
+
+/* Options row and screen title: the camera format table */
+"Camera diagnostics" = "Diagnostic de la caméra";
+
+/* Camera diagnostics toolbar button after the report was copied */
+"Copied" = "Copié";
+
+/* Camera diagnostics toolbar button: copy the report */
+"Copy" = "Copier";
+
+/* ===== RemoteStartIntents.swift ===== */
+
+/* Shortcuts/Siri action name */
+"Start Camera Stream" = "Démarrer le flux caméra";
+
+/* Shortcuts action description */
+"Opens LensLink and starts streaming the camera to OBS." = "Ouvre LensLink et lance la diffusion de la caméra vers OBS.";
+
+/* Shortcuts/Siri action name */
+"Stop Camera Stream" = "Arrêter le flux caméra";
+
+/* Shortcuts action description */
+"Stops the LensLink camera stream." = "Arrête le flux caméra LensLink.";
+
+/* ===== StreamClient.swift ===== */
+
+/* Status line error: the app couldn't open the network port OBS connects to (USB and Wi-Fi) */
+"Could not open USB listener" = "Impossible d’ouvrir le port d’écoute";
+
+/* ===== Streamer.swift ===== */
+
+/* Status word: nothing is connected */
+"Not connected" = "Non connecté";
+
+/* Status word: OBS is connected and can start the camera */
+"OBS connected — ready" = "OBS connecté – prêt";
+
+/* Status word: streaming, waiting for OBS to connect */
+"Waiting for OBS…" = "En attente d’OBS…";
+
+/* Status word: streaming to OBS */
+"Live" = "En direct";
+
+/* Status word: the stream is held without ending it */
+"Paused" = "En pause";
+
+/* Idle view choice: hide everything but the picture */
+"Clean feed" = "Image seule";
+
+/* Idle view choice: blank the screen and lower the brightness */
+"Dim screen" = "Assombrir l’écran";
+
+/* Status line: iOS paused the camera because another app is on screen (iPad Split View) */
+"Camera paused — this iPad can't share the camera on screen" = "Caméra en pause – cet iPad ne peut pas partager la caméra à l’écran";
+
+/* Status line: iOS paused the camera because the app went to the background */
+"Camera paused — app left the screen" = "Caméra en pause – l’app a quitté l’écran";
+
+/* Status line: iOS paused the camera because the device is overheating */
+"Camera paused — device too hot" = "Caméra en pause – appareil trop chaud";
+
+/* Status line: iOS paused the camera because another app took it */
+"Camera paused — in use by another app" = "Caméra en pause – utilisée par une autre app";
+
+/* Status line error: camera permission was denied */
+"Camera access denied — enable it in Settings" = "Accès à la caméra refusé – autorisez-le dans Réglages";
+
+/* Lip-sync pill: calibration finished (tap to recalibrate); also spoken by VoiceOver when it happens [also used in StreamingView.swift] */
+"Sync locked" = "Synchro verrouillée";
+
+/* ===== StreamingView.swift ===== */
+
+/* Dimmed Live screen hint; also the VoiceOver label of the invisible wake area over the clean feed */
+"Streaming — tap to wake" = "Diffusion en cours – touchez pour réveiller";
+
+/* Dimmed Live screen: battery level, e.g. "80%" */
+"%lld%%" = "%lld %%";
+
+/* VoiceOver: battery level while charging */
+"Battery %lld percent, charging" = "Batterie à %lld pour cent, en charge";
+
+/* VoiceOver: battery level */
+"Battery %lld percent" = "Batterie à %lld pour cent";
+
+/* Status pill menu: show or hide the stream health line */
+"Stats" = "Statistiques";
+
+/* Status pill menu: switch to the clean feed idle view immediately */
+"Clean feed now" = "Image seule maintenant";
+
+/* Status pill menu: dim the screen immediately */
+"Dim screen now" = "Assombrir l’écran maintenant";
+
+/* Lip-sync pill: calibration in progress */
+"Measuring sync" = "Mesure de la synchro";
+
+/* Lip-sync pill: calibrating again */
+"Recalibrating" = "Recalibrage";
+
+/* Stream health line: %1$lld = frames per second, %2$.1f = megabits per second, %3$lld = dropped frames */
+"%1$lld fps · %2$.1f Mb/s · %3$lld dropped" = "%1$lld fps · %2$.1f Mb/s · pertes : %3$lld";
+
+/* VoiceOver label of the button that opens the camera adjust tray */
+"Adjust camera" = "Régler la caméra";
+
+/* Voice Control: a shorter name the user can say for the Adjust camera button (never shown) */
+"Adjust" = "Régler";
+
+/* VoiceOver label of the Live screen button that holds the stream */
+"Pause" = "Mettre en pause";
+
+/* VoiceOver label of the Live screen button that resumes a held stream */
+"Resume" = "Reprendre";
+
+/* VoiceOver label of the Live screen red Stop button */
+"Stop camera" = "Arrêter la caméra";
+
+/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) */
+"Stop" = "Arrêter";
+
+/* Voice Control: another name the user can say for the status pill menu (never shown) */
+"Status" = "État";
+
+/* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
+"Recalibrate" = "Recalibrer";
+
+/* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
+"Flashlight" = "Lampe torche";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown; use the everyday word for it) */
+"Torch" = "Flash";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown) */
+"Light" = "Lampe";
+
+/* VoiceOver label of the Live screen button that switches front/back camera */
+"Flip camera" = "Changer de caméra";
+
+/* Voice Control: another name the user can say for the Flip camera button (never shown) */
+"Switch camera" = "Basculer la caméra";
+
+/* Voice Control: a shorter name the user can say for the Flip camera button (never shown) */
+"Flip" = "Changer";
+
+/* VoiceOver label of the Live screen button that closes the adjust tray */
+"Close" = "Fermer";
+
+/* One-letter badge on a Live screen chip: the setting is on Auto */
+"A" = "A";
+
+/* VoiceOver: a camera setting chip that is on auto; %@ = chip name */
+"%@, auto" = "%@, auto";
+
+/* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
+"%@, manual" = "%@, manuel";
+
+/* Live screen chip: zoom */
+"Zoom" = "Zoom";
+
+/* Live screen chip: exposure */
+"Exposure" = "Expo";
+
+/* Live screen chip: shutter speed */
+"Shutter" = "Vitesse";
+
+/* Live screen chip: white balance (keep it short) */
+"WB" = "BB";
+
+/* Live screen chip: focus */
+"Focus" = "MAP";
+
+/* Live screen chip: green screen subject distance */
+"Subject" = "Sujet";
+
+/* Live screen adjust tray hint */
+"Pinch the picture to zoom" = "Pincez l’image pour zoomer";
+
+/* Live screen adjust tray hint: exposure on auto */
+"Auto · drag the picture up or down" = "Auto · faites glisser l’image vers le haut ou le bas";
+
+/* Live screen adjust tray hint: focus on auto with face tracking */
+"Auto · faces first · hold the picture to lock" = "Auto · visages d’abord · maintenez l’image pour verrouiller";
+
+/* Live screen adjust tray hint: focus on auto */
+"Auto · tap the picture · hold to lock" = "Auto · touchez l’image · maintenez pour verrouiller";
+
+/* Live screen adjust tray hint: a subject distance cutoff is set (Subject = the chip name) */
+"Cutoff · tap Subject for all" = "Seuil · touchez Sujet pour tout";
+
+/* Live screen adjust tray hint: no subject distance cutoff */
+"All · drag to set a cutoff" = "Tout · faites glisser pour fixer un seuil";
+
+/* Live screen adjust tray hint: setting on auto */
+"Auto · drag to set by hand" = "Auto · faites glisser pour régler à la main";
+
+/* Live screen adjust tray hint: setting set by hand; %@ = chip name */
+"Manual · tap %@ for auto" = "Manuel · touchez %@ pour l’auto";
+
+/* Live screen dial readout: the setting is automatic */
+"Auto" = "Auto";
+
+/* Live screen dial readout: subject distance in meters */
+"%.1f m" = "%.1f m";
+
+/* Live screen dial readout: no subject distance cutoff */
+"All" = "Tout";
+
+/* Tag under the focus square after a long press (camera app term) */
+"AE/AF Lock" = "Verrouillage AE/AF";
+
+/* ===== TallyLightOptions.swift ===== */
+
+/* Tally status: the camera is on the program output */
+"On air" = "À l’antenne";
+
+/* Tally status: the camera is visible in OBS but not on air */
+"In preview" = "En aperçu";
+
+/* Tally status: the link to OBS dropped mid-stream */
+"Connection lost" = "Connexion perdue";
+
+/* Tally status */
+"Calibrating lip-sync" = "Calibration de la synchro labiale";
+
+/* Tally status */
+"Lip-sync locked" = "Synchro labiale verrouillée";
+
+/* Tally status */
+"Low battery" = "Batterie faible";
+
+/* Tally border color */
+"Red" = "Rouge";
+
+/* Tally border color */
+"Amber" = "Ambre";
+
+/* Tally border color */
+"Green" = "Vert";
+
+/* Tally border color */
+"Blue" = "Bleu";
+
+/* Tally border color */
+"Purple" = "Violet";
+
+/* Tally border color */
+"White" = "Blanc";
+
+/* VoiceOver label of the switch that makes a tally color pulse */
+"Pulse" = "Pulsation";
+
+/* Voice Control: the name the user can say for one row's pulse switch; %@ = the tally status, e.g. "Pulse On air" (never shown) */
+"Pulse %@" = "Pulsation %@";
+
+/* Tally light screen: list header */
+"Statuses, highest priority first" = "États, du plus prioritaire au moins prioritaire";
+
+/* Tally light screen: list footer (Off and Edit are on-screen labels) */
+"The highest status here that's currently true sets the border color; Off skips it. Tap Edit to reorder." = "L’état actif le plus haut dans cette liste donne sa couleur à la bordure ; Désactivé le fait ignorer. Touchez Modifier pour réordonner.";
+
+/* Tally light screen button */
+"Reset to defaults" = "Rétablir les valeurs par défaut";
+
+/* ===== VideoEncoder.swift ===== */
+
+/* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
+"%1$@ encoder unavailable (%2$lld)" = "Encodeur %1$@ indisponible (%2$lld)";
