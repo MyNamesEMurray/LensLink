@@ -28,6 +28,24 @@ from the same captures) and **2064 × 2752** (13-inch iPad).
    `--only home,live-glance` renders a subset; `--raw` and `--out`
    point elsewhere.
 
+## Other languages
+
+The same captures, with the headline and subline translated:
+
+```bash
+node render.js --lang all      # English plus every language below
+node render.js --lang de,ja    # just these
+```
+
+Each language lands in its own folder, `out/<lang>/`, with the same file
+names; upload a folder to the matching localization in App Store
+Connect (`es` serves both Spanish (Mexico) and Spanish (Spain)). The
+translations are `captions/<lang>.json`: one entry per shot in
+`shots.json`, and the render stops if one is missing, so a new shot
+needs its caption in every file. They follow the glossary in
+`docs/LOCALIZATION.md`. Without `--lang`, English renders into `out/`
+as before.
+
 Shots marked `"statusBar": true` in `shots.json` get their battery pill
 repainted as a full white battery, so a capture taken on a low phone
 doesn't ship with a red one; the time and signal icons stay as taken.

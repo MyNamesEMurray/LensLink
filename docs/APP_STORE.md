@@ -152,7 +152,10 @@ Required sets: **6.9-inch iPhone** and **13-inch iPad** (the app targets
 both device families). Take them on device with the tally lit where it
 matters; the Camera app's own screenshots are the reference for framing.
 `tools/store-screenshots/` adds the headline and bezel and outputs the
-exact store sizes; its `shots.json` names each capture.
+exact store sizes; its `shots.json` names each capture. The same English
+captures serve every store language: `--lang all` renders the headlines
+from `captions/<lang>.json` into `out/<lang>/`, one folder per App Store
+Connect localization (`es` for both Spanish ones).
 
 1. `home`: the computer card naming the Mac, "OBS connected — ready",
    Camera / Format / Green screen rows.

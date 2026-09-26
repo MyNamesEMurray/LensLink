@@ -5,7 +5,7 @@
 // raw/<name>-ipad.png (the names are in shots.json); output lands in
 // out/. Needs Node and Playwright (npx playwright install chromium once).
 //
-//   node render.js [--raw DIR] [--out DIR] [--only name,name]
+//   node render.js [--raw DIR] [--out DIR] [--only name,name] [--lang de,ja|all]
 const fs = require('fs');
 const path = require('path');
 
@@ -18,6 +18,10 @@ const here = __dirname;
 const rawDir = path.resolve(opt('--raw', path.join(here, 'raw')));
 const outDir = path.resolve(opt('--out', path.join(here, 'out')));
 const only = opt('--only', '') ? opt('--only', '').split(',') : null;
+const captionsDir = path.join(here, 'captions');
+const available = fs.readdirSync(captionsDir).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
+const langArg = opt('--lang', '');
+const langs = !langArg ? [null] : langArg === 'all' ? ['en', ...available] : langArg.split(',');
 
 // App Store Connect sizes, portrait. `raw` names which capture feeds
 // each: the 6.5-inch set is rendered from the same iPhone captures as
@@ -48,7 +52,17 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 (async () => {
   const shots = JSON.parse(fs.readFileSync(path.join(here, 'shots.json'), 'utf8'));
   const template = fs.readFileSync(path.join(here, 'template.html'), 'utf8');
-  fs.mkdirSync(outDir, { recursive: true });
+  const captions = {};
+  for (const lang of langs) {
+    if (!lang || lang === 'en') continue;
+    const file = path.join(captionsDir, `${lang}.json`);
+    if (!fs.existsSync(file)) throw new Error(`no captions/${lang}.json (have: en, ${available.join(', ')})`);
+    captions[lang] = JSON.parse(fs.readFileSync(file, 'utf8'));
+    for (const shot of shots) {
+      const c = captions[lang][shot.name];
+      if (!c || !c.headline || !c.sub) throw new Error(`captions/${lang}.json is missing "${shot.name}"`);
+    }
+  }
 
   // No browser download needed: an installed Edge or Chrome is driven
   // directly, and Playwright's own Chromium is the last resort.
@@ -61,33 +75,40 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
     catch (e) { lastErr = e; }
   }
   if (!browser) throw lastErr;
-  let made = 0, missing = [];
+  let made = 0;
+  const missing = new Set();
 
-  for (const shot of shots) {
-    if (only && !only.includes(shot.name)) continue;
-    for (const [device, d] of Object.entries(DEVICES)) {
-      const raw = path.join(rawDir, `${shot.name}-${d.raw}.png`);
-      if (!fs.existsSync(raw)) { missing.push(path.relative(process.cwd(), raw)); continue; }
-      const img = 'data:image/png;base64,' + fs.readFileSync(raw).toString('base64');
-      const html = template
-        .replace(/{{W}}/g, d.w).replace(/{{H}}/g, d.h).replace(/{{PAD}}/g, d.pad)
-        .replace(/{{H1}}/g, d.h1).replace(/{{P}}/g, d.p).replace(/{{DEVW}}/g, d.devw)
-        .replace(/{{RADIUS}}/g, d.radius).replace(/{{BEZEL}}/g, d.bezel)
-        .replace('{{HEADLINE}}', esc(shot.headline)).replace('{{SUB}}', esc(shot.sub))
-        .replace('{{IMG}}', img)
-        .replace('{{FULLBATTERY}}', shot.statusBar ? 'true' : 'false')
-        .replace('{{BATTERY}}', JSON.stringify(BATTERY[d.raw]));
-      const page = await browser.newPage({ viewport: { width: d.w, height: d.h }, deviceScaleFactor: 1 });
-      await page.setContent(html, { waitUntil: 'load' });
-      await page.waitForFunction(() => document.getElementById('shot').dataset.fullBattery !== 'true');
-      const out = path.join(outDir, `${shot.name}-${device}.png`);
-      await page.screenshot({ path: out, clip: { x: 0, y: 0, width: d.w, height: d.h } });
-      await page.close();
-      console.log('wrote', path.relative(process.cwd(), out));
-      made++;
+  for (const lang of langs) {
+    const langOut = lang ? path.join(outDir, lang) : outDir;
+    fs.mkdirSync(langOut, { recursive: true });
+    for (const shot of shots) {
+      if (only && !only.includes(shot.name)) continue;
+      const text = captions[lang] ? captions[lang][shot.name] : shot;
+      for (const [device, d] of Object.entries(DEVICES)) {
+        const raw = path.join(rawDir, `${shot.name}-${d.raw}.png`);
+        if (!fs.existsSync(raw)) { missing.add(path.relative(process.cwd(), raw)); continue; }
+        const img = 'data:image/png;base64,' + fs.readFileSync(raw).toString('base64');
+        const html = template
+          .replace(/{{W}}/g, d.w).replace(/{{H}}/g, d.h).replace(/{{PAD}}/g, d.pad)
+          .replace(/{{H1}}/g, d.h1).replace(/{{P}}/g, d.p).replace(/{{DEVW}}/g, d.devw)
+          .replace(/{{RADIUS}}/g, d.radius).replace(/{{BEZEL}}/g, d.bezel)
+          .replace('{{LANG}}', lang || 'en')
+          .replace('{{HEADLINE}}', esc(text.headline)).replace('{{SUB}}', esc(text.sub))
+          .replace('{{IMG}}', img)
+          .replace('{{FULLBATTERY}}', shot.statusBar ? 'true' : 'false')
+          .replace('{{BATTERY}}', JSON.stringify(BATTERY[d.raw]));
+        const page = await browser.newPage({ viewport: { width: d.w, height: d.h }, deviceScaleFactor: 1 });
+        await page.setContent(html, { waitUntil: 'load' });
+        await page.waitForFunction(() => document.getElementById('shot').dataset.fullBattery !== 'true');
+        const out = path.join(langOut, `${shot.name}-${device}.png`);
+        await page.screenshot({ path: out, clip: { x: 0, y: 0, width: d.w, height: d.h } });
+        await page.close();
+        console.log('wrote', path.relative(process.cwd(), out));
+        made++;
+      }
     }
   }
   await browser.close();
-  if (missing.length) console.log('no raw capture for:\n  ' + missing.join('\n  '));
+  if (missing.size) console.log('no raw capture for:\n  ' + [...missing].join('\n  '));
   console.log(`${made} screenshot(s) written to ${path.relative(process.cwd(), outDir) || '.'}`);
 })().catch((e) => { console.error(e); process.exit(1); });
