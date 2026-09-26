@@ -64,10 +64,21 @@ description: Mirror your whole iPhone or iPad screen into OBS with its audio, us
   <figcaption>OBS then scales each incoming size to fit your box instead of resizing your layout.</figcaption>
 </figure>
 
+<h2>Frame rate</h2>
+<p>
+  The source's <strong>Frame rate</strong> property picks 60 fps (the
+  default) or 30 fps. At 30 the phone encodes every other frame at a lower
+  bitrate, which roughly halves its encoding work and the Wi-Fi bandwidth.
+  That suits slides, documents and apps, and helps on a weak Wi-Fi link;
+  keep 60 for games and video. It applies right away, even mid-broadcast.
+  iOS only sends a new frame when something on screen changes, so a still
+  screen costs little either way.
+</p>
+
 <h2>What the Screen source doesn't have</h2>
 <p>
-  No camera controls and no browser panel — there's nothing to zoom or focus.
-  Its properties are the connection, decoding and diagnostics.
+  No camera controls and no browser panel: there's nothing to zoom or focus.
+  Its properties are the connection, decoding, frame rate and diagnostics.
 </p>
 
 <h2>Sharing one phone between two sources</h2>

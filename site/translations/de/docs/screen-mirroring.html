@@ -1,6 +1,6 @@
 title: Bildschirmspiegelung
 description: Spiegle den ganzen Bildschirm deines iPhone oder iPad samt Ton in OBS, mit der Quelle LensLink Screen und der integrierten Bildschirmübertragung von iOS.
-source: 29f388d60573
+source: 8c2230d4ffc9
 ---
 <h1>Bildschirmspiegelung</h1>
 <p class="lede">
@@ -67,11 +67,23 @@ source: 29f388d60573
   <figcaption>OBS skaliert dann jede ankommende Größe passend in deinen Rahmen, statt dein Layout zu verändern.</figcaption>
 </figure>
 
+<h2>Bildrate</h2>
+<p>
+  Die Eigenschaft <strong>Bildrate</strong> der Quelle wählt 60 fps (Standard)
+  oder 30 fps. Bei 30 kodiert das Smartphone nur jedes zweite Bild mit
+  geringerer Bitrate, was seinen Kodieraufwand und die WLAN-Bandbreite
+  ungefähr halbiert. Das passt für Folien, Dokumente und Apps und hilft bei
+  schwachem WLAN; für Spiele und Videos bleib bei 60. Die Änderung gilt
+  sofort, auch während einer laufenden Übertragung. iOS sendet nur dann ein
+  neues Bild, wenn sich etwas auf dem Bildschirm ändert, ein ruhiger
+  Bildschirm kostet also so oder so wenig.
+</p>
+
 <h2>Was die Screen-Quelle nicht hat</h2>
 <p>
   Keine Kamerasteuerung und kein Browser-Steuerfeld – es gibt nichts zu zoomen
-  oder zu fokussieren. Ihre Eigenschaften umfassen Verbindung, Dekodierung und
-  Diagnose.
+  oder zu fokussieren. Ihre Eigenschaften umfassen Verbindung, Dekodierung,
+  Bildrate und Diagnose.
 </p>
 
 <h2>Ein Smartphone für zwei Quellen</h2>

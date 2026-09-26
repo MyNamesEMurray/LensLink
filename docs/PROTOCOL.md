@@ -139,6 +139,14 @@ active lens (the STATE snapshot advertises the valid choices in
 through the normal live-reconfigure path: new VIDEO_CONFIG, fresh
 keyframe, decoder reset on a codec change.
 
+Screen-mirror connections honour only `set_format`'s `fps`, 60 or 30. The
+plugin's LensLink Screen source sends `{ "cmd": "set_format", "fps": 30 }`
+on every new connection and whenever its **Frame rate** property changes
+(the same on-change + re-announce contract as `tally`). The phone keeps
+capturing at the display's rate and skips frames down to the requested
+rate before encoding, scaling the bitrate with it, and announces the new
+rate in the next VIDEO_CONFIG. An older app ignores it and sends 60.
+
 `set_quality` picks the bitrate strategy: `"balanced"` (the app's table,
 safe on ordinary Wi-Fi, the adaptive loop only backs off from it) or
 `"maximum"` (starts higher and probes upward while the link is clean, to

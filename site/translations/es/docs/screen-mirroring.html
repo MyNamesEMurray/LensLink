@@ -1,6 +1,6 @@
 title: Duplicado de pantalla
 description: Duplica toda la pantalla de tu iPhone o iPad en OBS, con su audio, usando la fuente LensLink Screen y la transmisión integrada de iOS.
-source: 29f388d60573
+source: 8c2230d4ffc9
 ---
 <h1>Duplicado de pantalla</h1>
 <p class="lede">
@@ -66,10 +66,24 @@ source: 29f388d60573
   <figcaption>Así, OBS escala cada tamaño entrante para que quepa en tu recuadro, en lugar de cambiar tu composición.</figcaption>
 </figure>
 
+<h2>Velocidad de fotogramas</h2>
+<p>
+  La propiedad <strong>Velocidad de fotogramas</strong> de la fuente elige
+  60 fps (el valor predeterminado) o 30 fps. A 30, el teléfono codifica uno
+  de cada dos fotogramas con una tasa de bits menor, lo que reduce
+  aproximadamente a la mitad su trabajo de codificación y el ancho de banda
+  Wi-Fi. Es adecuado para diapositivas, documentos y apps, y ayuda con una
+  conexión Wi-Fi débil; para juegos y video, mantén 60. Se aplica al
+  instante, incluso con la transmisión en curso. iOS solo envía un
+  fotograma nuevo cuando algo cambia en la pantalla, así que una pantalla
+  quieta cuesta poco en cualquier caso.
+</p>
+
 <h2>Lo que no tiene la fuente Screen</h2>
 <p>
   No tiene controles de cámara ni panel del navegador: no hay nada que ampliar ni
-  enfocar. Sus propiedades son la conexión, la decodificación y el diagnóstico.
+  enfocar. Sus propiedades son la conexión, la decodificación, la velocidad de
+  fotogramas y el diagnóstico.
 </p>
 
 <h2>Compartir un teléfono entre dos fuentes</h2>
