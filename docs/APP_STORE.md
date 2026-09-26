@@ -81,7 +81,8 @@ each submission.
 ## Store listing
 
 **Name:** LensLink Camera
-**Subtitle** (30 chars max): Your iPhone as an OBS camera
+**Subtitle** (30 chars max, and no "iPhone" or "iPad": App Store
+Connect rejects them there): Phone camera for OBS Studio
 **Category:** Photo & Video (secondary: Utilities)
 **Age rating:** 4+ (no objectionable content; the questionnaire is all
 "None")
@@ -92,8 +93,8 @@ each submission.
 
 **Promotional text** (170 chars, editable without a new build):
 
-> Stream your iPhone's camera to OBS Studio over Wi-Fi or USB — up to
-> 4K60, HEVC, 10-bit HDR — with live controls from your computer.
+> Stream your iPhone or iPad's camera to OBS Studio over Wi-Fi or USB —
+> up to 4K60, HEVC, 10-bit HDR — with live controls from your computer.
 
 **Description:**
 
@@ -105,7 +106,7 @@ each submission.
 > **Picture first**
 > - Up to 4K at 60 fps, HEVC or H.264, with 120 and 240 fps available
 >   where the camera has them
-> - 10-bit HDR (HLG) and Apple Log on supported iPhones
+> - 10-bit HDR (HLG) and Apple Log on supported devices
 > - Balanced or Maximum quality: Maximum finds the most your connection
 >   can carry
 > - Every lens, with the Camera app's lens buttons
@@ -117,7 +118,7 @@ each submission.
 >   faces-first autofocus
 > - The same controls in a browser panel on your computer, and in OBS
 >   itself
-> - Remember camera settings: a shot dialled in once stays dialled in
+> - Remember camera settings: a shot dialed in once stays dialed-in
 >
 > **Built for production**
 > - Remote start: OBS starts the camera while the app sits idle
@@ -131,13 +132,37 @@ each submission.
 > - Siri and Shortcuts
 >
 > **Private by design**
-> Nothing is recorded on the phone and nothing leaves your local
+> Nothing is recorded on the phone, and nothing leaves your local
 > network. No account, no sign-in, no analytics.
 >
 > Requires OBS Studio and the free, open-source LensLink plugin for
 > Mac, Windows or Linux: https://lenslink.cam
 
-**Keywords** (100 chars): obs,camera,webcam,streaming,virtual camera,4k,hevc,hdr,usb,wifi,phone camera,capture
+**Keywords** (100 chars): webcam,streaming,virtual,4k,hevc,hdr,usb,wifi,capture,live,broadcast,video,mobile,mirror,screen
+
+Search matches the name and subtitle as well as the keywords, so the
+keywords never repeat their words ("obs", "camera", "phone"): that room
+is spent on other terms instead.
+
+**Localized listing:** German, Spanish, French, Japanese, Brazilian
+Portuguese and Simplified Chinese have every field translated in
+[`APP_STORE_LOCALIZED.md`](APP_STORE_LOCALIZED.md). The name stays
+"LensLink Camera" in every language.
+
+**What's New** (1.15.1, the first update; covers 1.14.0 to 1.15.1):
+
+> LensLink now speaks your language, works better with accessibility features, and has a new icon.
+>
+> - Six new languages: German, Spanish, French, Japanese, Brazilian Portuguese and Simplified Chinese. LensLink follows your iPhone or iPad language, and the OBS plugin and browser control panel are translated too.
+> - Accessibility: every control has a VoiceOver label and Voice Control names. VoiceOver announces going live, pausing, and losing the connection to OBS. The app also supports Differentiate Without Color, Reduce Transparency, Increase Contrast, Reduce Motion and larger text sizes.
+> - Front camera lens buttons: on iPads with a front ultra wide camera, switch front lenses right from the Live screen, just like the back lenses. The front ultra wide is now listed as "Front (Ultra Wide)" instead of a second "Front".
+> - Tap the lens you're already using to reset its zoom, just like the Camera app.
+> - Screen mirroring can now run at 30 fps to save battery and Wi-Fi bandwidth. Choose it in the LensLink Screen source's properties in OBS (needs the 1.15.1 plugin).
+> - A new app icon, with light and dark versions and full Liquid Glass support on iOS 26 and later.
+
+The App Store version must match the release tag the merge cut (1.15.1
+here): the build carries that version, and App Store Connect only
+attaches a build whose version matches.
 
 **What's New** (first version):
 
@@ -152,7 +177,12 @@ Required sets: **6.9-inch iPhone** and **13-inch iPad** (the app targets
 both device families). Take them on device with the tally lit where it
 matters; the Camera app's own screenshots are the reference for framing.
 `tools/store-screenshots/` adds the headline and bezel and outputs the
-exact store sizes; its `shots.json` names each capture.
+exact store sizes; its `shots.json` names each capture. The same English
+captures serve every store language: `render.js --lang all` renders the
+headlines from `captions/<lang>.json` into `out/<lang>/`, one folder per
+App Store Connect localization (`es` for both Spanish ones), and
+`localize.js` does the same from the finished English screenshots when
+the raw captures are gone.
 
 1. `home`: the computer card naming the Mac, "OBS connected — ready",
    Camera / Format / Green screen rows.

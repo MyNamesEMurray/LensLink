@@ -1,0 +1,26 @@
+{
+  "home": {
+    "headline": "Votre iPhone, dans OBS.",
+    "sub": "Ouvrez l’app, touchez Démarrer la caméra. OBS trouve le téléphone en Wi-Fi ou en USB."
+  },
+  "live-glance": {
+    "headline": "Jusqu’à 4K60, HEVC, HDR 10 bits.",
+    "sub": "L’image est l’interface. Touchez pour la mise au point, maintenez pour verrouiller, pincez pour zoomer."
+  },
+  "live-tray": {
+    "headline": "Un seul tiroir pour toute la caméra.",
+    "sub": "Exposition, obturateur, balance des blancs et mise au point, chacun avec un mode auto fiable."
+  },
+  "format": {
+    "headline": "Équilibrée ou Maximale.",
+    "sub": "Maximale trouve le débit le plus élevé que votre connexion peut tenir, et s’y maintient."
+  },
+  "options": {
+    "headline": "Démarrage à distance. Voyant tally. Réglages mémorisés.",
+    "sub": "Conçue pour la production, pas pour bricoler en plein direct."
+  },
+  "obs": {
+    "headline": "En direct dans OBS en une ou deux secondes.",
+    "sub": "La synchronisation labiale automatique aligne votre vrai micro. Rien ne quitte votre réseau."
+  }
+}

@@ -15,6 +15,11 @@ translations of it.
 | Portuguese (Brazil) | `pt-BR` | `pt-BR` | `/pt-br/` |
 | Chinese (Simplified) | `zh-Hans` | `zh-CN` | `/zh-hans/` |
 
+The App Store screenshot captions (`tools/store-screenshots/captions/`)
+use the iOS codes. The store listing text (subtitle, promotional text,
+keywords, description, release notes) is translated in
+`docs/APP_STORE_LOCALIZED.md`, to paste into App Store Connect.
+
 Why these six: they are the largest non-English OBS user communities and
 App Store markets, and together they cover most streamers who would not
 otherwise read an English UI. Spanish is written to read naturally in both

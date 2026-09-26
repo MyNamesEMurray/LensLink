@@ -35,7 +35,8 @@ Read the matching doc before touching an area:
 - `docs/ROADMAP.md` (planned work — check before designing a feature),
   `docs/TESTFLIGHT.md` (App Store Connect / TestFlight automation),
   `docs/APP_STORE.md` (review notes, store listing, the multitasking
-  camera entitlement — keep in step with user-visible features),
+  camera entitlement — keep in step with user-visible features; its
+  translations are `docs/APP_STORE_LOCALIZED.md`),
   `docs/DEBUGGING-SCREEN-MIRROR.md` (the broadcast extension's failure
   modes, which are hard to observe from the app),
   `docs/LOCALIZATION.md` (how every surface is translated, the languages,
