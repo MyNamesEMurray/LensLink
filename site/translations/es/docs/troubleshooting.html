@@ -5,8 +5,7 @@ source: b9fde365152b
 <h1>Solución de problemas</h1>
 <p class="lede">
   Busca tu síntoma. Con dos archivos adjuntos casi cualquier informe se puede
-  resolver: el registro de OBS (<strong>Ayuda → Archivos de registro → Ver el
-  registro actual</strong>) y <strong>Opciones → Diagnóstico de cámara</strong>
+  resolver: el registro de OBS (<strong>Ayuda → Archivos de registro → Ver registro actual</strong>) y <strong>Opciones → Diagnóstico de cámara</strong>
   de la app.
 </p>
 
@@ -21,8 +20,7 @@ source: b9fde365152b
 <h2>La fuente se llama “iOS Camera”, o las actualizaciones no parecen aplicarse</h2>
 <p>
   Sigue instalada una copia anterior a la 1.0 (<code>ios-camera-source.dll</code>)
-  que se impone a la actual; el registro dice <em>"Source 'ios_camera_source'
-  already exists"</em>. Elimina estas dos rutas y reinicia:
+  que se impone a la actual; el registro dice <em>“Source 'ios_camera_source' already exists”</em>. Elimina estas dos rutas y reinicia:
 </p>
 <pre><code>obs-plugins\64bit\ios-camera-source.dll
 data\obs-plugins\ios-camera-source\</code></pre>
@@ -97,7 +95,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 <h2>No hay audio, o hay audio que no oyes</h2>
 <ul>
   <li><strong>Las apps con DRM quedan en silencio durante una transmisión:</strong> iOS silencia Apple Music, Spotify y Netflix. El audio de juegos, apps y navegador funciona bien.</li>
-  <li><strong>Se graba pero no se oye:</strong> configura la <strong>Monitorización de audio</strong> como <strong>Monitor y salida</strong> en las Propiedades avanzadas de audio de OBS.</li>
+  <li><strong>Se graba pero no se oye:</strong> configura la <strong>Monitorización de audio</strong> como <strong>Monitor y salida</strong> en las Propiedades de audio avanzadas de OBS.</li>
   <li><strong>No llega el micrófono del teléfono a OBS:</strong> activa <strong>Enviar micrófono del teléfono a OBS</strong>. Si <strong>Referencia de sincronía labial automática</strong> está activada, no llegará: un micrófono, una función.</li>
 </ul>
 
@@ -186,7 +184,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 
 <h2>Nada de esto coincide</h2>
 <p>
-  <strong>Herramientas → Configuración de LensLink → Copiar un informe de
+  <strong>Herramientas → Ajustes de LensLink → Copiar un informe de
   diagnóstico</strong>, y luego pégalo en una incidencia en
   <a href="{{REPO}}/issues">GitHub</a>. Reúne las versiones, el hardware, el
   dispositivo gráfico, los ajustes y el estado de conexión de cada fuente,
@@ -197,8 +195,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 <p>
   Sin la interfaz Qt, o desde un script:
   <code>curl localhost:9980/api/diagnostics</code>. El informe también va al
-  registro de OBS, así que <strong>Ayuda → Archivos de registro → Subir el
-  archivo de registro actual</strong> lo incluye.
+  registro de OBS, así que <strong>Ayuda → Archivos de registro → Cargar el archivo de registro actual</strong> lo incluye.
 </p>
 <p>
   Conviene añadir también: <strong>Opciones → Diagnóstico de cámara</strong> de la

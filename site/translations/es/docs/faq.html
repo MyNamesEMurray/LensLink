@@ -1,6 +1,6 @@
 title: Preguntas frecuentes
 description: Precio, privacidad, dispositivos compatibles, Android, uso como cámara virtual, batería y cómo se compara LensLink con una capturadora o una webcam USB.
-source: 11108b31c9b2
+source: de29eb0c21eb
 ---
 <h1>Preguntas frecuentes</h1>
 
@@ -53,7 +53,7 @@ source: 11108b31c9b2
   Tantos como tu equipo pueda decodificar. Una fuente por teléfono, cada una
   conectada, controlada y supervisada por separado. El
   <a href="/docs/performance/#the-gpu-decode-pipeline-beta">pipeline de
-  decodificación por GPU</a> es lo que permite manejar con holgura varias fuentes 4K.
+  decodificación en GPU</a> es lo que permite manejar con holgura varias fuentes 4K.
 </p>
 
 <h2>¿Me gastará la batería?</h2>
@@ -110,10 +110,23 @@ source: 11108b31c9b2
   Stream Decks y scripts.
 </p>
 
+<h2>¿Funciona con VoiceOver y otros ajustes de accesibilidad?</h2>
+<p>
+  Sí. Todos los controles de la app tienen un nombre hablado para VoiceOver y
+  Control por voz, y VoiceOver anuncia cuando la transmisión pasa a en vivo, se
+  pausa, sale al aire o pierde OBS. Mientras VoiceOver o Control por botón está
+  activado, la pantalla En vivo nunca se atenúa ni oculta sus controles por sí
+  sola. La app respeta Texto más grande, Reducir movimiento, Reducir
+  transparencia, Aumentar contraste y Diferenciar sin color, que añade el nombre
+  del estado tally junto al borde de color. El
+  <a href="/docs/web-panel/">panel en el navegador</a> también etiqueta sus
+  controles para lectores de pantalla.
+</p>
+
 <h2>¿Cómo informo de un error o pido una función?</h2>
 <p>
   Abre un issue en <a href="{{REPO}}/issues">GitHub</a>. Si es un error, adjunta
-  el registro de OBS y <strong>Opciones → Diagnóstico de la cámara</strong>:
+  el registro de OBS y <strong>Opciones → Diagnóstico de cámara</strong>:
   <a href="/docs/troubleshooting/#nothing-here-matches">qué incluir</a>.
 </p>
 

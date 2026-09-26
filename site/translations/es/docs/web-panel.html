@@ -14,7 +14,7 @@ source: 441ba810e72e
 <p>
   Abre <code>http://localhost:9980</code> en la computadora donde se ejecuta OBS.
   El panel está activado de forma predeterminada; el interruptor está en
-  <strong>Herramientas → Configuración de LensLink → Panel de control en el
+  <strong>Herramientas → Ajustes de LensLink → Panel de control en el
   navegador</strong>.
 </p>
 <div class="callout">
@@ -60,7 +60,7 @@ source: 441ba810e72e
   <tbody>
     <tr><td><code>GET /api/sources</code></td><td>Todas las fuentes: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>screen</code>.</td></tr>
     <tr><td><code>GET /api/status</code></td><td>El texto de <code>status</code> (en el idioma de OBS), su <code>tone</code> (<code>idle</code>, <code>wait</code>, <code>ready</code>, <code>live</code> o <code>error</code>, para darle color sin leer el texto), además de <code>screen</code>, <code>standby</code>, <code>connected</code>, <code>autoStart</code> y la fase <code>sync</code> de la sincronía labial.</td></tr>
-    <tr><td><code>GET /api/diagnostics</code></td><td>El informe de diagnóstico completo en texto plano: versiones, hardware, ajustes y estado de cada fuente. El mismo contenido que el botón de Herramientas → Configuración de LensLink.</td></tr>
+    <tr><td><code>GET /api/diagnostics</code></td><td>El informe de diagnóstico completo en texto plano: versiones, hardware, ajustes y estado de cada fuente. El mismo contenido que el botón de Herramientas → Ajustes de LensLink.</td></tr>
     <tr><td><code>GET /api/state</code></td><td>La última instantánea del estado de la cámara del teléfono: lentes, zoom, exposición, enfoque, balance de blancos, formatos admitidos. Es la misma caché que leen las propiedades de la fuente, y así es como las tres superficies se mantienen sincronizadas.</td></tr>
   </tbody>
 </table>
@@ -108,6 +108,6 @@ curl -s http://localhost:9980/api/sources</code></pre>
 <h2>Desactivarlo</h2>
 <p>
   Desmarca <strong>Panel de control en el navegador</strong> en
-  <strong>Herramientas → Configuración de LensLink</strong>. El puerto se cierra
+  <strong>Herramientas → Ajustes de LensLink</strong>. El puerto se cierra
   de inmediato; todo lo demás sigue igual.
 </p>

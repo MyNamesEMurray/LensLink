@@ -25,7 +25,7 @@ source: 1afb7c72d111
     <tr><td>Pausar / Reanudar la transmisión</td><td>Botones. Pausar retiene la transmisión (el teléfono sigue conectado y OBS muestra una imagen fija desenfocada con un símbolo de pausa) y Reanudar vuelve a la transmisión en vivo. También están en la pantalla En vivo del teléfono y en el panel web.</td></tr>
     <tr><td>Fuente de audio para la sincronía labial</td><td>Tu micrófono real, el que hay que alinear.</td></tr>
     <tr><td>Retrasar automáticamente esa fuente de audio…</td><td>Aplica a esa fuente de audio la latencia medida de la cámara.</td></tr>
-    <tr><td>Calibrar automáticamente</td><td>Mide el desfase a partir de la referencia del micrófono del teléfono. Requiere tener activada <strong>Referencia de sincronía labial automática</strong> en la app; ignora la latencia manual de abajo.</td></tr>
+    <tr><td>Calibración automática</td><td>Mide el desfase a partir de la referencia del micrófono del teléfono. Requiere tener activada <strong>Referencia de sincronía labial automática</strong> en la app; ignora la latencia manual de abajo.</td></tr>
     <tr><td>Retraso de video automático para micrófonos lentos</td><td>Retrasa el video en su lugar, para micrófonos más lentos que la transmisión.</td></tr>
     <tr><td>Latencia propia del dispositivo de audio</td><td>Solo en modo manual. Se resta del retraso.</td></tr>
   </tbody>
@@ -35,7 +35,7 @@ source: 1afb7c72d111
   conexión, decodificación y diagnóstico.
 </p>
 
-<h2>Ajustes del plugin (Herramientas → Configuración de LensLink)</h2>
+<h2>Ajustes del plugin (Herramientas → Ajustes de LensLink)</h2>
 <p>Un solo valor para todo el plugin, nunca repetido en cada fuente.</p>
 <table>
   <thead><tr><th>Ajuste</th><th>Qué hace</th></tr></thead>
@@ -60,7 +60,7 @@ source: 1afb7c72d111
     <tr><td>Alta velocidad de fotogramas</td><td>Experimental: añade 120 y 240 fps a la hoja Formato donde la cámara los tiene (1080p y 720p en los iPhone recientes). La tasa de bits aumenta con ella, el teléfono se calienta más y un lienzo de OBS a 60 muestra, como mucho, un fotograma de cada dos: haz que coincida con el lienzo y usa USB si puedes. Al desactivarla, la velocidad vuelve a 60.</td></tr>
     <tr><td>Permitir efectos de video del sistema</td><td>Experimental: permite que iOS reduzca la velocidad de fotogramas de captura, algo que pueden requerir los efectos del Centro de control. Se aplica la próxima vez que se inicie la cámara.</td></tr>
     <tr><td>Luz tally</td><td>Colores, orden de prioridad, desactivación por estado y qué estados parpadean. Consulta más abajo.</td></tr>
-    <tr><td>Recordar configuración de cámara</td><td>Conserva la exposición, el balance de blancos, el zoom y el enfoque de cada cámara de una transmisión a la siguiente, por lente. Al desactivarla, se olvida lo guardado. <a href="/docs/camera/#remembered">Ajustes que se recuerdan</a>.</td></tr>
+    <tr><td>Recordar ajustes de cámara</td><td>Conserva la exposición, el balance de blancos, el zoom y el enfoque de cada cámara de una transmisión a la siguiente, por lente. Al desactivarla, se olvida lo guardado. <a href="/docs/camera/#remembered">Ajustes que se recuerdan</a>.</td></tr>
     <tr><td>Enviar micrófono del teléfono a OBS</td><td>Convierte el teléfono en el audio de la fuente de cámara: un micrófono inalámbrico.</td></tr>
     <tr><td>Referencia de sincronía labial automática</td><td>Envía el micrófono solo como referencia de tiempo; nunca se oye. No es compatible con la fila anterior.</td></tr>
     <tr><td>Diagnóstico de cámara</td><td>Todos los formatos del dispositivo y cuáles admiten los efectos del Centro de control, HDR de 10 bits o Apple Log. Pégalo en un informe de error.</td></tr>
@@ -95,6 +95,6 @@ source: 1afb7c72d111
 <h2>Dónde no está un ajuste</h2>
 <ul>
   <li><strong>La resolución, la velocidad de fotogramas, el códec y el color</strong> están en el teléfono, porque solo él sabe qué pueden hacer sus cámaras. Otras superficies pueden cambiarlos durante la transmisión, pero la lista la controla la app.</li>
-  <li><strong>Los ajustes globales</strong> nunca se repiten en cada fuente. Si no está en la fuente, está en <strong>Herramientas → Configuración de LensLink</strong>.</li>
+  <li><strong>Los ajustes globales</strong> nunca se repiten en cada fuente. Si no está en la fuente, está en <strong>Herramientas → Ajustes de LensLink</strong>.</li>
   <li><strong>Todo lo que se puede ajustar desde más de un sitio</strong> lee el mismo estado en caché, así que las tres superficies nunca discrepan.</li>
 </ul>
