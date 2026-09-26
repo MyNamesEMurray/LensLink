@@ -1,0 +1,147 @@
+title: Latence et performances
+description: De quoi se compose la latence de LensLink, comment la mesurer, comment la réduire, et ce que change le pipeline de décodage GPU.
+source: c872f7d4c756
+---
+<h1>Latence et performances</h1>
+<p class="lede">
+  Environ <strong>60 ms</strong> de la caméra à OBS en USB, en 1080p comme en 4K ;
+  en Wi-Fi, c’est plus élevé et plus variable. La valeur est mesurée en continu,
+  pas estimée, et affichée dans le champ État, la barre d’état et le journal.
+</p>
+
+<h2>D’où vient le délai</h2>
+<table>
+  <thead><tr><th>Étape</th><th>Environ</th><th>Remarques</th></tr></thead>
+  <tbody>
+    <tr><td>Capture et exposition</td><td>Une image</td><td>Les scènes plus lumineuses s’exposent plus vite, et cela se voit ici.</td></tr>
+    <tr><td>Encodage matériel</td><td>Quelques ms</td><td>VideoToolbox. Rien à régler.</td></tr>
+    <tr><td>La liaison</td><td>USB : faible, stable. Wi-Fi : variable</td><td>L’étape qui distingue une bonne installation d’une installation frustrante.</td></tr>
+    <tr><td>Décodage</td><td>Quelques ms</td><td>GPU par défaut, repli logiciel automatique.</td></tr>
+    <tr><td>Arrivée dans votre scène</td><td>Moins d’une milliseconde avec le pipeline GPU</td><td>Sinon, une copie hors de la mémoire GPU, puis retour.</td></tr>
+  </tbody>
+</table>
+
+<h2>La réduire</h2>
+<ol>
+  <li><strong>Utilisez l’USB.</strong> Le plus régulier, insensible à l’encombrement du Wi-Fi, et il recharge le téléphone.</li>
+  <li><strong>Éclairez la scène.</strong> Une pièce sombre allonge l’exposition, ce qui s’ajoute directement au budget de latence.</li>
+  <li><strong>Gardez les réglages par défaut.</strong> Le mode faible latence et le décodage matériel sont activés d’origine.</li>
+  <li><strong>Ne visez pas plus haut que nécessaire.</strong> Si le plan est un face caméra de 1000 px de large dans votre scène, le 1080p n’est pas un compromis.</li>
+  <li><strong>Utilisez le téléobjectif plutôt qu’un fort zoom numérique.</strong> Une vidéo zoomée et bruitée se compresse mal, ce qui se traduit par des pics de débit et de latence.</li>
+</ol>
+<div class="callout">
+  <p><strong>En cas de congestion, les images sont abandonnées, pas mises en file d’attente.</strong>
+  Quand la liaison cale, LensLink abandonne des images et baisse brièvement la
+  qualité plutôt que d’accumuler du retard : la latence reste stable au lieu de
+  dériver au fil de la diffusion.</p>
+</div>
+
+<h2>Surveiller les chiffres</h2>
+<ul>
+  <li><strong>Barre d’état d’OBS :</strong> <code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>, une entrée par source en direct.</li>
+  <li><strong>Le dock LensLink</strong> (<strong>Afficher → Docks</strong>) : une ligne par source.</li>
+  <li><strong>Sur le téléphone :</strong> <strong>Statistiques</strong>, dans le menu d’état de l’écran de direct, affiche la même ligne. Avec <strong>Image seule</strong> comme vue au repos, elle reste volontairement visible quand les commandes s’effacent.</li>
+  <li><strong>Le champ État</strong> indique la latence mesurée de la capture au décodage pendant la connexion.</li>
+</ul>
+<p>
+  La valeur est réelle : un échange de décalage d’horloge de type NTP a lieu
+  chaque seconde, et c’est aussi ce qui rend possible la synchronisation labiale
+  automatique.
+</p>
+
+<h2>Le pipeline de décodage GPU (bêta)</h2>
+<p>
+  Normalement, chaque image décodée est téléchargée du GPU vers la mémoire
+  système, confiée à OBS, puis renvoyée aussitôt au GPU pour la composition :
+  environ 2 GB/s de pixels en 4K60, pour rien. Le pipeline bêta transmet l’image
+  à OBS sous forme de texture et évite cet aller-retour.
+</p>
+<p>
+  <strong>Outils → Paramètres LensLink</strong>. Toutes les sources basculent
+  ensemble, après un redémarrage d’OBS.
+</p>
+
+<h3>Résultats mesurés</h3>
+<p>
+  Douze configurations, environ 25 s de vidéo en direct chacune, même PC et même
+  téléphone en Wi-Fi. Les copies de pixels affichent 0,00 MB/s sur chaque essai
+  avec le pipeline GPU.
+</p>
+<table>
+  <thead><tr><th>Config.</th><th>Coût par image (ms)</th><th>Copies de pixels (MB/s)</th><th>CPU d’OBS</th></tr></thead>
+  <tbody>
+    <tr><td>720p 60 HEVC</td><td>0,81 → 0,09</td><td>163 → 0</td><td>2,2 % → 1,4 %</td></tr>
+    <tr><td>1080p 60 H.264</td><td>2,11 → 0,10</td><td>370 → 0</td><td>2,3 % → 1,6 %</td></tr>
+    <tr><td>1080p 60 HEVC</td><td>1,42 → 0,09</td><td>373 → 0</td><td>2,6 % → 1,4 %</td></tr>
+    <tr><td>4K 30 HEVC</td><td>4,96 → 0,14</td><td>721 → 0</td><td>2,9 % → 1,5 %</td></tr>
+    <tr><td>4K 60 H.264</td><td>7,54 → 0,10</td><td>1221 → 0</td><td>4,1 % → 1,8 %</td></tr>
+    <tr><td>4K 60 HEVC</td><td>4,75 → 0,10</td><td>1439 → 0</td><td>4,1 % → 1,6 %</td></tr>
+  </tbody>
+</table>
+<p>
+  Le coût par image baisse de 89 à 99 %, et le gain croît avec la résolution : en
+  4K60 HEVC, le pipeline standard faisait transiter environ 1,4 GB/s par la
+  mémoire système ; celui-ci supprime purement et simplement ce trafic, ce qui
+  divise à peu près par deux le CPU du processus OBS. La latence et la fréquence
+  d’images n’ont montré aucune différence systématique : elles dépendent du réseau
+  et de l’encodeur du téléphone, pas du chemin de rendu.
+</p>
+
+<h3>Notes par plateforme</h3>
+<table>
+  <tbody>
+    <tr><td>Windows</td><td>Tout système pris en charge par OBS 32 (Windows 10 1909+), via des textures D3D11 partagées.</td></tr>
+    <tr><td>macOS</td><td>Tout système pris en charge par OBS 32 (macOS 13+), via IOSurface. Les flux 10 bits font exception : VideoToolbox les convertit lui-même en 8 bits, si bien que le HDR et Apple Log passent par le chemin standard plutôt que par celui-ci.</td></tr>
+    <tr><td>Linux</td><td>Nécessite OBS sous <strong>EGL</strong> (par défaut sous Wayland et dans les versions X11 actuelles) et un pilote <strong>VAAPI</strong>, intégré à Mesa pour Intel et AMD ; NVIDIA nécessite <code>nvidia-vaapi-driver</code>.</td></tr>
+    <tr><td>Multi-GPU</td><td>Un décodage et un rendu sur des GPU différents ne peuvent pas partager de textures ; la source se replie automatiquement.</td></tr>
+  </tbody>
+</table>
+<p>
+  Le repli se fait source par source, automatiquement : dans le pire des cas, vous
+  obtenez exactement le pipeline standard, avec une ligne dans le journal qui
+  explique pourquoi.
+</p>
+
+<h3>La marque du GPU compte-t-elle ?</h3>
+<p>
+  Moins que le système d’exploitation. Le décodage est un bloc à fonction fixe sur
+  tous les GPU modernes, et le plugin le demande à l’API propre à la plateforme
+  plutôt qu’à une interface spécifique à un fabricant.
+</p>
+<table>
+  <tbody>
+    <tr><td>Windows</td><td>Indépendant du fabricant. D3D11VA sur tout GPU actuel, DXVA2 en repli.</td></tr>
+    <tr><td>macOS</td><td>VideoToolbox, sur les Mac Apple silicon comme sur les Mac Intel.</td></tr>
+    <tr><td>Linux, Intel ou AMD</td><td>VAAPI est déjà dans Mesa : rien à installer.</td></tr>
+    <tr><td>Linux, NVIDIA</td><td>Nécessite <code>nvidia-vaapi-driver</code> ; VDPAU sert de repli. C’est le seul cas où la marque décide si le pipeline GPU s’active ou non.</td></tr>
+    <tr><td>Portables à deux GPU</td><td>Si le décodage se fait sur l’un et le rendu d’OBS sur l’autre, les textures ne peuvent pas être partagées et la source se replie d’elle-même.</td></tr>
+    <tr><td>GPU plus anciens</td><td>Un GPU sans décodeur HEVC Main10 repasse en décodage logiciel pour les flux 10 bits ; le 8 bits n’est pas concerné.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>Plusieurs téléphones à la fois, c’est une charge de décodage, pas d’encodage.</strong>
+  La limite de NVIDIA sur le nombre de sessions NVENC simultanées ne s’applique
+  pas : rien n’est encodé sur l’ordinateur. Ce qui vous limite, c’est le débit de
+  décodage et la bande passante mémoire, précisément ce qu’économise le pipeline
+  GPU.</p>
+</div>
+<p>
+  Les mesures ci-dessus proviennent d’une seule machine Windows équipée d’une
+  carte NVIDIA. Le pipeline est en bêta notamment parce que les autres
+  combinaisons (IOSurface sous macOS, VAAPI de Mesa,
+  <code>nvidia-vaapi-driver</code> et le repli multi-GPU) ont davantage besoin de
+  retours du terrain que de code supplémentaire.
+</p>
+
+<h2>Mesurer vous-même</h2>
+<p>
+  <strong>Outils → Paramètres LensLink → Enregistrer un benchmark du pipeline</strong>
+  écrit une ligne CSV par seconde dans le dossier de configuration du plugin
+  (chemin indiqué dans le journal), plus un résumé toutes les cinq secondes.
+  Diffusez dix secondes avec chaque configuration, puis comparez une paire :
+</p>
+<pre><code>python3 tools/bench-report.py BEFORE.csv AFTER.csv</code></pre>
+<p>
+  Toute modification des performances proposée à LensLink doit citer l’une de ces
+  comparaisons.
+</p>

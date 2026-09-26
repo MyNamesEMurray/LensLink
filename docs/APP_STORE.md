@@ -177,6 +177,102 @@ crash reporting SDK, no identifiers.
 Already answered in the build: `ITSAppUsesNonExemptEncryption = false`
 (plain TCP on the local network, no custom cryptography).
 
+## Accessibility Nutrition Labels
+
+App Store Connect → the app → **Accessibility**, once for **iPhone** and
+once for **iPad** (the answers are the same on both). The rules behind
+each claim are `docs/UI_DESIGN.md` §8; a change that breaks one of them
+takes the label down with it. Run the matching checks below on a real
+device before declaring a label, and again after any release that
+touches the Live screen or the Setup screen. "Common tasks" for this app
+are: connect to OBS, start the camera, adjust it while live (zoom,
+exposure, focus, white balance, flashlight, flip, lens), pause, stop,
+and change Options.
+
+| Label | Declare | Why |
+|---|---|---|
+| VoiceOver | Yes | Every control has a spoken name and state, stream changes are announced, and idle dimming waits while VoiceOver runs. |
+| Voice Control | Yes | Every control has a name Voice Control can say, with short aliases ("Stop", "Flip", "Wake"); the tray's dial reaches every setting the picture's gestures do. |
+| Larger Text | Yes, after the checks pass | Every form follows Dynamic Type to the largest size; the Live screen scales its text to twice the default and shows the large content viewer on its fixed-size controls. |
+| Dark Interface | Yes | The Live screen is always dark; the Setup screen and every sheet follow the system appearance. |
+| Differentiate Without Color Alone | Yes | Every status has a word beside its dot, and with the setting on the tally border gains a badge naming the lit status. |
+| Sufficient Contrast | Yes, on the strength of Increase Contrast | With Increase Contrast (or Reduce Transparency) on, glass over the picture turns near-opaque and secondary text near-white. The default glass over a very bright picture can dip below 4.5:1 for secondary text, so re-read Apple's current criteria before declaring; if they require the default look to pass on its own, leave this one off. |
+| Reduced Motion | Yes | The tally pulse holds steady, the tray and idle view change without moving, and the focus square lands without scaling. |
+| Captions | No (not applicable) | The app plays no media with speech or audio of its own. |
+| Audio Descriptions | No (not applicable) | The app plays no video content. |
+
+### Device checks before declaring
+
+**VoiceOver** (Settings → Accessibility → VoiceOver):
+
+- [ ] Setup: every row, the Start camera and Mirror Screen buttons (one
+      element each, not two), Options and Documentation read sensibly.
+- [ ] Start the camera. "Live" is spoken when OBS connects; a success
+      haptic on the way.
+- [ ] Live screen: swipe through the status pill (its word), Pause,
+      Stop camera, lens buttons (name, current one selected with its
+      zoom), Adjust camera. Open the tray: every chip (name, auto or
+      manual, selected), the dial (chip name and readout as value,
+      adjustable with swipe up and down; on Shutter, WB and Focus that
+      takes the setting out of auto), Flashlight (value On / Off),
+      Flip camera, Close.
+- [ ] Pause and resume: "Paused", then "Live". Unplug or quit OBS:
+      "Connection lost" plus a warning haptic; reconnect: "Live".
+- [ ] Put the source in OBS's Program: "On air". With lip-sync
+      auto-calibrate on: "Sync locked" when it locks.
+- [ ] With Idle view on Dim screen, wait well past 10 seconds: the
+      screen never dims. Use the status pill's Dim screen now, then
+      double-tap the wake hint: the controls come back.
+- [ ] Turn VoiceOver on while the screen is already dimmed (triple-click
+      shortcut): the screen wakes.
+- [ ] Remote-start standby with Dim screen: the Setup screen never dims
+      while VoiceOver runs. Repeat these two with Switch Control.
+
+**Voice Control** (Settings → Accessibility → Voice Control):
+
+- [ ] "Show names" on the Live screen and the tray: every button has a
+      name, none shows a bare number.
+- [ ] "Tap Flashlight", "Tap Torch", "Tap Flip", "Tap Switch camera",
+      "Tap Stop", "Tap Adjust", "Tap Close", "Tap Status", "Tap
+      Exposure", "Tap Mirror Screen" all work.
+- [ ] Let the Live screen dim, then "Tap Wake".
+
+**Larger Text** (Settings → Accessibility → Display & Text Size →
+Larger Text, at the largest size):
+
+- [ ] Setup: the computer card stacks the name, status and Start or
+      address without clipping; every row, the Format sheet, Options,
+      Tally light and Documentation stay usable.
+- [ ] Live screen: the status and sync pills, the tray's mode line and
+      the dial readout are larger and nothing overlaps the top bar.
+- [ ] Long-press a glass button, a dial chip, a lens button and the
+      status pill: the large content viewer shows its name.
+
+**Dark Interface**: switch Settings → Display & Brightness to Dark and
+back; Setup, every sheet and the Live screen stay legible in both.
+
+**Differentiate Without Color Alone** (Display & Text Size):
+
+- [ ] Stream with the source on air in OBS: a badge reading "On air"
+      sits under the top bar, still visible on the dimmed screen.
+      Preview it: "In preview".
+- [ ] Tally light screen: the pulse switch shows a filled disc when on.
+- [ ] Low Power Mode on, screen dimmed: "Low battery" under the
+      percentage.
+
+**Sufficient Contrast** (Display & Text Size → Increase Contrast, then
+Reduce Transparency on its own):
+
+- [ ] Point the camera at a bright white wall. The pills, the tray and
+      the glass buttons are dark and solid, with a light edge under
+      Increase Contrast; the tray's mode line reads as near-white.
+
+**Reduced Motion** (Accessibility → Motion → Reduce Motion):
+
+- [ ] Give a tally status Pulse: the border holds steady.
+- [ ] Open and close the tray, let the idle view engage and wake it,
+      tap to focus: nothing slides or scales.
+
 ## The multitasking camera entitlement
 
 Requested from Apple (form answers recorded below). The submitted build
@@ -206,8 +302,14 @@ backgrounding section, the site's FAQ and this note.
 - [ ] Demo video recorded and its link pasted into the review notes.
 - [ ] App Privacy questionnaire answered (Data Not Collected).
 - [ ] Age rating questionnaire answered (4+).
+- [ ] Accessibility Nutrition Labels answered for iPhone and iPad, after
+      the device checks above.
 - [ ] The build chosen is a **stable** release, not a `-beta.N`.
-- [ ] After approval: switch the TestFlight links in the README, the
+- [x] After approval: switch the TestFlight links in the README, the
       site (download, setup) and the release-notes install table to the
-      App Store link, and set `Release-Skip`-free stable releases to
-      keep TestFlight as the beta channel.
+      App Store link, and keep TestFlight as the beta channel.
+
+The app is live: [LensLink Camera](https://apps.apple.com/app/lenslink-camera/id6790673163)
+(app id `6790673163`). Every stable release still uploads to App Store
+Connect and TestFlight automatically; putting it on the App Store is a
+manual **Add for Review** of that build.

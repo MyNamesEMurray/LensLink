@@ -1,0 +1,214 @@
+title: LensLink : votre iPhone comme caméra dans OBS Studio
+description: LensLink fait d’un iPhone ou d’un iPad une source caméra de haute qualité dans OBS Studio, en Wi-Fi ou en USB. Jusqu’à 4K60 en H.264 ou HEVC, commandes de caméra en direct, synchronisation labiale automatique. Gratuit et open source.
+nav: home
+source: d5c6fc00fbbc
+---
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Gratuit et open source · GPL-2.0-or-later</span>
+      <h1>Votre iPhone est déjà la meilleure caméra que vous ayez. <em>Mettez-le dans OBS.</em></h1>
+      <p class="lede">
+        Deux sources OBS, une caméra et une recopie de l’écran, reliées directement
+        à votre iPhone ou iPad en Wi-Fi ou en USB. Pas de pilote de caméra
+        virtuelle, pas de serveur RTMP, pas d’abonnement.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="/download/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          Télécharger
+        </a>
+        <a class="btn ghost" href="/setup/">Configuration guidée</a>
+      </div>
+      <p class="meta">
+        <span>OBS Studio 32+</span><span>Windows, macOS, Linux</span><span>iOS/iPadOS 15+</span>
+      </p>
+    </div>
+
+    <div>
+      <!-- The app's Live screen, rebuilt from the same design tokens the
+           app and the plugin's browser panel use. -->
+      <div class="device">
+        <div class="screen{{FEED}}"{{FEED_STYLE}}>
+          <div class="topgroup">
+            <div class="toprow">
+            <span class="pill"><span class="dot live"></span>En direct<span class="chev">⌄</span></span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span>
+            <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
+            </div>
+            <span class="pill health">60 fps · 11,9 Mb/s · pertes : 0</span>
+          </div>
+          <div class="panelmock">
+            <div class="chiprow">
+              <span class="chp">Zoom</span>
+              <span class="chp on">Expo</span>
+              <span class="chp">Vitesse<i>A</i></span>
+              <span class="chp">BB<i>A</i></span>
+              <span class="chp">MAP<i>A</i></span>
+            </div>
+            <div class="dial">
+              <span class="ro yl">+0.3 EV</span>
+              <span class="track yl"><i style="width:58%"></i></span>
+            </div>
+            <div class="row">
+              <span class="mode">Auto · faites glisser l’image vers le haut ou le bas</span>
+              <span class="chips">
+                <span class="chip on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h11l-2-2M20 16H9l2 2"/><circle cx="12" cy="12" r="2"/></svg></span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 10 6 6 6-6"/></svg></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">L’écran de direct de l’app, tiroir de réglages ouvert : une seule molette, que les puces réaffectent. La bordure rouge est le voyant tally : cette source est à l’antenne. Chaque commande présente ici est aussi disponible dans votre navigateur, sur l’ordinateur.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Configuration</p>
+      <h2>Trois étapes, environ trois minutes</h2>
+      <p>Le plugin sur l’ordinateur, l’app sur le téléphone, la source dans OBS. Aucune configuration du routeur, aucun compte.</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>Installez le plugin OBS</h3>
+        <p>Un programme d’installation pour Windows et macOS, une archive tar pour Linux. Il ajoute deux sources à votre OBS existant.</p>
+      </li>
+      <li>
+        <h3>Installez l’app iPhone</h3>
+        <p>Gratuite sur l’<a href="{{APPSTORE}}">App Store</a>. Vous pouvez aussi rejoindre la bêta TestFlight, installer manuellement la version non signée ou la compiler vous-même.</p>
+      </li>
+      <li>
+        <h3>Ajoutez la source dans OBS</h3>
+        <p><strong>Sources → + → LensLink Camera</strong>, puis choisissez votre téléphone ou branchez le câble. La vidéo apparaît en une ou deux secondes.</p>
+      </li>
+    </ol>
+    <div class="cta">
+      <a class="btn ghost small" href="/setup/">Répondre plutôt à quatre questions</a>
+      <a class="btn ghost small" href="/docs/install/">Guide d’installation complet</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Ce que vous obtenez</p>
+      <h2>Une vraie source caméra, pas un bricolage de webcam</h2>
+      <p>Le téléphone encode en matériel ; le plugin décode sur votre GPU et transmet les images à OBS. Une seule connexion, rien entre les deux.</p>
+    </div>
+    <div class="grid three">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="m17 12 5-3v9l-5-3z"/></svg>
+        <h3>Jusqu’à la 4K à 60 fps</h3>
+        <p>H.264 ou HEVC. Le sélecteur ne propose que les combinaisons que votre caméra prend réellement en charge.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/><path d="M2 9a15 15 0 0 1 20 0"/></svg>
+        <h3>Wi-Fi ou USB</h3>
+        <p>L’USB se passe de réseau, offre la latence la plus stable et recharge le téléphone pendant qu’il diffuse. Le Wi-Fi vous libère du câble.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        <h3>Pilotez-la depuis l’ordinateur</h3>
+        <p>Zoom, exposition, ISO et obturateur manuels, mise au point, balance des blancs, lampe torche, objectif, changement de caméra : depuis le téléphone, un panneau dans le navigateur ou les propriétés de la source.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h2l2-5 3 10 3-13 3 16 2-8h3"/></svg>
+        <h3>Synchronisation labiale automatique</h3>
+        <p>Le plugin mesure la latence réelle et aligne votre propre micro sur l’image. Le réglage se stabilise en une quinzaine de secondes, puis ne bouge plus.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>
+        <h3>Recopie de l’écran</h3>
+        <p>Un second type de source recopie tout l’écran avec son audio, grâce à la diffusion intégrée à iOS. Idéal pour les jeux mobiles et les démos d’apps.</p>
+      </div>
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v9"/><path d="M7.5 6.5a7 7 0 1 0 9 0"/></svg>
+        <h3>Démarrage à distance</h3>
+        <p>OBS démarre lui-même la caméra : inutile de décrocher un téléphone fixé sur son support. Siri et Raccourcis fonctionnent aussi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Pour aller plus loin</p>
+      <h2>Ce qu’une webcam ne sait pas faire</h2>
+      <p>Tout est optionnel. Sans rien activer, la source est une simple caméra SDR.</p>
+    </div>
+    <div class="grid two">
+      <div>
+        <h3>Apple Log (bêta)</h3>
+        <p>Sur les iPhone Pro (iOS 17+), diffusez une image Log 10 bits neutre et étalonnez-la avec le filtre Appliquer un LUT d’OBS. Le plugin la décode fidèlement et, pour le reste, ne touche pas à l’image.</p>
+      </div>
+      <div>
+        <h3>HDR en HLG (bêta)</h3>
+        <p>HLG 10 bits en HEVC, sur les caméras compatibles. OBS l’affiche correctement sur un canevas SDR comme sur un canevas HDR.</p>
+      </div>
+      <div>
+        <h3>Écran vert virtuel (bêta)</h3>
+        <p>Avant l’encodage, le téléphone peint en vert uni tout ce qui n’est pas vous, et le plugin ajoute un filtre d’incrustation chromatique déjà réglé. Avec la profondeur Face ID ou LiDAR, un seuil de distance efface les personnes qui passent derrière vous.</p>
+      </div>
+      <div>
+        <h3>Tous les objectifs, commutables en direct</h3>
+        <p>Principal, Ultra grand-angle, Téléobjectif, Avant : changez en cours de diffusion sans perdre la source OBS.</p>
+      </div>
+      <div>
+        <h3>Pipeline de décodage GPU (bêta)</h3>
+        <p>La vidéo décodée reste sur la carte graphique au lieu de faire l’aller-retour par la mémoire système. Moins de CPU et de latence, surtout en 4K.</p>
+      </div>
+      <div>
+        <h3>Un état de santé visible</h3>
+        <p>Fréquence d’images décodée, débit transmis et latence mesurée, par téléphone et chaque seconde, dans la barre d’état d’OBS et dans un dock.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">En bref</p>
+      <h2>Caractéristiques techniques</h2>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr><td>Vidéo</td><td>Jusqu’à <span class="num">3840×2160</span> à <span class="num">60 fps</span>, H.264 ou HEVC. HDR (HLG) et Apple Log en bêta.</td></tr>
+        <tr><td>Latence</td><td>Environ <span class="num">60 ms</span> en USB, en 1080p comme en 4K. Plus élevée et plus variable en Wi-Fi.</td></tr>
+        <tr><td>Transport</td><td>USB ou Wi-Fi local. Une seule connexion TCP, aucun relais dans le cloud.</td></tr>
+        <tr><td>Audio</td><td>Au choix : le micro du téléphone comme audio de la source, une référence temporelle pour la synchronisation labiale, ou l’audio système avec la recopie de l’écran.</td></tr>
+        <tr><td>Ordinateur</td><td>OBS Studio 32+ sous Windows, macOS ou Linux. Sous Windows, l’USB nécessite iTunes pour le pilote d’Apple.</td></tr>
+        <tr><td>Téléphone</td><td>iPhone ou iPad sous iOS/iPadOS 15+.</td></tr>
+        <tr><td>Caméras</td><td>Plusieurs à la fois : une source par téléphone, chacune pilotée séparément.</td></tr>
+        <tr><td>Prix</td><td>Gratuit, GPL-2.0-or-later. Aucun compte, aucun filigrane, aucune offre payante.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Documentation</p>
+      <h2>Écrite pour répondre à vos questions</h2>
+      <p>Chaque écran, chaque réglage, chaque cas de panne, y compris les plus épineux : pourquoi iOS coupe l’audio protégé par DRM pendant une diffusion, ou pourquoi l’USB a besoin d’iTunes sous Windows.</p>
+    </div>
+    <ul class="doccards">
+      <li><a href="/docs/install/"><strong>Installer</strong><span>Plugin et app, sur chaque plateforme, y compris depuis les sources.</span></a></li>
+      <li><a href="/docs/connect/"><strong>Connecter</strong><span>Wi-Fi, USB, plusieurs téléphones, et chaque message d’état expliqué.</span></a></li>
+      <li><a href="/docs/camera/"><strong>Caméra et image</strong><span>Objectifs, formats, exposition manuelle, HDR, Apple Log, écran vert, réglages mémorisés.</span></a></li>
+      <li><a href="/docs/troubleshooting/"><strong>Dépannage</strong><span>Symptôme par symptôme, avec les lignes du journal à vérifier.</span></a></li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="/download/">Télécharger LensLink</a>
+      <a class="btn ghost" href="/docs/">Parcourir toute la documentation</a>
+    </div>
+  </div>
+</section>

@@ -167,14 +167,15 @@ void refresh()
 
 	/* Status bar: live streams get numbers; standby-only gets a word;
 	 * nothing LensLink → no label at all (don't crowd OBS's bar). */
+	QString prefix = QString::fromUtf8(obs_module_text("StatusBar.Label"));
 	if (!bar_parts.isEmpty()) {
-		status_label->setText(
-			QStringLiteral("LensLink: %1")
-				.arg(bar_parts.join(QStringLiteral("  |  "))));
+		status_label->setText(QStringLiteral("%1 %2").arg(
+			prefix, bar_parts.join(QStringLiteral("  |  "))));
 		status_label->setVisible(true);
 	} else if (standby_count > 0) {
-		status_label->setText(
-			QStringLiteral("LensLink: ready (camera idle)"));
+		status_label->setText(QStringLiteral("%1 %2").arg(
+			prefix, QString::fromUtf8(
+					obs_module_text("StatusBar.Standby"))));
 		status_label->setVisible(true);
 	} else {
 		status_label->setVisible(false);

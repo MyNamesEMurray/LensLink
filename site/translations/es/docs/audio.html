@@ -1,0 +1,105 @@
+title: Audio y sincronía labial
+description: Usa el teléfono como micrófono inalámbrico, o envía su micrófono como referencia de tiempo para que el plugin alinee automáticamente tu propio micrófono con el video.
+source: 257918f25fc6
+---
+<h1>Audio y sincronía labial</h1>
+<p class="lede">
+  El micrófono del teléfono puede hacer dos trabajos, pero solo uno a la vez: ser
+  <strong>el audio que se oye</strong> o ser una <strong>referencia de
+  tiempo</strong> que alinea el micrófono que usas de verdad. Al activar uno, el
+  otro se desactiva.
+</p>
+
+<h2>El teléfono como micrófono</h2>
+<p>
+  <strong>Opciones → Enviar micrófono del teléfono a OBS</strong> hace que la
+  fuente de cámara lleve el micrófono del teléfono: en la práctica, un micrófono
+  inalámbrico. Está desactivado de forma predeterminada, porque la mayoría de los
+  streamers usan su propio micrófono y lo alinean.
+</p>
+<p>Una fila <strong>Micrófono</strong> bajo el interruptor, en la pantalla de preparación de la app, y una fila de micrófono en el panel del navegador permiten elegir cuál:</p>
+<table>
+  <thead><tr><th>Opción</th><th>Qué obtienes</th></tr></thead>
+  <tbody>
+    <tr><td>Auto</td><td>El enrutamiento predeterminado de iOS: normalmente el micrófono <em>Inferior</em>, sea cual sea la cámara activa, porque iOS no vincula uno con otra. Unos auriculares con micrófono o un micrófono Bluetooth toman el control automáticamente.</td></tr>
+    <tr><td>Frontal</td><td>El conjunto de micrófonos frontal, orientado más o menos hacia donde mira la cámara frontal.</td></tr>
+    <tr><td>Trasero</td><td>El micrófono trasero, orientado hacia lo que ve la cámara trasera.</td></tr>
+  </tbody>
+</table>
+<p>El cambio se aplica en vivo.</p>
+
+<h2>Sincronía labial automática</h2>
+<p>
+  El video siempre llega con algo de retraso, así que un micrófono aparte va
+  adelantado respecto a él: el efecto de película mal doblada. La solución
+  habitual es adivinar un retraso en OBS y retocarlo. LensLink, en cambio, lo
+  mide.
+</p>
+
+<h3>Configuración</h3>
+<ol class="walk">
+  <li>
+    <strong>En las propiedades de la fuente</strong>
+    <p>Elige tu micrófono real en <strong>Fuente de audio para la sincronía labial</strong> y activa <strong>Retrasar automáticamente esa fuente de audio…</strong> y <strong>Calibración automática</strong>.</p>
+  </li>
+  <li>
+    <strong>En las Opciones de la app</strong>
+    <p>Activa <strong>Referencia de sincronía labial automática</strong>. El micrófono del teléfono pasa a ser solo una señal de tiempo: nunca se reproduce, nunca se graba y nunca aparece en tu transmisión.</p>
+  </li>
+  <li>
+    <strong>Habla durante unos quince segundos</strong>
+    <p>El plugin compara las dos señales, mide el desfase y lo corrige. La pantalla En vivo y el panel del navegador muestran la fase: <strong>Midiendo la sincronía</strong> y luego <strong>Sincronía fijada</strong>.</p>
+  </li>
+</ol>
+
+<h3>Una vez fijada</h3>
+<p>
+  Como ya se conoce el retraso propio de tu micrófono, la corrección sigue por sí
+  sola la latencia de la cámara (durante los silencios y justo después de una
+  reconexión) y se recalibra si cambias el equipo de audio durante la
+  transmisión.
+</p>
+<p>
+  Para forzar una medición nueva, toca <strong>Recalibrar</strong> en la píldora
+  de sincronía, en el teléfono o en el panel del navegador. Solo aparece con la
+  sincronía fijada, el único estado en el que sirve de algo.
+</p>
+<table>
+  <thead><tr><th>Indicador</th><th>Significado</th></tr></thead>
+  <tbody>
+    <tr><td>No se muestra nada</td><td>La calibración automática no está en marcha.</td></tr>
+    <tr><td>Midiendo la sincronía</td><td>Sigue hablando.</td></tr>
+    <tr><td>Sincronía fijada</td><td>Desfase aplicado y en seguimiento.</td></tr>
+    <tr><td>Recalibrando</td><td>Volviendo a medir tras un cambio. No es un error.</td></tr>
+  </tbody>
+</table>
+
+<h3>Cuando el lento es tu micrófono</h3>
+<p>
+  Algunas interfaces USB añaden tanta latencia que el micrófono llega
+  <em>después</em> del video, y retrasarlo más no ayuda. <strong>Retraso de video
+  automático para micrófonos lentos</strong> retrasa el video en su lugar.
+</p>
+
+<h3>Una corrección fija, sin calibración automática</h3>
+<p>
+  Con <strong>Calibración automática</strong> desactivada, la casilla de
+  retraso por sí sola desplaza tu micrófono según la latencia medida de la
+  cámara. Si conoces el retraso de tu dispositivo, escríbelo en
+  <strong>Latencia propia del dispositivo de audio</strong> y se restará.
+</p>
+
+<div class="callout">
+  <p><strong>¿Por qué no escribir simplemente un número en OBS?</strong> La
+  latencia de la cámara no es constante: varía con la resolución, el códec, el
+  enlace y la red. Un desfase medido sobrevive al paso de 1080p60 por Wi-Fi a
+  4K30 por USB. Uno escrito a mano, no.</p>
+</div>
+
+<h2>Audio del duplicado de pantalla</h2>
+<p>
+  La fuente <strong>LensLink Screen</strong> lleva audio real y reproducible de
+  las apps y del sistema, no una referencia de tiempo. iOS silencia las apps con
+  DRM durante una transmisión, y tu micrófono no se incluye:
+  <a href="/docs/screen-mirroring/#audio">duplicado de pantalla</a>.
+</p>

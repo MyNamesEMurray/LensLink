@@ -7,6 +7,16 @@
 
 	var API = "https://api.github.com/repos/MyNamesEMurray/LensLink/releases/latest";
 
+	var strings = {};
+	try {
+		strings = JSON.parse(document.getElementById("i18n").textContent) || {};
+	} catch (e) { strings = {}; }
+	function t(key, fallback) {
+		return typeof strings[key] === "string" && strings[key] ? strings[key] : fallback;
+	}
+
+	var OS_NAMES = { windows: "Windows", macos: "macOS", linux: "Linux" };
+
 	/* Asset name fragment -> the row it belongs to. Matched case-insensitively
 	   against the release's asset names, first match wins. */
 	var ROWS = [
@@ -46,8 +56,9 @@
 		if (btn) btn.classList.add("primary");
 		var label = document.getElementById("os-detected");
 		if (label) {
-			label.textContent = card.getAttribute("data-os-name") +
-				" detected — this is the build for you.";
+			var name = t("os." + os, OS_NAMES[os] || os);
+			label.textContent = t("download.detected", "{os} detected — this is the build for you.")
+				.replace("{os}", name);
 			label.hidden = false;
 		}
 	}
@@ -63,7 +74,9 @@
 			if (tag) tag.textContent = rel.tag_name;
 			var when = document.getElementById("rel-date");
 			if (when && rel.published_at) {
-				when.textContent = new Date(rel.published_at).toLocaleDateString(undefined, {
+				var scope = when.closest ? when.closest("[lang]") : null;
+				var lang = (scope && scope.lang) || document.documentElement.lang || undefined;
+				when.textContent = new Date(rel.published_at).toLocaleDateString(lang, {
 					year: "numeric", month: "long", day: "numeric"
 				});
 			}

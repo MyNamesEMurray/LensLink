@@ -1,5 +1,5 @@
 title: Download LensLink
-description: Download the LensLink plugin for OBS Studio on Windows, macOS or Linux, and install the LensLink app on your iPhone or iPad through TestFlight.
+description: Download the LensLink plugin for OBS Studio on Windows, macOS or Linux, and install the LensLink app on your iPhone or iPad from the App Store.
 nav: download
 script: /js/download.js
 ---
@@ -34,7 +34,7 @@ script: /js/download.js
         Screen</strong> sources to OBS Studio 32+. Restart OBS afterwards.</p>
 
         <ul class="oslist">
-          <li id="dl-win-installer" data-os="windows" data-os-name="Windows">
+          <li id="dl-win-installer" data-os="windows">
             <span class="grow"><span class="name">Windows installer</span>
               <span class="file">LensLink-installer-windows-x64.exe</span></span>
             <a class="btn small" href="{{REPO}}/releases/latest">Download</a>
@@ -44,7 +44,7 @@ script: /js/download.js
               <span class="file">lenslink-windows-x64.zip</span></span>
             <a class="btn small ghost" href="{{REPO}}/releases/latest">Download</a>
           </li>
-          <li id="dl-mac-pkg" data-os="macos" data-os-name="macOS">
+          <li id="dl-mac-pkg" data-os="macos">
             <span class="grow"><span class="name">macOS package</span>
               <span class="file">LensLink-installer-macos-universal.pkg</span></span>
             <a class="btn small" href="{{REPO}}/releases/latest">Download</a>
@@ -54,7 +54,7 @@ script: /js/download.js
               <span class="file">lenslink-macos-universal.zip</span></span>
             <a class="btn small ghost" href="{{REPO}}/releases/latest">Download</a>
           </li>
-          <li id="dl-linux" data-os="linux" data-os-name="Linux">
+          <li id="dl-linux" data-os="linux">
             <span class="grow"><span class="name">Linux</span>
               <span class="file">lenslink-linux-x86_64.tar.gz</span></span>
             <a class="btn small" href="{{REPO}}/releases/latest">Download</a>
@@ -67,17 +67,21 @@ script: /js/download.js
       <div class="card">
         <span class="step">Part 2</span>
         <h2>The iPhone / iPad app</h2>
-        <p>Captures the video and listens for OBS. iOS or iPadOS 15+. TestFlight
-        is the route to prefer: updates arrive on their own, no computer
-        involved.</p>
+        <p>Captures the video and listens for OBS. iOS or iPadOS 15+. Free on
+        the App Store, and it updates on its own.</p>
 
-        <a class="btn primary" href="{{TESTFLIGHT}}">
+        <a class="btn primary" href="{{APPSTORE}}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
-          Join the TestFlight beta
+          Get it on the App Store
         </a>
-        <p class="sub">Opens Apple's TestFlight page.</p>
+        <p class="sub">LensLink Camera, free, no in-app purchases.</p>
 
         <ul class="oslist">
+          <li>
+            <span class="grow"><span class="name">TestFlight beta</span>
+              <span class="file">New versions before App Review</span></span>
+            <a class="btn small ghost" href="{{TESTFLIGHT}}">Join</a>
+          </li>
           <li id="dl-ipa">
             <span class="grow"><span class="name">Sideload, unsigned build</span>
               <span class="file">LensLink-unsigned.ipa</span></span>

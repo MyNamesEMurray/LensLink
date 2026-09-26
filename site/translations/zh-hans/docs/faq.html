@@ -1,0 +1,87 @@
+title: 常见问题
+description: 费用、隐私、支持的设备、Android、用作虚拟摄像头、电池续航，以及 LensLink 与采集卡或 USB 网络摄像头的比较。
+source: de29eb0c21eb
+---
+<h1>常见问题</h1>
+
+<h2>真的免费吗？</h2>
+<p>
+  是的。许可证为 <a href="{{REPO}}/blob/main/LICENSE">GPL-2.0-or-later</a>，与 OBS Studio 相同。无需账户，没有水印，没有分辨率上限，也没有付费版本。两部分都在 <a href="{{REPO}}">GitHub</a> 上。
+</p>
+
+<h2>我的视频会经过互联网吗？</h2>
+<p>
+  不会。插件通过你的网络或数据线直接连接手机，没有中转，没有云服务，也没有遥测。视频流不加密，因此适用于可信的家庭和工作室网络，而不是共享的公共 Wi-Fi。
+</p>
+
+<h2>哪些设备可以使用？</h2>
+<p>
+  任何运行 <strong>iOS/iPadOS 15+</strong> 的 iPhone 或 iPad，搭配 Windows、macOS 或 Linux 上的 OBS Studio <strong>32+</strong>。较新的手机会带来更多镜头和格式；功能集是相同的。
+</p>
+
+<h2>有 Android 版本吗？</h2>
+<p>
+  没有。App 基于 AVFoundation 和 VideoToolbox 构建，USB 连接使用的是 Apple 的设备服务。Android App 将会是一个独立的程序，只共享传输协议。
+</p>
+
+<h2>Wi-Fi 还是 USB，该用哪个？</h2>
+<p>
+  只要线缆不碍事，就用 USB：不需要网络，延迟最稳定，不受网络拥塞影响，还能给手机充电。Wi-Fi 适用于手机必须放在线缆够不到的地方的情况。
+</p>
+
+<h2>能在 Zoom、Teams 或 Discord 中把它当作网络摄像头使用吗？</h2>
+<p>
+  不能直接使用，因为它是一个 OBS 来源，而不是虚拟摄像头驱动。可以使用 OBS 自带的虚拟摄像头：把来源添加到场景中，点击<strong>启动虚拟摄像机</strong>，然后在另一个应用中选择 OBS Virtual Camera。这样画面在传出时还能带上场景、滤镜和叠加层。
+</p>
+
+<h2>可以同时使用多少部手机？</h2>
+<p>
+  你的电脑能解码多少就能用多少。每部手机一个来源，各自独立连接、控制和监控。有了 <a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPU 解码管线</a>，同时运行多个 4K 来源也能游刃有余。
+</p>
+
+<h2>会耗电吗？</h2>
+<p>
+  会。编码视频很耗电，所以长时间推流时要准备好数据线。USB 可以边推流边充电，从而解决这个问题。此外，<strong>调暗屏幕</strong>空闲显示会在十秒后降低亮度并停止渲染预览，<strong>此来源未在任何位置显示时断开连接</strong>则会在来源被隐藏时停止编码。
+</p>
+
+<h2>手机必须保持解锁并显示在屏幕上吗？</h2>
+<p>
+  是的：App 一旦不在屏幕上，iOS 就会停止摄像头采集，因此锁定手机或离开 LensLink 都会结束摄像头推流。这正是<a href="/docs/remote-start/">远程启动</a>存在的原因。唯一的例外是支持多任务摄像头访问的 iPad，在这类 iPad 上，LensLink 在分屏浏览、侧拉或台前调度中与其他 App 并排显示时仍会继续推流。屏幕<em>直播</em>则又不同，切换到其他 App 后仍会继续运行。
+</p>
+
+<h2>能用 Apple Log 或 HDR 录制吗？</h2>
+<p>
+  在支持的硬件上，这两种都可以推流，并像其他来源一样录制结果。Apple Log 需要运行 iOS 17+ 的 Pro 系列 iPhone，以及 OBS 中的 LUT；HDR 是通过 HEVC 传输的 HLG。两者都是测试版，默认关闭：
+  <a href="/docs/camera/#color-hdr-and-apple-log">色彩</a>。
+</p>
+
+<h2>它与采集卡加 HDMI 转接器有什么不同？</h2>
+<p>
+  采集卡无需任何 App 就能提供纯净画面，代价是一个转接器、一根线缆、一张采集卡，以及一两百美元。LensLink 不花一分钱，增加了可以在电脑上操作的摄像头控件，还会测量自身延迟，让你的麦克风能够自动对齐。通过 USB 连接时，两者的延迟相当。
+</p>
+
+<h2>macOS 内置的连续互通相机呢？</h2>
+<p>
+  连续互通相机非常出色，而且无需安装任何东西，但它仅限 macOS，给你的也只是 Apple 决定给你的东西。LensLink 还能在 Windows 和 Linux 上运行，开放摄像头控件，可以自选编码格式和视频格式，并能自动音画同步。
+</p>
+
+<h2>能不碰手机就控制摄像头吗？</h2>
+<p>
+  可以。使用位于 <code>localhost:9980</code> 的<a href="/docs/web-panel/">浏览器面板</a>，以及它背后同样可供直播控制台和脚本调用的 HTTP API。
+</p>
+
+<h2>能配合旁白和其他辅助功能设置使用吗？</h2>
+<p>
+  可以。App 中的每个控件都有供旁白和语音控制使用的名称，旁白还会在推流开始直播、暂停、开始播出或与 OBS 断开连接时进行播报。旁白或切换控制开启时，直播界面不会自行变暗或隐藏控制项。App 支持更大字体、减弱动态效果、降低透明度、增强对比度和不以颜色区分，最后一项会在彩色边框旁显示 Tally 状态的名称。<a href="/docs/web-panel/">浏览器面板</a>也为屏幕阅读器标注了各个控件。
+</p>
+
+<h2>如何报告错误或提出功能建议？</h2>
+<p>
+  在 <a href="{{REPO}}/issues">GitHub</a> 上提交 issue。报告错误时，附上 OBS 日志和<strong>选项 → 摄像头诊断</strong>：
+  <a href="/docs/troubleshooting/#nothing-here-matches">需要包含哪些内容</a>。
+</p>
+
+<h2>我可以参与贡献吗？</h2>
+<p>
+  可以：这里有<a href="{{REPO}}/blob/main/CONTRIBUTING.md">贡献指南</a>、架构指南、有文档说明的传输协议和路线图。
+</p>

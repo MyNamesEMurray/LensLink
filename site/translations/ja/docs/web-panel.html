@@ -1,0 +1,94 @@
+title: ブラウザコントロールパネル
+description: localhost:9980で開くLensLinkのコントロールパネル。コンピュータのブラウザで同じカメラ操作ができるほか、その裏にあるHTTP APIも使えます。
+source: 441ba810e72e
+---
+<h1>ブラウザコントロールパネル</h1>
+<p class="lede">
+  プラグインは、ライブ画面のカメラ操作を<a href="http://localhost:9980"><code>http://localhost:9980</code></a>で提供します。OBSの横に置いておけるブラウザウィンドウで操作できるので、誰もスマートフォンに触れる必要はありません。
+</p>
+
+<h2>開き方</h2>
+<p>
+  OBSを実行しているコンピュータで<code>http://localhost:9980</code>を開きます。パネルはデフォルトでオンで、オン・オフは<strong>ツール → LensLink設定 → ブラウザコントロールパネル</strong>で切り替えます。
+</p>
+<div class="callout">
+  <p><strong>ループバック専用です。</strong>パネルは<code>127.0.0.1</code>にバインドされるため、ネットワーク上のどこからもアクセスできません。カメラを開始でき、認証もないため、意図的にこうしています。</p>
+</div>
+<p>
+  そのポートがすでにほかで使われている場合は、プラグイン全体の設定である<strong>パネルのポート</strong>（デフォルトは<code>9980</code>）で変更できます。
+</p>
+
+<h2>パネルの内容</h2>
+<p>アプリのライブパネルと同じ操作項目が、同じ順序で並びます。</p>
+<ul>
+  <li><strong>ステータス表示</strong>：点、状態を示す語、遅延を表示します。リップシンクのキャリブレーション中は2つ目の表示が現れ、ロックされると<strong>再キャリブレーション</strong>を選べるようになります。</li>
+  <li><strong>ソースタブ</strong>：カメラのソースが複数ライブになっているときに表示されます。1つのページですべてのスマートフォンを操作できます。</li>
+  <li><strong>ズーム</strong>、<strong>露出</strong>（AE補正、またはマニュアルのISOとシャッター）、<strong>フォーカス</strong>、<strong>ホワイトバランス</strong>。</li>
+  <li><strong>フラッシュライト、レンズ、カメラの切り替え。</strong></li>
+  <li><strong>配信中のフォーマット変更</strong>：解像度、フレームレート、コーデック、マイク。</li>
+  <li><strong>被写体までの距離</strong>：深度アシストを使ったグリーンバックの動作中に表示されます。</li>
+  <li>待機中は<strong>カメラを開始</strong>、ライブ中は赤い<strong>カメラを停止</strong>。どちらにも<strong>自動開始</strong>のトグルがあります。</li>
+  <li><strong>一時停止</strong>は、配信を終了せずに止めます。スマートフォンは接続されたままカメラも動き続け、OBSはソースを保持したまま、一時停止マークの付いた暗くぼかした静止画を表示します。<strong>再開</strong>を押すとすぐに元に戻ります。音声は流れ続けるので、スマートフォンをマイクとしても使っている場合も途切れません。</li>
+</ul>
+<p>
+  スマートフォン側での変更も反映されます。ドラッグ中は反映を止めるので、操作とぶつかることはありません。<strong>LensLink Screen</strong>ソースにはカメラの操作項目がなく、パネルには動かないスライダーの代わりにその旨が表示されます。
+</p>
+
+<h2>HTTP API</h2>
+<p>
+  パネルは、同じポートで動く小さなHTTP APIのクライアントの1つにすぎず、Stream Deckやスクリプトも別のクライアントになれます。どのエンドポイントも省略可能な<code>?src=&lt;id&gt;</code>を受け付け、省略するとプラグインが最初の適切なソースを選びます。
+</p>
+
+<h3>状態の取得</h3>
+<table>
+  <thead><tr><th>リクエスト</th><th>戻り値</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/sources</code></td><td>すべてのソース：<code>id</code>、<code>name</code>、<code>connected</code>、<code>standby</code>、<code>screen</code>。</td></tr>
+    <tr><td><code>GET /api/status</code></td><td><code>status</code>のテキスト（OBSの言語）とその<code>tone</code>（<code>idle</code>、<code>wait</code>、<code>ready</code>、<code>live</code>、<code>error</code>のいずれか。テキストを読まずに色分けするためのもの）、さらに<code>screen</code>、<code>standby</code>、<code>connected</code>、<code>autoStart</code>、リップシンクの<code>sync</code>段階。</td></tr>
+    <tr><td><code>GET /api/diagnostics</code></td><td>診断レポート全体をプレーンテキストで返します。バージョン、ハードウェア、設定、ソースごとの状態を含み、ツール → LensLink設定にあるボタンと同じ内容です。</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>スマートフォンから最後に受け取ったカメラ状態のスナップショット：レンズ、ズーム、露出、フォーカス、ホワイトバランス、対応フォーマット。ソースのプロパティが読むのと同じキャッシュで、これによって3つの操作画面の表示が一致します。</td></tr>
+  </tbody>
+</table>
+
+<h3>コマンドの送信</h3>
+<p>
+  <code>POST /api/control</code>は、1リクエストにつき1つのJSONコマンドを受け付けます。未知のコマンドは設計上無視されるため、新しいパネルと古いアプリの組み合わせでも、壊れずに機能が限られるだけで済みます。
+</p>
+<pre><code>POST /api/control
+{ "cmd": "zoom",          "value": 2.0 }
+{ "cmd": "exposure_bias", "value": -0.5 }
+{ "cmd": "exposure",      "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
+{ "cmd": "exposure",      "mode": "auto" }
+{ "cmd": "focus",         "mode": "locked", "lensPosition": 0.42 }
+{ "cmd": "focus",         "mode": "auto" }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "flashlight",    "on": true }
+{ "cmd": "flip" }
+{ "cmd": "start_stream" }
+{ "cmd": "stop_stream" }
+{ "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "mic",           "id": "builtin:2" }
+{ "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
+<table>
+  <thead><tr><th>リクエスト</th><th>効果</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code>。自動開始のチェックボックスと同じプロパティを変更します。空の本文はfalseとして扱われず、拒否されます。</td></tr>
+    <tr><td><code>POST /api/recalibrate</code></td><td>本文なし。リップシンクの測定を新たに開始します。</td></tr>
+  </tbody>
+</table>
+
+<h3>例</h3>
+<pre><code># Start the camera on the only connected phone
+curl -X POST http://localhost:9980/api/control -d '{"cmd":"start_stream"}'
+
+# Zoom the source with id 2 to 3x
+curl -X POST 'http://localhost:9980/api/control?src=2' -d '{"cmd":"zoom","value":3.0}'
+
+# What is connected right now?
+curl -s http://localhost:9980/api/sources</code></pre>
+
+<h2>オフにする</h2>
+<p>
+  <strong>ツール → LensLink設定</strong>で<strong>ブラウザコントロールパネル</strong>のチェックを外します。ポートはすぐに閉じ、ほかには影響しません。
+</p>

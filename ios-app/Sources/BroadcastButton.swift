@@ -23,7 +23,7 @@ struct BroadcastPickerOverlay: UIViewRepresentable {
         picker.preferredExtension = Self.extensionBundleID
         // System audio only (see the extension); no mic toggle.
         picker.showsMicrophoneButton = false
-        picker.accessibilityLabel = "Mirror Screen"
+        picker.accessibilityLabel = L("Mirror Screen")
         Self.stripChrome(picker)
         return picker
     }
@@ -39,6 +39,9 @@ struct BroadcastPickerOverlay: UIViewRepresentable {
     /// view's alpha below 0.01 would make UIKit skip it in hit-testing.
     private static func stripChrome(_ picker: RPSystemBroadcastPickerView) {
         for case let button as UIButton in picker.subviews {
+            button.accessibilityLabel = L("Mirror Screen")
+            button.accessibilityUserInputLabels = [L("Mirror Screen"),
+                                                   L("Mirror")]
             button.setImage(nil, for: .normal)
             button.imageView?.alpha = 0
             button.frame = picker.bounds

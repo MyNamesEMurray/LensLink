@@ -1,0 +1,135 @@
+title: OBS mit dem Smartphone verbinden
+description: Verbinde die Quelle LensLink Camera über WLAN oder USB mit deinem iPhone, nutze mehrere Smartphones gleichzeitig und verstehe jede Statusmeldung, die die Quelle anzeigen kann.
+source: 15367c815715
+---
+<h1>OBS mit dem Smartphone verbinden</h1>
+<p class="lede">
+  Eine einzige TCP-Verbindung überträgt Video, Kamerasteuerung, Uhrabgleich und
+  Status – über dein lokales Netzwerk oder das USB-Kabel. Nichts davon geht ins Internet.
+</p>
+
+<h2>Die Kurzfassung</h2>
+<ol class="walk">
+  <li>
+    <strong>Auf dem Smartphone</strong>
+    <p>Öffne LensLink, wähle Kamera und Format und tippe dann auf <strong>Kamera starten</strong>. Der Einrichtungsbildschirm zeigt die WLAN-Adresse des Smartphones an; tippe darauf, um sie zu kopieren.</p>
+    <p>Wenn <strong>Fernstart durch OBS</strong> aktiviert ist (die Standardeinstellung), reicht es, die App geöffnet und im Leerlauf zu lassen – OBS startet die Kamera selbst.</p>
+  </li>
+  <li>
+    <strong>In OBS</strong>
+    <p><strong>Quellen → + → LensLink Camera</strong>. Eine Quelle pro Smartphone.</p>
+  </li>
+  <li>
+    <strong>Quelle auf das Smartphone richten</strong>
+    <p><strong>WLAN:</strong> Wähle dein Gerät im Dropdown <strong>Telefon</strong> aus oder tippe die IP-Adresse ein, die die App anzeigt.</p>
+    <p><strong>USB:</strong> Schließ das Smartphone an und setze <strong>Verbindung</strong> auf <strong>USB-Kabel</strong>.</p>
+  </li>
+</ol>
+<p>Nach ein, zwei Sekunden erscheint das Bild. Wenn du die App mitten im Stream verlässt, wird die Quelle schwarz, weil iOS die Kameraaufnahme von Apps anhält, die nicht auf dem Bildschirm sind. Auf einem unterstützten iPad streamt LensLink neben einer anderen App in Split View, Slide Over und Stage Manager weiter.</p>
+
+<h2>WLAN</h2>
+<p>
+  Beide Geräte müssen im selben Netzwerk sein, und das Netzwerk muss Verkehr
+  zwischen Geräten zulassen. Gastnetzwerke, Access Points mit Client-Isolation
+  und viele Büro- oder Campusnetzwerke blockieren ihn; ein Hotspot des
+  Smartphones, mit dem der Computer verbunden ist, nicht.
+</p>
+
+<h3>Das Smartphone über seinen Namen finden</h3>
+<p>
+  Die App macht sich per Bonjour bekannt, solange sie geöffnet ist, und das
+  Dropdown <strong>Telefon</strong> listet auf, was es findet. Fehlt dein
+  Smartphone in der Liste, obwohl das Eintippen der IP-Adresse funktioniert,
+  fehlt der App die Berechtigung <strong>Lokales Netzwerk</strong>, die iOS für
+  diese Bekanntmachung verlangt: Erlaube sie, wenn du gefragt wirst, oder unter
+  <strong>Einstellungen → Datenschutz &amp; Sicherheit → Lokales Netzwerk →
+  LensLink</strong>.
+</p>
+<p>
+  Smartphones bekommen außerdem neue DHCP-Leases, und das ist der andere Grund,
+  sie über den Namen auszuwählen. Wenn du lieber Adressen eintippst, reserviere
+  im Router eine feste Adresse.
+</p>
+
+<h2>USB</h2>
+<p>
+  Nimm USB für alles, worauf es ankommt: kein Netzwerk beteiligt, die stabilste
+  Latenz, und das Smartphone lädt, während es kodiert – was sich lohnt, denn
+  Video zu kodieren gehört zum Anstrengendsten, was ein Smartphone tut.
+</p>
+<ol class="walk">
+  <li>
+    <strong>Nur Windows: iTunes installieren</strong>
+    <p>Es liefert Apples Gerätetreiber. Ohne ihn funktioniert kein Kabel.</p>
+  </li>
+  <li>
+    <strong>Anschließen und auf „Vertrauen“ tippen</strong>
+    <p>Das Smartphone muss für die Abfrage entsperrt sein, und es muss ein Datenkabel sein.</p>
+  </li>
+  <li>
+    <strong>Verbindung auf „USB-Kabel“ setzen</strong>
+    <p>Lass <strong>USB-Gerät</strong> auf <strong>Auto</strong>, sofern du nicht mehr als ein Smartphone verwendest.</p>
+  </li>
+</ol>
+<p>
+  <strong>Wenn mehrere Smartphones angeschlossen sind</strong>, setze
+  <strong>USB-Gerät</strong> bei jeder Quelle auf ein bestimmtes Gerät statt auf
+  Auto. Dann speist immer dasselbe Smartphone dieselbe Quelle, egal in welcher
+  Reihenfolge angeschlossen wurde. Eine Quelle, die an ein nicht vorhandenes
+  Gerät gebunden ist, wartet und zeigt das auch an.
+</p>
+
+<h2>Mehrere Smartphones gleichzeitig</h2>
+<p>
+  Eine Quelle <strong>LensLink Camera</strong> pro Smartphone. Jede hat ihre
+  eigene Verbindung, Steuerung und Zustandsanzeige, und das Browser-Steuerfeld
+  bekommt pro Quelle einen eigenen Tab.
+</p>
+<div class="callout">
+  <p><strong>Ein Smartphone speist immer nur eine Quelle.</strong> Eine zweite
+  Quelle, die auf dasselbe Gerät zeigt, meldet, dass es bereits verwendet wird.
+  Ausnahme: Mit <strong>Trennen, wenn diese Quelle nirgends angezeigt wird</strong>
+  gibt eine ausgeblendete Quelle das Smartphone frei – so können sich eine
+  Camera-Quelle in einer Szene und eine Screen-Quelle in einer anderen das Gerät teilen.</p>
+</div>
+
+<h2>Das Statusfeld lesen</h2>
+<p>
+  Jede LensLink-Quelle hat oben in ihren Eigenschaften eine Zeile
+  <strong>Status</strong>, und diese nennt genau die Stufe, an der es scheitert.
+</p>
+<table>
+  <thead><tr><th>Status</th><th>Bedeutung</th></tr></thead>
+  <tbody>
+    <tr><td>Verbunden: …</td><td>Stream läuft. Zeigt Gerät, Format und gemessene Latenz.</td></tr>
+    <tr><td>Verbunden – die Kamera ist im Leerlauf</td><td>Bereitschaft: App erreichbar, nimmt nicht auf. Starte sie hier, über das Browser-Steuerfeld oder am Smartphone.</td></tr>
+    <tr><td>Kamera des Smartphones wird gestartet …</td><td>Fernstart gesendet, die Kamera fährt hoch.</td></tr>
+    <tr><td>Verbindungsversuch mit dem Smartphone unter …</td><td>Falsche oder nicht erreichbare Adresse, oder die App ist nicht im Vordergrund.</td></tr>
+    <tr><td>IP-Adresse des Smartphones eingeben</td><td>Bei einer WLAN-Quelle ist kein Host eingetragen.</td></tr>
+    <tr><td>Kein Gerät über USB erkannt</td><td>Prüfe das Kabel und tippe auf „Vertrauen“. Prüfe unter Windows, ob iTunes installiert ist.</td></tr>
+    <tr><td>Gerät gefunden, aber die LensLink-App ist nicht erreichbar</td><td>Das Kabel ist in Ordnung. Entsperre das Smartphone und hol die App in den Vordergrund.</td></tr>
+    <tr><td>Warten auf das ausgewählte USB-Gerät</td><td>An ein Gerät gebunden, das nicht angeschlossen ist.</td></tr>
+    <tr><td>Dieses Gerät wird bereits von einer anderen LensLink-Quelle verwendet</td><td>Zwei Quellen, ein Smartphone. Siehe oben.</td></tr>
+    <tr><td>Getrennt – Verbindung wird wiederhergestellt</td><td>Verbindung abgebrochen, die Quelle wählt neu.</td></tr>
+    <tr><td>Pausiert – Quelle ist ausgeblendet</td><td><strong>Trennen, wenn diese Quelle nirgends angezeigt wird</strong> ist aktiviert, und nichts zeigt die Quelle an.</td></tr>
+    <tr><td>Smartphone sendet eine Bildschirmübertragung</td><td>Falscher Quelltyp – nimm für eine Übertragung eine Quelle <strong>LensLink Screen</strong>.</td></tr>
+    <tr><td>Verbunden, aber dieser OBS-Build kann den Stream nicht dekodieren</td><td>Kein HEVC-Decoder in diesem Build. Stell die App auf H.264 um.</td></tr>
+  </tbody>
+</table>
+
+<h2>Damit alles rund läuft</h2>
+<ul>
+  <li><strong>Behalte die Zahlen im Blick.</strong> Die Statusleiste von OBS zeigt eine Zeile pro Smartphone – <code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code> –, und <strong>Ansicht → Docks → LensLink</strong> zeigt dasselbe als Panel.</li>
+  <li><strong>Überlastung regelt sich selbst.</strong> Die App senkt kurz die Qualität und erholt sich wieder, statt Latenz anzuhäufen.</li>
+  <li><strong>Spare Akku</strong> mit <strong>Trennen, wenn diese Quelle nirgends angezeigt wird</strong>: Das Smartphone hört auf zu kodieren, sobald die Quelle ausgeblendet ist.</li>
+  <li><strong>Der Stream ist unverschlüsselt</strong> in deinem Netzwerk – gedacht für vertrauenswürdige Netzwerke zu Hause und im Studio.</li>
+</ul>
+
+<h2>Wenn keine Verbindung zustande kommt</h2>
+<ol>
+  <li>Ist die App <strong>auf dem Bildschirm</strong>, auf einem entsperrten Smartphone?</li>
+  <li>WLAN: dasselbe Netzwerk – und nicht eines der Geräte in einer Gast-SSID?</li>
+  <li>USB: Datenkabel, und auf <strong>Vertrauen</strong> getippt?</li>
+  <li>Ansonsten folge der Zeile oben, die zu deinem Statusfeld passt.</li>
+</ol>
+<p>Kommst du immer noch nicht weiter: <a href="/docs/troubleshooting/">Fehlerbehebung</a>.</p>

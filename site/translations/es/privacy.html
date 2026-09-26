@@ -1,0 +1,98 @@
+title: Política de privacidad
+description: LensLink Camera no recopila ningún dato. Qué puede ver la app, qué hace con ello y qué nunca sale de tu red local.
+nav: docs
+source: 0dc862d45f0a
+---
+<section class="tight">
+  <div class="wrap">
+    <article class="doc" style="max-width: 46em">
+      <h1>Política de privacidad</h1>
+      <p class="lede">
+        LensLink Camera no recopila ningún dato. Nada sobre ti, tu dispositivo
+        o tu video sale de tu red local, y no hay cuenta, ni inicio de sesión,
+        ni analíticas. Esta página explica qué puede ver la app y qué hace con
+        ello.
+      </p>
+
+      <h2>Qué hace la app con la cámara y el micrófono</h2>
+      <p>
+        Cuando tocas Iniciar cámara, la app captura video de la cámara del
+        teléfono, lo codifica en el teléfono y lo envía por tu red Wi-Fi local
+        o por un cable USB a OBS Studio en tu propia computadora, a través del
+        plugin de código abierto de LensLink. La cámara solo funciona después
+        de que tocas Iniciar, el indicador de cámara del sistema permanece
+        encendido durante toda la transmisión, y se detiene al tocar Detener,
+        al salir de la app o al bloquear el teléfono. No se graba nada en el
+        teléfono ni se guarda ningún fotograma en ninguna parte.
+      </p>
+      <p>
+        El micrófono solo se usa durante la transmisión y solo si activas
+        <strong>Enviar micrófono del teléfono a OBS</strong> (que envía el
+        audio a OBS como un micrófono inalámbrico) o <strong>Referencia de
+        sincronía labial automática</strong> (una señal de tiempo que el plugin
+        usa para alinear tu propio micrófono; nunca se escucha ni se guarda).
+      </p>
+      <p>
+        <strong>Duplicar pantalla</strong> envía la pantalla del teléfono y el
+        audio de las apps a OBS de la misma manera, mediante el selector de
+        transmisión del sistema, y se detiene cuando finalizas la transmisión.
+      </p>
+
+      <h2>Red local</h2>
+      <p>
+        La app pide el permiso de Red local porque OBS se conecta al teléfono
+        a través de tu red local. Se anuncia con Bonjour para que el plugin
+        pueda mostrarla por su nombre, y espera la conexión de OBS en un puerto
+        TCP. Nunca se conecta a ningún servidor nuestro, porque no existe
+        ninguno. Todas las conexiones son entre tu teléfono y tu computadora.
+      </p>
+
+      <h2>Qué se guarda en el teléfono</h2>
+      <p>
+        Tus ajustes (formato, calidad, ajustes de cámara recordados, opciones)
+        se guardan en las preferencias propias de la app en el dispositivo y no
+        van a ninguna otra parte. Al eliminar la app, se eliminan.
+      </p>
+
+      <h2>Qué no se recopila</h2>
+      <ul>
+        <li>Ni analíticas, ni seguimiento de uso, ni identificadores publicitarios.</li>
+        <li>Ningún SDK de informes de fallos. Si en iOS activaste la opción de
+          compartir con los desarrolladores de apps (Configuración → Privacidad y
+          seguridad → Análisis y mejoras), Apple puede compartir con nosotros
+          los registros de fallos. Si instalas la app mediante TestFlight, Apple
+          también puede compartir los comentarios que envíes, según las propias
+          condiciones de TestFlight de Apple.</li>
+        <li>Ni cuenta, ni dirección de correo electrónico, ni información personal.</li>
+        <li>Ningún SDK de terceros.</li>
+      </ul>
+      <p>
+        Los únicos enlaces que salen de la app se abren en Safari y llevan al
+        repositorio de GitHub del proyecto (código fuente e informes de
+        errores) o a este sitio.
+      </p>
+
+      <h2>Siri y Atajos</h2>
+      <p>
+        “Empieza a transmitir con LensLink” y “Deja de transmitir con LensLink” se ejecutan en el dispositivo. El tratamiento que Apple da a
+        las solicitudes de Siri se rige por la política de privacidad de Apple,
+        no por esta.
+      </p>
+
+      <h2>Menores</h2>
+      <p>
+        La app tiene una clasificación de 4+ y no recopila datos de nadie, sea
+        cual sea su edad.
+      </p>
+
+      <h2>Cambios y contacto</h2>
+      <p>
+        Si esta política cambia, la nueva versión se publica aquí con la fecha
+        que aparece abajo. Para cualquier pregunta, consulta la
+        <a href="/support/">página de soporte</a>.
+      </p>
+      <p><em>Última actualización: 25 de septiembre de 2026.</em></p>
+      <p>En caso de discrepancia, prevalece la versión en inglés de esta política.</p>
+    </article>
+  </div>
+</section>

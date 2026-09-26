@@ -1,0 +1,136 @@
+title: Connecter OBS à votre téléphone
+description: Connectez la source LensLink Camera à votre iPhone en Wi-Fi ou en USB, utilisez plusieurs téléphones à la fois, et comprenez chaque message d’état que la source peut afficher.
+source: 15367c815715
+---
+<h1>Connecter OBS à votre téléphone</h1>
+<p class="lede">
+  Une seule connexion TCP transporte la vidéo, les commandes de la caméra, la
+  synchronisation d’horloge et l’état, par votre réseau local ou par le câble
+  USB. Rien ne passe par Internet.
+</p>
+
+<h2>En bref</h2>
+<ol class="walk">
+  <li>
+    <strong>Sur le téléphone</strong>
+    <p>Ouvrez LensLink, choisissez la caméra et le format, puis touchez <strong>Démarrer la caméra</strong>. L’écran de configuration affiche l’adresse Wi-Fi du téléphone ; touchez-la pour la copier.</p>
+    <p>Avec <strong>Démarrage à distance depuis OBS</strong> activé (par défaut), il suffit de laisser l’app ouverte et inactive : OBS démarre lui-même la caméra.</p>
+  </li>
+  <li>
+    <strong>Dans OBS</strong>
+    <p><strong>Sources → + → LensLink Camera</strong>. Une source par téléphone.</p>
+  </li>
+  <li>
+    <strong>Reliez-la au téléphone</strong>
+    <p><strong>Wi-Fi :</strong> choisissez votre appareil dans la liste <strong>Téléphone</strong>, ou saisissez l’adresse IP affichée par l’app.</p>
+    <p><strong>USB :</strong> branchez le téléphone et réglez <strong>Connexion</strong> sur <strong>Câble USB</strong>.</p>
+  </li>
+</ol>
+<p>La vidéo apparaît en une ou deux secondes. Quitter l’app en cours de diffusion vide la source, car iOS suspend la capture de la caméra pour les apps qui ne sont pas à l’écran. Sur un iPad compatible, LensLink continue de diffuser à côté d’une autre app en Split View, en Slide Over et avec Stage Manager.</p>
+
+<h2>Wi-Fi</h2>
+<p>
+  Les deux appareils doivent être sur le même réseau, et celui-ci doit autoriser
+  le trafic entre appareils. Les réseaux invités, les points d’accès avec
+  isolation des clients et de nombreux réseaux d’entreprise ou de campus le
+  bloquent ; un partage de connexion du téléphone auquel l’ordinateur est
+  connecté, non.
+</p>
+
+<h3>Trouver le téléphone par son nom</h3>
+<p>
+  L’app s’annonce via Bonjour tant qu’elle est ouverte, et la liste
+  <strong>Téléphone</strong> affiche ce qu’elle trouve. Si votre téléphone manque
+  à la liste alors que saisir son adresse IP fonctionne, l’app n’a pas
+  l’autorisation <strong>Réseau local</strong> qu’iOS exige pour cette annonce :
+  accordez-la quand elle vous est demandée, ou dans <strong>Réglages →
+  Confidentialité et sécurité → Réseau local → LensLink</strong>.
+</p>
+<p>
+  Les téléphones reçoivent aussi de nouveaux baux DHCP, autre raison de choisir
+  par le nom. Si vous préférez saisir des adresses, réservez-en une dans votre
+  routeur.
+</p>
+
+<h2>USB</h2>
+<p>
+  Utilisez l’USB pour tout ce qui compte : pas de réseau en jeu, la latence la
+  plus stable, et le téléphone se recharge pendant qu’il encode, ce qui n’est pas
+  un luxe, car l’encodage vidéo fait partie des tâches les plus exigeantes pour
+  un téléphone.
+</p>
+<ol class="walk">
+  <li>
+    <strong>Windows uniquement : installez iTunes</strong>
+    <p>Il fournit le pilote de périphérique d’Apple. Sans lui, aucun câble ne fonctionne.</p>
+  </li>
+  <li>
+    <strong>Branchez le téléphone et touchez Se fier</strong>
+    <p>Le téléphone doit être déverrouillé pour que la demande s’affiche, et le câble doit être un câble de données.</p>
+  </li>
+  <li>
+    <strong>Réglez Connexion sur « Câble USB »</strong>
+    <p>Laissez <strong>Appareil USB</strong> sur <strong>Auto</strong>, sauf si vous utilisez plusieurs téléphones.</p>
+  </li>
+</ol>
+<p>
+  <strong>Avec plusieurs téléphones branchés</strong>, réglez l’<strong>Appareil
+  USB</strong> de chaque source sur un appareil précis plutôt que sur Auto. Le
+  même téléphone alimente alors toujours la même source, quel que soit l’ordre
+  de branchement. Une source associée à un appareil absent attend, et le signale.
+</p>
+
+<h2>Plusieurs téléphones à la fois</h2>
+<p>
+  Une source <strong>LensLink Camera</strong> par téléphone. Chacune a sa propre
+  connexion, ses propres commandes et son propre indicateur de santé, et le
+  panneau de contrôle web ajoute un onglet par source.
+</p>
+<div class="callout">
+  <p><strong>Un téléphone n’alimente qu’une source à la fois.</strong> Une seconde
+  source pointée vers le même appareil indique qu’il est déjà utilisé. Exception :
+  avec <strong>Se déconnecter quand cette source n’est affichée nulle part</strong>,
+  une source masquée libère le téléphone. Une source Camera dans une scène et une
+  source Screen dans une autre peuvent ainsi se le partager.</p>
+</div>
+
+<h2>Lire le champ État</h2>
+<p>
+  Chaque source LensLink affiche une ligne <strong>État</strong> en haut de ses
+  propriétés, qui nomme précisément l’étape en échec.
+</p>
+<table>
+  <thead><tr><th>État</th><th>Signification</th></tr></thead>
+  <tbody>
+    <tr><td>Connecté : …</td><td>Diffusion en cours. Indique l’appareil, le format et la latence mesurée.</td></tr>
+    <tr><td>Connecté – la caméra est inactive</td><td>Veille : l’app est joignable mais ne capture pas. Démarrez la caméra ici, depuis le panneau de contrôle web ou sur le téléphone.</td></tr>
+    <tr><td>Démarrage de la caméra du téléphone…</td><td>Démarrage à distance envoyé ; la caméra s’allume.</td></tr>
+    <tr><td>Tentative de connexion au téléphone à l’adresse …</td><td>Adresse erronée ou injoignable, ou l’app n’est pas au premier plan.</td></tr>
+    <tr><td>Saisissez l’adresse IP du téléphone</td><td>Aucun hôte défini sur une source Wi-Fi.</td></tr>
+    <tr><td>Aucun appareil détecté en USB</td><td>Vérifiez le câble et touchez Se fier. Sous Windows, vérifiez qu’iTunes est installé.</td></tr>
+    <tr><td>Appareil détecté, mais l’app LensLink est injoignable</td><td>Le câble fonctionne. Déverrouillez le téléphone et mettez l’app au premier plan.</td></tr>
+    <tr><td>En attente de la connexion de l’appareil USB sélectionné</td><td>Associée à un appareil qui n’est pas connecté.</td></tr>
+    <tr><td>Cet appareil est déjà utilisé par une autre source LensLink</td><td>Deux sources, un seul téléphone. Voir plus haut.</td></tr>
+    <tr><td>Déconnecté – reconnexion</td><td>Liaison perdue ; la source se reconnecte.</td></tr>
+    <tr><td>En pause – la source est masquée</td><td><strong>Se déconnecter quand cette source n’est affichée nulle part</strong> est activé et rien n’affiche la source.</td></tr>
+    <tr><td>Le téléphone envoie une diffusion de l’écran</td><td>Mauvais type de source : utilisez une source <strong>LensLink Screen</strong> pour une diffusion.</td></tr>
+    <tr><td>Connecté, mais cette version d’OBS ne peut pas décoder le flux</td><td>Pas de décodeur HEVC dans cette version. Passez l’app en H.264.</td></tr>
+  </tbody>
+</table>
+
+<h2>Garder une connexion saine</h2>
+<ul>
+  <li><strong>Surveillez les chiffres.</strong> La barre d’état d’OBS affiche une ligne par téléphone (<code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>), et <strong>Afficher → Docks → LensLink</strong> présente la même chose sous forme de panneau.</li>
+  <li><strong>La congestion se gère toute seule.</strong> L’app baisse brièvement la qualité puis la rétablit, au lieu d’accumuler de la latence.</li>
+  <li><strong>Économisez la batterie</strong> avec <strong>Se déconnecter quand cette source n’est affichée nulle part</strong> : le téléphone cesse d’encoder dès que la source est masquée.</li>
+  <li><strong>Le flux n’est pas chiffré</strong> sur votre réseau : il est conçu pour des réseaux domestiques et de studio de confiance.</li>
+</ul>
+
+<h2>Si la connexion échoue</h2>
+<ol>
+  <li>L’app est-elle <strong>à l’écran</strong>, sur un téléphone déverrouillé ?</li>
+  <li>Wi-Fi : même réseau, sans qu’un des appareils soit sur un SSID invité ?</li>
+  <li>USB : câble de données, et <strong>Se fier</strong> touché ?</li>
+  <li>Sinon, suivez la ligne du tableau ci-dessus qui correspond à votre champ État.</li>
+</ol>
+<p>Le problème persiste ? Consultez <a href="/docs/troubleshooting/">Dépannage</a>.</p>

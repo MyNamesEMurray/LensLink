@@ -40,6 +40,7 @@ def main():
                 target, fragment = url, href[1:]
             else:
                 target, _, fragment = href.partition("#")
+                target = target.partition("?")[0]
             on_disk = os.path.exists(os.path.join(DIST, target.lstrip("/")))
             if target not in pages and not on_disk:
                 bad.append((url, href, "no such page"))

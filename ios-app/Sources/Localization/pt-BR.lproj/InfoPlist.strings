@@ -1,0 +1,8 @@
+/* Camera permission prompt */
+"NSCameraUsageDescription" = "O LensLink transmite a sua câmera para o OBS no seu computador.";
+
+/* Local Network permission prompt */
+"NSLocalNetworkUsageDescription" = "O LensLink se conecta ao OBS Studio na sua rede local para enviar o vídeo da câmera.";
+
+/* Microphone permission prompt */
+"NSMicrophoneUsageDescription" = "O LensLink pode enviar o seu microfone ao OBS: como áudio da câmera, se você ativar essa opção, ou apenas como referência de tempo para sincronizar automaticamente o seu microfone de verdade com o vídeo.";

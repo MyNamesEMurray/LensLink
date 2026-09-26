@@ -1,0 +1,201 @@
+title: Solução de problemas
+description: Soluções sintoma por sintoma para o LensLink: o plugin que não carrega, dispositivos USB não encontrados, expiração do sideload, transmissões de tela, picos de latência e efeitos de vídeo ausentes.
+source: b9fde365152b
+---
+<h1>Solução de problemas</h1>
+<p class="lede">
+  Encontre o seu sintoma. Dois anexos tornam quase qualquer relato solucionável: o
+  log do OBS (<strong>Ajuda → Arquivos de registro → Ver arquivo de registro atual</strong>) e
+  <strong>Opções → Diagnóstico da câmera</strong>, do app.
+</p>
+
+<h2>As fontes não aparecem no OBS</h2>
+<ul>
+  <li><strong>Reinicie o OBS</strong>: os plugins são carregados uma única vez, na inicialização.</li>
+  <li><strong>Confira se o OBS é a versão 32 ou mais recente</strong> (<strong>Ajuda → Sobre</strong>).</li>
+  <li><strong>Linux, o log diz <code>libavcodec.so.60: cannot open shared object file</code>:</strong> os tarballs até a v1.7.x eram vinculados ao FFmpeg da máquina de build, então só carregavam em distribuições com exatamente aquela versão principal. Atualize ou <a href="/docs/install/#from-source">compile a partir do código-fonte</a>, que vincula o seu próprio FFmpeg.</li>
+  <li><strong>macOS, instalado pelo zip:</strong> remova o atributo de quarentena, ou o OBS se recusa a carregá-lo sem avisar.</li>
+</ul>
+
+<h2>A fonte se chama "iOS Camera", ou as atualizações parecem não ter efeito</h2>
+<p>
+  Uma cópia anterior à 1.0 (<code>ios-camera-source.dll</code>) ainda está instalada
+  e tem prioridade sobre a atual; o log diz <em>"Source 'ios_camera_source'
+  already exists"</em>. Apague estes dois itens e reinicie:
+</p>
+<pre><code>obs-plugins\64bit\ios-camera-source.dll
+data\obs-plugins\ios-camera-source\</code></pre>
+<p>O instalador atual a remove automaticamente.</p>
+
+<h2>Dispositivo USB não encontrado (Windows)</h2>
+<ul>
+  <li><strong>Instale o iTunes</strong>: ele fornece o driver de dispositivo da Apple. No Windows, não há como contornar isso.</li>
+  <li><strong>Toque em Confiar</strong>, com o celular desbloqueado.</li>
+  <li><strong>Use um cabo de dados.</strong> Nada na interface consegue diferenciar um cabo só de carga de um cabo de dados.</li>
+</ul>
+<p>
+  <em>"Dispositivo encontrado, mas o app LensLink não está acessível"</em> significa
+  que o cabo e o driver estão funcionando: o app não está em primeiro plano, ou o
+  celular está bloqueado.
+</p>
+
+<h2>O celular não aparece na lista Celular</h2>
+<p>
+  O iOS exige a permissão de <strong>Rede Local</strong> para a divulgação do nome:
+  permita quando for solicitado, ou em <strong>Ajustes → Privacidade e
+  Segurança → Rede Local → LensLink</strong>. Digitar o IP funciona de qualquer forma.
+</p>
+<p>
+  Confira também se os dois aparelhos estão na mesma rede, e se ela não é uma rede
+  de convidados nem uma com isolamento de clientes.
+</p>
+
+<h2>O app para de funcionar depois de uma semana (somente sideload)</h2>
+<p>
+  Com Contas Apple gratuitas, os apps instalados por sideload expiram a cada 7 dias.
+  Reinstale para renovar (os ajustes são mantidos) ou mude para a
+  <a href="{{APPSTORE}}">versão da App Store</a>, que não expira.
+</p>
+
+<h2>"E aí Siri, comece a transmitir com o LensLink" não é reconhecido (somente sideload)</h2>
+<p>
+  A reassinatura reescreve o ID do pacote, deixando órfãos os dados de frases
+  compilados: a Siri recusa, mesmo que a mesma ação funcione pelos Atalhos. Use a
+  versão da App Store, ou um atalho com <code>lenslink://start</code>. Verifique
+  também se o app já foi aberto uma vez e se "Usar com a Siri" está ativado em
+  <strong>Ajustes → Siri e Busca → LensLink</strong>.
+</p>
+
+<h2>Os efeitos de vídeo da Central de Controle não aparecem ou estão acinzentados</h2>
+<p>
+  São efeitos do iOS, ativados na Central de Controle enquanto um app usa a câmera.
+  O iOS só os oferece em certas câmeras e formatos (normalmente a câmera frontal,
+  nada acima de 1920×1440), e em muitos iPhones as câmeras traseiras não recebem
+  nenhum.
+</p>
+<ul>
+  <li><strong>Opções → Diagnóstico da câmera</strong> mostra o que o seu aparelho oferece, por câmera e formato.</li>
+  <li>O LensLink já escolhe um formato compatível com efeitos quando os seus ajustes permitem.</li>
+  <li>Um botão acinzentado indica que a taxa de quadros está alta demais: reduza-a e ative <strong>Opções → Permitir efeitos de vídeo do sistema</strong>.</li>
+  <li>Antes da 1.8.1, o painel nem aparecia: o iOS só o preenche para apps que declaram cada efeito no <code>Info.plist</code>, o que o LensLink agora faz.</li>
+</ul>
+<p>
+  Os filtros do app Câmera e os Estilos Fotográficos da Apple não estão disponíveis
+  para nenhum app de terceiros. Use os filtros do OBS (clique com o botão direito →
+  <strong>Filtros</strong>).
+</p>
+
+<h2>A transmissão de tela não conecta</h2>
+<ul>
+  <li><strong>Versões instaladas por sideload:</strong> a reassinatura pode quebrar a extensão sem aviso; a seção Espelhamento de tela da tela principal do app avisa quando ela está faltando. As versões do TestFlight e da App Store não são afetadas.</li>
+  <li>Confira se a fonte é uma fonte <strong>LensLink Screen</strong>: uma fonte Camera que recebe uma transmissão de tela avisa isso no campo Status.</li>
+</ul>
+
+<h2>Sem áudio, ou áudio que você não consegue ouvir</h2>
+<ul>
+  <li><strong>Apps com DRM ficam mudos durante uma transmissão:</strong> o iOS silencia Apple Music, Spotify e Netflix. O áudio de jogos, apps e do navegador funciona normalmente.</li>
+  <li><strong>Gravado, mas inaudível:</strong> defina o <strong>Monitoramento de áudio</strong> como <strong>Monitoramento ativado</strong> nas Propriedades de áudio avançadas do OBS.</li>
+  <li><strong>Sem o microfone do celular no OBS:</strong> ative <strong>Enviar microfone do celular ao OBS</strong>. Se a <strong>Referência automática de sincronia labial</strong> estiver ativada, ele não é enviado: um microfone, uma função.</li>
+</ul>
+
+<h2>Duas fontes, um celular</h2>
+<p>
+  Um celular alimenta uma fonte por vez; uma segunda fonte avisa que o aparelho está
+  em uso. A exceção é <strong>Desconectar quando esta fonte não aparecer em lugar
+  nenhum</strong>: uma fonte oculta libera o celular, então fontes em cenas
+  diferentes podem compartilhá-lo.
+</p>
+
+<h2>Picos de latência no Wi-Fi com zoom</h2>
+<p>
+  O zoom digital amplia o ruído do sensor, que comprime mal e faz a taxa de bits
+  disparar. Use a lente Teleobjetiva ou mude para USB.
+</p>
+
+<h2>"Conectado, mas esta versão do OBS não consegue decodificar o vídeo"</h2>
+<p>
+  Essa versão não tem decodificador HEVC. Mude o app para <strong>H.264</strong>: a
+  mesma imagem, com mais banda.
+</p>
+
+<h2>A imagem está totalmente verde</h2>
+<p>
+  Quase sempre é a <a href="/docs/camera/#virtual-green-screen">tela verde
+  virtual</a> funcionando como deveria com um assunto que ela não encontra mais: o
+  celular pinta de verde chroma tudo o que não é você, então, se a segmentação perde
+  você (você saiu do quadro, ou a <strong>distância do assunto</strong> está
+  apertada demais), o quadro inteiro vira fundo. Isso continua mesmo depois de
+  reiniciar o OBS <em>e</em> o celular, porque a configuração fica no celular.
+</p>
+<p>
+  Desative a <strong>Tela verde</strong> no app para confirmar. Se você quer mantê-la
+  ativada, confira se ainda há um filtro chroma key na fonte: o plugin adiciona um na
+  primeira vez e nunca volta a adicionar um filtro que você excluiu. A linha
+  <strong>Status</strong> da fonte diz em qual caso você está.
+</p>
+<p>
+  Ela também dá bastante trabalho ao celular a cada quadro, então vale testar com a
+  tela verde desativada um aparelho que fica lento durante a transmissão.
+</p>
+
+<h2>A fonte no OBS mostra uma imagem desfocada com um símbolo de pausa</h2>
+<p>
+  A transmissão está <strong>pausada</strong>, não quebrada: o celular continua
+  conectado e a câmera continua rodando, mas nenhum vídeo está saindo.
+  Ou alguém a pausou (a tela Ao vivo do celular, o painel web e as propriedades da
+  fonte têm o botão), ou o iOS interrompeu a câmera, o que acontece quando outro app
+  a abre ao lado do LensLink em um iPad. Retome a partir de qualquer um desses
+  lugares; no caso da interrupção, a transmissão é retomada sozinha quando a câmera
+  volta.
+</p>
+
+<h2>A imagem congela ou fica preta quando troco de app no celular</h2>
+<p>
+  É o esperado: o iOS suspende a captura da câmera dos apps que não estão na tela,
+  então o LensLink para a transmissão de forma limpa e a fonte fica vazia.
+  Bloquear o celular tem o mesmo efeito. Uma <em>transmissão</em> de tela é a
+  exceção e continua rodando entre apps, e um iPad compatível continua transmitindo
+  ao lado de outro app em Split View, Slide Over ou no Organizador Visual.
+</p>
+<p>
+  A janela não tem botões próprios (o iOS deixou de desenhá-los nesse tipo de janela
+  depois do iOS 15), então toque nela para voltar ao LensLink.
+  Empurrá-la para fora da lateral da tela a estaciona, e
+  o iOS só empresta a câmera a uma janela que ele consegue ver; por isso a captura
+  pausa, o ponto verde da câmera se apaga e o OBS mantém o último quadro até você
+  puxar a janela de volta, e aí a transmissão é retomada sozinha.
+  Essa é a regra do iOS para captura em segundo plano, não uma configuração do
+  LensLink. Para parar ou pausar sem voltar ao celular, use <strong>Parar</strong>
+  ou <strong>Pausar</strong> no OBS ou no
+  <a href="/docs/web-panel/">painel web</a>, ou peça à Siri para parar a
+  transmissão.
+</p>
+<p>
+  No iPad, manter o LensLink <em>na</em> tela junto com o outro app (Split View,
+  Slide Over ou Organizador Visual) mantém a câmera rodando nos modelos compatíveis
+  com acesso à câmera em multitarefa (iPadOS 16+). Onde o iPad não consegue
+  compartilhar a câmera, o status mostra
+  <strong>Câmera pausada: este iPad não pode compartilhar a câmera na
+  tela</strong>; lá, use o LensLink em tela cheia.
+</p>
+
+<h2>Nada aqui corresponde ao seu caso</h2>
+<p>
+  <strong>Ferramentas → Configurações do LensLink → Copiar um relatório de diagnóstico</strong>
+  e cole em uma issue no <a href="{{REPO}}/issues">GitHub</a>. Ele reúne as
+  versões, o hardware, o dispositivo gráfico, as configurações e o estado da conexão
+  de cada fonte, incluindo o último erro de socket, que distingue "o app não estava
+  rodando" de "o sistema operacional recusou a conexão". Sem vídeo, áudio nem dados
+  pessoais.
+</p>
+<p>
+  Sem a interface Qt, ou a partir de um script:
+  <code>curl localhost:9980/api/diagnostics</code>. O relatório também vai para o
+  log do OBS, então <strong>Ajuda → Arquivos de registro → Carregar arquivo de registro atual</strong>
+  o inclui.
+</p>
+<p>
+  Vale acrescentar: <strong>Opções → Diagnóstico da câmera</strong>, do app, e o log
+  do OBS com <strong>Diagnóstico detalhado</strong> ativado enquanto você reproduz o
+  problema uma vez.
+</p>

@@ -1,5 +1,5 @@
 title: Install LensLink
-description: Install the LensLink plugin into OBS Studio on Windows, macOS or Linux, and the LensLink app on your iPhone or iPad through TestFlight, sideloading or Xcode.
+description: Install the LensLink plugin into OBS Studio on Windows, macOS or Linux, and the LensLink app on your iPhone or iPad from the App Store, TestFlight, sideloading or Xcode.
 ---
 <h1>Install</h1>
 <p class="lede">
@@ -67,10 +67,18 @@ cmake --build build</code></pre>
 
 <h2>The app</h2>
 
-<h3>TestFlight — recommended</h3>
+<h3>App Store (recommended)</h3>
 <p>
-  Join at <a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a>.
-  Updates arrive on their own and Siri phrases work.
+  Install <a href="{{APPSTORE}}">LensLink Camera</a> from the App Store. It's
+  free, updates arrive on their own, and Siri phrases work.
+</p>
+
+<h3>TestFlight beta</h3>
+<p>
+  To get new versions before they reach the App Store, join at
+  <a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a>. Every
+  release lands in TestFlight first; the App Store gets it once Apple approves
+  the update.
 </p>
 
 <h3>Sideloading</h3>
@@ -86,7 +94,7 @@ cmake --build build</code></pre>
   <p>Re-signing also rewrites the bundle ID, which orphans the compiled Siri
   phrase data: <em>"Hey Siri, start streaming with LensLink"</em> gets a generic
   refusal even though the same action works from Shortcuts. Use
-  <code>lenslink://start</code> in a Shortcut, or use TestFlight.</p>
+  <code>lenslink://start</code> in a Shortcut, or install from the App Store.</p>
 </div>
 
 <h3>Xcode</h3>
@@ -140,7 +148,8 @@ cd ios-app && xcodegen generate && open LensLink.xcodeproj</code></pre>
 <h2>Updating</h2>
 <p>
   Run the new plugin installer over the old one and restart OBS; the app
-  updates through TestFlight, or by re-installing the new <code>.ipa</code>.
+  updates through the App Store or TestFlight, or by re-installing the new
+  <code>.ipa</code>.
   The two halves negotiate a protocol version, so a slightly older app and a
   newer plugin keep working — if a release ever needs both sides, its notes say
   so.

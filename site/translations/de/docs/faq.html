@@ -1,0 +1,140 @@
+title: Häufige Fragen
+description: Kosten, Datenschutz, unterstützte Geräte, Android, Nutzung als virtuelle Kamera, Akku und wie sich LensLink mit einer Capture-Karte oder einer USB-Webcam vergleicht.
+source: de29eb0c21eb
+---
+<h1>Häufige Fragen</h1>
+
+<h2>Ist es wirklich kostenlos?</h2>
+<p>
+  Ja – <a href="{{REPO}}/blob/main/LICENSE">GPL-2.0-or-later</a>, dieselbe
+  Lizenz wie OBS Studio. Kein Konto, kein Wasserzeichen, keine
+  Auflösungsgrenze, keine Bezahlversion. Beide Hälften liegen auf <a href="{{REPO}}">GitHub</a>.
+</p>
+
+<h2>Läuft mein Video über das Internet?</h2>
+<p>
+  Nein. Das Plugin wählt das Smartphone direkt über dein Netzwerk oder das Kabel
+  an – kein Relay, kein Cloud-Dienst, keine Telemetrie. Der Stream ist
+  unverschlüsselt, er ist also für vertrauenswürdige Netzwerke zu Hause und im
+  Studio gedacht, nicht für öffentliches WLAN, das du mit anderen teilst.
+</p>
+
+<h2>Welche Geräte funktionieren?</h2>
+<p>
+  Jedes iPhone oder iPad mit <strong>iOS/iPadOS 15+</strong>, zusammen mit OBS Studio
+  <strong>32+</strong> unter Windows, macOS oder Linux. Neuere Smartphones bringen
+  mehr Objektive und Formate mit, der Funktionsumfang ist derselbe.
+</p>
+
+<h2>Gibt es eine Android-Version?</h2>
+<p>
+  Nein. Die App baut auf AVFoundation und VideoToolbox auf, und der USB-Weg nutzt
+  Apples Gerätedienst. Eine Android-App wäre ein eigenes Programm, das nur das
+  Übertragungsprotokoll mit ihr teilt.
+</p>
+
+<h2>WLAN oder USB – was soll ich nehmen?</h2>
+<p>
+  USB, wann immer das Kabel nicht stört: kein Netzwerk, die stabilste Latenz,
+  unempfindlich gegen Überlastung, und es lädt das Smartphone. WLAN ist für
+  Fälle gedacht, in denen das Smartphone an einem Ort stehen muss, den kein
+  Kabel erreicht.
+</p>
+
+<h2>Kann ich es als Webcam in Zoom, Teams oder Discord nutzen?</h2>
+<p>
+  Nicht direkt – es ist eine OBS-Quelle, kein Treiber für eine virtuelle Kamera.
+  Nutze die virtuelle Kamera von OBS: Füge die Quelle einer Szene hinzu, klicke
+  auf <strong>Virtuelle Kamera starten</strong> und wähle in der anderen App
+  OBS Virtual Camera aus. Szenen, Filter und Overlays kommen dabei gleich mit.
+</p>
+
+<h2>Wie viele Smartphones kann ich gleichzeitig nutzen?</h2>
+<p>
+  So viele, wie dein Rechner dekodieren kann. Eine Quelle pro Smartphone, jede
+  unabhängig verbunden, gesteuert und überwacht. Mit der
+  <a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPU-Dekodier-Pipeline</a>
+  laufen auch mehrere 4K-Quellen entspannt.
+</p>
+
+<h2>Leert es meinen Akku?</h2>
+<p>
+  Ja – Video zu kodieren ist aufwendig, plane bei einem langen Stream also ein
+  Kabel ein. USB löst das Problem, weil es beim Streamen lädt. Ansonsten senkt
+  die Ruheansicht <strong>Bildschirm abdunkeln</strong> nach zehn Sekunden die
+  Helligkeit und stoppt die Vorschau, und
+  <strong>Trennen, wenn diese Quelle nirgends angezeigt wird</strong> stoppt das
+  Kodieren, sobald die Quelle ausgeblendet ist.
+</p>
+
+<h2>Muss das Smartphone entsperrt und die App auf dem Bildschirm bleiben?</h2>
+<p>
+  Ja: iOS hält die Kameraaufnahme an, sobald eine App nicht mehr auf dem
+  Bildschirm ist. Wenn du das Smartphone sperrst oder LensLink verlässt, endet
+  also ein Kamerastream. Genau deshalb gibt es den
+  <a href="/docs/remote-start/">Fernstart</a>. Die einzige Ausnahme ist ein iPad,
+  das Kamerazugriff im Multitasking unterstützt: Dort streamt LensLink neben
+  einer anderen App in Split View, Slide Over oder Stage Manager weiter. Eine
+  Bildschirm<em>übertragung</em> ist wiederum etwas anderes und läuft auch
+  über App-Wechsel hinweg weiter.
+</p>
+
+<h2>Kann ich in Apple Log oder HDR aufnehmen?</h2>
+<p>
+  Auf geeigneter Hardware kannst du beides streamen und das Ergebnis wie jede
+  andere Quelle aufnehmen. Apple Log braucht ein Pro-iPhone mit iOS 17+ und eine
+  LUT in OBS; HDR ist HLG über HEVC. Beides ist Beta und standardmäßig aus:
+  <a href="/docs/camera/#color-hdr-and-apple-log">Farbe</a>.
+</p>
+
+<h2>Was ist der Unterschied zu einer Capture-Karte mit HDMI-Adapter?</h2>
+<p>
+  Eine Capture-Karte liefert ein sauberes Bild ganz ohne App, kostet dafür aber
+  einen Adapter, ein Kabel, eine Karte und ein paar hundert Dollar. LensLink
+  kostet nichts, bringt eine Kamerasteuerung mit, die du vom Computer aus
+  bedienst, und misst seine eigene Latenz, sodass dein Mikrofon automatisch
+  abgeglichen werden kann. Über USB ist die Verzögerung vergleichbar.
+</p>
+
+<h2>Und die in macOS eingebaute Integrationskamera?</h2>
+<p>
+  Die Integrationskamera (Continuity Camera) ist hervorragend und braucht keine Installation, aber
+  sie gibt es nur unter macOS, und du bekommst, was Apple dir zu geben beschließt.
+  LensLink läuft auch unter Windows und Linux, macht die Kamerasteuerung
+  zugänglich, lässt dich Codec und Format wählen und sorgt automatisch für
+  Lippensynchronität.
+</p>
+
+<h2>Kann ich die Kamera steuern, ohne das Smartphone anzufassen?</h2>
+<p>
+  Ja – mit dem <a href="/docs/web-panel/">Browser-Steuerfeld</a> unter
+  <code>localhost:9980</code> und mit derselben HTTP-API dahinter, für Stream
+  Decks und Skripte.
+</p>
+
+<h2>Funktioniert es mit VoiceOver und anderen Bedienungshilfen?</h2>
+<p>
+  Ja. Jedes Bedienelement der App hat einen gesprochenen Namen für VoiceOver und
+  die Sprachsteuerung, und VoiceOver sagt an, wenn der Stream live geht,
+  pausiert, auf Sendung geht oder die Verbindung zu OBS verliert. Solange
+  VoiceOver oder die Schaltersteuerung aktiv ist, dunkelt der Live-Bildschirm nie
+  von selbst ab und blendet seine Bedienelemente nie von selbst aus. Die App
+  berücksichtigt „Größerer Text“, „Bewegung reduzieren“, „Transparenz
+  reduzieren“, „Kontrast erhöhen“ und „Ohne Farben unterscheiden“, das den Namen
+  des Tally-Status neben dem farbigen Rahmen einblendet. Auch das
+  <a href="/docs/web-panel/">Browser-Steuerfeld</a> beschriftet seine
+  Bedienelemente für Screenreader.
+</p>
+
+<h2>Wie melde ich einen Fehler oder schlage eine Funktion vor?</h2>
+<p>
+  Eröffne ein Issue auf <a href="{{REPO}}/issues">GitHub</a>. Hänge bei Fehlern das
+  OBS-Log und <strong>Optionen → Kameradiagnose</strong> an:
+  <a href="/docs/troubleshooting/#nothing-here-matches">was dazugehört</a>.
+</p>
+
+<h2>Kann ich mitmachen?</h2>
+<p>
+  Ja: Es gibt <a href="{{REPO}}/blob/main/CONTRIBUTING.md">Richtlinien für Beiträge</a>,
+  eine Architekturbeschreibung, ein dokumentiertes Übertragungsprotokoll und eine Roadmap.
+</p>

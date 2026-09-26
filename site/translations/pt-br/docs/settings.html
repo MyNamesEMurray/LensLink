@@ -1,0 +1,99 @@
+title: Referência de configurações
+description: Todas as configurações do LensLink em um só lugar: as propriedades da fonte no OBS, a janela de configurações do plugin e as opções do app.
+source: 1afb7c72d111
+---
+<h1>Referência de configurações</h1>
+<p class="lede">
+  As propriedades de cada fonte ficam na própria fonte, as configurações do plugin
+  inteiro ficam em Ferramentas, e tudo o que diz respeito ao celular fica no app.
+</p>
+
+<h2>Propriedades da fonte (LensLink Camera)</h2>
+<p>Clique com o botão direito na fonte → <strong>Propriedades</strong>.</p>
+<table>
+  <thead><tr><th>Propriedade</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td>Status</td><td>Somente leitura: a etapa atual, mais o aparelho, o formato e a latência medida enquanto conectado. <a href="/docs/connect/#reading-the-status-field">Tabela de status</a>.</td></tr>
+    <tr><td>Conexão</td><td><strong>Wi-Fi: digite o IP do celular</strong> ou <strong>Cabo USB</strong>.</td></tr>
+    <tr><td>Celular</td><td>Só no Wi-Fi. Escolha um celular pelo nome ou digite o IP dele.</td></tr>
+    <tr><td>Dispositivo USB</td><td>Só no USB. <strong>Auto</strong>, ou um aparelho específico para que o mesmo celular sempre alimente esta fonte.</td></tr>
+    <tr><td>Modo de baixa latência</td><td>Renderiza o quadro mais recente na hora, em vez de suavizar. Ativado por padrão.</td></tr>
+    <tr><td>Decodificação por hardware (GPU)</td><td>Decodifica na GPU, com retorno automático ao software. Ativado por padrão.</td></tr>
+    <tr><td>Desconectar quando esta fonte não aparecer em lugar nenhum</td><td>Oculta (olho desativado, ou em nenhuma cena, pré-visualização ou projetor visível) significa desconectada, então o celular para de codificar, economizando bateria e ficando livre para outra fonte. Reconecta quando exibida; com o início automático ativado, também para e inicia a câmera.</td></tr>
+    <tr><td>Iniciar a câmera do celular automaticamente quando estiver pronta</td><td>Início remoto, quando o app está aberto e ocioso. Ativado por padrão.</td></tr>
+    <tr><td>Iniciar / Parar câmera no celular</td><td>Botões: faz isso agora, uma vez.</td></tr>
+    <tr><td>Pausar / Retomar a transmissão</td><td>Botões. Pausar segura a transmissão (o celular continua conectado e o OBS mostra uma imagem parada e desfocada com um símbolo de pausa), e Retomar volta ao vivo. Também estão na tela Ao vivo do celular e no painel web.</td></tr>
+    <tr><td>Fonte de áudio para sincronia labial</td><td>O seu microfone de verdade, aquele que será alinhado.</td></tr>
+    <tr><td>Atrasar automaticamente essa fonte de áudio…</td><td>Aplica a latência medida da câmera a essa fonte de áudio.</td></tr>
+    <tr><td>Calibrar automaticamente</td><td>Mede a diferença a partir da referência do microfone do celular. Requer <strong>Referência automática de sincronia labial</strong> ativada no app; ignora a latência manual abaixo.</td></tr>
+    <tr><td>Atraso automático de vídeo para microfones lentos</td><td>Atrasa o vídeo em vez do áudio, para microfones mais lentos que a transmissão.</td></tr>
+    <tr><td>Latência própria do dispositivo de áudio</td><td>Só no modo manual. Subtraída do atraso.</td></tr>
+  </tbody>
+</table>
+<p>
+  Uma fonte <strong>LensLink Screen</strong> tem apenas as propriedades de conexão,
+  decodificação e diagnóstico.
+</p>
+
+<h2>Configurações do plugin (Ferramentas → Configurações do LensLink)</h2>
+<p>Um valor para o plugin inteiro, nunca repetido em cada fonte.</p>
+<table>
+  <thead><tr><th>Configuração</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td>Pipeline de decodificação na GPU (beta)</td><td>Mantém o vídeo decodificado na placa de vídeo. Vale para todas as fontes, <strong>depois de reiniciar o OBS</strong>; volta ao caminho padrão, fonte por fonte, onde as texturas não podem ser compartilhadas. <a href="/docs/performance/#the-gpu-decode-pipeline-beta">Detalhes</a>.</td></tr>
+    <tr><td>Painel de controle no navegador</td><td>Disponibiliza o <a href="/docs/web-panel/">painel</a> no loopback. Ativado por padrão.</td></tr>
+    <tr><td>Porta do painel</td><td>Padrão <code>9980</code>.</td></tr>
+    <tr><td>Diagnóstico detalhado no log do OBS</td><td>Muito mais detalhes de cada conexão. Ative para reproduzir um bug e desative depois.</td></tr>
+    <tr><td>Gravar vídeo recebido em disco</td><td>Grava o fluxo bruto para que um problema de decodificação possa ser reproduzido fora do aparelho.</td></tr>
+    <tr><td>Copiar um relatório de diagnóstico</td><td>Coloca as versões, o hardware, as configurações e o estado da conexão de cada fonte na área de transferência (e no log do OBS) para um relatório de bug. Sem vídeo, áudio nem dados pessoais.</td></tr>
+    <tr><td>Registrar benchmark do pipeline</td><td>Um resumo no log a cada 5 segundos e uma amostra CSV por segundo, na pasta de configuração do plugin.</td></tr>
+  </tbody>
+</table>
+
+<h2>Opções do app</h2>
+<p>A linha <strong>Opções</strong>, no fim da tela de configuração.</p>
+<table>
+  <thead><tr><th>Opção</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td>Início remoto pelo OBS</td><td>Permite que o OBS inicie a câmera enquanto o app está aberto e ocioso. O celular fica acordado esperando; bloqueá-lo ou sair do app encerra a espera.</td></tr>
+    <tr><td>Tela de repouso</td><td>O que a tela Ao vivo vira 10 segundos depois do seu último toque. <strong>Padrão</strong> mantém os controles; <strong>Imagem limpa</strong> mostra só a imagem (ative antes Estatísticas no menu de status para manter a linha de saúde); <strong>Escurecer tela</strong> apaga a tela, reduz o brilho e mostra o nível da bateria, e é a única que também escurece a tela em espera do início remoto, após um minuto. Qualquer toque traz os controles de volta.</td></tr>
+    <tr><td>Taxa de quadros alta</td><td>Experimental: acrescenta 120 e 240 fps à janela Formato quando a câmera oferece (1080p e 720p nos iPhones recentes). A taxa de bits aumenta junto, o celular esquenta mais, e um canvas do OBS a 60 mostra, no máximo, um quadro sim, um não: use a mesma taxa do canvas e prefira USB. Desativar volta a taxa para 60.</td></tr>
+    <tr><td>Permitir efeitos de vídeo do sistema</td><td>Experimental: permite que o iOS reduza a taxa de quadros da captura, o que os efeitos da Central de Controle podem exigir. Vale a partir da próxima vez que a câmera iniciar.</td></tr>
+    <tr><td>Luz tally</td><td>Cores, ordem de prioridade, desativação por status e quais status pulsam. Veja abaixo.</td></tr>
+    <tr><td>Memorizar ajustes da câmera</td><td>Mantém a exposição, o equilíbrio de branco, o zoom e o foco de cada câmera de uma transmissão para a outra, por lente. Desativar apaga o que estava guardado. <a href="/docs/camera/#remembered">Ajustes memorizados</a>.</td></tr>
+    <tr><td>Enviar microfone do celular ao OBS</td><td>Faz do celular o áudio da fonte de câmera: um microfone sem fio.</td></tr>
+    <tr><td>Referência automática de sincronia labial</td><td>Envia o microfone só como referência de tempo; nunca é ouvido. Mutuamente exclusiva com a linha acima.</td></tr>
+    <tr><td>Diagnóstico da câmera</td><td>Todos os formatos que este aparelho tem e quais suportam os efeitos da Central de Controle, HDR de 10 bits ou Apple Log. Cole isso em um relatório de bug.</td></tr>
+  </tbody>
+</table>
+
+<h3>Luz tally</h3>
+<p>
+  A borda colorida ao redor da tela Ao vivo. Vence o status de maior prioridade que
+  estiver ativo e tiver uma cor; definir um como <strong>Desativado</strong> deixa
+  os de prioridade menor aparecerem.
+</p>
+<table>
+  <thead><tr><th>Status</th><th>Padrão</th><th>Significado</th></tr></thead>
+  <tbody>
+    <tr><td>No ar</td><td>Vermelho, 6 pt</td><td>Na saída ao vivo do OBS.</td></tr>
+    <tr><td>Na pré-visualização</td><td>Âmbar, 4 pt</td><td>Visível no OBS, mas não ao vivo.</td></tr>
+    <tr><td>Conexão perdida</td><td>Desativado</td><td>Transmitindo, mas o link com o OBS caiu.</td></tr>
+    <tr><td>Calibrando a sincronia labial</td><td>Desativado</td><td>Medindo ou medindo de novo.</td></tr>
+    <tr><td>Sincronia labial travada</td><td>Desativado</td><td>Calibração travada.</td></tr>
+    <tr><td>Bateria fraca</td><td>Desativado</td><td>Modo Pouca Energia, ou 20% ou menos, fora da tomada.</td></tr>
+  </tbody>
+</table>
+<p>
+  Cores: vermelho, âmbar, verde, azul, roxo, branco, desativado. No ar mantém o traço
+  mais grosso, seja qual for a cor. Qualquer status aceso pode pulsar em vez de ficar
+  fixo (desativado por padrão), e Reduzir Movimento transforma todo pulso em uma
+  borda fixa da mesma cor: menos movimento, nunca menos aviso.
+</p>
+
+<h2>Onde uma configuração não fica</h2>
+<ul>
+  <li><strong>Resolução, taxa de quadros, codec e cor</strong> ficam no celular, já que só ele sabe o que as câmeras dele conseguem fazer. As outras interfaces podem alterá-los durante a transmissão, mas a lista é do app.</li>
+  <li><strong>Opções globais</strong> nunca se repetem em cada fonte. Se não está na fonte, está em <strong>Ferramentas → Configurações do LensLink</strong>.</li>
+  <li><strong>Tudo o que pode ser ajustado em mais de um lugar</strong> lê o mesmo estado em cache, então as três interfaces nunca discordam.</li>
+</ul>

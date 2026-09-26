@@ -12,13 +12,13 @@ enum BroadcastProbe {
               let items = try? FileManager.default.contentsOfDirectory(
                   at: plugins, includingPropertiesForKeys: nil)
         else {
-            return "✗ No PlugIns folder — the sideloader stripped the extension"
+            return "✗ " + L("No PlugIns folder — the sideloader stripped the extension")
         }
         let appexes = items.filter { $0.pathExtension == "appex" }
         guard !appexes.isEmpty else {
-            return "✗ Extension missing from app bundle — re-sideload with app extensions enabled"
+            return "✗ " + L("Extension missing from app bundle — re-sideload with app extensions enabled")
         }
-        return "✓ Extension installed: "
-            + appexes.map { $0.lastPathComponent }.joined(separator: ", ")
+        return "✓ " + L("Extension installed: %@",
+                        appexes.map { $0.lastPathComponent }.joined(separator: ", "))
     }
 }

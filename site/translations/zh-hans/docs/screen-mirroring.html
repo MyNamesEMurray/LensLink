@@ -1,0 +1,71 @@
+title: 屏幕镜像
+description: 使用 LensLink Screen 来源和 iOS 内置的直播功能，把 iPhone 或 iPad 的整个屏幕连同声音镜像到 OBS。
+source: 241eae9c8fb9
+---
+<h1>屏幕镜像</h1>
+<p class="lede">
+  <strong>LensLink Screen</strong> 接收 iOS 屏幕直播：来自任何 App 的整个屏幕及其声音，以 HEVC 编码。
+</p>
+
+<h2>设置方法</h2>
+<ol class="walk">
+  <li>
+    <strong>在 OBS 中添加来源</strong>
+    <p><strong>源 → + → LensLink Screen</strong>，然后像设置摄像头来源一样把它指向手机。</p>
+  </li>
+  <li>
+    <strong>在手机上开始直播</strong>
+    <p>轻点<strong>镜像屏幕</strong>，选择 <strong>LensLink Screen</strong>，再轻点<strong>开始直播</strong>。这里必须使用 iOS 自己的选择器。</p>
+  </li>
+  <li>
+    <strong>离开 App</strong>
+    <p>与摄像头不同，直播在切换 App 后仍会继续，这正是它的用途。</p>
+  </li>
+</ol>
+
+<div class="callout">
+  <p>每种来源只接收自己类型的视频流。如果配错了，“状态”字段会告诉你应该换成哪种来源，而不是什么都不显示。</p>
+</div>
+
+<h2>音频</h2>
+<ul>
+  <li><strong>App 和系统声音会传过来</strong>：游戏音效、浏览器视频、App 音效。</li>
+  <li><strong>受 DRM 保护的音频会在直播期间被 iOS 静音</strong>（Apple Music、Spotify、Netflix）。这适用于该平台上所有的直播扩展；LensLink 无法绕开。</li>
+  <li><strong>不会发送你的麦克风。</strong>在 OBS 中单独接入你的麦克风。（摄像头来源可以传输手机麦克风；这个来源特意不这样做。）</li>
+</ul>
+<p>
+  如果要<em>听到</em>声音而不只是录下来，在 OBS 的“高级音频设置”中把该来源的<strong>音频监听</strong>设为<strong>监听并输出</strong>。
+</p>
+
+<h2>固定来源尺寸</h2>
+<p>
+  镜像会报告 iOS 当前直播的分辨率，而它会随 App 和屏幕方向变化，因此来源可能在推流中改变尺寸、打乱你的布局。把它固定在一个框内：
+</p>
+<ol>
+  <li>右键点击来源 → <strong>变换</strong> → <strong>编辑变换…</strong></li>
+  <li>将<strong>边框类型</strong>设为<strong>等比缩放到框内</strong>（较新的 OBS 中为“边界类型”和“适应”）。</li>
+  <li>把边界框设为你希望镜像画面占据的尺寸。</li>
+</ol>
+<figure>
+  <img src="/img/screen-fit-transform.png" alt="OBS 的“编辑变换”对话框，边框类型设为等比缩放到框内" width="544" loading="lazy">
+  <figcaption>之后 OBS 会把每种传入尺寸缩放到你的框内，而不是改变你的布局。</figcaption>
+</figure>
+
+<h2>Screen 来源没有的功能</h2>
+<p>
+  没有摄像头控制，也没有浏览器面板，因为没有什么需要变焦或对焦。它的设置只有连接、解码和诊断。
+</p>
+
+<h2>两个来源共用一台手机</h2>
+<p>
+  一台手机同一时间只能向一个来源供流。在两个来源上都启用<strong>此来源未在任何位置显示时断开连接</strong>，被隐藏的来源就会释放手机，切换场景时设备便会随之交接。
+</p>
+
+<h2>直播无法连接时</h2>
+<p>
+  直播扩展是一个独立进程，所以它的故障很难察觉。检查两点：
+</p>
+<ul>
+  <li>在<strong>侧载</strong>的版本上，重新签名可能会删除或破坏扩展，这是改写 Bundle ID 的已知后果。当已安装的 App 中缺少扩展时，主界面的“屏幕镜像”部分会发出警告。TestFlight 和 App Store 版本不受影响。</li>
+  <li>如果手机上已开始直播，但 OBS 什么都不显示，问题出在连接上：见<a href="/docs/connect/#reading-the-status-field">看懂“状态”字段</a>。</li>
+</ul>

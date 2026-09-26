@@ -1,0 +1,113 @@
+title: Panel de control en el navegador
+description: El panel de control de LensLink en localhost:9980: los mismos controles de cámara en un navegador de tu computadora, más la API HTTP que hay detrás.
+source: 441ba810e72e
+---
+<h1>Panel de control en el navegador</h1>
+<p class="lede">
+  El plugin ofrece los controles de cámara de la pantalla En vivo en
+  <a href="http://localhost:9980"><code>http://localhost:9980</code></a>, en una
+  ventana del navegador que puedes dejar junto a OBS. Nadie tiene que tocar el
+  teléfono.
+</p>
+
+<h2>Abrirlo</h2>
+<p>
+  Abre <code>http://localhost:9980</code> en la computadora donde se ejecuta OBS.
+  El panel está activado de forma predeterminada; el interruptor está en
+  <strong>Herramientas → Ajustes de LensLink → Panel de control en el
+  navegador</strong>.
+</p>
+<div class="callout">
+  <p><strong>Solo en local.</strong> El panel escucha en <code>127.0.0.1</code>,
+  así que nada de la red puede acceder a él. Es a propósito, porque puede iniciar
+  cámaras y no tiene autenticación.</p>
+</div>
+<p>
+  <strong>Puerto del panel</strong> (de forma predeterminada <code>9980</code>)
+  es un ajuste de todo el plugin, por si otro programa ya usa ese puerto.
+</p>
+
+<h2>Qué contiene</h2>
+<p>Los mismos controles que el panel En vivo de la app, en el mismo orden:</p>
+<ul>
+  <li><strong>Píldora de estado</strong> con punto, palabra y latencia. Aparece una segunda píldora mientras se calibra la sincronía labial, que ofrece <strong>Recalibrar</strong> una vez fijada.</li>
+  <li><strong>Pestañas de fuentes</strong>, cuando hay más de una fuente de cámara en vivo: una sola página controla todos los teléfonos.</li>
+  <li><strong>Zoom</strong>, <strong>exposición</strong> (compensación de AE, o ISO y obturador manuales), <strong>enfoque</strong>, <strong>balance de blancos</strong>.</li>
+  <li><strong>Linterna, Lente, Cambiar de cámara.</strong></li>
+  <li><strong>Cambios de formato durante la transmisión</strong>: resolución, velocidad de fotogramas, códec, micrófono.</li>
+  <li><strong>Distancia del sujeto</strong>, mientras la pantalla verde funciona con asistencia de profundidad.</li>
+  <li><strong>Iniciar cámara</strong> sin transmitir, el botón rojo <strong>Detener cámara</strong> en vivo, cada uno con un interruptor de <strong>Inicio automático</strong>.</li>
+  <li><strong>Pausar</strong> retiene la transmisión sin terminarla: el teléfono sigue conectado con la cámara en marcha, OBS conserva la fuente y muestra una imagen fija atenuada y desenfocada con un símbolo de pausa, y <strong>Reanudar</strong> la retoma al instante. El audio sigue llegando, así que un teléfono que también hace de micrófono no se corta.</li>
+</ul>
+<p>
+  Refleja los cambios hechos en el teléfono, y se detiene mientras arrastras para
+  no pelearse nunca con tu mano. Una fuente <strong>LensLink Screen</strong> no
+  tiene controles de cámara, y el panel lo indica en lugar de mostrar controles
+  deslizantes inútiles.
+</p>
+
+<h2>La API HTTP</h2>
+<p>
+  El panel es un cliente de una pequeña API HTTP en el mismo puerto; un stream
+  deck o un script pueden ser otro. Todos los endpoints aceptan un
+  <code>?src=&lt;id&gt;</code> opcional; si no se indica, el plugin elige la
+  primera fuente adecuada.
+</p>
+
+<h3>Leer el estado</h3>
+<table>
+  <thead><tr><th>Solicitud</th><th>Devuelve</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/sources</code></td><td>Todas las fuentes: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>screen</code>.</td></tr>
+    <tr><td><code>GET /api/status</code></td><td>El texto de <code>status</code> (en el idioma de OBS), su <code>tone</code> (<code>idle</code>, <code>wait</code>, <code>ready</code>, <code>live</code> o <code>error</code>, para darle color sin leer el texto), además de <code>screen</code>, <code>standby</code>, <code>connected</code>, <code>autoStart</code> y la fase <code>sync</code> de la sincronía labial.</td></tr>
+    <tr><td><code>GET /api/diagnostics</code></td><td>El informe de diagnóstico completo en texto plano: versiones, hardware, ajustes y estado de cada fuente. El mismo contenido que el botón de Herramientas → Ajustes de LensLink.</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>La última instantánea del estado de la cámara del teléfono: lentes, zoom, exposición, enfoque, balance de blancos, formatos admitidos. Es la misma caché que leen las propiedades de la fuente, y así es como las tres superficies se mantienen sincronizadas.</td></tr>
+  </tbody>
+</table>
+
+<h3>Enviar comandos</h3>
+<p>
+  <code>POST /api/control</code> acepta un comando JSON por solicitud. Los
+  comandos desconocidos se ignoran a propósito, de modo que un panel más nuevo con
+  una app más antigua pierde funciones en lugar de romperse.
+</p>
+<pre><code>POST /api/control
+{ "cmd": "zoom",          "value": 2.0 }
+{ "cmd": "exposure_bias", "value": -0.5 }
+{ "cmd": "exposure",      "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
+{ "cmd": "exposure",      "mode": "auto" }
+{ "cmd": "focus",         "mode": "locked", "lensPosition": 0.42 }
+{ "cmd": "focus",         "mode": "auto" }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "flashlight",    "on": true }
+{ "cmd": "flip" }
+{ "cmd": "start_stream" }
+{ "cmd": "stop_stream" }
+{ "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "mic",           "id": "builtin:2" }
+{ "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
+<table>
+  <thead><tr><th>Solicitud</th><th>Efecto</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code>: la misma propiedad que edita la casilla de inicio automático. Un cuerpo vacío se rechaza, no se interpreta como false.</td></tr>
+    <tr><td><code>POST /api/recalibrate</code></td><td>Sin cuerpo. Inicia una nueva medición de la sincronía labial.</td></tr>
+  </tbody>
+</table>
+
+<h3>Ejemplos</h3>
+<pre><code># Start the camera on the only connected phone
+curl -X POST http://localhost:9980/api/control -d '{"cmd":"start_stream"}'
+
+# Zoom the source with id 2 to 3x
+curl -X POST 'http://localhost:9980/api/control?src=2' -d '{"cmd":"zoom","value":3.0}'
+
+# What is connected right now?
+curl -s http://localhost:9980/api/sources</code></pre>
+
+<h2>Desactivarlo</h2>
+<p>
+  Desmarca <strong>Panel de control en el navegador</strong> en
+  <strong>Herramientas → Ajustes de LensLink</strong>. El puerto se cierra
+  de inmediato; todo lo demás sigue igual.
+</p>

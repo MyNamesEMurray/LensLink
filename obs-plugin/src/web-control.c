@@ -2,6 +2,7 @@
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/bmem.h>
+#include <util/dstr.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -21,10 +22,57 @@
  * control metaphors and ordering with the app's Live panel). Single-quoted
  * HTML/SVG attributes keep the C escaping sane.
  */
+static const char *const web_text_keys[] = {
+	"Web.Title",
+	"Web.Connecting",
+	"Web.Idle",
+	"Web.NoSources",
+	"Web.Unreachable",
+	"Web.Recalibrate",
+	"Web.Sync.Measuring",
+	"Web.Sync.Locked",
+	"Web.Sync.Relocking",
+	"Web.ScreenNote",
+	"Web.StartCamera",
+	"Web.StopCamera",
+	"Web.AutoStart",
+	"Web.AutoStart.Tip",
+	"Web.StartHint",
+	"Web.Pause",
+	"Web.Resume",
+	"Web.Manual",
+	"Web.Exposure",
+	"Web.Shutter",
+	"Web.Lock",
+	"Web.AutoWhiteBalance",
+	"Web.GreenScreen",
+	"Web.All",
+	"Web.Mic",
+	"Web.PhoneMic",
+	"Web.FocusHint",
+	"Web.Flashlight",
+	"Web.Flip",
+	"Web.Resolution",
+	"Web.FrameRate",
+	"Web.Codec",
+	"Web.Zoom",
+	"Web.Lens",
+	"Web.ColorTemperature",
+	"Web.FocusPosition",
+	"Web.SubjectDistance",
+	"Web.SubjectAll.Tip",
+	"Web.Lens.Front",
+	"Web.Lens.FrontUltraWide",
+	"Web.Lens.MainWide",
+	"Web.Lens.UltraWide",
+	"Web.Lens.Telephoto",
+};
+
+#define WEB_KEY_PREFIX "Web."
+
 static const char control_page[] =
-	"<!doctype html><html><head><meta charset='utf-8'>"
 	"<meta name='viewport' content='width=device-width,initial-scale=1'>"
-	"<title>LensLink Control</title><style>"
+	"<title data-t='Title'></title><style>"
 	/* color-scheme makes the browser's own chrome — most visibly the
 	 * native dropdown popup of a <select> — render dark; without it the
 	 * popup was a light list inheriting white text (invisible until
@@ -78,11 +126,23 @@ static const char control_page[] =
 	".btnrow:first-child{margin-top:0}"
 	".primary.toggle{background:rgba(255,255,255,.12)}"
 	".primary.toggle.on{background:var(--accent)}"
-	".lbl{font-size:13px;color:var(--txt2);width:48px;flex:none}"
+	".lbl{font-size:13px;color:var(--txt2);min-width:48px;white-space:nowrap;flex:none}"
+	"button:focus-visible,select:focus-visible,input:focus-visible,"
+	"[role=button]:focus-visible{outline:2px solid var(--accent);"
+	"outline-offset:2px}"
+	"#gsdv{cursor:pointer}"
+	".sr{position:absolute;width:1px;height:1px;overflow:hidden;"
+	"clip:rect(0 0 0 0);white-space:nowrap}"
+	"@media(prefers-contrast:more){:root{--txt2:rgba(255,255,255,.9);"
+	"--hair:rgba(255,255,255,.5);--glass:rgba(14,15,19,.95)}}"
+	"@media(prefers-reduced-transparency:reduce){:root{"
+	"--glass:rgba(14,15,19,.95)}.panel{backdrop-filter:none}}"
+	"@media(prefers-reduced-motion:reduce){.dot{transition:none}}"
 	"</style></head><body>"
 	"<header><h1>LensLink</h1>"
 	"<div class='pill'><span class='dot' id='dot'></span>"
-	"<span id='status'>connecting&hellip;</span></div>"
+	"<span id='status' data-t='Connecting'></span></div>"
+	"<span class='sr' id='statusann' role='status' aria-live='polite'></span>"
 	/* Lip-sync calibration stage — hidden unless auto-calibrate is on
 	 * AND a phone is connected: the plugin keeps its lock across
 	 * reconnects (by design), but claiming "locked" beside a "trying to
@@ -90,37 +150,36 @@ static const char control_page[] =
 	 * button appears only while locked — the one state where it acts. */
 	"<div class='pill' id='syncpill' style='display:none'>"
 	"<span class='dot' id='syncdot'></span>"
-	"<span id='sync'></span>"
+	"<span id='sync' aria-live='polite'></span>"
 	"<button id='recal' style='display:none;border:0;cursor:pointer;"
 	"background:var(--glass2,rgba(255,255,255,.12));color:inherit;"
-	"border-radius:999px;font-size:12px;padding:2px 10px;margin-left:4px'>"
-	"Recalibrate</button></div></header>"
+	"border-radius:999px;font-size:12px;padding:2px 10px;margin-left:4px' "
+	"data-t='Recalibrate'></button></div></header>"
 	/* Source tabs: hidden until more than one camera source is live.
 	 * Every API call carries the selected source's ?src= id. */
 	"<div class='seg' id='srctabs' "
 	"style='display:none;margin-bottom:12px;flex-wrap:wrap'></div>"
 	/* Shown instead of the controls for a screen-mirror source. */
-	"<div class='panel' id='screennote' style='display:none'>"
-	"Screen mirroring &mdash; camera controls don&rsquo;t apply.</div>"
+	"<div class='panel' id='screennote' style='display:none' "
+	"data-t='ScreenNote'></div>"
 	/* Remote start: the app is open but idle; one tap starts the camera. */
 	"<div class='panel' id='startpanel' style='display:none'>"
 	"<div class='btnrow'>"
-	"<button class='primary' id='startbtn'>Start camera</button>"
+	"<button class='primary' id='startbtn' data-t='StartCamera'></button>"
 	"<button class='primary toggle' id='asbtn1' "
-	"title='Start the camera automatically whenever the app is ready'>"
-	"Auto-start</button></div>"
-	"<div class='hint' style='margin-top:12px'>The LensLink app is open "
-	"and ready &mdash; the camera hasn&rsquo;t been started yet.</div></div>"
+	"data-t-title='AutoStart.Tip' data-t='AutoStart'></button></div>"
+	"<div class='hint' style='margin-top:12px' data-t='StartHint'></div></div>"
 	/* Hidden until the first poll confirms a live camera connection —
 	 * a default-visible panel flashed dead sliders and a Stop button
 	 * before any state was known. */
 	"<div class='panel' id='panel' style='display:none'>"
 	"<div class='row'>"
-	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/>"
 	"<line x1='21' y1='21' x2='16.65' y2='16.65'/><line x1='8' y1='11' x2='14' y2='11'/></svg>"
-	"<input id='zoom' type='range' min='1' max='10' step='0.1' value='1'>"
-	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"<input id='zoom' type='range' min='1' max='10' step='0.1' value='1' "
+	"data-t-title='Zoom'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/>"
 	"<line x1='21' y1='21' x2='16.65' y2='16.65'/><line x1='8' y1='11' x2='14' y2='11'/>"
 	"<line x1='11' y1='8' x2='11' y2='14'/></svg>"
@@ -128,13 +187,14 @@ static const char control_page[] =
 	/* AE/Manual toggle: shown when the app reports manual-exposure support. */
 	"<div class='row' id='emoderow' style='display:none'>"
 	"<div class='seg'><button id='ae' class='on'>AE</button>"
-	"<button id='me'>Manual</button></div>"
-	"<span class='hint'>Exposure</span></div>"
+	"<button id='me' data-t='Manual'></button></div>"
+	"<span class='hint' data-t='Exposure'></span></div>"
 	"<div class='row' id='biasrow'>"
-	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2'><circle cx='12' cy='12' r='3'/></svg>"
-	"<input id='exposure' type='range' min='-2' max='2' step='0.1' value='0'>"
-	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"<input id='exposure' type='range' min='-2' max='2' step='0.1' value='0' "
+	"data-t-title='Exposure'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='4'/>"
 	"<line x1='12' y1='1' x2='12' y2='4'/><line x1='12' y1='20' x2='12' y2='23'/>"
 	"<line x1='1' y1='12' x2='4' y2='12'/><line x1='20' y1='12' x2='23' y2='12'/>"
@@ -144,20 +204,22 @@ static const char control_page[] =
 	/* Manual exposure (ISO + shutter) and white-balance rows; hidden until
 	 * the app's STATE says the camera supports them. */
 	"<div class='row' id='isorow' style='display:none'>"
-	"<span class='lbl'>ISO</span>"
-	"<input id='iso' type='range' min='34' max='3072' step='1'>"
+	"<span class='lbl' id='isol'>ISO</span>"
+	"<input id='iso' type='range' min='34' max='3072' step='1' "
+	"aria-labelledby='isol'>"
 	"<span class='ro' id='isov'>100</span></div>"
 	"<div class='row' id='shutrow' style='display:none'>"
-	"<span class='lbl'>Shutter</span>"
-	"<input id='shut' type='range' min='0' max='1' step='0.01'>"
+	"<span class='lbl' id='shutl' data-t='Shutter'></span>"
+	"<input id='shut' type='range' min='0' max='1' step='0.01' "
+	"aria-labelledby='shutl'>"
 	"<span class='ro' id='shutv'>1/60</span></div>"
 	"<div class='row' id='wbrow' style='display:none'>"
 	"<div class='seg'><button id='awb' class='on'>AWB</button>"
-	"<button id='wbl'>Lock</button></div>"
+	"<button id='wbl' data-t='Lock'></button></div>"
 	"<input id='wbtemp' type='range' min='2500' max='8000' step='100' "
-	"style='display:none'>"
+	"style='display:none' data-t-title='ColorTemperature'>"
 	"<span class='ro' id='wbv' style='display:none'>5000K</span>"
-	"<span class='hint' id='wbhint'>Auto white balance</span></div>"
+	"<span class='hint' id='wbhint' data-t='AutoWhiteBalance'></span></div>"
 	/* Green screen: hidden until the app's STATE advertises support
 	 * (supportsGreenScreen). The subject-distance slider appears only
 	 * while depth assist is actually running (greenScreenDepth). Same
@@ -166,33 +228,34 @@ static const char control_page[] =
 	 * tapping the readout returns to "All" (sends 0). The slider only
 	 * ever sends real cutoffs (0.5-5.0) — 0 comes from the readout. */
 	"<div class='row' id='gsrow' style='display:none'>"
-	"<button class='chip' id='gs' title='Green screen'>"
-	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"<button class='chip' id='gs' data-t-title='GreenScreen'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round'><circle cx='12' cy='8' r='4'/>"
 	"<path d='M4 21 v-1 a8 8 0 0 1 16 0 v1'/></svg></button>"
 	"<input id='gsd' type='range' min='0.5' max='5' step='0.1' value='5' "
-	"style='display:none'>"
-	"<span class='ro' id='gsdv' style='display:none'>All</span>"
-	"<span class='hint' id='gshint'>Green screen</span></div>"
+	"style='display:none' data-t-title='SubjectDistance'>"
+	"<span class='ro' id='gsdv' style='display:none' role='button' "
+	"tabindex='0' data-t-title='SubjectAll.Tip' data-t='All'></span>"
+	"<span class='hint' id='gshint' data-t='GreenScreen'></span></div>"
 	/* Mic picker: shown while the app streams its mic as the source's
 	 * audio (STATE micEnabled) — mirrors the app's mic row. */
 	"<div class='row' id='microw' style='display:none'>"
-	"<span class='lbl'>Mic</span>"
-	"<select id='micsel' title='Phone microphone'></select>"
-	"<span class='hint'>Phone microphone</span></div>"
+	"<span class='lbl' data-t='Mic'></span>"
+	"<select id='micsel' data-t-title='PhoneMic'></select>"
+	"<span class='hint' data-t='PhoneMic'></span></div>"
 	"<div class='row'>"
 	"<div class='seg'><button id='af' class='on'>AF</button>"
-	"<button id='mf'>Lock</button></div>"
+	"<button id='mf' data-t='Lock'></button></div>"
 	"<input id='lens' type='range' min='0' max='1' step='0.01' value='0.5' "
-	"style='display:none'>"
-	"<span class='hint' id='fhint'>Tap the phone to focus</span></div>"
+	"style='display:none' data-t-title='FocusPosition'>"
+	"<span class='hint' id='fhint' data-t='FocusHint'></span></div>"
 	"<div class='chips'>"
-	"<button class='chip' id='flashlight' title='Flashlight'>"
-	"<svg class='ic' viewBox='0 0 24 24' fill='currentColor'>"
+	"<button class='chip' id='flashlight' data-t-title='Flashlight'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='currentColor'>"
 	"<path d='M13 2 L4 14 h6 l-1 8 9-12 h-6 z'/></svg></button>"
-	"<select id='lenssel'></select>"
-	"<button class='chip' id='flip' title='Flip camera'>"
-	"<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"<select id='lenssel' data-t-title='Lens'></select>"
+	"<button class='chip' id='flip' data-t-title='Flip'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
 	"<path d='M15 4 h5 v5'/><path d='M20 9 A8 8 0 0 0 6 6'/>"
 	"<path d='M9 20 H4 v-5'/><path d='M4 15 A8 8 0 0 0 18 18'/></svg></button>"
@@ -200,9 +263,9 @@ static const char control_page[] =
 	/* Format row (resolution / fps / codec): shown once the app's STATE
 	 * advertises its capability lists; older apps just never show it. */
 	"<div class='row' id='fmtrow' style='display:none'>"
-	"<select id='fmtres' title='Resolution'></select>"
-	"<select id='fmtfps' title='Frame rate'></select>"
-	"<select id='fmtcodec' title='Codec'></select>"
+	"<select id='fmtres' data-t-title='Resolution'></select>"
+	"<select id='fmtfps' data-t-title='FrameRate'></select>"
+	"<select id='fmtcodec' data-t-title='Codec'></select>"
 	"</div>"
 	/* Remote stop: mirrors the app's red Stop. The phone drops back to
 	 * standby, so this panel swaps to the Start button afterwards. */
@@ -210,16 +273,25 @@ static const char control_page[] =
 	/* Hold the stream without ending it: the phone keeps the connection
 	 * and the camera, OBS keeps the source, and resuming is a keyframe
 	 * rather than a reconnect. Label follows the phone's state. */
-	"<button class='primary toggle' id='pausebtn'>Pause</button>"
-	"<button class='primary danger' id='stopbtn'>Stop camera</button>"
+	"<button class='primary toggle' id='pausebtn' data-t='Pause'></button>"
+	"<button class='primary danger' id='stopbtn' data-t='StopCamera'></button>"
 	"<button class='primary toggle' id='asbtn2' "
-	"title='Start the camera automatically whenever the app is ready'>"
-	"Auto-start</button></div>"
+	"data-t-title='AutoStart.Tip' data-t='AutoStart'></button></div>"
 	"</div>"
 	"<script>"
 	/* NB: elements are looked up explicitly — a bare `status` would
 	 * resolve to window.status, not the element. */
 	"const $=id=>document.getElementById(id);"
+	"const t=k=>T[k]||k;"
+	"document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));"
+	"document.querySelectorAll('[data-t-title]').forEach(e=>{"
+	"e.title=t(e.dataset.tTitle);"
+	"if(!e.dataset.t)e.setAttribute('aria-label',e.title)});"
+	"const pressed=(el,on)=>el.setAttribute('aria-pressed',on?'true':'false');"
+	"const vt=(el,v)=>el.setAttribute('aria-valuetext',v);"
+	"const setText=(el,v)=>{if(el.textContent!==v)el.textContent=v};"
+	"let annKey=null;"
+	"const say=(k,v)=>{if(k!==annKey){annKey=k;$('statusann').textContent=v}};"
 	"const syncEl=$('sync'),syncdotEl=$('syncdot'),syncpillEl=$('syncpill'),"
 	"recalEl=$('recal'),"
 	"dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
@@ -241,6 +313,11 @@ static const char control_page[] =
 	"microwEl=$('microw'),micselEl=$('micsel'),srctabsEl=$('srctabs');"
 	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93',"
 	"accent:'#3D7BFF'};"
+	"const TONE={idle:COL.grey,wait:COL.amber,ready:COL.amber,live:COL.live,"
+	"error:COL.red};"
+	"const LENS={'Front':t('Lens.Front'),"
+	"'Front (Ultra Wide)':t('Lens.FrontUltraWide'),'Main (Wide)':t('Lens.MainWide'),"
+	"'Ultra Wide (0.5\\u00d7)':t('Lens.UltraWide'),'Telephoto':t('Lens.Telephoto')};"
 	/* Selected source id (from /api/sources); every request carries it. */
 	"let src=null;const q=()=>src==null?'':('?src='+src);"
 	"let lastTouch=0;const touch=()=>lastTouch=Date.now();"
@@ -250,11 +327,13 @@ static const char control_page[] =
 	"t=setTimeout(()=>f(...a),ms)}};"
 	"const dz=deb(()=>send({cmd:'zoom',value:+zoomEl.value}),60);"
 	"zoomEl.oninput=()=>{touch();"
-	"zvEl.textContent=(+zoomEl.value).toFixed(1)+'\\u00d7';dz()};"
+	"zvEl.textContent=(+zoomEl.value).toFixed(1)+'\\u00d7';"
+	"vt(zoomEl,zvEl.textContent);dz()};"
 	"const de=deb(()=>send({cmd:'exposure_bias',value:+expEl.value}),60);"
 	"expEl.oninput=()=>{touch();evEl.textContent=(+expEl.value).toFixed(1);de()};"
 	"function focusUI(locked){afEl.className=locked?'':'on';"
-	"mfEl.className=locked?'on':'';lensEl.style.display=locked?'':'none';"
+	"mfEl.className=locked?'on':'';pressed(afEl,!locked);pressed(mfEl,locked);"
+	"lensEl.style.display=locked?'':'none';"
 	"fhintEl.style.display=locked?'none':''}"
 	"afEl.onclick=()=>{focusUI(false);send({cmd:'focus',mode:'auto'})};"
 	"mfEl.onclick=()=>{focusUI(true);"
@@ -262,7 +341,8 @@ static const char control_page[] =
 	"lensEl.oninput=deb(()=>send({cmd:'focus',mode:'locked',"
 	"lensPosition:+lensEl.value}),60);"
 	"let fon=false;"
-	"function flashlightUI(on){fon=on;flashlightEl.className=on?'chip on':'chip'}"
+	"function flashlightUI(on){fon=on;flashlightEl.className=on?'chip on':'chip';"
+	"pressed(flashlightEl,on)}"
 	"flashlightEl.onclick=()=>{touch();flashlightUI(!fon);send({cmd:'flashlight',on:fon})};"
 	"flipEl.onclick=()=>send({cmd:'flip'});"
 	"lensselEl.onchange=()=>send({cmd:'selectLens',label:lensselEl.value});"
@@ -270,7 +350,7 @@ static const char control_page[] =
 	"stopbtnEl.onclick=()=>send({cmd:'stop_stream'});"
 	"let paused=false;"
 	"function pauseUI(on){paused=on;"
-	"pausebtnEl.textContent=on?'Resume':'Pause';"
+	"pausebtnEl.textContent=on?t('Resume'):t('Pause');"
 	"pausebtnEl.className=on?'primary toggle on':'primary toggle'}"
 	"pausebtnEl.onclick=()=>{touch();pauseUI(!paused);"
 	"send({cmd:paused?'pause_stream':'resume_stream'})};"
@@ -278,7 +358,8 @@ static const char control_page[] =
 	 * (the checkbox in the source properties), not a phone control. */
 	"let autoStart=false;"
 	"function asUI(on){autoStart=on;const c=on?'primary toggle on':'primary toggle';"
-	"asbtn1El.className=c;asbtn2El.className=c}"
+	"asbtn1El.className=c;asbtn2El.className=c;"
+	"pressed(asbtn1El,on);pressed(asbtn2El,on)}"
 	"const toggleAS=()=>{touch();asUI(!autoStart);"
 	"fetch('/api/autostart'+q(),{method:'POST',body:JSON.stringify({on:autoStart})})};"
 	"asbtn1El.onclick=toggleAS;asbtn2El.onclick=toggleAS;"
@@ -302,7 +383,8 @@ static const char control_page[] =
 	"return 1-(Math.log(s)-Math.log(smin))/(Math.log(smax)-Math.log(smin))};"
 	"const shutLabel=s=>s>=1?Math.round(s)+'s':'1/'+Math.round(1/s);"
 	"function emodeUI(m){eman=m;aeEl.className=m?'':'on';"
-	"meEl.className=m?'on':'';biasrowEl.style.display=m?'none':'';"
+	"meEl.className=m?'on':'';pressed(aeEl,!m);pressed(meEl,m);"
+	"biasrowEl.style.display=m?'none':'';"
 	"isorowEl.style.display=m?'':'none';shutrowEl.style.display=m?'':'none'}"
 	"aeEl.onclick=()=>{touch();emodeUI(false);send({cmd:'exposure',mode:'auto'})};"
 	"meEl.onclick=()=>{touch();emodeUI(true);send({cmd:'exposure',"
@@ -311,48 +393,47 @@ static const char control_page[] =
 	"isoEl.oninput=()=>{touch();isovEl.textContent=isoEl.value;dIso()};"
 	"const dShut=deb(()=>send({cmd:'exposure',mode:'manual',"
 	"shutterSeconds:shutSecs()}),60);"
-	"shutEl.oninput=()=>{touch();shutvEl.textContent=shutLabel(shutSecs());dShut()};"
+	"shutEl.oninput=()=>{touch();shutvEl.textContent=shutLabel(shutSecs());"
+	"vt(shutEl,shutvEl.textContent);dShut()};"
 	/* White balance. */
 	"function wbUI(locked){wblocked=locked;awbEl.className=locked?'':'on';"
-	"wblEl.className=locked?'on':'';wbtempEl.style.display=locked?'':'none';"
+	"wblEl.className=locked?'on':'';pressed(awbEl,!locked);pressed(wblEl,locked);"
+	"wbtempEl.style.display=locked?'':'none';"
 	"wbvEl.style.display=locked?'':'none';wbhintEl.style.display=locked?'none':''}"
 	"awbEl.onclick=()=>{touch();wbUI(false);send({cmd:'white_balance',mode:'auto'})};"
 	"wblEl.onclick=()=>{touch();wbUI(true);send({cmd:'white_balance',"
 	"mode:'locked',temperature:+wbtempEl.value})};"
 	"const dWb=deb(()=>send({cmd:'white_balance',mode:'locked',"
 	"temperature:+wbtempEl.value}),60);"
-	"wbtempEl.oninput=()=>{touch();wbvEl.textContent=wbtempEl.value+'K';dWb()};"
+	"wbtempEl.oninput=()=>{touch();wbvEl.textContent=wbtempEl.value+'K';"
+	"vt(wbtempEl,wbvEl.textContent);dWb()};"
 	/* Green screen: optimistic chip toggle. Dragging the slider always
 	 * sets a real cutoff (0.5-5.0 m); "All" (0) is reachable only by
 	 * clicking the readout, mirroring the app's Live row exactly so the
 	 * full-left gesture means "tightest cutoff" on both surfaces. */
 	"let gson=false;"
-	"function gsUI(on){gson=on;gsEl.className=on?'chip on':'chip'}"
+	"function gsUI(on){gson=on;gsEl.className=on?'chip on':'chip';pressed(gsEl,on)}"
 	"gsEl.onclick=()=>{touch();gsUI(!gson);send({cmd:'green_screen',on:gson})};"
-	"const gsLabel=v=>v?v.toFixed(1)+' m':'All';"
+	"const gsLabel=v=>v?v.toFixed(1)+' m':t('All');"
 	"const dGs=deb(()=>send({cmd:'green_screen',maxDistance:+gsdEl.value}),60);"
-	"gsdEl.oninput=()=>{touch();gsdvEl.textContent=gsLabel(+gsdEl.value);dGs()};"
+	"gsdEl.oninput=()=>{touch();gsdvEl.textContent=gsLabel(+gsdEl.value);"
+	"vt(gsdEl,gsdvEl.textContent);dGs()};"
 	"gsdvEl.onclick=()=>{touch();gsdEl.value=5;gsdvEl.textContent=gsLabel(0);"
+	"vt(gsdEl,gsdvEl.textContent);"
 	"send({cmd:'green_screen',maxDistance:0})};"
+	"gsdvEl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){"
+	"e.preventDefault();gsdvEl.onclick()}};"
 	"micselEl.onchange=()=>send({cmd:'mic',id:micselEl.value});"
 	/* Optimistic flip to 'relocking'; the 1 Hz poll corrects if lost. */
 	"recalEl.onclick=()=>{recalEl.style.display='none';"
-	"syncEl.textContent='Recalibrating lip-sync';"
+	"syncEl.textContent=t('Sync.Relocking');"
 	"syncdotEl.style.background=COL.amber;"
 	"fetch('/api/recalibrate'+q(),{method:'POST'})};"
-	"function statusColor(t){t=(t||'').toLowerCase();"
-	/* Standby/starting are amber (ready, not live) — test before the
-	 * generic 'connected' match, which their wording also contains. */
-	"if(t.includes('idle')||t.includes('starting'))return COL.amber;"
-	"if(t.includes('connected'))return COL.live;"
-	"if(t.includes('disconnect')||t.includes('could not')||t.includes('error'))return COL.red;"
-	"if(t.includes('wait')||t.includes('trying')||t.includes('dial'))return COL.amber;"
-	"return COL.grey}"
 	"async function poll(){try{"
 	/* Source list first: pick/keep a selection, tabs when >1. */
 	"const sj=await(await fetch('/api/sources')).json();"
 	"const list=sj.sources||[];"
-	"if(!list.length){statusEl.textContent='no LensLink sources';"
+	"if(!list.length){setText(statusEl,t('NoSources'));say('none',t('NoSources'));"
 	"dotEl.style.background=COL.grey;srctabsEl.style.display='none';"
 	"panelEl.style.display='none';startpanelEl.style.display='none';"
 	"screennoteEl.style.display='none';return}"
@@ -363,20 +444,21 @@ static const char control_page[] =
 	"if(srctabsEl.dataset.k!==sk){srctabsEl.dataset.k=sk;"
 	"srctabsEl.replaceChildren(...list.map(x=>{"
 	"const b=document.createElement('button');b.textContent=x.name;"
-	"b.className=x.id===src?'on':'';"
+	"b.className=x.id===src?'on':'';pressed(b,x.id===src);"
 	"b.onclick=()=>{src=x.id;lastTouch=0;poll()};return b}))}"
 	"const s=await(await fetch('/api/status'+q())).json();"
-	"statusEl.textContent=s.status||'idle';dotEl.style.background=statusColor(s.status);"
+	"setText(statusEl,s.status||t('Idle'));dotEl.style.background=TONE[s.tone]||COL.grey;"
+	"say(s.tone==='error'?'error:'+s.status:s.tone,statusEl.textContent);"
 	/* Lip-sync stage: same words and colours as the phone's own light.
 	 * Only meaningful while a phone is connected — the plugin's lock
 	 * survives disconnects, but showing it next to a "trying to reach
 	 * the phone" status would read as stale. */
-	"const SYNC={measuring:['Measuring lip-sync',COL.accent],"
-	"locked:['Lip-sync locked',COL.live],"
-	"relocking:['Recalibrating lip-sync',COL.amber]};"
+	"const SYNC={measuring:[t('Sync.Measuring'),COL.accent],"
+	"locked:[t('Sync.Locked'),COL.live],"
+	"relocking:[t('Sync.Relocking'),COL.amber]};"
 	"const sy=s.connected?SYNC[s.sync]:null;"
 	"syncpillEl.style.display=sy?'':'none';"
-	"if(sy){syncEl.textContent=sy[0];syncdotEl.style.background=sy[1];"
+	"if(sy){setText(syncEl,sy[0]);syncdotEl.style.background=sy[1];"
 	"recalEl.style.display=s.sync==='locked'?'':'none'}"
 	/* Live controls only when a camera stream is actually connected;
 	 * standby gets the Start panel; screen mirror gets the note; not
@@ -395,18 +477,15 @@ static const char control_page[] =
 	"if(Date.now()-lastTouch>2000&&typeof st.zoom==='number'){"
 	"if(st.maxZoom)zoomEl.max=st.maxZoom;"
 	"zoomEl.value=st.zoom;zvEl.textContent=(+st.zoom).toFixed(1)+'\\u00d7';"
+	"vt(zoomEl,zvEl.textContent);"
 	"if(typeof st.exposureBias==='number'){expEl.value=st.exposureBias;"
 	"evEl.textContent=(+st.exposureBias).toFixed(1)}"
 	"const locked=st.focusMode==='locked';focusUI(locked);"
 	"if(locked&&typeof st.lensPosition==='number')lensEl.value=st.lensPosition;"
 	"flashlightUI(!!st.flashlight);flashlightEl.style.display=st.hasFlashlight===false?'none':'';"
-	"if(Array.isArray(st.lenses)){"
-	"const want=st.lenses.join('|');"
 	/* textContent, not innerHTML: lens labels come from the device. */
-	"if(lensselEl.dataset.opts!==want){lensselEl.dataset.opts=want;"
-	"lensselEl.replaceChildren(...st.lenses.map(l=>{"
-	"const o=document.createElement('option');o.textContent=l;return o}))}"
-	"if(st.lens)lensselEl.value=st.lens}"
+	"if(Array.isArray(st.lenses))"
+	"fillSel(lensselEl,st.lenses,st.lens||null,l=>LENS[l]||l);"
 	"lensselEl.style.display=(st.lenses&&st.lenses.length>1)?'':'none';"
 	/* Manual exposure + white balance, mirrored from the app. */
 	"emoderowEl.style.display=st.supportsManualExposure?'':'none';"
@@ -421,13 +500,15 @@ static const char control_page[] =
 	"smax=Math.max(st.maxShutterSeconds,smin*2);"
 	"if(typeof st.shutterSeconds==='number'){"
 	"shutEl.value=shutPos(st.shutterSeconds);"
-	"shutvEl.textContent=shutLabel(st.shutterSeconds)}}"
+	"shutvEl.textContent=shutLabel(st.shutterSeconds);"
+	"vt(shutEl,shutvEl.textContent)}}"
 	"else emodeUI(false);"
 	"wbrowEl.style.display=st.supportsWhiteBalanceLock?'':'none';"
 	"if(st.supportsWhiteBalanceLock){wbUI(st.whiteBalanceMode==='locked');"
 	"if(typeof st.whiteBalanceTemperature==='number'){"
 	"wbtempEl.value=Math.round(st.whiteBalanceTemperature);"
-	"wbvEl.textContent=Math.round(st.whiteBalanceTemperature)+'K'}}"
+	"wbvEl.textContent=Math.round(st.whiteBalanceTemperature)+'K';"
+	"vt(wbtempEl,wbvEl.textContent)}}"
 	/* Green screen, mirrored from the app. */
 	"gsrowEl.style.display=st.supportsGreenScreen?'':'none';"
 	"if(st.supportsGreenScreen){gsUI(!!st.greenScreen);"
@@ -437,7 +518,8 @@ static const char control_page[] =
 	"let md=typeof st.greenScreenMaxDistance==='number'"
 	"?st.greenScreenMaxDistance:0;"
 	"md=md<0.5?0:Math.min(md,5);"
-	"gsdEl.value=md||5;gsdvEl.textContent=gsLabel(md)}"
+	"gsdEl.value=md||5;gsdvEl.textContent=gsLabel(md);"
+	"vt(gsdEl,gsdvEl.textContent)}"
 	/* Mic picker, only while the phone mic is live as source audio.
 	 * Options are {id,name} pairs: ids round-trip, names display. */
 	"microwEl.style.display=st.micEnabled?'':'none';"
@@ -452,7 +534,10 @@ static const char control_page[] =
 	"const codecs=Array.isArray(st.codecs)?st.codecs:[];"
 	"fmtcodecEl.style.display=codecs.length>1?'':'none';"
 	"fillSel(fmtcodecEl,codecs,st.codec,c=>CODEC_NAMES[c]||c)}}"
-	"}catch(e){statusEl.textContent='plugin unreachable';dotEl.style.background=COL.grey}}"
+	"}catch(e){setText(statusEl,t('Unreachable'));say('unreachable',t('Unreachable'));"
+	"dotEl.style.background=COL.grey}}"
+	"focusUI(false);flashlightUI(false);emodeUI(false);wbUI(false);gsUI(false);"
+	"asUI(false);"
 	"setInterval(poll,1000);poll();"
 	"</script></body></html>";
 
@@ -574,6 +659,96 @@ static void json_escape(const char *in, char *out, size_t out_size)
 	out[o] = 0;
 }
 
+static void json_cat_escaped(struct dstr *d, const char *in)
+{
+	for (const unsigned char *p = (const unsigned char *)in; *p; p++) {
+		unsigned char ch = *p;
+		if (ch == '"' || ch == '\\') {
+			char esc[3] = {'\\', (char)ch, 0};
+			dstr_cat(d, esc);
+		} else if (ch < 0x20 || ch == '<' || ch == '>' || ch == '&') {
+			dstr_catf(d, "\\u%04x", (unsigned)ch);
+		} else if (ch == 0xE2 && p[1] == 0x80 &&
+			   (p[2] == 0xA8 || p[2] == 0xA9)) {
+			dstr_cat(d, p[2] == 0xA8 ? "\\u2028" : "\\u2029");
+			p += 2;
+		} else {
+			dstr_ncat(d, (const char *)p, 1);
+		}
+	}
+}
+
+static void page_lang(char *out, size_t size)
+{
+	const char *loc = obs_get_locale();
+	size_t o = 0;
+	for (; loc && *loc && o + 1 < size; loc++) {
+		char c = *loc;
+		if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+		    (c >= '0' && c <= '9') || c == '-')
+			out[o++] = c;
+		else if (c == '_')
+			out[o++] = '-';
+	}
+	out[o] = 0;
+	if (!o)
+		snprintf(out, size, "en");
+}
+
+static pthread_mutex_t g_page_mutex = PTHREAD_MUTEX_INITIALIZER;
+static char *g_page;
+
+static const char *web_page(void)
+{
+	pthread_mutex_lock(&g_page_mutex);
+	if (!g_page) {
+		char lang[32];
+		size_t prefix = strlen(WEB_KEY_PREFIX);
+		size_t count = sizeof(web_text_keys) / sizeof(web_text_keys[0]);
+		struct dstr d = {0};
+
+		page_lang(lang, sizeof(lang));
+		dstr_copy(&d, "<!doctype html><html lang='");
+		dstr_cat(&d, lang);
+		dstr_cat(&d, "'><head><meta charset='utf-8'><script>const T={");
+		for (size_t i = 0; i < count; i++) {
+			const char *key = web_text_keys[i];
+			const char *text = obs_module_text(key);
+			bool prefixed = strncmp(key, WEB_KEY_PREFIX, prefix) == 0;
+			if (i)
+				dstr_cat(&d, ",");
+			dstr_cat(&d, "\"");
+			json_cat_escaped(&d, prefixed ? key + prefix : key);
+			dstr_cat(&d, "\":\"");
+			json_cat_escaped(&d, text ? text : key);
+			dstr_cat(&d, "\"");
+		}
+		dstr_cat(&d, "};</script>");
+		dstr_cat(&d, control_page);
+		g_page = d.array;
+	}
+	const char *page = g_page;
+	pthread_mutex_unlock(&g_page_mutex);
+	return page;
+}
+
+static const char *tone_name(enum ios_camera_status_tone tone)
+{
+	switch (tone) {
+	case STATUS_TONE_WAIT:
+		return "wait";
+	case STATUS_TONE_READY:
+		return "ready";
+	case STATUS_TONE_LIVE:
+		return "live";
+	case STATUS_TONE_ERROR:
+		return "error";
+	case STATUS_TONE_IDLE:
+	default:
+		return "idle";
+	}
+}
+
 /* True if the header value (up to CR/LF) names a loopback host, e.g.
  * "localhost:9980" or "127.0.0.1:9980" or "http://localhost:9980". */
 static bool value_is_local(const char *v)
@@ -674,7 +849,7 @@ static void handle_client(socket_t client)
 
 	if (strncmp(request, "GET / ", 6) == 0) {
 		respond(client, "200 OK", "text/html; charset=utf-8",
-			control_page);
+			web_page());
 		return;
 	}
 
@@ -733,9 +908,10 @@ static void handle_client(socket_t client)
 	}
 
 	if (strncmp(request, "GET /api/status", 15) == 0) {
-		char status[256] = {0};
-		char escaped[512] = {0};
-		char json[768];
+		char status[1024] = {0};
+		char escaped[2048] = {0};
+		char json[2304];
+		enum ios_camera_status_tone tone = STATUS_TONE_IDLE;
 		bool screen = false, standby = false, connected = false;
 		bool auto_start = false;
 		const char *sync = "off";
@@ -743,7 +919,8 @@ static void handle_client(socket_t client)
 		pthread_mutex_lock(&g_reg.mutex);
 		struct ios_camera_source *s = locked_pick_source(request);
 		if (s) {
-			ios_camera_copy_status(s, status, sizeof(status));
+			ios_camera_copy_status(s, status, sizeof(status),
+					       &tone);
 			screen = ios_camera_is_screen(s);
 			standby = ios_camera_is_standby(s);
 			connected = ios_camera_is_connected(s);
@@ -758,9 +935,10 @@ static void handle_client(socket_t client)
 		}
 		json_escape(status, escaped, sizeof(escaped));
 		snprintf(json, sizeof(json),
-			 "{\"status\":\"%s\",\"screen\":%s,\"standby\":%s,"
-			 "\"connected\":%s,\"autoStart\":%s,\"sync\":\"%s\"}",
-			 escaped, screen ? "true" : "false",
+			 "{\"status\":\"%s\",\"tone\":\"%s\",\"screen\":%s,"
+			 "\"standby\":%s,\"connected\":%s,\"autoStart\":%s,"
+			 "\"sync\":\"%s\"}",
+			 escaped, tone_name(tone), screen ? "true" : "false",
 			 standby ? "true" : "false",
 			 connected ? "true" : "false",
 			 auto_start ? "true" : "false", sync);
@@ -976,4 +1154,18 @@ void web_control_unregister(struct ios_camera_source *source)
 		}
 	}
 	pthread_mutex_unlock(&g_reg.mutex);
+}
+
+void web_control_shutdown(void)
+{
+	pthread_mutex_lock(&g_reg.mutex);
+	struct web_control *to_stop = g_reg.server;
+	g_reg.server = NULL;
+	pthread_mutex_unlock(&g_reg.mutex);
+	server_stop(to_stop);
+
+	pthread_mutex_lock(&g_page_mutex);
+	bfree(g_page);
+	g_page = NULL;
+	pthread_mutex_unlock(&g_page_mutex);
 }

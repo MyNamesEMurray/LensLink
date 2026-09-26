@@ -1,0 +1,151 @@
+title: Caméra, objectifs et image
+description: Objectifs, résolutions, fréquences d’images et codecs ; exposition et balance des blancs manuelles ; HDR et Apple Log ; l’écran vert virtuel ; et les réglages mémorisés.
+source: 97ca79ab8525
+---
+<h1>Caméra, objectifs et image</h1>
+<p class="lede">
+  L’image se décide sur le téléphone, avant l’encodage. Le plugin décode ce
+  qu’il reçoit et n’y change rien.
+</p>
+
+<h2>Choisir l’objectif, la résolution, la fréquence d’images et le codec</h2>
+<p>
+  Quatre sélecteurs dans la section <strong>Caméra</strong> de l’écran de
+  configuration, chacun limité à ce que l’objectif choisi sait faire. Une
+  combinaison absente de la liste n’est pas prise en charge par le matériel.
+</p>
+<table>
+  <thead><tr><th>Réglage</th><th>Remarques</th></tr></thead>
+  <tbody>
+    <tr><td>Objectif</td><td>Principal, Ultra grand-angle, Téléobjectif ou Avant. Modifiable en cours de diffusion.</td></tr>
+    <tr><td>Résolution</td><td>Jusqu’à 3840×2160. Plus haut n’est pas forcément mieux : 1080p60 l’emporte sur 4K30 pour la plupart des plans face caméra.</td></tr>
+    <tr><td>Fréquence d’images</td><td>30 ou 60. Alignez-vous sur votre canevas OBS. <strong>Options → Fréquence d’images élevée</strong> (expérimental) ajoute 120 et 240 quand la caméra les propose.</td></tr>
+    <tr><td>Codec</td><td>HEVC donne la même image que H.264 avec environ 40 % de données en moins. Utilisez-le, sauf si votre version d’OBS ne sait pas le décoder.</td></tr>
+    <tr><td>Qualité</td><td><strong>Équilibrée</strong> diffuse à un débit sans risque sur un Wi-Fi ordinaire. <strong>Maximale</strong> continue de monter tant que la connexion reste propre (jusqu’à environ six fois ce débit en USB, quatre fois en Wi-Fi) et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité et diffuse à partir de la lecture complète du capteur. Plus de données et plus de chaleur : c’est en USB qu’elle a sa place.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p>Si la source affiche <em>« Connecté, mais cette version d’OBS ne peut pas
+  décoder le flux »</em>, cette version n’a pas de décodeur HEVC. Passez l’app
+  en H.264 ; rien d’autre ne change.</p>
+</div>
+
+<h3>Modifier les réglages en cours de diffusion</h3>
+<p>
+  L’objectif, la résolution, la fréquence d’images et le codec peuvent tous
+  changer pendant le direct, depuis le panneau web ou les propriétés de la
+  source. Un changement d’objectif est instantané ; un changement de format
+  marque une brève pause, le temps que la caméra redémarre.
+</p>
+
+<h2>Commandes de la caméra en direct</h2>
+<p>
+  Les mêmes commandes figurent sur l’écran de direct de l’app, dans le
+  <a href="/docs/web-panel/">panneau web</a> et (en partie) dans les propriétés
+  de la source : même ordre partout, et agir sur l’une met à jour les autres.
+</p>
+<p>
+  Sur le téléphone, l’écran de direct affiche l’image, la pastille d’état, Pause,
+  Arrêter et les boutons d’objectif (<strong>.5</strong>, <strong>1×</strong>,
+  <strong>2</strong>), comme dans l’app Appareil photo. Pincez pour zoomer,
+  touchez pour faire la mise au point, et faites glisser vers le haut ou le bas
+  sur l’image pour éclaircir ou assombrir le plan. Le chevron ouvre le
+  <strong>tiroir de réglages</strong> : une molette et une puce pour chaque
+  paramètre qu’elle peut piloter. Un <strong>A</strong> jaune sur une puce
+  signifie que ce réglage est en automatique ; faites glisser la molette et il
+  passe en manuel, touchez de nouveau la puce active et il revient en automatique.
+  Le panneau web présente les mêmes commandes sous forme de lignes.
+</p>
+<table>
+  <thead><tr><th>Commande</th><th>Rôle</th></tr></thead>
+  <tbody>
+    <tr><td>Zoom</td><td>De 1× au maximum de l’objectif. Pincez l’écran de direct, touchez un bouton d’objectif, ou utilisez la puce Zoom ou le curseur du panneau.</td></tr>
+    <tr><td>Exposition</td><td>En automatique, une molette de correction (faites glisser l’image sur le téléphone). Faites glisser la puce <strong>Vitesse</strong> (vitesse d’obturation) pour passer l’exposition en manuel (la puce Expo devient alors <strong>ISO</strong>), ou choisissez <strong>Manuel</strong> dans le panneau. Le mode manuel est masqué sur les caméras qui ne le proposent pas.</td></tr>
+    <tr><td>Mise au point</td><td>Automatique, ou verrouillée avec une molette allant de près à loin. En automatique, la caméra suit les visages (Options → Mise au point sur les visages). Touchez l’aperçu pour faire la mise au point et l’exposition à cet endroit jusqu’à ce que la scène change ; maintenez le doigt pour verrouiller la mise au point et l’exposition sur ce point.</td></tr>
+    <tr><td>Balance des blancs</td><td>Automatique, ou verrouillée avec une molette de 2500 à 8000 K.</td></tr>
+    <tr><td>Lampe torche</td><td>Allumée ou éteinte. Un éclairage d’appoint dur à courte distance, guère plus. Dans la rangée du bas du tiroir, sur le téléphone.</td></tr>
+    <tr><td>Objectif</td><td>Les objectifs réels de l’appareil : les boutons d’objectif sur le téléphone, un menu dans le panneau. Touchez le bouton de l’objectif actif pour réinitialiser son zoom. Sur un appareil doté de deux caméras avant (un iPad Pro, par exemple), la caméra avant a ses propres boutons d’objectif.</td></tr>
+    <tr><td>Changer de caméra</td><td>De l’avant vers l’arrière, et inversement. Dans la rangée du bas du tiroir, sur le téléphone.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>Verrouillez la mise au point et la balance des blancs une fois le plan réglé.</strong>
+  L’autofocus et la balance des blancs automatique se remettent à chercher dès
+  que quelqu’un passe ou qu’une lumière change, et cela se voit dans la
+  diffusion. C’est le plus gros gain de qualité de cette page.</p>
+</div>
+
+<h2>Couleur : HDR et Apple Log</h2>
+<p>
+  <strong>Couleur</strong> se trouve dans le panneau Format de l’app et ne
+  propose que ce que ce téléphone peut capturer. Les deux options sont réservées
+  au HEVC et prennent effet au prochain démarrage de la caméra ; le panneau les
+  marque « HEVC uniquement », et y choisir H.264 ramène Couleur sur Standard.
+</p>
+<h3>HDR (HLG)</h3>
+<p>
+  Capture HLG en 10 bits. OBS applique un mappage de tons pour un canevas SDR ;
+  un canevas HDR en profite pleinement. Désactivé par défaut.
+</p>
+<h3>Apple Log</h3>
+<p>
+  Sur les iPhone Pro (iOS 17+), une image plate en 10 bits destinée à
+  l’étalonnage : ajoutez un filtre <strong>Appliquer un LUT</strong> à la source
+  et chargez un LUT Apple Log. Le plugin n’applique rien de lui-même.
+</p>
+<div class="callout warn">
+  <p>Le Log paraît délavé tant qu’il n’est pas étalonné. Si vous n’ajoutez pas
+  de LUT, restez en Standard.</p>
+</div>
+
+<h2>Écran vert virtuel</h2>
+<p>
+  Tout ce qui n’est pas vous est peint en vert uni <em>avant</em> que la vidéo
+  quitte le téléphone ; l’activer règle Couleur sur Standard. La source ajoute
+  ensuite dans OBS un filtre d’incrustation par chrominance déjà réglé, une seule
+  fois : si vous le supprimez ou le réglez autrement, votre choix est conservé.
+</p>
+<ul>
+  <li><strong>Assistance profondeur</strong> affine le détourage grâce à la profondeur réelle : la caméra avant sur les téléphones à Face ID, l’objectif principal arrière sur les téléphones Pro (LiDAR). Les autres objectifs s’appuient sur la seule détection de silhouettes, qui garde chaque personne dans le cadre. Elle désactive aussi Cadre centré et les autres effets du système.</li>
+  <li><strong>Distance du sujet</strong> apparaît quand l’assistance profondeur est active : tout ce qui se trouve au-delà du seuil devient l’arrière-plan, ce qui permet d’effacer quelqu’un qui passe derrière vous. Faites glisser pour choisir entre 0,5 et 5,0 m, ou touchez la valeur affichée pour <strong>Tout</strong>.</li>
+</ul>
+
+
+<h2 id="remembered">Réglages mémorisés</h2>
+<p>
+  Pour chaque caméra, <strong>l’exposition, la balance des blancs, le zoom et la
+  mise au point</strong> sont conservés d’une diffusion à l’autre, objectif par
+  objectif : un plan réglé une fois le reste. Verrouillez la balance des blancs
+  sur l’objectif principal aujourd’hui, elle revient verrouillée demain ; passez
+  à l’ultra grand-angle en cours de diffusion, il revient tel que vous l’aviez
+  laissé, <em>lui</em>. Rien à nommer ni à enregistrer : le tiroir montre ce qui
+  a été restauré, et toucher une puce le libère.
+</p>
+<p><strong>Options → Mémoriser les réglages de la caméra</strong> désactive la fonction, ce qui efface aussi ce qui était enregistré.</p>
+
+<h2>Effets vidéo du Centre de contrôle</h2>
+<p>
+  Portrait, Éclairage de studio et les autres sont des fonctions d’iOS, activées
+  dans le Centre de contrôle pendant qu’une app utilise la caméra. iOS ne les
+  propose que sur certaines caméras et certains formats (généralement la caméra
+  avant, rien au-delà de 1920×1440) et, sur de nombreux iPhone, les caméras
+  arrière n’en ont aucun.
+</p>
+<ul>
+  <li><strong>Options → Diagnostic de la caméra</strong> liste ce que propose votre appareil, par caméra et par format.</li>
+  <li>LensLink choisit un format compatible avec les effets chaque fois que vos réglages le permettent.</li>
+  <li>Une commande qui apparaît mais reste grisée signifie que la fréquence d’images est trop élevée : baissez-la, et activez <strong>Options → Autoriser les effets vidéo du système</strong> pour qu’iOS puisse la faire varier.</li>
+</ul>
+<p>
+  Les filtres de l’app Appareil photo et les Styles photographiques d’Apple ne
+  sont accessibles à aucune app tierce. Pour le rendu, utilisez les filtres OBS
+  (clic droit sur la source → <strong>Filtres</strong>).
+</p>
+
+<h2>Tenir le téléphone</h2>
+<p>
+  L’interface suit la rotation du téléphone (sauf si le verrouillage de
+  l’orientation est activé) et l’image en direct reste droite dans toutes les
+  orientations. OBS reçoit toujours l’image en paysage native du capteur : faire
+  pivoter le téléphone ne redimensionne donc jamais la source dans votre scène.
+</p>

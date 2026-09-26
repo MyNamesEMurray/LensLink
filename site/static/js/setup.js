@@ -10,6 +10,14 @@
 
 	var FACETS = ["os", "link", "mode", "app"];
 
+	var strings = {};
+	try {
+		strings = JSON.parse(document.getElementById("i18n").textContent) || {};
+	} catch (e) { strings = {}; }
+	function t(key, fallback) {
+		return typeof strings[key] === "string" && strings[key] ? strings[key] : fallback;
+	}
+
 	var form = document.getElementById("wizard");
 	var guide = document.getElementById("guide");
 	if (!form || !guide) return;
@@ -30,16 +38,17 @@
 	/* What the chosen setup requires, beyond the obvious. One line: it is a
 	   packing list, not a section. */
 	function needs(a) {
-		var list = ["OBS 32+", "an iPhone or iPad on iOS 15+"];
+		var list = [t("setup.need.obs", "OBS 32+"),
+			t("setup.need.device", "an iPhone or iPad on iOS 15+")];
 		if (a.link === "usb") {
-			list.push("a USB data cable");
-			if (a.os === "windows") list.push("iTunes");
-			if (a.os === "linux") list.push("usbmuxd");
+			list.push(t("setup.need.cable", "a USB data cable"));
+			if (a.os === "windows") list.push(t("setup.need.itunes", "iTunes"));
+			if (a.os === "linux") list.push(t("setup.need.usbmuxd", "usbmuxd"));
 		} else {
-			list.push("both devices on one network");
+			list.push(t("setup.need.network", "both devices on one network"));
 		}
-		if (a.app === "sideload") list.push("Sideloadly and an Apple ID");
-		if (a.app === "xcode") list.push("Xcode and XcodeGen");
+		if (a.app === "sideload") list.push(t("setup.need.sideload", "Sideloadly and an Apple ID"));
+		if (a.app === "xcode") list.push(t("setup.need.xcode", "Xcode and XcodeGen"));
 		return list;
 	}
 
@@ -76,7 +85,8 @@
 
 		var box = document.getElementById("needs");
 		if (box) {
-			box.textContent = "You'll need " + needs(a).join(", ") + ".";
+			box.textContent = t("setup.needs", "You'll need {list}.")
+				.replace("{list}", needs(a).join(t("setup.needs_separator", ", ")));
 			box.hidden = false;
 		}
 

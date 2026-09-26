@@ -24,6 +24,10 @@ final class AudioReference {
     struct MicOption: Identifiable, Equatable {
         let id: String
         let name: String
+
+        var displayName: String {
+            id == "auto" ? L("Auto (iOS default)") : name
+        }
     }
 
     /// The session's selectable inputs, flattened: "Auto" first, the

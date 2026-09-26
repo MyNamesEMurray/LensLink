@@ -34,11 +34,11 @@ final class Streamer: ObservableObject {
         /// (see docs/UI_DESIGN.md §2).
         var displayName: String {
             switch self {
-            case .idle: return "Not connected"
-            case .standby: return "OBS connected — ready"
-            case .connecting: return "Waiting for OBS…"
-            case .streaming: return "Live"
-            case .paused: return "Paused"
+            case .idle: return L("Not connected")
+            case .standby: return L("OBS connected — ready")
+            case .connecting: return L("Waiting for OBS…")
+            case .streaming: return L("Live")
+            case .paused: return L("Paused")
             case .error(let message): return message
             }
         }
@@ -78,9 +78,9 @@ final class Streamer: ObservableObject {
         /// UI label, American English per docs/UI_DESIGN.md.
         var displayName: String {
             switch self {
-            case .standard: return "Standard"
-            case .clean: return "Clean feed"
-            case .dim: return "Dim screen"
+            case .standard: return L("Standard")
+            case .clean: return L("Clean feed")
+            case .dim: return L("Dim screen")
             }
         }
     }
@@ -149,8 +149,8 @@ final class Streamer: ObservableObject {
         var id: String { rawValue }
         var displayName: String {
             switch self {
-            case .balanced: return "Balanced"
-            case .maximum: return "Maximum"
+            case .balanced: return L("Balanced")
+            case .maximum: return L("Maximum")
             }
         }
     }
@@ -961,7 +961,9 @@ final class Streamer: ObservableObject {
     }
 
     // State
-    @Published private(set) var status: Status = .idle
+    @Published private(set) var status: Status = .idle {
+        didSet { noteFeedbackChange(status: oldValue) }
+    }
     @Published private(set) var isStreaming = false
 
     /// Held, not ended: the connection, the camera and the encoder all
@@ -1073,7 +1075,9 @@ final class Streamer: ObservableObject {
 
     /// Pushed by the plugin on change only, so these cost nothing while
     /// they're steady.
-    @Published private(set) var tally: Tally = .off
+    @Published private(set) var tally: Tally = .off {
+        didSet { noteFeedbackChange(tally: oldValue) }
+    }
     /// What the plugin said about itself on connect (`identify`): the
     /// computer's host name, its OBS version, and the transport it dialed
     /// over ("usb" or "lan"). nil until told, and cleared with the
@@ -1081,7 +1085,65 @@ final class Streamer: ObservableObject {
     @Published private(set) var obsHost: String?
     @Published private(set) var obsVersion: String?
     @Published private(set) var obsTransport: String?
-    @Published private(set) var syncState: SyncState = .off
+    @Published private(set) var syncState: SyncState = .off {
+        didSet { noteFeedbackChange(sync: oldValue) }
+    }
+
+    private struct FeedbackBaseline {
+        var status: Status
+        var tally: Tally
+        var sync: SyncState
+    }
+
+    private var feedbackBaseline: FeedbackBaseline?
+
+    private func noteFeedbackChange(status oldStatus: Status? = nil,
+                                    tally oldTally: Tally? = nil,
+                                    sync oldSync: SyncState? = nil) {
+        guard feedbackBaseline == nil else { return }
+        feedbackBaseline = FeedbackBaseline(status: oldStatus ?? status,
+                                            tally: oldTally ?? tally,
+                                            sync: oldSync ?? syncState)
+        Task { @MainActor [weak self] in
+            self?.deliverFeedback()
+        }
+    }
+
+    private func deliverFeedback() {
+        guard let before = feedbackBaseline else { return }
+        feedbackBaseline = nil
+
+        if before.status != status {
+            switch status {
+            case .streaming:
+                AssistiveTech.announce(status.displayName)
+                if before.status != .paused {
+                    AssistiveTech.haptic(.success)
+                }
+            case .paused:
+                AssistiveTech.announce(status.displayName)
+            case .error:
+                AssistiveTech.announce(status.displayName)
+                if before.status == .streaming || before.status == .paused {
+                    AssistiveTech.haptic(.warning)
+                }
+            case .connecting:
+                if isStreaming,
+                   before.status == .streaming || before.status == .paused {
+                    AssistiveTech.announce(TallyStatus.connectionLost.displayName)
+                    AssistiveTech.haptic(.warning)
+                }
+            case .idle, .standby:
+                break
+            }
+        }
+        if isStreaming, before.tally != .live, tally == .live {
+            AssistiveTech.announce(TallyStatus.onAir.displayName)
+        }
+        if isStreaming, before.sync != .locked, syncState == .locked {
+            AssistiveTech.announce(L("Sync locked"))
+        }
+    }
 
     /// Asks the plugin to drop its locked mic latency and calibrate afresh
     /// (the sync pill's tap). Optimistically shows "Recalibrating" so the
@@ -1310,13 +1372,13 @@ final class Streamer: ObservableObject {
     ) -> String {
         switch reason {
         case .videoDeviceNotAvailableWithMultipleForegroundApps:
-            return "Camera paused — this iPad can't share the camera on screen"
+            return L("Camera paused — this iPad can't share the camera on screen")
         case .videoDeviceNotAvailableInBackground:
-            return "Camera paused — app left the screen"
+            return L("Camera paused — app left the screen")
         case .videoDeviceNotAvailableDueToSystemPressure:
-            return "Camera paused — device too hot"
+            return L("Camera paused — device too hot")
         default:
-            return "Camera paused — in use by another app"
+            return L("Camera paused — in use by another app")
         }
     }
 
@@ -1620,7 +1682,7 @@ final class Streamer: ObservableObject {
 
         guard await CameraManager.requestPermission() else {
             cameraPermissionDenied = true
-            status = .error("Camera access denied — enable it in Settings")
+            status = .error(L("Camera access denied — enable it in Settings"))
             return
         }
 

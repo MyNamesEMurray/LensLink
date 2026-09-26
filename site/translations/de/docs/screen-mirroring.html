@@ -1,0 +1,85 @@
+title: Bildschirmspiegelung
+description: Spiegle den ganzen Bildschirm deines iPhone oder iPad samt Ton in OBS, mit der Quelle LensLink Screen und der integrierten Bildschirmübertragung von iOS.
+source: 241eae9c8fb9
+---
+<h1>Bildschirmspiegelung</h1>
+<p class="lede">
+  <strong>LensLink Screen</strong> empfängt eine iOS-Bildschirmübertragung: den
+  ganzen Bildschirm samt Ton, aus jeder App, in HEVC kodiert.
+</p>
+
+<h2>Einrichtung</h2>
+<ol class="walk">
+  <li>
+    <strong>Die Quelle in OBS hinzufügen</strong>
+    <p><strong>Quellen → + → LensLink Screen</strong>, dann richtest du sie genauso auf das Smartphone aus wie eine Kameraquelle.</p>
+  </li>
+  <li>
+    <strong>Die Übertragung auf dem Smartphone starten</strong>
+    <p>Tippe auf <strong>Bildschirm spiegeln</strong>, wähle <strong>LensLink Screen</strong> und tippe auf <strong>Übertragung starten</strong>. iOS schreibt hier seine eigene Auswahl vor.</p>
+  </li>
+  <li>
+    <strong>Die App verlassen</strong>
+    <p>Anders als die Kamera läuft eine Übertragung über App-Wechsel hinweg weiter – genau darum geht es.</p>
+  </li>
+</ol>
+
+<div class="callout">
+  <p>Jeder Quellentyp nimmt nur seinen eigenen Stream an. Bei einer falschen
+  Zuordnung zeigt das Statusfeld an, zu welcher Quelle du wechseln musst, statt einfach
+  nichts anzuzeigen.</p>
+</div>
+
+<h2>Audio</h2>
+<ul>
+  <li><strong>App- und Systemton kommen an</strong>: Spielsound, Videos im Browser, App-Effekte.</li>
+  <li><strong>DRM-geschützten Ton schaltet iOS stumm</strong>, während eine Übertragung läuft (Apple Music, Spotify, Netflix). Das gilt für jede Broadcast-Erweiterung auf der Plattform; LensLink kann sich dem nicht entziehen.</li>
+  <li><strong>Dein Mikrofon wird nicht gesendet.</strong> Nimm dich in OBS mit einem eigenen Mikrofon auf. (Die Kameraquelle kann das Mikrofon des Smartphones übertragen; diese hier bewusst nicht.)</li>
+</ul>
+<p>
+  Um den Ton zu <em>hören</em> statt ihn nur aufzuzeichnen, stell in den
+  Erweiterten Audioeigenschaften von OBS das <strong>Audiomonitoring</strong>
+  der Quelle auf <strong>Monitoring aktiviert</strong>.
+</p>
+
+<h2>Die Größe der Quelle festlegen</h2>
+<p>
+  Eine Spiegelung meldet die Auflösung, die iOS gerade überträgt, und die ändert
+  sich je nach App und Ausrichtung. Die Quelle kann also mitten im Stream ihre
+  Größe ändern und dein Layout durcheinanderbringen. Fixiere sie in einem festen
+  Rahmen:
+</p>
+<ol>
+  <li>Rechtsklick auf die Quelle → <strong>Transformieren</strong> → <strong>Transformation bearbeiten …</strong></li>
+  <li>Stell <strong>Begrenzungstyp</strong> auf <strong>Anpassen</strong> (auf innere Grenzen skalieren).</li>
+  <li>Gib dem Begrenzungsrahmen die Größe, die die Spiegelung einnehmen soll.</li>
+</ol>
+<figure>
+  <img src="/img/screen-fit-transform.png" alt="OBS-Dialog „Transformation bearbeiten“ mit dem Begrenzungstyp „Anpassen“ (auf innere Grenzen skalieren)" width="544" loading="lazy">
+  <figcaption>OBS skaliert dann jede ankommende Größe passend in deinen Rahmen, statt dein Layout zu verändern.</figcaption>
+</figure>
+
+<h2>Was die Screen-Quelle nicht hat</h2>
+<p>
+  Keine Kamerasteuerung und kein Browser-Steuerfeld – es gibt nichts zu zoomen
+  oder zu fokussieren. Ihre Eigenschaften umfassen Verbindung, Dekodierung und
+  Diagnose.
+</p>
+
+<h2>Ein Smartphone für zwei Quellen</h2>
+<p>
+  Ein Smartphone beliefert immer nur eine Quelle. Aktiviere bei beiden
+  <strong>Trennen, wenn diese Quelle nirgends angezeigt wird</strong>, dann gibt
+  eine ausgeblendete Quelle das Smartphone frei, und ein Szenenwechsel übergibt
+  das Gerät.
+</p>
+
+<h2>Wenn die Übertragung keine Verbindung herstellt</h2>
+<p>
+  Die Broadcast-Erweiterung ist ein eigener Prozess, deshalb sind ihre Fehler
+  schwer zu erkennen. Zwei Dinge solltest du prüfen:
+</p>
+<ul>
+  <li>Bei einem per <strong>Sideloading</strong> installierten Build kann das Neusignieren die Erweiterung entfernen oder beschädigen – eine bekannte Folge davon, dass Bundle-IDs umgeschrieben werden. Der Einrichtungsbildschirm der App warnt unter „Bildschirm spiegeln“, wenn der installierten App die Erweiterung fehlt. Builds aus TestFlight und dem App Store sind nicht betroffen.</li>
+  <li>Startet die Übertragung auf dem Smartphone, aber OBS zeigt nichts, liegt es an der Verbindung: siehe <a href="/docs/connect/#reading-the-status-field">Das Statusfeld lesen</a>.</li>
+</ul>

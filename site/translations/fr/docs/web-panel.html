@@ -1,0 +1,113 @@
+title: Panneau de contrôle web
+description: Le panneau de contrôle LensLink sur localhost:9980 : les mêmes commandes de caméra dans un navigateur sur votre ordinateur, plus l’API HTTP qui le fait fonctionner.
+source: 441ba810e72e
+---
+<h1>Panneau de contrôle web</h1>
+<p class="lede">
+  Le plugin sert les commandes de caméra de l’écran de direct à l’adresse
+  <a href="http://localhost:9980"><code>http://localhost:9980</code></a>, dans une
+  fenêtre de navigateur que vous pouvez garder à côté d’OBS. Personne n’a besoin
+  de toucher le téléphone.
+</p>
+
+<h2>L’ouvrir</h2>
+<p>
+  Ouvrez <code>http://localhost:9980</code> sur l’ordinateur qui exécute OBS. Le
+  panneau est activé par défaut ; l’interrupteur se trouve dans <strong>Outils →
+  Paramètres LensLink → Panneau de contrôle web</strong>.
+</p>
+<div class="callout">
+  <p><strong>Boucle locale uniquement.</strong> Le panneau écoute sur
+  <code>127.0.0.1</code>, donc rien sur le réseau ne peut l’atteindre. C’est
+  voulu, puisqu’il peut démarrer des caméras et n’a pas d’authentification.</p>
+</div>
+<p>
+  <strong>Port du panneau</strong> (<code>9980</code> par défaut) est un réglage
+  global du plugin, au cas où ce port serait déjà pris.
+</p>
+
+<h2>Ce qu’il contient</h2>
+<p>Les mêmes commandes que le panneau de direct de l’app, dans le même ordre :</p>
+<ul>
+  <li><strong>Pastille d’état</strong> avec point, mot et latence. Une seconde pastille apparaît pendant la calibration de la synchro labiale, et propose <strong>Recalibrer</strong> une fois verrouillée.</li>
+  <li><strong>Onglets de source</strong>, quand plusieurs sources caméra sont en direct : une seule page pilote tous les téléphones.</li>
+  <li><strong>Zoom</strong>, <strong>exposition</strong> (correction AE, ou ISO et obturateur manuels), <strong>mise au point</strong>, <strong>balance des blancs</strong>.</li>
+  <li><strong>Lampe torche, Objectif, Changer de caméra.</strong></li>
+  <li><strong>Changements de format en cours de diffusion</strong> : résolution, fréquence d’images, codec, microphone.</li>
+  <li><strong>Distance du sujet</strong>, quand l’écran vert fonctionne avec l’assistance profondeur.</li>
+  <li><strong>Démarrer la caméra</strong> quand l’app est inactive, <strong>Arrêter la caméra</strong> en rouge pendant le direct, chacun avec un interrupteur <strong>Démarrage auto</strong>.</li>
+  <li><strong>Mettre en pause</strong> suspend le flux sans y mettre fin : le téléphone reste connecté, caméra en marche, OBS conserve la source et affiche une image fixe assombrie et floutée avec un symbole de pause, et <strong>Reprendre</strong> relance aussitôt le direct. L’audio continue de passer, donc un téléphone qui sert aussi de micro ne se coupe pas.</li>
+</ul>
+<p>
+  Il reflète les changements faits sur le téléphone, mais suspend ces mises à
+  jour pendant que vous faites glisser un curseur, pour ne jamais contrarier
+  votre geste. Une
+  source <strong>LensLink Screen</strong> n’a pas de commandes de caméra, et le
+  panneau l’indique au lieu d’afficher des curseurs inertes.
+</p>
+
+<h2>L’API HTTP</h2>
+<p>
+  Le panneau n’est qu’un client d’une petite API HTTP sur le même port ; un
+  stream deck ou un script peut en être un autre. Chaque point d’accès accepte un
+  paramètre facultatif <code>?src=&lt;id&gt;</code> ; sans lui, le plugin prend
+  la première source adaptée.
+</p>
+
+<h3>Lire l’état</h3>
+<table>
+  <thead><tr><th>Requête</th><th>Renvoie</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/sources</code></td><td>Toutes les sources : <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>screen</code>.</td></tr>
+    <tr><td><code>GET /api/status</code></td><td>Le texte <code>status</code> (dans la langue d’OBS), son <code>tone</code> (<code>idle</code>, <code>wait</code>, <code>ready</code>, <code>live</code> ou <code>error</code>, pour le colorer sans lire le texte), plus <code>screen</code>, <code>standby</code>, <code>connected</code>, <code>autoStart</code> et l’étape <code>sync</code> de la synchro labiale.</td></tr>
+    <tr><td><code>GET /api/diagnostics</code></td><td>Le rapport de diagnostic complet en texte brut : versions, matériel, réglages et état de chaque source. Même contenu que le bouton dans Outils → Paramètres LensLink.</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>Le dernier instantané de l’état de la caméra envoyé par le téléphone : objectifs, zoom, exposition, mise au point, balance des blancs, formats pris en charge. C’est le même cache que lisent les propriétés de la source, et c’est ainsi que les trois interfaces restent en phase.</td></tr>
+  </tbody>
+</table>
+
+<h3>Envoyer des commandes</h3>
+<p>
+  <code>POST /api/control</code> accepte une commande JSON par requête. Les
+  commandes inconnues sont ignorées à dessein : un panneau plus récent et une app
+  plus ancienne perdent des fonctions au lieu de casser.
+</p>
+<pre><code>POST /api/control
+{ "cmd": "zoom",          "value": 2.0 }
+{ "cmd": "exposure_bias", "value": -0.5 }
+{ "cmd": "exposure",      "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
+{ "cmd": "exposure",      "mode": "auto" }
+{ "cmd": "focus",         "mode": "locked", "lensPosition": 0.42 }
+{ "cmd": "focus",         "mode": "auto" }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "flashlight",    "on": true }
+{ "cmd": "flip" }
+{ "cmd": "start_stream" }
+{ "cmd": "stop_stream" }
+{ "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "mic",           "id": "builtin:2" }
+{ "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
+<table>
+  <thead><tr><th>Requête</th><th>Effet</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code> : la même propriété que modifie la case de démarrage auto. Un corps vide est refusé, et non interprété comme false.</td></tr>
+    <tr><td><code>POST /api/recalibrate</code></td><td>Sans corps. Lance une nouvelle mesure de la synchro labiale.</td></tr>
+  </tbody>
+</table>
+
+<h3>Exemples</h3>
+<pre><code># Start the camera on the only connected phone
+curl -X POST http://localhost:9980/api/control -d '{"cmd":"start_stream"}'
+
+# Zoom the source with id 2 to 3x
+curl -X POST 'http://localhost:9980/api/control?src=2' -d '{"cmd":"zoom","value":3.0}'
+
+# What is connected right now?
+curl -s http://localhost:9980/api/sources</code></pre>
+
+<h2>Le désactiver</h2>
+<p>
+  Décochez <strong>Panneau de contrôle web</strong> dans <strong>Outils →
+  Paramètres LensLink</strong>. Le port se ferme immédiatement ; rien d’autre
+  n’est affecté.
+</p>

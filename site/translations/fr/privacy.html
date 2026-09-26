@@ -1,0 +1,98 @@
+title: Politique de confidentialité
+description: LensLink Camera ne collecte aucune donnée. Ce que l’app peut voir, ce qu’elle en fait, et ce qui ne quitte jamais votre réseau local.
+nav: docs
+source: 0dc862d45f0a
+---
+<section class="tight">
+  <div class="wrap">
+    <article class="doc" style="max-width: 46em">
+      <h1>Politique de confidentialité</h1>
+      <p class="lede">
+        LensLink Camera ne collecte aucune donnée. Rien sur vous, votre appareil
+        ou votre vidéo ne quitte votre réseau local, et il n’y a ni compte, ni
+        connexion, ni outil d’analyse. Cette page indique ce que l’app peut voir
+        et ce qu’elle en fait.
+      </p>
+
+      <h2>Ce que l’app fait de la caméra et du micro</h2>
+      <p>
+        Lorsque vous touchez Démarrer la caméra, l’app capture la vidéo de la
+        caméra du téléphone, l’encode sur le téléphone et l’envoie, par votre
+        réseau Wi-Fi local ou un câble USB, à OBS Studio sur votre propre
+        ordinateur, via le plugin open source LensLink. La caméra ne fonctionne
+        qu’après que vous avez touché Démarrer, l’indicateur de caméra du système
+        reste allumé pendant toute la diffusion, et elle s’arrête quand vous
+        touchez Arrêter, quittez l’app ou verrouillez le téléphone. Rien n’est
+        enregistré sur le téléphone et aucune image n’est conservée nulle part.
+      </p>
+      <p>
+        Le micro n’est utilisé que pendant la diffusion, et seulement si vous
+        activez <strong>Envoyer le micro du téléphone à OBS</strong> (qui envoie
+        l’audio à OBS comme un micro sans fil) ou <strong>Référence de synchro
+        labiale auto</strong> (un signal temporel dont le plugin se sert pour
+        aligner votre propre micro ; il n’est jamais entendu ni conservé).
+      </p>
+      <p>
+        <strong>Recopier l’écran</strong> envoie de la même façon l’écran du
+        téléphone et l’audio des apps à OBS, via le sélecteur de diffusion du
+        système, et s’arrête quand vous mettez fin à la diffusion.
+      </p>
+
+      <h2>Réseau local</h2>
+      <p>
+        L’app demande l’autorisation Réseau local, car OBS se connecte au
+        téléphone par votre réseau local. Elle s’annonce via Bonjour pour que le
+        plugin puisse l’afficher par son nom, et elle attend OBS sur un seul port
+        TCP. Elle ne se connecte jamais à un serveur à nous, puisqu’il n’y en a
+        aucun. Toutes les connexions se font entre votre téléphone et votre
+        ordinateur.
+      </p>
+
+      <h2>Ce qui est stocké sur le téléphone</h2>
+      <p>
+        Vos réglages (format, qualité, réglages de caméra mémorisés, options)
+        sont conservés dans les préférences propres à l’app, sur l’appareil, et
+        ne vont nulle part ailleurs. Supprimer l’app les supprime.
+      </p>
+
+      <h2>Ce qui n’est pas collecté</h2>
+      <ul>
+        <li>Aucun outil d’analyse, aucun suivi d’utilisation ni identifiant publicitaire.</li>
+        <li>Aucun SDK de rapport de plantage. Si vous avez activé le partage avec
+          les développeurs d’apps dans iOS (Réglages → Confidentialité et sécurité →
+          Analyse et améliorations), Apple peut nous transmettre des journaux de plantage.
+          Si vous installez l’app via TestFlight, Apple peut aussi nous transmettre les
+          commentaires que vous envoyez, selon ses propres conditions TestFlight.</li>
+        <li>Aucun compte, aucune adresse e-mail, aucune information personnelle.</li>
+        <li>Aucun SDK tiers, de quelque sorte que ce soit.</li>
+      </ul>
+      <p>
+        Les seuls liens qui sortent de l’app s’ouvrent dans Safari et mènent au
+        dépôt GitHub du projet (code source et signalement de bugs) ou à ce site.
+      </p>
+
+      <h2>Siri et Raccourcis</h2>
+      <p>
+        « Lance le streaming avec LensLink » et « Arrête le streaming avec
+        LensLink » s’exécutent sur l’appareil. Le traitement des requêtes Siri
+        par Apple relève de la politique de confidentialité d’Apple, pas de
+        celle-ci.
+      </p>
+
+      <h2>Enfants</h2>
+      <p>
+        L’app est classée 4+ et ne collecte de données auprès de personne, quel
+        que soit son âge.
+      </p>
+
+      <h2>Modifications et contact</h2>
+      <p>
+        Si cette politique change, la nouvelle version est publiée ici, avec la
+        date ci-dessous. Pour toute question, rendez-vous sur la
+        <a href="/support/">page d’assistance</a>.
+      </p>
+      <p><em>Dernière mise à jour : 25 septembre 2026.</em></p>
+      <p>En cas de divergence, seule la version anglaise de cette politique fait foi.</p>
+    </article>
+  </div>
+</section>

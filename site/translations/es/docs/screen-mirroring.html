@@ -1,0 +1,83 @@
+title: Duplicado de pantalla
+description: Duplica toda la pantalla de tu iPhone o iPad en OBS, con su audio, usando la fuente LensLink Screen y la transmisión integrada de iOS.
+source: 241eae9c8fb9
+---
+<h1>Duplicado de pantalla</h1>
+<p class="lede">
+  <strong>LensLink Screen</strong> recibe una transmisión de pantalla de iOS
+  (toda la pantalla con su audio, desde cualquier app) codificada en HEVC.
+</p>
+
+<h2>Configuración</h2>
+<ol class="walk">
+  <li>
+    <strong>Añade la fuente en OBS</strong>
+    <p><strong>Fuentes → + → LensLink Screen</strong>, y luego apúntala al teléfono exactamente como harías con una fuente de cámara.</p>
+  </li>
+  <li>
+    <strong>Inicia la transmisión en el teléfono</strong>
+    <p><strong>Duplicar pantalla</strong>, elige <strong>LensLink Screen</strong> y toca <strong>Iniciar transmisión</strong>. Aquí iOS exige su propio selector.</p>
+  </li>
+  <li>
+    <strong>Sal de la app</strong>
+    <p>A diferencia de la cámara, una transmisión sigue funcionando al cambiar de app: para eso existe.</p>
+  </li>
+</ol>
+
+<div class="callout">
+  <p>Cada tipo de fuente acepta solo su propia transmisión. Si te equivocas, el
+  campo Estado te dice a qué fuente cambiar, en lugar de no mostrar nada.</p>
+</div>
+
+<h2>Audio</h2>
+<ul>
+  <li><strong>Llega el audio de las apps y del sistema</strong>: sonido de juegos, video del navegador, efectos de las apps.</li>
+  <li><strong>iOS silencia el audio protegido con DRM</strong> durante cualquier transmisión (Apple Music, Spotify, Netflix). Esto afecta a todas las extensiones de transmisión de la plataforma; LensLink no puede evitarlo.</li>
+  <li><strong>Tu micrófono no se envía.</strong> Captura tu voz en OBS. (La fuente de cámara puede llevar el micrófono del teléfono; esta no lo hace, a propósito.)</li>
+</ul>
+<p>
+  Para <em>oírlo</em> y no solo grabarlo, configura la
+  <strong>Monitorización de audio</strong> de la fuente como <strong>Monitor y
+  salida</strong> en las Propiedades de audio avanzadas de OBS.
+</p>
+
+<h2>Fijar el tamaño de la fuente</h2>
+<p>
+  Una duplicación informa de la resolución que esté transmitiendo iOS, y esta
+  cambia según la app y la orientación, así que la fuente puede cambiar de
+  tamaño durante la transmisión y descolocar tu composición. Fíjala en un
+  recuadro de tamaño fijo:
+</p>
+<ol>
+  <li>Clic derecho en la fuente → <strong>Transformar</strong> → <strong>Editar transformación…</strong></li>
+  <li>Configura <strong>Tipo de límites</strong> como <strong>Ajustar</strong>.</li>
+  <li>Dale a los límites el tamaño que quieras que ocupe la duplicación.</li>
+</ol>
+<figure>
+  <img src="/img/screen-fit-transform.png" alt="Cuadro de diálogo Editar transformación de OBS con Tipo de límites configurado como Ajustar" width="544" loading="lazy">
+  <figcaption>Así, OBS escala cada tamaño entrante para que quepa en tu recuadro, en lugar de cambiar tu composición.</figcaption>
+</figure>
+
+<h2>Lo que no tiene la fuente Screen</h2>
+<p>
+  No tiene controles de cámara ni panel del navegador: no hay nada que ampliar ni
+  enfocar. Sus propiedades son la conexión, la decodificación y el diagnóstico.
+</p>
+
+<h2>Compartir un teléfono entre dos fuentes</h2>
+<p>
+  Un teléfono alimenta una sola fuente a la vez. Activa <strong>Desconectar
+  cuando esta fuente no se muestre en ninguna parte</strong> en las dos, y la
+  fuente oculta libera el teléfono, de modo que al cambiar de escena el
+  dispositivo pasa de una a otra.
+</p>
+
+<h2>Cuando la transmisión no se conecta</h2>
+<p>
+  La extensión de transmisión es un proceso aparte, así que sus fallos son
+  difíciles de ver. Revisa dos cosas:
+</p>
+<ul>
+  <li>En una versión <strong>instalada manualmente (sideload)</strong>, volver a firmar la app puede quitar o romper la extensión, una consecuencia conocida de reescribir los identificadores de paquete (bundle IDs). La sección Duplicado de pantalla de la pantalla principal avisa cuando falta la extensión en la app instalada. Las versiones de TestFlight y de la App Store no se ven afectadas.</li>
+  <li>Si la transmisión empieza en el teléfono pero OBS no muestra nada, el problema está en la conexión: consulta <a href="/docs/connect/#reading-the-status-field">Cómo leer el campo Estado</a>.</li>
+</ul>

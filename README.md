@@ -7,7 +7,8 @@
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](LICENSE)
 
 **[lenslink.cam](https://lenslink.cam)** — downloads, setup guides and full
-documentation.
+documentation. The iPhone and iPad app is
+**[LensLink Camera on the App Store](https://apps.apple.com/app/lenslink-camera/id6790673163)**.
 
 Use your iPhone or iPad as a high-quality camera **directly inside OBS
 Studio** — over Wi-Fi or a USB cable. No virtual-camera drivers, no RTMP
@@ -43,10 +44,12 @@ phone.
 
 **2. The LensLink app** — pick whichever suits you:
 
-- **TestFlight (recommended):** join the beta at
-  **<https://testflight.apple.com/join/N7Rth6m3>** and install from the
-  TestFlight app. Updates arrive automatically; no computer or re-signing
-  needed.
+- **App Store (recommended):** install
+  **[LensLink Camera](https://apps.apple.com/app/lenslink-camera/id6790673163)**. It's free and
+  updates automatically.
+- **TestFlight beta:** to get new versions before they reach the App
+  Store, join at <https://testflight.apple.com/join/N7Rth6m3> and install
+  from the TestFlight app.
 - **Sideloading:** download `LensLink-unsigned.ipa` from
   [Releases](../../releases) and install it with
   [Sideloadly](https://sideloadly.io) and a free Apple ID (free accounts
@@ -326,13 +329,13 @@ are the places to watch.
   OBS. The installer now removes it automatically.
 - **The app stops working after a week (sideloaded only):** free Apple IDs
   expire sideloaded apps every 7 days. Re-install it with Sideloadly to
-  refresh (settings are kept) — or switch to the TestFlight build, which
-  doesn't have this problem.
+  refresh (settings are kept), or switch to the
+  [App Store](https://apps.apple.com/app/lenslink-camera/id6790673163) build, which doesn't have this problem.
 - **"Hey Siri, start streaming with LensLink" isn't recognized (sideloaded
   only):** re-signing tools rewrite the app's bundle ID for free Apple
   IDs, which orphans the compiled Siri phrase data — Siri answers with a
   generic refusal even though the same action works from the Shortcuts
-  app. Use the TestFlight build for working Siri phrases, or drive it
+  app. Use the App Store (or TestFlight) build for working Siri phrases, or drive it
   through a Shortcuts automation (`lenslink://start` works everywhere).
   Also make sure the app has been launched once and "Use with Siri" is on
   in Settings → Siri & Search → LensLink.

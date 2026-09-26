@@ -50,6 +50,10 @@ struct StreamingView: View {
     /// Battery level for the dim readout and the low-battery tally.
     /// Monitoring runs only while this screen is up (see .task below).
     @ObservedObject private var battery = BatteryMonitor.shared
+    @ObservedObject private var assistive = AssistiveTech.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityDifferentiateWithoutColor)
+    private var differentiateWithoutColor
 
     private static let idleAfterSeconds: TimeInterval = 10
 
@@ -122,8 +126,10 @@ struct StreamingView: View {
                 }
             }
             .padding()
-            .animation(.easeInOut(duration: 0.2), value: showsControls)
-            .animation(.easeInOut(duration: 0.2), value: trayOpen)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2),
+                       value: showsControls)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2),
+                       value: trayOpen)
 
             // The focus marker, in the preview's own coordinate space (both
             // fill the screen). Not hit-testable: the next tap goes to the
@@ -136,6 +142,7 @@ struct StreamingView: View {
                 }
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
+                .accessibilityHidden(true)
                 .id(mark.id)
                 .task(id: mark.id) {
                     try? await Task.sleep(
@@ -150,11 +157,12 @@ struct StreamingView: View {
             // control, and it isn't one.
             if dragBaseBias != nil {
                 Text(readout(.exposure))
-                    .font(.system(size: 17, weight: .semibold,
-                                  design: .rounded).monospacedDigit())
+                    .font(.system(.body, design: .rounded).weight(.semibold)
+                            .monospacedDigit())
                     .foregroundColor(Theme.cameraYellow)
                     .glassPill()
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
 
             if dimmed {
@@ -177,24 +185,33 @@ struct StreamingView: View {
                     // it fires.
                     .gesture(DragGesture(minimumDistance: 0)
                         .onChanged { _ in touched() })
+                    .accessibilityElement()
+                    .accessibilityLabel(L("Streaming — tap to wake"))
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityInputLabels([L("Wake")])
+                    .accessibilityAction { touched() }
             }
 
             // Above the dim overlay on purpose: a phone mounted out of
             // reach dims itself after ten seconds, and that is exactly
             // when knowing you're on air matters most.
             tallyBorder
+            tallyBadge
         }
         .statusBar(hidden: true)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 if streamer.idleAppearance != .standard && !idle &&
+                    !assistive.suspendsIdle &&
                     Date().timeIntervalSince(lastInteraction)
                         > Self.idleAfterSeconds {
                     goIdle()
                 }
             }
         }
+        .onChange(of: assistive.suspendsIdle) { _ in touched() }
         // The preference is only reachable from the Setup screen today,
         // but a change arriving under a live idle view (an App Intent, a
         // future remote command) must not strand the screen dark or
@@ -247,13 +264,13 @@ struct StreamingView: View {
             brightnessLowered = true
             UIScreen.main.brightness = 0.05
         }
-        withAnimation { idle = true }
+        withAnimation(reduceMotion ? nil : .default) { idle = true }
     }
 
     /// Back to the controls.
     private func wake() {
         restoreBrightness()
-        withAnimation { idle = false }
+        withAnimation(reduceMotion ? nil : .default) { idle = false }
         lastInteraction = Date()
     }
 
@@ -296,9 +313,13 @@ struct StreamingView: View {
             VStack(spacing: Theme.Space.m) {
                 Image(systemName: "video.fill")
                     .foregroundColor(.green.opacity(0.6))
+                    .accessibilityHidden(true)
                 Text("Streaming — tap to wake")
                     .font(.footnote)
                     .foregroundColor(.gray)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityInputLabels([L("Wake")])
+                    .accessibilityAction { wake() }
                 batteryReadout
                     .padding(.top, Theme.Space.s)
             }
@@ -318,20 +339,27 @@ struct StreamingView: View {
     /// rather than a placeholder that looks like a fault.
     @ViewBuilder private var batteryReadout: some View {
         if let percent = battery.percent {
-            HStack(spacing: Theme.Space.s) {
-                Image(systemName: batterySymbol(percent))
-                    .font(.system(size: 44, weight: .regular))
-                Text("\(percent)%")
-                    .font(.system(size: 44, weight: .semibold,
-                                  design: .rounded).monospacedDigit())
-                if battery.isCharging {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 30, weight: .semibold))
+            VStack(spacing: Theme.Space.xs) {
+                HStack(spacing: Theme.Space.s) {
+                    Image(systemName: batterySymbol(percent))
+                        .font(.system(size: 44, weight: .regular))
+                    Text(L("%lld%%", percent))
+                        .font(.system(size: 44, weight: .semibold,
+                                      design: .rounded).monospacedDigit())
+                    if battery.isCharging {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 30, weight: .semibold))
+                    }
+                }
+                .foregroundColor(batteryTint)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(batteryAccessibilityLabel(percent))
+                if differentiateWithoutColor && battery.isLow {
+                    Text(TallyStatus.lowBattery.displayName)
+                        .font(.footnote.bold())
+                        .foregroundColor(batteryTint)
                 }
             }
-            .foregroundColor(batteryTint)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(batteryAccessibilityLabel(percent))
         }
     }
 
@@ -339,8 +367,8 @@ struct StreamingView: View {
     /// decoration once the percentage is spoken.
     private func batteryAccessibilityLabel(_ percent: Int) -> String {
         battery.isCharging
-            ? "Battery \(percent) percent, charging"
-            : "Battery \(percent) percent"
+            ? L("Battery %lld percent, charging", percent)
+            : L("Battery %lld percent", percent)
     }
 
     /// Red means low, amber means the OS is throttling, grey means fine —
@@ -426,6 +454,27 @@ struct StreamingView: View {
         }
     }
 
+    @ViewBuilder private var tallyBadge: some View {
+        if differentiateWithoutColor,
+           let light = tallySettings.activeLight(for: activeTallyStatuses) {
+            VStack {
+                HStack {
+                    Spacer()
+                    Text(light.entry.status.displayName)
+                        .font(.caption.bold())
+                        .lineLimit(1)
+                        .foregroundColor(Theme.textPrimary)
+                        .glassPill()
+                        .overlay(Capsule().strokeBorder(light.color, lineWidth: 2))
+                }
+                Spacer()
+            }
+            .padding()
+            .padding(.top, Theme.controlButton + Theme.Space.s)
+            .allowsHitTesting(false)
+        }
+    }
+
     /// Corner radius for the tally border. Modern iPhones have rounded
     /// display corners that physically clip a sharp-cornered stroke, so the
     /// border visibly broke at all four corners. There's no public API for
@@ -465,21 +514,18 @@ struct StreamingView: View {
             // Hidden for a camera-side pause: iOS took the camera, and
             // a resume button that can't resume anything is a lie.
             if !streamer.isPaused || streamer.pauseReason == .user {
-                ControlButton(systemImage: streamer.isPaused
+                ControlButton(streamer.isPaused ? L("Resume") : L("Pause"),
+                              systemImage: streamer.isPaused
                                 ? "play.fill" : "pause.fill",
-                              active: streamer.isPaused) {
+                              highlighted: streamer.isPaused) {
                     touched()
                     streamer.setPaused(!streamer.isPaused, reason: .user)
                 }
             }
 
-            Button {
+            ControlButton(L("Stop camera"), systemImage: "stop.fill",
+                          destructive: true, inputLabels: [L("Stop")]) {
                 streamer.stop()
-            } label: {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .frame(width: Theme.controlButton, height: Theme.controlButton)
-                    .background(Theme.errorRed.opacity(0.9), in: Circle())
             }
         }
         .foregroundColor(Theme.textPrimary)
@@ -490,18 +536,19 @@ struct StreamingView: View {
     /// the fuse. The small chevron is what says it opens.
     private var statusMenu: some View {
         Menu {
-            Button {
-                touched()
-                showHealth.toggle()
-            } label: {
-                Label("Stats", systemImage: showHealth ? "checkmark" : "gauge")
+            Toggle(isOn: Binding(get: { showHealth },
+                                 set: { on in
+                                     touched()
+                                     showHealth = on
+                                 })) {
+                Label("Stats", systemImage: "gauge")
             }
             if streamer.idleAppearance != .standard {
                 Button {
                     goIdle()
                 } label: {
                     Label(streamer.idleAppearance == .clean
-                            ? "Clean feed now" : "Dim screen now",
+                            ? L("Clean feed now") : L("Dim screen now"),
                           systemImage: streamer.idleAppearance == .clean
                             ? "eye.slash" : "moon.fill")
                 }
@@ -516,10 +563,15 @@ struct StreamingView: View {
                     .lineLimit(1)
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
-                    .foregroundColor(Theme.textSecondary)
+                    .secondaryOnGlass()
             }
             .foregroundColor(Theme.textPrimary)
             .glassPill()
+        }
+        .accessibilityLabel(streamer.status.displayName)
+        .accessibilityInputLabels([streamer.status.displayName, L("Status")])
+        .accessibilityShowsLargeContentViewer {
+            Text(streamer.status.displayName)
         }
     }
 
@@ -540,11 +592,11 @@ struct StreamingView: View {
         case .off:
             return nil
         case .measuring:
-            return ("Measuring sync", Theme.accent)
+            return (L("Measuring sync"), Theme.accent)
         case .locked:
-            return ("Sync locked", Theme.liveGreen)
+            return (L("Sync locked"), Theme.liveGreen)
         case .relocking:
-            return ("Recalibrating", Theme.connectAmber)
+            return (L("Recalibrating"), Theme.connectAmber)
         }
     }
 
@@ -573,12 +625,30 @@ struct StreamingView: View {
                     }
                 }
                 .glassPill()
-                .foregroundColor(Theme.textSecondary)
+                .secondaryOnGlass()
             }
             .disabled(streamer.syncState != .locked)
+            .accessibilityLabel(syncAccessibilityLabel)
+            .accessibilityHint(syncAccessibilityHint)
+            .accessibilityInputLabels(syncInputLabels)
+            .accessibilityShowsLargeContentViewer()
             Spacer()
         }
         .padding(.top, Theme.Space.s)
+    }
+
+    private var syncAccessibilityLabel: String {
+        syncLabel?.text ?? ""
+    }
+
+    private var syncAccessibilityHint: String {
+        streamer.syncState == .locked ? L("Recalibrate") : ""
+    }
+
+    private var syncInputLabels: [String] {
+        guard let sync = syncLabel else { return [] }
+        return streamer.syncState == .locked ? [sync.text, L("Recalibrate")]
+                                             : [sync.text]
     }
 
     /// One-line health readout under the status bar: encoder output rate,
@@ -587,11 +657,11 @@ struct StreamingView: View {
     /// "stream health overlay"); monospaced so they don't jitter.
     private func healthPill(_ health: Streamer.StreamHealth) -> some View {
         HStack {
-            Text("\(health.fps) fps · "
-                 + String(format: "%.1f", health.megabitsPerSecond)
-                 + " Mb/s · \(health.droppedFrames) dropped")
+            Text(L("%1$lld fps · %2$.1f Mb/s · %3$lld dropped",
+                   health.fps, health.megabitsPerSecond, health.droppedFrames))
                 .font(.caption.monospacedDigit())
                 .glassPill()
+                .accessibilityShowsLargeContentViewer()
             Spacer()
         }
         .padding(.top, Theme.Space.s)
@@ -601,11 +671,11 @@ struct StreamingView: View {
     // MARK: - Glance layer
 
     /// What sits at the bottom of the screen while the tray is closed:
-    /// the lens buttons (back cameras only, as in the Camera app) and the
-    /// chevron that opens the tray.
+    /// the lens buttons (for whichever side has more than one camera) and
+    /// the chevron that opens the tray.
     private var glanceControls: some View {
         VStack(spacing: Theme.Space.l) {
-            if streamer.selectedLens.position == .back, backLenses.count > 1 {
+            if sideLenses.count > 1 {
                 lensButtons
             }
             Button {
@@ -616,23 +686,28 @@ struct StreamingView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(Theme.textPrimary)
                     .frame(width: 56, height: 30)
-                    .background(Theme.glassChip, in: Capsule())
+                    .glassBackground(Capsule(), style: .chip)
             }
             .accessibilityLabel("Adjust camera")
+            .accessibilityInputLabels([L("Adjust camera"), L("Adjust")])
+            .accessibilityShowsLargeContentViewer {
+                Label(L("Adjust camera"), systemImage: "chevron.up")
+            }
         }
     }
 
-    /// Back lenses in magnification order (.5 · 1× · 2), the Camera
-    /// app's order, rather than the device list's Main-first order.
-    private var backLenses: [CameraManager.Lens] {
+    /// The selected side's lenses in magnification order (.5 · 1× · 2),
+    /// the Camera app's order, rather than the device list's Main-first
+    /// order.
+    private var sideLenses: [CameraManager.Lens] {
         streamer.availableLenses
-            .filter { $0.position == .back }
+            .filter { $0.position == streamer.selectedLens.position }
             .sorted { (lensFactors[$0.id] ?? 1) < (lensFactors[$1.id] ?? 1) }
     }
 
     private func refreshLensFactors() {
         var factors: [String: Double] = [:]
-        for lens in backLenses {
+        for lens in streamer.availableLenses {
             factors[lens.id] = CameraManager.zoomFactorRelativeToMain(lens)
         }
         lensFactors = factors
@@ -641,26 +716,39 @@ struct StreamingView: View {
     /// The Camera app's lens row: one round button per back lens, the
     /// active one larger and yellow with the live zoom on it, so ".5 · 1× ·
     /// 2" reads exactly as it does in the app everyone already knows.
-    /// Tapping switches the physical lens; pinching still zooms within it.
+    /// Tapping switches the physical lens; pinching still zooms within it,
+    /// and tapping the active lens returns it to its own zoom.
     private var lensButtons: some View {
         HStack(spacing: Theme.Space.s) {
-            ForEach(backLenses) { lens in
+            ForEach(sideLenses) { lens in
                 let active = lens == streamer.selectedLens
                 Button {
                     touched()
-                    streamer.selectedLens = lens
+                    if active {
+                        if streamer.zoom != 1 { streamer.zoom = 1 }
+                    } else {
+                        streamer.selectedLens = lens
+                    }
                 } label: {
                     Text(lensButtonLabel(lens, active: active))
                         .font(.system(size: active ? 13 : 11, weight: .bold,
                                       design: .rounded).monospacedDigit())
-                        .foregroundColor(active ? Theme.cameraYellow
-                                                : Theme.textPrimary.opacity(0.85))
+                        .onGlassText(active ? Theme.cameraYellow
+                                            : Theme.textPrimary.opacity(0.85),
+                                     increased: active ? Theme.cameraYellow
+                                                       : Theme.textPrimary)
                         .frame(width: active ? 38 : 32,
                                height: active ? 38 : 32)
-                        .background(Color.black.opacity(active ? 0.6 : 0.45),
-                                    in: Circle())
+                        .glassBackground(Circle(),
+                                         style: .scrim(active ? 0.6 : 0.45))
                 }
-                .accessibilityLabel(lens.label)
+                .accessibilityLabel(lens.displayLabel)
+                .accessibilityValue(lensAccessibilityValue(lens, active: active))
+                .accessibilityHint(lensAccessibilityHint(active: active))
+                .accessibilityAddTraits(active ? .isSelected : [])
+                .accessibilityShowsLargeContentViewer {
+                    Text(lensButtonLabel(lens, active: active))
+                }
             }
         }
     }
@@ -676,6 +764,16 @@ struct StreamingView: View {
         let text = Self.compactFactor(factor)
         // Camera app spelling: the ultra-wide is ".5", not "0.5".
         return text.hasPrefix("0.") ? String(text.dropFirst()) : text
+    }
+
+    private func lensAccessibilityHint(active: Bool) -> String {
+        guard active, streamer.zoom != 1 else { return "" }
+        return L("Resets the zoom")
+    }
+
+    private func lensAccessibilityValue(_ lens: CameraManager.Lens,
+                                        active: Bool) -> String {
+        active ? lensButtonLabel(lens, active: true) : ""
     }
 
     /// Two significant figures, no trailing zeros: 1, 0.5, 2.4, 12.
@@ -719,23 +817,28 @@ struct StreamingView: View {
             HStack(spacing: Theme.Space.s) {
                 Text(modeLine(activeTarget))
                     .font(.caption)
-                    .foregroundColor(Theme.textSecondary)
-                    .lineLimit(2)
+                    .secondaryOnGlass()
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: Theme.Space.s)
                 if streamer.camera.hasFlashlight {
-                    ControlButton(systemImage: streamer.flashlightOn
+                    ControlButton(L("Flashlight"),
+                                  systemImage: streamer.flashlightOn
                                     ? "bolt.fill" : "bolt.slash",
-                                  active: streamer.flashlightOn) {
+                                  isOn: streamer.flashlightOn,
+                                  inputLabels: [L("Torch"), L("Light")]) {
                         touched()
                         streamer.flashlightOn.toggle()
                     }
                 }
-                ControlButton(
-                    systemImage: "arrow.triangle.2.circlepath.camera") {
+                ControlButton(L("Flip camera"),
+                              systemImage: "arrow.triangle.2.circlepath.camera",
+                              inputLabels: [L("Switch camera"), L("Flip")]) {
                     touched()
                     streamer.flipCamera()
                 }
-                ControlButton(systemImage: "chevron.down") {
+                ControlButton(L("Close"), systemImage: "chevron.down",
+                              inputLabels: [L("Done")]) {
                     touched()
                     trayOpen = false
                 }
@@ -769,11 +872,12 @@ struct StreamingView: View {
                 .font(.system(size: 12, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-                .foregroundColor(selected ? .black : Theme.textPrimary.opacity(0.8))
+                .onGlassText(selected ? .black : Theme.textPrimary.opacity(0.8),
+                             increased: selected ? .black : Theme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 30)
-                .background(selected ? Color.white : Theme.glassChip,
-                            in: Capsule())
+                .glassBackground(Capsule(),
+                                 style: selected ? .solid(.white) : .chip)
                 .overlay(alignment: .topTrailing) {
                     if auto == true {
                         Text("A")
@@ -787,28 +891,33 @@ struct StreamingView: View {
                 }
         }
         .accessibilityLabel(chipAccessibilityLabel(target, auto: auto))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityInputLabels([chipLabel(target)])
+        .accessibilityShowsLargeContentViewer {
+            Text(chipLabel(target))
+        }
     }
 
     private func chipAccessibilityLabel(_ target: DialTarget, auto: Bool?) -> String {
         let name = chipLabel(target)
         switch auto {
         case nil: return name
-        case true?: return "\(name), auto"
-        case false?: return "\(name), manual"
+        case true?: return L("%@, auto", name)
+        case false?: return L("%@, manual", name)
         }
     }
 
     private func chipLabel(_ target: DialTarget) -> String {
         switch target {
-        case .zoom: return "Zoom"
+        case .zoom: return L("Zoom")
         // The same chip drives bias on auto and ISO in manual; its name
         // follows, so the dial's readout and the chip never disagree.
         case .exposure:
-            return streamer.exposureSetting == .manual ? "ISO" : "Exposure"
-        case .shutter: return "Shutter"
-        case .whiteBalance: return "WB"
-        case .focus: return "Focus"
-        case .subject: return "Subject"
+            return streamer.exposureSetting == .manual ? "ISO" : L("Exposure")
+        case .shutter: return L("Shutter")
+        case .whiteBalance: return L("WB")
+        case .focus: return L("Focus")
+        case .subject: return L("Subject")
         }
     }
 
@@ -859,21 +968,21 @@ struct StreamingView: View {
     private func modeLine(_ target: DialTarget) -> String {
         switch target {
         case .zoom:
-            return "Pinch the picture to zoom"
+            return L("Pinch the picture to zoom")
         case .exposure where streamer.exposureSetting == .auto:
-            return "Auto · drag the picture up or down"
+            return L("Auto · drag the picture up or down")
         case .focus where streamer.focusSetting == .auto:
             return streamer.faceFocus && streamer.camera.supportsFaceDrivenFocus
-                ? "Auto · faces first · hold the picture to lock"
-                : "Auto · tap the picture · hold to lock"
+                ? L("Auto · faces first · hold the picture to lock")
+                : L("Auto · tap the picture · hold to lock")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
-                ? "Cutoff · tap Subject for all"
-                : "All · drag to set a cutoff"
+                ? L("Cutoff · tap Subject for all")
+                : L("All · drag to set a cutoff")
         default:
             return isAuto(target) == true
-                ? "Auto · drag to set by hand"
-                : "Manual · tap \(chipLabel(target)) for auto"
+                ? L("Auto · drag to set by hand")
+                : L("Manual · tap %@ for auto", chipLabel(target))
         }
     }
 
@@ -883,10 +992,13 @@ struct StreamingView: View {
     private var dial: some View {
         VStack(spacing: Theme.Space.xs) {
             Text(readout(activeTarget))
-                .font(.system(size: 15, weight: .bold,
-                              design: .rounded).monospacedDigit())
+                .font(.system(.subheadline, design: .rounded).weight(.bold)
+                        .monospacedDigit())
                 .foregroundColor(Theme.cameraYellow)
+                .accessibilityHidden(true)
             dialSlider(activeTarget)
+                .accessibilityLabel(chipLabel(activeTarget))
+                .accessibilityValue(readout(activeTarget))
         }
     }
 
@@ -922,7 +1034,14 @@ struct StreamingView: View {
     private func slider<V>(_ value: Binding<V>, in range: ClosedRange<V>,
                            target: DialTarget) -> some View
         where V: BinaryFloatingPoint, V.Stride: BinaryFloatingPoint {
-        Slider(value: value, in: range) { editing in
+        Slider(value: Binding(get: { value.wrappedValue },
+                              set: { newValue in
+                                  if assistive.suspendsIdle {
+                                      engageManual(target)
+                                  }
+                                  value.wrappedValue = newValue
+                              }),
+               in: range) { editing in
             if editing {
                 touched()
                 engageManual(target)
@@ -939,17 +1058,17 @@ struct StreamingView: View {
                 ? "ISO \(Int(streamer.iso))"
                 : String(format: "%+.1f EV", streamer.exposureBias)
         case .shutter:
-            return streamer.exposureSetting == .manual ? shutterReadout : "Auto"
+            return streamer.exposureSetting == .manual ? shutterReadout : L("Auto")
         case .whiteBalance:
             return streamer.whiteBalanceSetting == .locked
-                ? "\(Int(streamer.whiteBalanceTemperature)) K" : "Auto"
+                ? "\(Int(streamer.whiteBalanceTemperature)) K" : L("Auto")
         case .focus:
             return streamer.focusSetting == .locked
-                ? String(format: "%.2f", streamer.lensPosition) : "Auto"
+                ? String(format: "%.2f", streamer.lensPosition) : L("Auto")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
-                ? String(format: "%.1f m", streamer.greenScreenMaxDistance)
-                : "All"
+                ? L("%.1f m", streamer.greenScreenMaxDistance)
+                : L("All")
         }
     }
 
@@ -1023,6 +1142,7 @@ struct StreamingView: View {
 private struct FocusIndicator: View {
     let locked: Bool
     @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: Theme.Space.s) {
@@ -1038,7 +1158,7 @@ private struct FocusIndicator: View {
                     .background(Theme.cameraYellow, in: Capsule())
             }
         }
-        .scaleEffect(appeared ? 1 : 1.3)
+        .scaleEffect(appeared || reduceMotion ? 1 : 1.3)
         .opacity(appeared ? 1 : 0.4)
         .onAppear {
             withAnimation(.easeOut(duration: 0.15)) { appeared = true }

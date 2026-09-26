@@ -8,7 +8,9 @@ free on Cloudflare Pages.
 site/
   build.py          the generator — writes dist/
   check-links.py    verifies every internal link and #anchor resolves
-  pages/            one HTML fragment per page, with front matter
+  pages/            one HTML fragment per page, with front matter (English)
+  translations/     the same fragments in other languages, one folder each
+  i18n/             the shell's strings: en.json, then one file per language
   static/           css, js, _headers, _redirects (copied verbatim)
   dist/             build output (git-ignored)
 ```
@@ -43,8 +45,99 @@ builds the "On this page" list from the `<h2>`s, and writes clean URLs
    that one list drives the sidebar, the previous/next footer links and
    the sitemap.
 
-`{{REPO}}` and `{{TESTFLIGHT}}` in page bodies expand to the GitHub and
-TestFlight URLs, so those live in one place.
+`{{REPO}}`, `{{APPSTORE}}` and `{{TESTFLIGHT}}` in page bodies expand to the
+GitHub, App Store and TestFlight URLs, so those live in one place.
+
+A new doc page's sidebar label is a key, not a string: add it to
+`i18n/en.json` (and every other language file) next to the others.
+
+### Languages
+
+English lives at the root and its URLs never change. Every other language
+gets a prefix, and every page exists under every prefix:
+
+| Prefix | `lang` | Name |
+|---|---|---|
+| `/de/` | `de` | Deutsch |
+| `/es/` | `es` | Español |
+| `/fr/` | `fr` | Français |
+| `/ja/` | `ja` | 日本語 |
+| `/pt-br/` | `pt-BR` | Português (Brasil) |
+| `/zh-hans/` | `zh-Hans` | 简体中文 |
+
+`LANGS` in `build.py` is that table. The site is translated in two layers.
+
+**The shell** (navigation, sidebar, footer, "On this page", the notices
+below, and the few strings the scripts write) comes from `i18n/<prefix>.json`.
+`i18n/en.json` is the source: flat keys, plain text, `{name}` placeholders
+that must survive translation. A missing file or key falls back to English
+with a build warning. The scripts never carry English of their own: the
+build writes the strings they need into each page as a
+`<script type="application/json" id="i18n">` block, which the CSP allows
+because it never runs.
+
+**The pages** come from `translations/<prefix>/`, mirroring `pages/`:
+`translations/de/docs/install.html` translates `pages/docs/install.html`.
+Same front matter as the English page (keep `nav` and `script` exactly as
+they are), plus a `source` line naming the English revision it was made
+from:
+
+```
+title: LensLink installieren
+description: ...
+source: 3f2a9c81d0b4
+---
+<h1>LensLink installieren</h1>
+...
+```
+
+`python3 build.py --source-hash pages/docs/install.html` prints that line;
+with no path it lists every page's hash. Translate the words and leave the
+structure alone:
+
+- the same `<h2>`/`<h3>` headings, in the same order. The build gives them
+  the English page's ids, so `/de/docs/install/#sideloading` works and a
+  heading in Japanese still has an anchor;
+- the same internal links (write them as `/docs/...`; the build adds the
+  prefix), the same `{{REPO}}`-style placeholders, the same element ids and
+  `data-*` attributes (the setup guide filters on them).
+
+What a visitor gets:
+
+- **A translation**: the page, in the language's shell, listed in the
+  sitemap and in `hreflang` alternates on every version of the page.
+- **A stale translation** (its `source` no longer matches the English
+  file): the same, plus a small notice at the top linking to the English
+  page, and a build warning. Update the text, then the `source` line. If
+  the English edit added, removed or renamed headings or ids, the old
+  translation's anchors can't be trusted, so the English page is shown
+  instead until it is brought up to date.
+- **No translation**: the English body in the translated shell, marked
+  `lang="en"`, with a notice that it hasn't been translated yet, so links
+  and navigation never dead-end. These pages point their canonical URL at
+  the English page and stay out of the sitemap and the alternates, so
+  search engines see one copy of the English text.
+
+English pages carry a language switcher in the footer (and the header, on
+wide screens). When a visitor's browser prefers a language that page has
+a translation for, `site.js` offers it in a small banner in that language
+(the `lang.suggest` string), which stays dismissed once closed.
+
+Check a translation before opening a pull request:
+
+```bash
+python3 ../tools/l10n_site.py
+```
+
+It fails on anything that would break a page (missing or extra keys, a
+lost placeholder, headings that don't line up, a link or id that went
+missing). A stale translation is only ever a warning, structural
+differences included, so editing an English page never fails CI; the
+notice covers the gap until someone catches up.
+
+To add a language: a row in `LANGS` (prefix, `lang` code, native name,
+`og:locale`), an `i18n/<prefix>.json` with every key in `en.json`, and a
+`translations/<prefix>/` folder as pages are done.
 
 ### Design
 
@@ -145,6 +238,9 @@ can make a page wrong. The pages most likely to go stale:
 | A `CONTROL` command or an `/api/` endpoint | `pages/docs/web-panel.html` |
 | Release asset file names | `static/js/download.js` (the `ROWS` table) |
 | The app's Live-screen layout | the device panel in `pages/index.html` |
+| Any English page | nothing more: its translations go stale, which is expected. They show a notice until someone updates them and their `source` line |
+| A shell string in `build.py`, or a string a script writes | `i18n/en.json`, and the same key in every other `i18n/*.json` |
+| A heading, link, id or `data-*` attribute in an English page | the same change in each `translations/*/` copy when it is next updated (the checker insists once its `source` is current) |
 
 CI (`.github/workflows/build.yml`) builds the site and fails the pull
 request on a broken internal link, but it cannot tell you that a sentence

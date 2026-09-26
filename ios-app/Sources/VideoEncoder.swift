@@ -154,7 +154,8 @@ final class VideoEncoder {
 
         guard status == noErr, let session else {
             throw NSError(domain: "VideoEncoder", code: Int(status),
-                          userInfo: [NSLocalizedDescriptionKey: "\(codec.label) encoder unavailable (\(status))"])
+                          userInfo: [NSLocalizedDescriptionKey:
+                            L("%1$@ encoder unavailable (%2$lld)", codec.label, Int(status))])
         }
 
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_RealTime,

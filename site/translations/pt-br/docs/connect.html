@@ -1,0 +1,136 @@
+title: Conecte o OBS ao celular
+description: Conecte a fonte LensLink Camera ao seu iPhone via Wi-Fi ou USB, use vários celulares ao mesmo tempo e entenda cada mensagem de status que a fonte pode mostrar.
+source: 15367c815715
+---
+<h1>Conecte o OBS ao celular</h1>
+<p class="lede">
+  Uma única conexão TCP leva vídeo, controles da câmera, sincronização de
+  relógio e status, pela sua rede local ou pelo cabo USB. Nada passa pela
+  internet.
+</p>
+
+<h2>A versão curta</h2>
+<ol class="walk">
+  <li>
+    <strong>No celular</strong>
+    <p>Abra o LensLink, escolha a câmera e o formato e toque em <strong>Iniciar câmera</strong>. A tela de configuração mostra o endereço Wi-Fi do celular; toque nele para copiar.</p>
+    <p>Com <strong>Início remoto pelo OBS</strong> ativado (o padrão), basta deixar o app aberto e ocioso: o próprio OBS inicia a câmera.</p>
+  </li>
+  <li>
+    <strong>No OBS</strong>
+    <p><strong>Fontes → + → LensLink Camera</strong>. Uma fonte por celular.</p>
+  </li>
+  <li>
+    <strong>Aponte a fonte para o celular</strong>
+    <p><strong>Wi-Fi:</strong> escolha o seu dispositivo na lista <strong>Celular</strong> ou digite o IP que o app mostra.</p>
+    <p><strong>USB:</strong> conecte o cabo e defina <strong>Conexão</strong> como <strong>Cabo USB</strong>.</p>
+  </li>
+</ol>
+<p>O vídeo aparece em um ou dois segundos. Sair do app durante a transmissão deixa a fonte em branco, porque o iOS suspende a captura da câmera de apps que não estão na tela. Em um iPad compatível, o LensLink continua transmitindo ao lado de outro app no Split View, no Slide Over e no Organizador Visual.</p>
+
+<h2>Wi-Fi</h2>
+<p>
+  Os dois dispositivos precisam estar na mesma rede, e ela precisa permitir
+  tráfego entre dispositivos. Redes de convidados, pontos de acesso com
+  isolamento de clientes e muitas redes de escritório ou de universidade
+  bloqueiam esse tráfego; o hotspot de um celular, com o computador conectado
+  a ele, não bloqueia.
+</p>
+
+<h3>Encontrar o celular pelo nome</h3>
+<p>
+  O app se anuncia via Bonjour enquanto está aberto, e a lista
+  <strong>Celular</strong> mostra o que for encontrado. Se o seu celular não
+  aparece na lista, mas digitar o IP funciona, falta ao app a permissão de
+  <strong>Rede Local</strong> que o iOS exige para esse anúncio: permita quando
+  for solicitado, ou em <strong>Ajustes → Privacidade e Segurança → Rede Local
+  → LensLink</strong>.
+</p>
+<p>
+  Os celulares também recebem novos endereços DHCP de tempos em tempos, o que
+  é outro motivo para escolher pelo nome. Se você prefere digitar endereços,
+  reserve um no seu roteador.
+</p>
+
+<h2>USB</h2>
+<p>
+  Use USB para tudo o que for importante: nenhuma rede envolvida, a latência
+  mais estável, e o celular carrega enquanto codifica, o que vale a pena, já
+  que codificar vídeo é uma das tarefas mais pesadas para um celular.
+</p>
+<ol class="walk">
+  <li>
+    <strong>Só no Windows: instale o iTunes</strong>
+    <p>Ele fornece o driver de dispositivos da Apple. Sem ele, nenhum cabo funciona.</p>
+  </li>
+  <li>
+    <strong>Conecte o cabo e toque em Confiar</strong>
+    <p>O celular precisa estar desbloqueado para o aviso aparecer, e o cabo precisa ser de dados.</p>
+  </li>
+  <li>
+    <strong>Defina Conexão como "Cabo USB"</strong>
+    <p>Deixe <strong>Dispositivo USB</strong> em <strong>Auto</strong>, a menos que você use mais de um celular.</p>
+  </li>
+</ol>
+<p>
+  <strong>Com vários celulares conectados</strong>, defina o
+  <strong>Dispositivo USB</strong> de cada fonte como um dispositivo específico,
+  em vez de Auto. Assim, o mesmo celular sempre alimenta a mesma fonte, qualquer
+  que seja a ordem em que tudo foi conectado. Uma fonte fixada em um
+  dispositivo ausente fica aguardando e avisa isso.
+</p>
+
+<h2>Vários celulares ao mesmo tempo</h2>
+<p>
+  Uma fonte <strong>LensLink Camera</strong> por celular. Cada uma tem a sua
+  própria conexão, controles e indicadores de desempenho, e o painel no
+  navegador ganha uma aba por fonte.
+</p>
+<div class="callout">
+  <p><strong>Um celular alimenta uma fonte por vez.</strong> Uma segunda fonte
+  apontada para o mesmo dispositivo avisa que ele já está em uso. Exceção: com
+  <strong>Desconectar quando esta fonte não aparecer em lugar nenhum</strong>,
+  uma fonte oculta libera o celular. Assim, uma fonte Camera em uma cena e uma
+  fonte Screen em outra podem compartilhá-lo.</p>
+</div>
+
+<h2>Como ler o campo Status</h2>
+<p>
+  Toda fonte LensLink tem uma linha <strong>Status</strong> no topo das suas
+  propriedades, e ela indica exatamente a etapa que está falhando.
+</p>
+<table>
+  <thead><tr><th>Status</th><th>Significado</th></tr></thead>
+  <tbody>
+    <tr><td>Conectado: …</td><td>Transmitindo. Mostra o dispositivo, o formato e a latência medida.</td></tr>
+    <tr><td>Conectado: a câmera está inativa</td><td>Em espera: o app está acessível, mas não está capturando. Inicie a câmera aqui, pelo painel no navegador ou no celular.</td></tr>
+    <tr><td>Iniciando a câmera do celular…</td><td>O início remoto foi enviado; a câmera está ligando.</td></tr>
+    <tr><td>Tentando se conectar ao celular em …</td><td>Endereço errado ou inacessível, ou o app não está em primeiro plano.</td></tr>
+    <tr><td>Digite o endereço IP do celular</td><td>Nenhum host definido em uma fonte Wi-Fi.</td></tr>
+    <tr><td>Nenhum dispositivo detectado via USB</td><td>Verifique o cabo e toque em Confiar. No Windows, verifique se o iTunes está instalado.</td></tr>
+    <tr><td>Dispositivo encontrado, mas o app LensLink não está acessível</td><td>O cabo está bom. Desbloqueie o celular e traga o app para o primeiro plano.</td></tr>
+    <tr><td>Aguardando o dispositivo USB selecionado</td><td>Fixada em um dispositivo que não está conectado.</td></tr>
+    <tr><td>Este dispositivo já está em uso por outra fonte LensLink</td><td>Duas fontes, um celular. Veja acima.</td></tr>
+    <tr><td>Desconectado: reconectando</td><td>A conexão caiu; a fonte está tentando de novo.</td></tr>
+    <tr><td>Pausado: a fonte está oculta</td><td><strong>Desconectar quando esta fonte não aparecer em lugar nenhum</strong> está ativado e nada está exibindo a fonte.</td></tr>
+    <tr><td>O celular está enviando uma transmissão de tela</td><td>Tipo de fonte errado: use uma fonte <strong>LensLink Screen</strong> para uma transmissão de tela.</td></tr>
+    <tr><td>Conectado, mas esta versão do OBS não consegue decodificar o vídeo</td><td>Essa versão não tem decodificador HEVC. Mude o app para H.264.</td></tr>
+  </tbody>
+</table>
+
+<h2>Como manter tudo saudável</h2>
+<ul>
+  <li><strong>Acompanhe os números.</strong> A barra de status do OBS mostra uma linha por celular (<code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>), e <strong>Visualizar → Painéis → LensLink</strong> mostra o mesmo em um painel.</li>
+  <li><strong>O congestionamento se resolve sozinho.</strong> O app reduz a qualidade por um instante e se recupera, em vez de acumular latência.</li>
+  <li><strong>Economize bateria</strong> com <strong>Desconectar quando esta fonte não aparecer em lugar nenhum</strong>: o celular para de codificar sempre que a fonte está oculta.</li>
+  <li><strong>O vídeo não é criptografado</strong> na sua rede: ele foi pensado para redes domésticas e de estúdio confiáveis.</li>
+</ul>
+
+<h2>Se não conectar</h2>
+<ol>
+  <li>O app está <strong>na tela</strong>, com o celular desbloqueado?</li>
+  <li>Wi-Fi: mesma rede, sem um dos dispositivos em uma rede de convidados?</li>
+  <li>USB: cabo de dados, e <strong>Confiar</strong> tocado?</li>
+  <li>Se nada disso resolver, siga a linha acima que corresponde ao seu campo Status.</li>
+</ol>
+<p>Ainda sem solução: <a href="/docs/troubleshooting/">Solução de problemas</a>.</p>

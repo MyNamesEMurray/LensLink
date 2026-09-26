@@ -30,6 +30,8 @@ struct ContentView: View {
     @State private var dimmed = false
     @State private var lastInteraction = Date()
     @State private var previousBrightness: CGFloat = UIScreen.main.brightness
+    @ObservedObject private var assistive = AssistiveTech.shared
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private static let dimAfterSeconds: TimeInterval = 60
 
@@ -130,6 +132,7 @@ struct ContentView: View {
                 // with no visible way back.
                 if streamer.standbyActive
                     && streamer.idleAppearance == .dim &&
+                    !assistive.suspendsIdle &&
                     !showOptions && !showDocs && !showFormat && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
@@ -138,6 +141,13 @@ struct ContentView: View {
                     // fired, toggle turned off, port lost) — wake up.
                     undim()
                 }
+            }
+        }
+        .onChange(of: assistive.suspendsIdle) { on in
+            if on && dimmed {
+                undim()
+            } else {
+                lastInteraction = Date()
             }
         }
         .onDisappear {
@@ -169,9 +179,13 @@ struct ContentView: View {
             VStack(spacing: 8) {
                 Image(systemName: "video.fill")
                     .foregroundColor(Theme.connectAmber.opacity(0.6))
+                    .accessibilityHidden(true)
                 Text("Ready for remote start — tap to wake")
                     .font(.footnote)
                     .foregroundColor(.gray)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityInputLabels([L("Wake")])
+                    .accessibilityAction { undim() }
             }
         }
         .contentShape(Rectangle())
@@ -197,7 +211,7 @@ struct ContentView: View {
     /// and the site; on the screen a word is enough.
     private var titleHeader: some View {
         Section {
-            Text("LensLink")
+            Text(verbatim: "LensLink")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
@@ -216,42 +230,18 @@ struct ContentView: View {
     /// finds this phone). Setup instructions collapse away once read.
     private var connectionSection: some View {
         Section {
-            HStack(spacing: Theme.Space.m) {
-                Image(systemName: computerSymbol)
-                    .font(.system(size: 26, weight: .regular))
-                    .foregroundColor(streamer.status.tint)
-                    .frame(width: 40)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(connectionTitle)
-                        .font(.headline)
-                        .lineLimit(1)
-                    HStack(spacing: Theme.Space.xs + 2) {
-                        Circle()
-                            .fill(streamer.status.tint)
-                            .frame(width: 8, height: 8)
-                        Text(connectionSubtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .lineLimit(2)
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: Theme.Space.s) {
+                        connectionSummary
+                        connectionAction
                     }
-                }
-                Spacer(minLength: Theme.Space.s)
-                if streamer.status == .standby {
-                    Button {
-                        Task { await streamer.start() }
-                    } label: {
-                        Text("Start")
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, Theme.Space.l)
-                            .padding(.vertical, Theme.Space.s)
-                            .background(Theme.accent, in: Capsule())
-                            .foregroundColor(.white)
+                } else {
+                    HStack(spacing: Theme.Space.m) {
+                        connectionSummary
+                        Spacer(minLength: Theme.Space.s)
+                        connectionAction
                     }
-                    .buttonStyle(.plain)
-                } else if let ip = wifiIP {
-                    Text(ip)
-                        .font(.callout.monospacedDigit().bold())
-                        .textSelection(.enabled)
                 }
             }
             .padding(.vertical, Theme.Space.xs)
@@ -280,7 +270,7 @@ struct ContentView: View {
                 }
                 Label {
                     if let ip = wifiIP {
-                        Text("Enter \(Text(ip).bold()) as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes).")
+                        Text(markdown: L("Enter **%@** as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes).", ip))
                             .font(.callout)
                             .foregroundColor(.secondary)
                     } else {
@@ -292,6 +282,51 @@ struct ContentView: View {
                     Image(systemName: "2.circle")
                 }
             }
+        }
+    }
+
+    private var connectionSummary: some View {
+        HStack(spacing: Theme.Space.m) {
+            Image(systemName: computerSymbol)
+                .font(.system(size: 26, weight: .regular))
+                .foregroundColor(streamer.status.tint)
+                .frame(width: 40)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(connectionTitle)
+                    .font(.headline)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                HStack(spacing: Theme.Space.xs + 2) {
+                    Circle()
+                        .fill(streamer.status.tint)
+                        .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                    Text(connectionSubtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var connectionAction: some View {
+        if streamer.status == .standby {
+            Button {
+                Task { await streamer.start() }
+            } label: {
+                Text("Start")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, Theme.Space.l)
+                    .padding(.vertical, Theme.Space.s)
+                    .background(Theme.accent, in: Capsule())
+                    .foregroundColor(.white)
+            }
+            .buttonStyle(.plain)
+        } else if let ip = wifiIP {
+            Text(ip)
+                .font(.callout.monospacedDigit().bold())
+                .textSelection(.enabled)
         }
     }
 
@@ -329,10 +364,10 @@ struct ContentView: View {
         Section {
             Picker(selection: $streamer.selectedLens) {
                 ForEach(streamer.availableLenses) { lens in
-                    Text(lens.label).tag(lens)
+                    Text(lens.displayLabel).tag(lens)
                 }
             } label: {
-                SettingsRowLabel("Camera", systemImage: "camera.fill",
+                SettingsRowLabel(L("Camera"), systemImage: "camera.fill",
                                  color: Theme.connectAmber)
             }
 
@@ -343,7 +378,7 @@ struct ContentView: View {
                 showFormat = true
             } label: {
                 HStack {
-                    SettingsRowLabel("Format", systemImage: "rectangle.stack",
+                    SettingsRowLabel(L("Format"), systemImage: "rectangle.stack",
                                      color: Theme.accent)
                     Spacer()
                     Text(formatSummary)
@@ -351,13 +386,14 @@ struct ContentView: View {
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
                         .foregroundColor(.secondary)
+                        .accessibilityHidden(true)
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             Toggle(isOn: $streamer.greenScreenEnabled) {
-                SettingsRowLabel("Green screen",
+                SettingsRowLabel(L("Green screen"),
                                  systemImage: "person.fill.viewfinder",
                                  color: Theme.liveGreen)
             }
@@ -375,14 +411,14 @@ struct ContentView: View {
     /// "4K · 60 fps · HEVC", plus "· HDR" or "· Log" when the colour
     /// isn't Standard — the format row's value.
     private var formatSummary: String {
-        var parts = [streamer.resolution.rawValue, "\(streamer.fps) fps",
+        var parts = [streamer.resolution.rawValue, L("%lld fps", streamer.fps),
                      streamer.codec.label]
         switch streamer.colorSetting {
         case .sdr: break
         case .hlg: parts.append("HDR")
-        case .log: parts.append("Log")
+        case .log: parts.append(L("Log"))
         }
-        if streamer.quality == .maximum { parts.append("Max") }
+        if streamer.quality == .maximum { parts.append(L("Max")) }
         return parts.joined(separator: " · ")
     }
 
@@ -409,7 +445,7 @@ struct ContentView: View {
             Button {
                 Task { await streamer.start() }
             } label: {
-                ActionRowLabel(title: "Start Camera",
+                ActionRowLabel(title: L("Start Camera"),
                                systemImage: "video.fill",
                                style: .primary)
             }
@@ -418,9 +454,10 @@ struct ContentView: View {
             .listRowBackground(Color.clear)
 
             ZStack {
-                ActionRowLabel(title: "Mirror Screen",
+                ActionRowLabel(title: L("Mirror Screen"),
                                systemImage: "rectangle.on.rectangle",
                                style: .secondary)
+                    .accessibilityHidden(true)
                 BroadcastPickerOverlay()
             }
             .listRowInsets(EdgeInsets())
@@ -443,18 +480,18 @@ struct ContentView: View {
     private var micSection: some View {
         Section {
             Toggle(isOn: $streamer.sendMicAudio) {
-                SettingsRowLabel("Send phone mic to OBS", systemImage: "mic.fill",
+                SettingsRowLabel(L("Send phone mic to OBS"), systemImage: "mic.fill",
                                  color: Theme.connectAmber)
             }
             if streamer.sendMicAudio {
                 Picker("Microphone", selection: $streamer.selectedMicID) {
                     ForEach(streamer.micOptions) { mic in
-                        Text(mic.name).tag(mic.id)
+                        Text(mic.displayName).tag(mic.id)
                     }
                 }
             }
             Toggle(isOn: $streamer.sendAudioReference) {
-                SettingsRowLabel("Auto lip-sync reference",
+                SettingsRowLabel(L("Auto lip-sync reference"),
                                  systemImage: "waveform",
                                  color: Theme.accent)
             }
@@ -474,23 +511,23 @@ struct ContentView: View {
             Button {
                 showOptions = true
             } label: {
-                disclosureRow("Options", systemImage: "gearshape.fill",
+                disclosureRow(L("Options"), systemImage: "gearshape.fill",
                               color: Theme.idleGrey)
             }
             .buttonStyle(.plain)
             Button {
                 showDocs = true
             } label: {
-                disclosureRow("Documentation", systemImage: "book.fill",
+                disclosureRow(L("Documentation"), systemImage: "book.fill",
                               color: Theme.accent)
             }
             .buttonStyle(.plain)
             Link(destination: Self.reportProblemURL) {
-                SettingsRowLabel("Report a problem", systemImage: "ladybug.fill",
+                SettingsRowLabel(L("Report a problem"), systemImage: "ladybug.fill",
                                  color: Theme.errorRed)
             }
             Link(destination: URL(string: "https://github.com/MyNamesEMurray/LensLink")!) {
-                SettingsRowLabel("LensLink on GitHub", systemImage: "link",
+                SettingsRowLabel(L("LensLink on GitHub"), systemImage: "link",
                                  color: Theme.idleGrey)
             }
         } footer: {
@@ -508,6 +545,7 @@ struct ContentView: View {
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
                 .foregroundColor(.secondary)
+                .accessibilityHidden(true)
         }
         .contentShape(Rectangle())
     }
@@ -530,10 +568,15 @@ struct ContentView: View {
             URLQueryItem(name: "versions", value:
                 "\(versionLine), \(model), iOS \(UIDevice.current.systemVersion)"),
         ]
-        // TestFlight builds carry a sandbox receipt; prefill the install
-        // dropdown so reports say which distribution they came from.
-        if Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" {
-            items.append(URLQueryItem(name: "install", value: "TestFlight"))
+        // TestFlight builds carry a sandbox receipt and App Store builds a
+        // production one; prefill the install dropdown so reports say
+        // which distribution they came from.
+        if let receipt = Bundle.main.appStoreReceiptURL {
+            if receipt.lastPathComponent == "sandboxReceipt" {
+                items.append(URLQueryItem(name: "install", value: "TestFlight"))
+            } else if FileManager.default.fileExists(atPath: receipt.path) {
+                items.append(URLQueryItem(name: "install", value: "App Store"))
+            }
         }
         url.queryItems = items
         return url.url!
@@ -603,7 +646,7 @@ private struct FormatSheet: View {
                     }
                     Picker("Frame rate", selection: $streamer.fps) {
                         ForEach(availableFrameRates, id: \.self) { fps in
-                            Text("\(fps) fps").tag(fps)
+                            Text(L("%lld fps", fps)).tag(fps)
                         }
                     }
                 }
@@ -625,11 +668,11 @@ private struct FormatSheet: View {
                 }
 
                 Section {
-                    ChoiceRow(title: "Balanced", detail: nil,
+                    ChoiceRow(title: L("Balanced"), detail: nil,
                               selected: streamer.quality == .balanced) {
                         streamer.quality = .balanced
                     }
-                    ChoiceRow(title: "Maximum", detail: nil, tag: "Beta",
+                    ChoiceRow(title: L("Maximum"), detail: nil, tag: L("Beta"),
                               selected: streamer.quality == .maximum) {
                         streamer.quality = .maximum
                     }
@@ -643,16 +686,16 @@ private struct FormatSheet: View {
                 // some lens actually has a Log capture format (iOS 17+).
                 if VideoEncoder.hdrSupported {
                     Section {
-                        ChoiceRow(title: "Standard", detail: nil,
+                        ChoiceRow(title: L("Standard"), detail: nil,
                                   selected: streamer.colorSetting == .sdr) {
                             streamer.colorSetting = .sdr
                         }
-                        ChoiceRow(title: "HDR (HLG)", detail: "HEVC only",
+                        ChoiceRow(title: L("HDR (HLG)"), detail: L("HEVC only"),
                                   selected: streamer.colorSetting == .hlg) {
                             streamer.colorSetting = .hlg
                         }
                         if CameraManager.appleLogCaptureAvailable {
-                            ChoiceRow(title: "Apple Log", detail: "HEVC only",
+                            ChoiceRow(title: L("Apple Log"), detail: L("HEVC only"),
                                       selected: streamer.colorSetting == .log) {
                                 streamer.colorSetting = .log
                             }

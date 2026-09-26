@@ -1,0 +1,102 @@
+title: Áudio e sincronia labial
+description: Use o celular como microfone sem fio, ou envie o microfone dele como referência de tempo para que o plugin alinhe o seu próprio microfone com o vídeo automaticamente.
+source: 257918f25fc6
+---
+<h1>Áudio e sincronia labial</h1>
+<p class="lede">
+  O microfone do celular pode ter duas funções, mas só cumpre uma de cada vez: ser
+  <strong>o áudio que você ouve</strong> ou ser uma <strong>referência de tempo</strong>
+  que alinha o microfone que você realmente usa. Ativar uma desativa a outra.
+</p>
+
+<h2>O celular como microfone</h2>
+<p>
+  <strong>Opções → Enviar microfone do celular ao OBS</strong> faz a fonte de câmera
+  levar o microfone do celular; na prática, um microfone sem fio. Vem desativado por
+  padrão, já que a maioria dos streamers usa o próprio microfone e o alinha.
+</p>
+<p>Uma linha <strong>Microfone</strong> abaixo desse botão, na tela de configuração do app, e uma linha de microfone no painel no navegador escolhem qual deles usar:</p>
+<table>
+  <thead><tr><th>Opção</th><th>O que você obtém</th></tr></thead>
+  <tbody>
+    <tr><td>Auto</td><td>O roteamento padrão do iOS: normalmente o microfone <em>inferior</em>, seja qual for a câmera ativa, já que o iOS não liga um ao outro. Um headset ou microfone Bluetooth assume automaticamente.</td></tr>
+    <tr><td>Frontal</td><td>O conjunto frontal, voltado mais ou menos para onde a câmera frontal aponta.</td></tr>
+    <tr><td>Traseiro</td><td>O microfone traseiro, voltado para o que a câmera traseira vê.</td></tr>
+  </tbody>
+</table>
+<p>A troca é feita ao vivo.</p>
+
+<h2>Sincronia labial automática</h2>
+<p>
+  O vídeo sempre chega um pouco atrasado, então um microfone separado fica adiantado
+  em relação a ele: o efeito de filme dublado. A solução comum é chutar um atraso no
+  OBS e ir ajustando. O LensLink mede esse atraso.
+</p>
+
+<h3>Configurando</h3>
+<ol class="walk">
+  <li>
+    <strong>Nas propriedades da fonte</strong>
+    <p>Escolha o seu microfone de verdade em <strong>Fonte de áudio para sincronia labial</strong> e ative <strong>Atrasar automaticamente essa fonte de áudio…</strong> e <strong>Calibrar automaticamente</strong>.</p>
+  </li>
+  <li>
+    <strong>Nas Opções do app</strong>
+    <p>Ative <strong>Referência automática de sincronia labial</strong>. O microfone do celular agora é só um sinal de tempo: nunca é reproduzido, nunca é gravado, nunca vai para a sua transmissão.</p>
+  </li>
+  <li>
+    <strong>Fale por uns quinze segundos</strong>
+    <p>O plugin compara os dois sinais, mede a diferença e a corrige. A tela Ao vivo e o painel no navegador mostram a etapa: <strong>Medindo a sincronia</strong> e depois <strong>Sincronia travada</strong>.</p>
+  </li>
+</ol>
+
+<h3>Depois de travada</h3>
+<p>
+  O atraso próprio do seu microfone agora é conhecido, então a correção passa a
+  acompanhar sozinha a latência da câmera (durante o silêncio e logo depois de uma
+  reconexão) e recalibra se você trocar o equipamento de áudio no meio da
+  transmissão.
+</p>
+<p>
+  Para forçar uma nova medição, toque em <strong>Recalibrar</strong> no indicador de
+  sincronia, no celular ou no painel no navegador. A opção só aparece com a sincronia
+  travada, o único estado em que ela faz alguma coisa.
+</p>
+<table>
+  <thead><tr><th>Indicação</th><th>Significado</th></tr></thead>
+  <tbody>
+    <tr><td>Nada exibido</td><td>A opção <strong>Calibrar automaticamente</strong> não está ativa.</td></tr>
+    <tr><td>Medindo a sincronia</td><td>Continue falando.</td></tr>
+    <tr><td>Sincronia travada</td><td>Diferença aplicada e acompanhada.</td></tr>
+    <tr><td>Recalibrando</td><td>Medindo de novo após uma mudança. Não é um erro.</td></tr>
+  </tbody>
+</table>
+
+<h3>Quando o lento é o seu microfone</h3>
+<p>
+  Algumas interfaces USB acrescentam tanta latência que o microfone chega
+  <em>depois</em> do vídeo, e atrasá-lo ainda mais não adianta. <strong>Atraso
+  automático de vídeo para microfones lentos</strong> atrasa o vídeo em vez disso.
+</p>
+
+<h3>Uma correção fixa, sem calibrar automaticamente</h3>
+<p>
+  Com <strong>Calibrar automaticamente</strong> desativado, a caixa de atraso sozinha
+  desloca o seu microfone pela latência medida da câmera. Um atraso conhecido do
+  dispositivo vai em <strong>Latência própria do dispositivo de áudio</strong> e é
+  subtraído.
+</p>
+
+<div class="callout">
+  <p><strong>Por que não simplesmente digitar um número no OBS?</strong> A latência
+  da câmera não é constante: ela varia com a resolução, o codec, o link e a rede. Uma
+  diferença medida continua certa quando você passa de 1080p60 por Wi-Fi para 4K30 por
+  USB. Uma digitada, não.</p>
+</div>
+
+<h2>Áudio do espelhamento de tela</h2>
+<p>
+  A fonte <strong>LensLink Screen</strong> leva áudio real e reproduzível dos apps e
+  do sistema, não uma referência de tempo. O iOS silencia apps com DRM durante uma
+  transmissão, e o seu microfone não é incluído:
+  <a href="/docs/screen-mirroring/#audio">espelhamento de tela</a>.
+</p>

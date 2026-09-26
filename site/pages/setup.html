@@ -42,7 +42,7 @@ script: /js/setup.js
       <fieldset>
         <legend>How you'll install the app</legend>
         <div class="seg-choice">
-          <label><input type="radio" name="app" value="testflight" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 18.5h15"/></svg> TestFlight <em class="rec">Recommended</em></span></label>
+          <label><input type="radio" name="app" value="appstore" checked><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 18.5h15"/></svg> App Store <em class="rec">Recommended</em></span></label>
           <label><input type="radio" name="app" value="sideload"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12 8v6"/><path d="M9.5 11.5L12 14l2.5-2.5"/></svg> Sideload</span></label>
           <label><input type="radio" name="app" value="xcode"><span><svg class="opt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5-8.5 8.5H6v-5z"/><path d="M12.5 6.5l5 5"/></svg> Xcode</span></label>
         </div>
@@ -83,9 +83,9 @@ script: /js/setup.js
         <p><strong>Sources → +</strong> now lists LensLink Camera and LensLink Screen.</p>
       </li>
 
-      <li data-app="testflight">
-        <h2>Install the app <span class="tag">TestFlight</span></h2>
-        <p><a href="{{TESTFLIGHT}}">Join the beta</a>, then install from TestFlight.</p>
+      <li data-app="appstore">
+        <h2>Install the app <span class="tag">App Store</span></h2>
+        <p>Install <a href="{{APPSTORE}}">LensLink Camera</a> from the App Store. For new versions before they reach the App Store, <a href="{{TESTFLIGHT}}">join the TestFlight beta</a> instead.</p>
       </li>
 
       <li data-app="sideload">

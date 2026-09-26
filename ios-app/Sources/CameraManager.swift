@@ -168,6 +168,17 @@ final class CameraManager: NSObject {
         var id: String {
             "\(position == .front ? "front" : "back"):\(deviceType.rawValue)"
         }
+
+        var displayLabel: String {
+            switch label {
+            case "Front": return L("Front")
+            case "Front (Ultra Wide)": return L("Front (Ultra Wide)")
+            case "Ultra Wide (0.5×)": return L("Ultra Wide (0.5×)")
+            case "Telephoto": return L("Telephoto")
+            case "Main (Wide)": return L("Main (Wide)")
+            default: return label
+            }
+        }
     }
 
     /// Enumerates the cameras present on this device, back lenses first
@@ -198,7 +209,10 @@ final class CameraManager: NSObject {
     }
 
     private static func label(for device: AVCaptureDevice) -> String {
-        if device.position == .front { return "Front" }
+        if device.position == .front {
+            return device.deviceType == .builtInUltraWideCamera
+                ? "Front (Ultra Wide)" : "Front"
+        }
         switch device.deviceType {
         case .builtInUltraWideCamera: return "Ultra Wide (0.5×)"
         case .builtInTelephotoCamera: return "Telephoto"
@@ -222,9 +236,11 @@ final class CameraManager: NSObject {
     /// the wide at 2 and the telephoto at 6, so relative to the wide that
     /// is 0.5, 1 and 3. The field-of-view ratio is the fallback for a
     /// device with no virtual camera; it lands on .57 and 3.2 rather than
-    /// .5 and 3, so it is rounded to the nearest half. nil for the front
-    /// camera or where the device is missing.
+    /// .5 and 3, so it is rounded to the nearest half. A front lens is
+    /// measured against the regular front camera instead, to the nearest
+    /// tenth. nil where a device is missing.
     static func zoomFactorRelativeToMain(_ lens: Lens) -> Double? {
+        if lens.position == .front { return frontFactor(for: lens) }
         guard lens.position == .back else { return nil }
         if let exact = switchOverFactor(for: lens) { return exact }
         guard let lensDevice = Self.device(for: lens),
@@ -234,6 +250,18 @@ final class CameraManager: NSObject {
         guard fov > 0, mainFov > 0 else { return nil }
         let ratio = tan(mainFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
         return max(0.5, (ratio * 2).rounded() / 2)
+    }
+
+    private static func frontFactor(for lens: Lens) -> Double? {
+        guard let lensDevice = Self.device(for: lens),
+              let frontDevice = AVCaptureDevice.default(
+                .builtInWideAngleCamera, for: .video, position: .front)
+        else { return nil }
+        let fov = Double(lensDevice.activeFormat.videoFieldOfView)
+        let frontFov = Double(frontDevice.activeFormat.videoFieldOfView)
+        guard fov > 0, frontFov > 0 else { return nil }
+        let ratio = tan(frontFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
+        return max(0.1, (ratio * 10).rounded() / 10)
     }
 
     private static func switchOverFactor(for lens: Lens) -> Double? {
@@ -649,7 +677,7 @@ final class CameraManager: NSObject {
 
         guard var device = Self.device(for: lens) else {
             throw NSError(domain: "CameraManager", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "Camera not available"])
+                          userInfo: [NSLocalizedDescriptionKey: L("Camera not available")])
         }
         // Depth assist (green screen): swap to the depth-registered
         // sibling device (TrueDepth / LiDAR) — the plain lenses have no
@@ -671,13 +699,14 @@ final class CameraManager: NSObject {
                                fps: fps, color: color) else {
             throw NSError(domain: "CameraManager", code: 4,
                           userInfo: [NSLocalizedDescriptionKey:
-                            "\(resolution.rawValue) at \(fps) fps is not supported by the \(lens.label) camera"])
+                            L("%1$@ at %2$lld fps is not supported by the %3$@ camera",
+                              resolution.rawValue, Int(fps), lens.displayLabel)])
         }
 
         let input = try AVCaptureDeviceInput(device: device)
         guard session.canAddInput(input) else {
             throw NSError(domain: "CameraManager", code: 2,
-                          userInfo: [NSLocalizedDescriptionKey: "Cannot add camera input"])
+                          userInfo: [NSLocalizedDescriptionKey: L("Cannot add camera input")])
         }
         session.addInput(input)
 
@@ -760,7 +789,7 @@ final class CameraManager: NSObject {
 
         guard session.canAddOutput(output) else {
             throw NSError(domain: "CameraManager", code: 3,
-                          userInfo: [NSLocalizedDescriptionKey: "Cannot add video output"])
+                          userInfo: [NSLocalizedDescriptionKey: L("Cannot add video output")])
         }
         session.addOutput(output)
         videoOutput = output

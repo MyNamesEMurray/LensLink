@@ -13,12 +13,12 @@ enum TallyStatus: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .onAir: return "On air"
-        case .preview: return "In preview"
-        case .connectionLost: return "Connection lost"
-        case .calibrating: return "Calibrating lip-sync"
-        case .syncLocked: return "Lip-sync locked"
-        case .lowBattery: return "Low battery"
+        case .onAir: return L("On air")
+        case .preview: return L("In preview")
+        case .connectionLost: return L("Connection lost")
+        case .calibrating: return L("Calibrating lip-sync")
+        case .syncLocked: return L("Lip-sync locked")
+        case .lowBattery: return L("Low battery")
         }
     }
 
@@ -36,7 +36,17 @@ enum TallyColor: String, Codable, CaseIterable {
     case purple
     case white
 
-    var displayName: String { rawValue == "none" ? "Off" : rawValue.capitalized }
+    var displayName: String {
+        switch self {
+        case .none: return L("Off")
+        case .red: return L("Red")
+        case .amber: return L("Amber")
+        case .green: return L("Green")
+        case .blue: return L("Blue")
+        case .purple: return L("Purple")
+        case .white: return L("White")
+        }
+    }
 
     /// Border colour; nil for `.none`. Values come from the shared status
     /// palette (docs/UI_DESIGN.md) so the border speaks the same colour
@@ -192,6 +202,8 @@ final class TallySettings: ObservableObject {
 /// Options → Tally light: color per status, drag to set priority.
 struct TallyLightOptionsView: View {
     @ObservedObject private var settings = TallySettings.shared
+    @Environment(\.accessibilityDifferentiateWithoutColor)
+    private var differentiateWithoutColor
 
     var body: some View {
         List {
@@ -200,7 +212,7 @@ struct TallyLightOptionsView: View {
                     HStack {
                         Text(entry.status.displayName)
                         Spacer()
-                        Picker("", selection: $entry.color) {
+                        Picker(entry.status.displayName, selection: $entry.color) {
                             ForEach(TallyColor.allCases, id: \.self) { c in
                                 Label {
                                     Text(c.displayName)
@@ -229,10 +241,11 @@ struct TallyLightOptionsView: View {
                                            height: Theme.controlButton)
                             }
                             .buttonStyle(.borderless)
-                            .foregroundColor(entry.pulse
-                                             ? Theme.accent : .secondary)
+                            .foregroundColor(pulseForeground(entry.pulse))
+                            .background(pulseBackground(entry.pulse))
                             .accessibilityLabel("Pulse")
-                            .accessibilityValue(entry.pulse ? "On" : "Off")
+                            .accessibilityValue(entry.pulse ? L("On") : L("Off"))
+                            .accessibilityInputLabels([L("Pulse %@", entry.status.displayName)])
                         }
                     }
                 }
@@ -255,5 +268,18 @@ struct TallyLightOptionsView: View {
         .navigationTitle("Tally light")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { EditButton() }
+    }
+
+    private func pulseForeground(_ on: Bool) -> Color {
+        guard on else { return .secondary }
+        return differentiateWithoutColor ? .white : Theme.accent
+    }
+
+    @ViewBuilder private func pulseBackground(_ on: Bool) -> some View {
+        if on && differentiateWithoutColor {
+            Circle()
+                .fill(Theme.accent)
+                .frame(width: 32, height: 32)
+        }
     }
 }

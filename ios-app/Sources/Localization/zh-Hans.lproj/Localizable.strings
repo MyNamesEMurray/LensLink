@@ -1,0 +1,570 @@
+/* ===== AudioReference.swift ===== */
+
+/* Microphone picker: the choice that follows iOS's own input routing */
+"Auto (iOS default)" = "自动（iOS 默认）";
+
+/* ===== BroadcastButton.swift ===== */
+
+/* Setup screen: button that starts the screen broadcast (also its VoiceOver label) [also used in ContentView.swift] */
+"Mirror Screen" = "镜像屏幕";
+
+/* Voice Control: a shorter name the user can say for the Mirror Screen button (never shown) */
+"Mirror" = "镜像";
+
+/* ===== BroadcastProbe.swift ===== */
+
+/* Setup screen warning: the screen-broadcast extension is missing from a sideloaded install */
+"No PlugIns folder — the sideloader stripped the extension" = "没有 PlugIns 文件夹：侧载工具删除了扩展";
+
+/* Setup screen warning: the screen-broadcast extension is missing from the installed app */
+"Extension missing from app bundle — re-sideload with app extensions enabled" = "App 包中缺少扩展：启用 App 扩展后重新侧载";
+
+/* Diagnostics line: the screen-broadcast extension is installed; %@ = its file name(s) */
+"Extension installed: %@" = "扩展已安装：%@";
+
+/* ===== CameraManager.swift ===== */
+
+/* Camera (lens) name: the front camera */
+"Front" = "前置";
+
+/* Camera (lens) name: the front ultra wide camera, on iPads that have two front cameras */
+"Front (Ultra Wide)" = "前置（超广角）";
+
+/* Camera (lens) name: the ultra-wide back lens */
+"Ultra Wide (0.5×)" = "超广角（0.5×）";
+
+/* Camera (lens) name: the telephoto back lens */
+"Telephoto" = "长焦";
+
+/* Camera (lens) name: the main (wide) back lens */
+"Main (Wide)" = "主摄（广角）";
+
+/* Status line error: the chosen camera can't be opened */
+"Camera not available" = "摄像头不可用";
+
+/* Status line error. %1$@ = resolution (e.g. 4K), %2$lld = frame rate, %3$@ = camera name */
+"%1$@ at %2$lld fps is not supported by the %3$@ camera" = "%3$@摄像头不支持 %1$@ %2$lld fps";
+
+/* Status line error: the camera couldn't be attached to the capture session */
+"Cannot add camera input" = "无法添加摄像头输入";
+
+/* Status line error: the video output couldn't be attached to the capture session */
+"Cannot add video output" = "无法添加视频输出";
+
+/* ===== ContentView.swift ===== */
+
+/* Toolbar button that closes a sheet; Voice Control: another name the user can say for the Live screen button that closes the adjust tray [also used in OptionsView.swift, StreamingView.swift] */
+"Done" = "完成";
+
+/* Dimmed Setup screen while the app waits for OBS to start the camera */
+"Ready for remote start — tap to wake" = "远程启动已就绪：轻点以唤醒";
+
+/* Voice Control: the word the user can say to wake a dimmed screen (never shown) [also used in StreamingView.swift] */
+"Wake" = "唤醒";
+
+/* Connection card button: start the camera stream now */
+"Start" = "启动";
+
+/* Setup screen warning when Local Network permission is off */
+"Not visible by name in OBS — tap to allow Local Network in Settings. Connecting by IP still works." = "OBS 无法按名称找到此手机：轻点以在“设置”中允许“本地网络”。通过 IP 连接仍然可用。";
+
+/* Setup screen: header of the collapsible setup instructions */
+"How to connect" = "如何连接";
+
+/* Setup instructions, step 1 (Markdown: keep the ** markers; LensLink Camera and LensLink Screen are OBS source names) */
+"Install the LensLink plugin in OBS (GitHub link below), then add a **LensLink Camera** or **LensLink Screen** source." = "在 OBS 中安装 LensLink 插件（GitHub 链接见下方），然后添加 **LensLink Camera** 或 **LensLink Screen** 来源。";
+
+/* Setup instructions, step 2. %@ = the phone's Wi-Fi IP address (Markdown: keep the ** markers; Phone IP, Connection and USB cable are OBS source settings) */
+"Enter **%@** as the source's Phone IP (same Wi-Fi) — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes)." = "在来源的“手机”中输入 **%@**（同一 Wi-Fi），或者插上 USB 线并将“连接”设为“USB 线”（Windows 需要 iTunes）。";
+
+/* Setup instructions, step 2 when the phone has no Wi-Fi address (Connection and USB cable are OBS source settings) */
+"No Wi-Fi address — join Wi-Fi, or plug in USB and set the source's Connection to \"USB cable\" (Windows needs iTunes)." = "没有 Wi-Fi 地址：连接 Wi-Fi，或者插上 USB 线并将来源的“连接”设为“USB 线”（Windows 需要 iTunes）。";
+
+/* Setup screen row: camera (lens) picker */
+"Camera" = "摄像头";
+
+/* Setup screen row and sheet title: resolution, frame rate, codec and color */
+"Format" = "格式";
+
+/* Setup screen toggle; Documentation section header [also used in DocumentationView.swift] */
+"Green screen" = "绿幕";
+
+/* Setup screen button shown when camera or microphone access was denied */
+"Camera access denied — open Settings" = "摄像头访问被拒绝：打开“设置”";
+
+/* Frame rate value, e.g. "60 fps" */
+"%lld fps" = "%lld fps";
+
+/* Format row summary: short name of the Apple Log color setting */
+"Log" = "Log";
+
+/* Format row summary: short name of the Maximum quality setting */
+"Max" = "最高";
+
+/* Setup screen: main button that starts the camera stream */
+"Start Camera" = "启动摄像头";
+
+/* Setup screen toggle: use the phone's microphone as the OBS source's audio */
+"Send phone mic to OBS" = "将手机麦克风发送到 OBS";
+
+/* Setup screen picker choosing which microphone to use; Documentation section header [also used in DocumentationView.swift] */
+"Microphone" = "麦克风";
+
+/* Setup screen toggle: send the mic only as a timing reference for lip-sync */
+"Auto lip-sync reference" = "自动音画同步参考";
+
+/* Setup screen row that opens the Options sheet; the sheet's title; Documentation section header [also used in DocumentationView.swift, OptionsView.swift] */
+"Options" = "选项";
+
+/* Setup screen row that opens the in-app manual; the manual's title [also used in DocumentationView.swift] */
+"Documentation" = "文档";
+
+/* Setup screen link to the bug-report form */
+"Report a problem" = "报告问题";
+
+/* Setup screen link to the project page */
+"LensLink on GitHub" = "GitHub 上的 LensLink";
+
+/* Format sheet: resolution picker */
+"Resolution" = "分辨率";
+
+/* Format sheet: frame rate picker */
+"Frame rate" = "帧率";
+
+/* Format sheet section header: video codec */
+"Codec" = "编码格式";
+
+/* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
+"Balanced" = "均衡";
+
+/* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
+"Maximum" = "最高";
+
+/* Small tag next to a choice that is still in beta */
+"Beta" = "测试版";
+
+/* Format sheet section header: stream quality */
+"Quality" = "画质";
+
+/* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
+"Standard" = "标准";
+
+/* Format sheet: HDR color choice */
+"HDR (HLG)" = "HDR (HLG)";
+
+/* Format sheet: note under a color choice that needs the HEVC codec */
+"HEVC only" = "仅限 HEVC";
+
+/* Format sheet: Apple Log color choice (Apple's name for its log profile) */
+"Apple Log" = "Apple Log";
+
+/* Format sheet section header; Documentation section header [also used in DocumentationView.swift] */
+"Color" = "色彩";
+
+/* ===== DesignSystem.swift ===== */
+
+/* VoiceOver value of an on/off control (the Flashlight button, a tally pulse switch) [also used in TallyLightOptions.swift] */
+"On" = "开启";
+
+/* VoiceOver value of an on/off control; Tally: no status lights the border / a status's color is none [also used in OptionsView.swift, TallyLightOptions.swift] */
+"Off" = "关闭";
+
+/* ===== DocumentationView.swift ===== */
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"The camera streams to a **LensLink Camera** source in OBS; the screen broadcast streams to a **LensLink Screen** source. Add the source in OBS, enter the phone's Wi-Fi address as its Phone IP — or plug in USB and set Connection to \"USB cable\" (Windows needs iTunes)." = "摄像头推流到 OBS 中的 **LensLink Camera** 来源，屏幕直播推流到 **LensLink Screen** 来源。在 OBS 中添加来源，并在其“手机”中输入手机的 Wi-Fi 地址；或者插上 USB 线，将“连接”设为“USB 线”（Windows 需要 iTunes）。";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "OBS 连接后，顶部的卡片会显示你的电脑名称、OBS 版本，以及连接是经由 USB 还是 Wi-Fi。OBS 已连接且摄像头空闲时，卡片上的**启动**按钮可以直接在这里开始推流；其他时候，卡片显示手机的地址，也就是 OBS 需要填写的内容。";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**格式**是一行，汇总分辨率、帧率、编码格式和色彩，轻点即可进入选择。分辨率和帧率只提供所选摄像头支持的选项。编码格式和色彩相互制约：HDR 和 Apple Log 仅限 HEVC，因此选择 H.264 会把色彩恢复为“标准”，选择 HDR 或 Log 则会把编码格式切换为 HEVC。";
+
+/* Documentation sheet, Connecting section (Markdown: keep the ** markers) */
+"**Quality**, in the Format sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**画质**位于“格式”面板中。**均衡**以普通 Wi-Fi 下也安全的码率推流，只会向下调整。**最高**起点更高，并在连接保持顺畅时不断向上试探（USB 下最高约为均衡码率的六倍，Wi-Fi 下约四倍），一旦出现帧排队或丢帧就立即回退，最终稳定在链路承载能力之下一点。它还会把编码器切换为画质优先的设置；除非允许了系统视频效果，还会使用传感器的完整读出而非像素合并格式推流。数据更多、发热更大；第一次使用时留意“统计”一行。";
+
+/* Documentation section header */
+"Connecting" = "连接";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** 以 10 位色彩推流。OBS 会为 SDR 场景做色调映射，HDR 画布则得到真正的 HDR 画面。";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT." = "**Apple Log**（Pro 系列 iPhone，iOS 17+）推送用于调色的 10 位平淡画面：在 OBS 中为来源添加**应用 LUT** 滤镜，并载入 Apple Log LUT。";
+
+/* Documentation sheet, Color section (Markdown: keep the ** markers) */
+"Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture." = "两者都仅限 HEVC，并在摄像头下次启动时生效。色彩位于“格式”面板中，只提供这台手机能拍摄的选项。";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**绿幕**会在视频离开手机之前保留画面中的你，把其他一切涂成纯绿色；开启后色彩会设为“标准”。OBS 中的 **LensLink Camera** 来源会添加一个调好参数的滤镜来抠除绿色，而且只添加一次，因此你在 OBS 中删除或重新调整它后，更改都会保留。";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects." = "**深度辅助**利用真实深度信息让抠像边缘更精细：支持面容 ID 的手机使用前置摄像头，Pro（LiDAR）机型使用后置主摄。其他镜头仅靠形状识别，会保留画面中的每一个人。它还会关闭人物居中和其他系统视频效果。";
+
+/* Documentation sheet, Green screen section (Markdown: keep the ** markers) */
+"**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "深度辅助运行时，直播界面的调节栏中会出现**主体**：比转盘上的距离更远的一切都会成为背景，这样就能去掉从你身后走过的人。再次轻点“主体”按钮即可恢复为**全部**（不限距离）。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"While streaming, the screen shows the picture, the status pill, Pause and Stop, and the lens buttons — **.5**, **1×**, **2** — which switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "推流时，屏幕上显示画面、状态标签、暂停和停止按钮，以及镜头按钮 **.5**、**1×**、**2**，它们像在相机 App 中一样切换摄像头。双指捏合可在当前镜头内变焦。再次轻点当前镜头按钮可重置其变焦。在有两个前置摄像头的设备上，前置摄像头也会显示这些按钮。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光锁定在该处（AE/AF 锁定）：“对焦”按钮变为锁定，“曝光”按钮变为 ISO，轻点其中任一按钮即可解除。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Exposure, Shutter, WB, Focus, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**箭头**可打开调节栏：一个转盘，以及它能控制的每一项各有一个按钮，即变焦、曝光、快门、白平衡、对焦，绿幕配合深度辅助运行时还有主体。按钮上的黄色 **A** 表示该项处于自动。拖动转盘即切换为手动；再次轻点当前按钮则恢复自动。曝光处于自动时，转盘调节的是曝光补偿；拖动快门可切换为手动曝光，此时“曝光”按钮变为 ISO。手电筒和切换摄像头也在调节栏中。";
+
+/* Documentation sheet, Live screen section (Markdown: keep the ** markers) */
+"Tap the **status pill** for Stats — a health line of fps, Mb/s and dropped frames — and, when an idle view is set, to engage it now instead of waiting 10 seconds." = "轻点**状态标签**可打开“统计”，即一行显示 fps、Mb/s 和丢帧数的健康状态；设置了空闲显示时，还可以立即进入空闲显示，而不必等待 10 秒。";
+
+/* Documentation section header (the screen shown while streaming) */
+"Live screen" = "直播界面";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"**Send phone mic** makes this phone the camera's audio in OBS — a wireless mic. The **Microphone** row beneath it picks which one — Auto follows iOS's own routing; a headset or Bluetooth mic takes over on its own." = "**将手机麦克风发送到 OBS** 会让这台手机成为 OBS 中摄像头的音频，相当于一支无线麦克风。下方的**麦克风**一行用来选择使用哪个麦克风：“自动”遵循 iOS 自身的路由；耳机或蓝牙麦克风接入后会自动接管。";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"**Auto lip-sync** sends the mic only as a timing reference for aligning your real microphone; it's never heard." = "**自动音画同步参考**只把麦克风作为时间参考发送，用来对齐你实际使用的麦克风；它永远不会被听到。";
+
+/* Documentation sheet, Microphone section (Markdown: keep the ** markers) */
+"One mic, one role — turning one on turns the other off." = "一个麦克风只担一个角色：打开其中一个，另一个就会关闭。";
+
+/* Documentation sheet, Screen mirror section (Markdown: keep the ** markers) */
+"Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual." = "把整个屏幕连同 App 音频推流到 **LensLink Screen** 来源，适合手机游戏或 App 演示。iOS 会将 DRM 音频静音（Apple Music、Netflix），而且不会发送你的麦克风，请照常在 OBS 中接入你的麦克风。";
+
+/* Documentation section header */
+"Screen mirror" = "屏幕镜像";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Focus on faces** keeps focus and exposure on the faces the camera sees while focus is on auto, the way the Camera app does — a tap on the picture outranks it until the scene changes, and a lock ignores it. Off, the camera weights the centre of the frame." = "**人脸对焦**在对焦处于自动时，像相机 App 一样让对焦和曝光跟随摄像头看到的人脸：轻点画面的优先级更高，直到场景变化为止；锁定时则不起作用。关闭后，摄像头以画面中央为重点。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Remote start from OBS**: while the app is open and idle, OBS can start the camera for you. The phone stays awake while it waits — locking it or leaving the app ends remote start. Siri: \"Start streaming with LensLink.\"" = "**从 OBS 远程启动**：App 打开且空闲时，OBS 可以替你启动摄像头。等待期间手机保持唤醒；锁定手机或离开 App 会结束远程启动。Siri：“用 LensLink 开始推流。”";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Idle view** is what the Live screen becomes 10 seconds after you last touch it, for a phone that's mounted and out of reach. **Standard** leaves the controls up. **Clean feed** hides everything but the picture — turn Stats on (status pill) before you stop touching it to keep the health readout. **Dim screen** blanks the screen and drops the brightness to save battery, and is the only one that also dims remote-start standby, a minute in. Any tap brings the controls back." = "**空闲显示**是你最后一次触摸 10 秒后直播界面所变成的样子，适用于架好后够不着的手机。**标准**保留控制项。**纯净画面**只显示画面；若想保留健康状态读数，在停止触摸前先打开“统计”（状态标签）。**调暗屏幕**会隐藏画面并降低亮度以节省电量，而且只有它会在远程启动待机一分钟后同样变暗。轻点任意位置即可恢复控制项。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Pause** holds a stream without ending it — the phone stays connected, the camera stays on, and OBS shows a dimmed, blurred still with a pause symbol instead of a frozen picture. The pause button sits on the Live screen next to Stop, and the same control is in OBS (source properties) and the web panel. Audio keeps going, so the phone can still be your microphone while the picture is held." = "**暂停**会保持推流而不结束它：手机保持连接，摄像头保持开启，OBS 显示一张调暗、模糊并带暂停符号的静止画面，而不是冻结的画面。暂停按钮位于直播界面的停止按钮旁边，OBS（来源设置）和浏览器面板中也有同样的控制。音频不会中断，因此画面暂停时手机仍可充当你的麦克风。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60." = "**高帧率**为实验性功能：在摄像头支持时，为“格式”面板增加 120 和 240 fps（较新的 iPhone 上为 1080p 和 720p；240 使用传感器像素合并格式）。推流码率随之增加，手机发热更多、耗电更快，而设为 60 的 OBS 画布最多也只能每隔一帧显示一帧，因此要让画布与之匹配，并尽量使用 USB。关闭后帧率回到 60。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Remember camera settings** keeps each camera's exposure, white balance, zoom and focus from one stream to the next — a shot dialled in once stays dialled in, per lens. Turn it off and every camera starts on auto, and what was stored is forgotten." = "**记住摄像头设置**会按镜头在每次推流之间保留每个摄像头的曝光、白平衡、变焦和对焦，调好一次的画面会一直保持。关闭后每个摄像头都从自动开始，已保存的内容也会被清除。";
+
+/* Documentation sheet, Options section (Markdown: keep the ** markers) */
+"**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**允许系统视频效果**为实验性功能：允许 iOS 自行降低帧率，控制中心的视频效果（人像、摄影室灯光）可能需要这样做。在摄像头下次启动时生效。";
+
+/* Documentation sheet, Tally light section (Markdown: keep the ** markers) */
+"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "推流时直播界面周围的彩色边框。颜色、优先顺序以及按状态单独关闭，都可以在“选项 → Tally 灯”中自定义。颜色旁的波形按钮会让该状态闪烁而非常亮：对于你不必盯着看、却需要注意到的情况，动态更能引起注意。";
+
+/* Documentation sheet, Tally light section (Markdown: keep the ** markers); %lld%% = the low-battery threshold (20%) */
+"**Low battery** is one of the statuses you can light: it turns on with iOS Low Power Mode, or at %lld%% and below, and clears the moment you plug in. While the screen is dimmed the battery level also shows large under the wake hint — so a phone across the room can be read at a glance, without touching it." = "**电量不足**是可以点亮的状态之一：iOS 开启低电量模式时，或电量在 %lld%% 及以下时亮起，接上电源后立即清除。屏幕调暗时，唤醒提示下方还会以大字显示电量，这样隔着房间也能一眼看清，无需触碰手机。";
+
+/* Options row, its screen title, and Documentation section header: the colored border shown while streaming [also used in OptionsView.swift, TallyLightOptions.swift] */
+"Tally light" = "Tally 灯";
+
+/* Documentation sheet, Diagnostics section (Markdown: keep the ** markers) */
+"**Camera diagnostics** lists the camera's formats — which resolutions support the Control Center video effects, and which are 10-bit HDR or Apple Log capable. Paste it into a bug report if something is missing." = "**摄像头诊断**列出摄像头的格式：哪些分辨率支持控制中心的视频效果，哪些支持 10 位 HDR 或 Apple Log。如果缺少了什么，可以把它粘贴到问题报告中。";
+
+/* Documentation section header */
+"Diagnostics" = "诊断";
+
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; VoiceOver, Switch Control are the iOS feature names) */
+"**VoiceOver** and **Switch Control**: while either is on, the Live screen never dims or hides its controls by itself, and remote-start standby never dims. The status pill's menu still does it when you ask. VoiceOver also says when the stream goes live, pauses, goes on air, loses its connection to OBS, or locks lip-sync." = "**旁白**和**切换控制**：任一功能开启时，直播界面不会自行变暗或隐藏控制项，远程启动待机也不会变暗。需要时仍可通过状态标签的菜单手动执行。旁白还会在推流开始直播、暂停、开始播出、与 OBS 断开连接或音画同步锁定时进行播报。";
+
+/* Documentation sheet, Accessibility section (Markdown: keep the ** markers; name the iOS setting as iOS shows it) */
+"**Differentiate Without Color** (iOS Settings, Accessibility) adds the lit tally status's name as a small badge at the top of the Live screen, so the border never has to be read by its color alone." = "**不以颜色区分**（iOS“设置”中的“辅助功能”）会在直播界面顶部以小标记显示当前亮起的 Tally 状态名称，这样就不必仅凭颜色来辨认边框。";
+
+/* Documentation section header */
+"Accessibility" = "辅助功能";
+
+/* ===== OptionsView.swift ===== */
+
+/* Options toggle: let OBS start the camera while the app is open */
+"Remote start from OBS" = "从 OBS 远程启动";
+
+/* Options picker: what the Live screen becomes after 10 seconds untouched */
+"Idle view" = "空闲显示";
+
+/* Options toggle */
+"Focus on faces" = "人脸对焦";
+
+/* Options toggle */
+"Remember camera settings" = "记住摄像头设置";
+
+/* Options toggle (experimental 120/240 fps) */
+"High frame rate" = "高帧率";
+
+/* Options toggle (experimental) */
+"Allow system video effects" = "允许系统视频效果";
+
+/* Options row and screen title: the camera format table */
+"Camera diagnostics" = "摄像头诊断";
+
+/* Camera diagnostics toolbar button after the report was copied */
+"Copied" = "已拷贝";
+
+/* Camera diagnostics toolbar button: copy the report */
+"Copy" = "拷贝";
+
+/* ===== RemoteStartIntents.swift ===== */
+
+/* Shortcuts/Siri action name */
+"Start Camera Stream" = "开始摄像头推流";
+
+/* Shortcuts action description */
+"Opens LensLink and starts streaming the camera to OBS." = "打开 LensLink，并开始将摄像头推流到 OBS。";
+
+/* Shortcuts/Siri action name */
+"Stop Camera Stream" = "停止摄像头推流";
+
+/* Shortcuts action description */
+"Stops the LensLink camera stream." = "停止 LensLink 摄像头推流。";
+
+/* ===== StreamClient.swift ===== */
+
+/* Status line error: the app couldn't open the network port OBS connects to (USB and Wi-Fi) */
+"Could not open USB listener" = "无法打开 USB 监听程序";
+
+/* ===== Streamer.swift ===== */
+
+/* Status word: nothing is connected */
+"Not connected" = "未连接";
+
+/* Status word: OBS is connected and can start the camera */
+"OBS connected — ready" = "OBS 已连接，就绪";
+
+/* Status word: streaming, waiting for OBS to connect */
+"Waiting for OBS…" = "正在等待 OBS…";
+
+/* Status word: streaming to OBS */
+"Live" = "直播中";
+
+/* Status word: the stream is held without ending it */
+"Paused" = "已暂停";
+
+/* Idle view choice: hide everything but the picture */
+"Clean feed" = "纯净画面";
+
+/* Idle view choice: blank the screen and lower the brightness */
+"Dim screen" = "调暗屏幕";
+
+/* Status line: iOS paused the camera because another app is on screen (iPad Split View) */
+"Camera paused — this iPad can't share the camera on screen" = "摄像头已暂停：此 iPad 无法在屏幕上共享摄像头";
+
+/* Status line: iOS paused the camera because the app went to the background */
+"Camera paused — app left the screen" = "摄像头已暂停：App 已离开屏幕";
+
+/* Status line: iOS paused the camera because the device is overheating */
+"Camera paused — device too hot" = "摄像头已暂停：设备过热";
+
+/* Status line: iOS paused the camera because another app took it */
+"Camera paused — in use by another app" = "摄像头已暂停：正被其他 App 使用";
+
+/* Status line error: camera permission was denied */
+"Camera access denied — enable it in Settings" = "摄像头访问被拒绝：在“设置”中开启";
+
+/* Lip-sync pill: calibration finished (tap to recalibrate); also spoken by VoiceOver when it happens [also used in StreamingView.swift] */
+"Sync locked" = "同步已锁定";
+
+/* ===== StreamingView.swift ===== */
+
+/* Dimmed Live screen hint; also the VoiceOver label of the invisible wake area over the clean feed */
+"Streaming — tap to wake" = "正在推流：轻点以唤醒";
+
+/* Dimmed Live screen: battery level, e.g. "80%" */
+"%lld%%" = "%lld%%";
+
+/* VoiceOver: battery level while charging */
+"Battery %lld percent, charging" = "电量百分之 %lld，正在充电";
+
+/* VoiceOver: battery level */
+"Battery %lld percent" = "电量百分之 %lld";
+
+/* Status pill menu: show or hide the stream health line */
+"Stats" = "统计";
+
+/* Status pill menu: switch to the clean feed idle view immediately */
+"Clean feed now" = "立即显示纯净画面";
+
+/* Status pill menu: dim the screen immediately */
+"Dim screen now" = "立即调暗屏幕";
+
+/* Lip-sync pill: calibration in progress */
+"Measuring sync" = "正在测量同步";
+
+/* Lip-sync pill: calibrating again */
+"Recalibrating" = "正在重新校准";
+
+/* Stream health line: %1$lld = frames per second, %2$.1f = megabits per second, %3$lld = dropped frames */
+"%1$lld fps · %2$.1f Mb/s · %3$lld dropped" = "%1$lld fps · %2$.1f Mb/s · 丢帧 %3$lld";
+
+/* VoiceOver label of the button that opens the camera adjust tray */
+"Adjust camera" = "调节摄像头";
+
+/* VoiceOver hint on the active lens button when zoomed in: tapping it returns the lens to its own zoom */
+"Resets the zoom" = "重置变焦";
+
+/* Voice Control: a shorter name the user can say for the Adjust camera button (never shown) */
+"Adjust" = "调节";
+
+/* VoiceOver label of the Live screen button that holds the stream */
+"Pause" = "暂停";
+
+/* VoiceOver label of the Live screen button that resumes a held stream */
+"Resume" = "继续";
+
+/* VoiceOver label of the Live screen red Stop button */
+"Stop camera" = "停止摄像头";
+
+/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) */
+"Stop" = "停止";
+
+/* Voice Control: another name the user can say for the status pill menu (never shown) */
+"Status" = "状态";
+
+/* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
+"Recalibrate" = "重新校准";
+
+/* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
+"Flashlight" = "手电筒";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown; use the everyday word for it) */
+"Torch" = "闪光灯";
+
+/* Voice Control: another name the user can say for the Flashlight button (never shown) */
+"Light" = "补光灯";
+
+/* VoiceOver label of the Live screen button that switches front/back camera */
+"Flip camera" = "切换摄像头";
+
+/* Voice Control: another name the user can say for the Flip camera button (never shown) */
+"Switch camera" = "翻转摄像头";
+
+/* Voice Control: a shorter name the user can say for the Flip camera button (never shown) */
+"Flip" = "翻转";
+
+/* VoiceOver label of the Live screen button that closes the adjust tray */
+"Close" = "关闭";
+
+/* One-letter badge on a Live screen chip: the setting is on Auto */
+"A" = "A";
+
+/* VoiceOver: a camera setting chip that is on auto; %@ = chip name */
+"%@, auto" = "%@，自动";
+
+/* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
+"%@, manual" = "%@，手动";
+
+/* Live screen chip: zoom */
+"Zoom" = "变焦";
+
+/* Live screen chip: exposure */
+"Exposure" = "曝光";
+
+/* Live screen chip: shutter speed */
+"Shutter" = "快门";
+
+/* Live screen chip: white balance (keep it short) */
+"WB" = "白平衡";
+
+/* Live screen chip: focus */
+"Focus" = "对焦";
+
+/* Live screen chip: green screen subject distance */
+"Subject" = "主体";
+
+/* Live screen adjust tray hint */
+"Pinch the picture to zoom" = "双指捏合画面以变焦";
+
+/* Live screen adjust tray hint: exposure on auto */
+"Auto · drag the picture up or down" = "自动 · 上下拖动画面";
+
+/* Live screen adjust tray hint: focus on auto with face tracking */
+"Auto · faces first · hold the picture to lock" = "自动 · 人脸优先 · 按住画面锁定";
+
+/* Live screen adjust tray hint: focus on auto */
+"Auto · tap the picture · hold to lock" = "自动 · 轻点画面 · 按住锁定";
+
+/* Live screen adjust tray hint: a subject distance cutoff is set (Subject = the chip name) */
+"Cutoff · tap Subject for all" = "已设截止距离 · 轻点“主体”恢复全部";
+
+/* Live screen adjust tray hint: no subject distance cutoff */
+"All · drag to set a cutoff" = "全部 · 拖动以设置截止距离";
+
+/* Live screen adjust tray hint: setting on auto */
+"Auto · drag to set by hand" = "自动 · 拖动以手动设置";
+
+/* Live screen adjust tray hint: setting set by hand; %@ = chip name */
+"Manual · tap %@ for auto" = "手动 · 轻点“%@”恢复自动";
+
+/* Live screen dial readout: the setting is automatic */
+"Auto" = "自动";
+
+/* Live screen dial readout: subject distance in meters */
+"%.1f m" = "%.1f m";
+
+/* Live screen dial readout: no subject distance cutoff */
+"All" = "全部";
+
+/* Tag under the focus square after a long press (camera app term) */
+"AE/AF Lock" = "AE/AF 锁定";
+
+/* ===== TallyLightOptions.swift ===== */
+
+/* Tally status: the camera is on the program output */
+"On air" = "播出中";
+
+/* Tally status: the camera is visible in OBS but not on air */
+"In preview" = "预览中";
+
+/* Tally status: the link to OBS dropped mid-stream */
+"Connection lost" = "连接已断开";
+
+/* Tally status */
+"Calibrating lip-sync" = "正在校准音画同步";
+
+/* Tally status */
+"Lip-sync locked" = "音画同步已锁定";
+
+/* Tally status */
+"Low battery" = "电量不足";
+
+/* Tally border color */
+"Red" = "红色";
+
+/* Tally border color */
+"Amber" = "琥珀色";
+
+/* Tally border color */
+"Green" = "绿色";
+
+/* Tally border color */
+"Blue" = "蓝色";
+
+/* Tally border color */
+"Purple" = "紫色";
+
+/* Tally border color */
+"White" = "白色";
+
+/* VoiceOver label of the switch that makes a tally color pulse */
+"Pulse" = "闪烁";
+
+/* Voice Control: the name the user can say for one row's pulse switch; %@ = the tally status, e.g. "Pulse On air" (never shown) */
+"Pulse %@" = "%@闪烁";
+
+/* Tally light screen: list header */
+"Statuses, highest priority first" = "状态（按优先级从高到低）";
+
+/* Tally light screen: list footer (Off and Edit are on-screen labels) */
+"The highest status here that's currently true sets the border color; Off skips it. Tap Edit to reorder." = "此处当前成立的状态中，排在最上面的决定边框颜色；设为“关闭”的状态会被跳过。轻点“编辑”可重新排序。";
+
+/* Tally light screen button */
+"Reset to defaults" = "恢复默认设置";
+
+/* ===== VideoEncoder.swift ===== */
+
+/* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
+"%1$@ encoder unavailable (%2$lld)" = "%1$@ 编码器不可用（%2$lld）";

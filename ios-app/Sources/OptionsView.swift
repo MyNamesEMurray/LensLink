@@ -21,7 +21,7 @@ struct OptionsView: View {
                 // read as one list style.
                 Section {
                     Toggle(isOn: $streamer.remoteStartEnabled) {
-                        SettingsRowLabel("Remote start from OBS",
+                        SettingsRowLabel(L("Remote start from OBS"),
                                          systemImage: "play.fill",
                                          color: Theme.liveGreen)
                     }
@@ -34,17 +34,17 @@ struct OptionsView: View {
                             Text(view.displayName).tag(view)
                         }
                     } label: {
-                        SettingsRowLabel("Idle view", systemImage: "moon.fill",
+                        SettingsRowLabel(L("Idle view"), systemImage: "moon.fill",
                                          color: Color(hex: 0x5E5CE6))
                     }
                     Toggle(isOn: $streamer.faceFocus) {
-                        SettingsRowLabel("Focus on faces",
+                        SettingsRowLabel(L("Focus on faces"),
                                          systemImage: "face.smiling",
                                          color: Theme.cameraYellow)
                     }
                     NavigationLink(destination: TallyLightOptionsView()) {
                         HStack {
-                            SettingsRowLabel("Tally light",
+                            SettingsRowLabel(L("Tally light"),
                                              systemImage: "lightbulb.fill",
                                              color: Theme.tallyLive)
                             Spacer()
@@ -54,7 +54,7 @@ struct OptionsView: View {
                         }
                     }
                     Toggle(isOn: $streamer.rememberCameraSettings) {
-                        SettingsRowLabel("Remember camera settings",
+                        SettingsRowLabel(L("Remember camera settings"),
                                          systemImage: "clock.arrow.circlepath",
                                          color: Theme.connectAmber)
                     }
@@ -62,17 +62,17 @@ struct OptionsView: View {
 
                 Section {
                     Toggle(isOn: $streamer.highFrameRate) {
-                        SettingsRowLabel("High frame rate",
+                        SettingsRowLabel(L("High frame rate"),
                                          systemImage: "speedometer",
                                          color: Theme.idleGrey)
                     }
                     Toggle(isOn: $streamer.allowVideoEffects) {
-                        SettingsRowLabel("Allow system video effects",
+                        SettingsRowLabel(L("Allow system video effects"),
                                          systemImage: "wand.and.stars",
                                          color: Theme.idleGrey)
                     }
                     NavigationLink(destination: CameraDiagnosticsView()) {
-                        SettingsRowLabel("Camera diagnostics",
+                        SettingsRowLabel(L("Camera diagnostics"),
                                          systemImage: "list.bullet.rectangle",
                                          color: Theme.idleGrey)
                     }
@@ -98,7 +98,7 @@ extension OptionsView {
         let lit = tallySettings.entries
             .filter { $0.color != TallyColor.none }
             .map { $0.status.displayName }
-        return lit.isEmpty ? "Off" : lit.joined(separator: ", ")
+        return lit.isEmpty ? L("Off") : lit.joined(separator: ", ")
     }
 }
 
@@ -120,7 +120,7 @@ private struct CameraDiagnosticsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(copied ? "Copied" : "Copy") {
+                Button(copied ? L("Copied") : L("Copy")) {
                     UIPasteboard.general.string = report
                     copied = true
                 }

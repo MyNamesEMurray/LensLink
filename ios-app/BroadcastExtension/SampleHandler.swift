@@ -127,9 +127,7 @@ class SampleHandler: RPBroadcastSampleHandler {
                         }
                         return
                     }
-                    self.fail("Could not open the streaming port (\(message)). "
-                        + "If the LensLink camera is streaming, stop it first — "
-                        + "a device can send the camera or the screen, not both.")
+                    self.fail(L("Could not open the streaming port (%@). If the LensLink camera is streaming, stop it first — a device can send the camera or the screen, not both.", message))
                 }
             default:
                 break
@@ -146,11 +144,8 @@ class SampleHandler: RPBroadcastSampleHandler {
         watchdog = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 30_000_000_000)
             guard let self, !Task.isCancelled, !self.everConnected else { return }
-            self.fail("OBS did not connect within 30 seconds "
-                + "[\(self.client.debugStatus())]. Check OBS has a LensLink "
-                + "Screen source pointing at this phone (USB, or this "
-                + "phone's Wi-Fi IP) — a LensLink Camera source won't accept "
-                + "a screen broadcast — and the camera stream isn't running.")
+            self.fail(L("OBS did not connect within 30 seconds [%@]. Check OBS has a LensLink Screen source pointing at this phone (USB, or this phone's Wi-Fi IP) — a LensLink Camera source won't accept a screen broadcast — and the camera stream isn't running.",
+                        self.client.debugStatus()))
         }
     }
 

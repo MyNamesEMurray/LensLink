@@ -13,11 +13,19 @@
 
 struct ios_camera_source;
 
+enum ios_camera_status_tone {
+	STATUS_TONE_IDLE,
+	STATUS_TONE_WAIT,
+	STATUS_TONE_READY,
+	STATUS_TONE_LIVE,
+	STATUS_TONE_ERROR,
+};
+
 /* Implemented in ios-camera-source.c */
 void ios_camera_enqueue_control(struct ios_camera_source *s, const char *json,
 				size_t len);
 void ios_camera_copy_status(struct ios_camera_source *s, char *buf,
-			    size_t size);
+			    size_t size, enum ios_camera_status_tone *tone);
 void ios_camera_copy_state(struct ios_camera_source *s, char *buf,
 			   size_t size);
 void ios_camera_copy_name(struct ios_camera_source *s, char *buf, size_t size);
@@ -44,3 +52,4 @@ void ios_camera_set_auto_start(struct ios_camera_source *s, bool on);
 void web_control_register(struct ios_camera_source *source);
 void web_control_unregister(struct ios_camera_source *source);
 void web_control_apply_settings(void);
+void web_control_shutdown(void);

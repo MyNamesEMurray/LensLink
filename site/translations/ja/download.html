@@ -1,0 +1,122 @@
+title: LensLinkをダウンロード
+description: Windows、macOS、Linux用のOBS Studio向けLensLinkプラグインをダウンロードし、App StoreからiPhoneまたはiPadにLensLinkアプリをインストールします。
+nav: download
+script: /js/download.js
+source: 93d3caf21abf
+---
+<section class="dl-hero">
+  <div class="wrap">
+    <h1>LensLinkをダウンロード</h1>
+    <p>
+      互いに通信する2つの部分でできています。OBS Studio用の<strong>プラグイン</strong>と、iPhoneまたはiPadの<strong>アプリ</strong>です。両方が必要です。
+    </p>
+    <p id="os-detected" class="detected" hidden></p>
+    <p id="rel-meta" class="relmeta" hidden>
+      <span>最新リリース <span class="num" id="rel-tag">—</span></span>
+      <span>公開日 <span class="num" id="rel-date">—</span></span>
+      <span><a id="rel-notes" href="{{REPO}}/releases/latest">リリースノート</a></span>
+    </p>
+    <p id="rel-fallback" class="relmeta" hidden>
+      <span>GitHubからファイル一覧を取得できませんでした。下のボタンからは引き続き最新リリースに移動できます。</span>
+    </p>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="dl-pair">
+
+      <div class="card">
+        <span class="step">パート1</span>
+        <h2>OBSプラグイン</h2>
+        <p>OBS Studio 32以降に<strong>LensLink Camera</strong>と<strong>LensLink Screen</strong>のソースを追加します。インストール後にOBSを再起動してください。</p>
+
+        <ul class="oslist">
+          <li id="dl-win-installer" data-os="windows">
+            <span class="grow"><span class="name">Windowsインストーラ</span>
+              <span class="file">LensLink-installer-windows-x64.exe</span></span>
+            <a class="btn small" href="{{REPO}}/releases/latest">ダウンロード</a>
+          </li>
+          <li id="dl-win-zip">
+            <span class="grow"><span class="name">Windows（手動）</span>
+              <span class="file">lenslink-windows-x64.zip</span></span>
+            <a class="btn small ghost" href="{{REPO}}/releases/latest">ダウンロード</a>
+          </li>
+          <li id="dl-mac-pkg" data-os="macos">
+            <span class="grow"><span class="name">macOSパッケージ</span>
+              <span class="file">LensLink-installer-macos-universal.pkg</span></span>
+            <a class="btn small" href="{{REPO}}/releases/latest">ダウンロード</a>
+          </li>
+          <li id="dl-mac-zip">
+            <span class="grow"><span class="name">macOS（手動）</span>
+              <span class="file">lenslink-macos-universal.zip</span></span>
+            <a class="btn small ghost" href="{{REPO}}/releases/latest">ダウンロード</a>
+          </li>
+          <li id="dl-linux" data-os="linux">
+            <span class="grow"><span class="name">Linux</span>
+              <span class="file">lenslink-linux-x86_64.tar.gz</span></span>
+            <a class="btn small" href="{{REPO}}/releases/latest">ダウンロード</a>
+          </li>
+        </ul>
+        <p class="sub">プラットフォームごとの手順は<a href="/docs/install/">インストールガイド</a>をご覧ください。<a href="{{REPO}}/blob/main/obs-plugin/BUILDING.md">ソースからビルド</a>することもできます。</p>
+      </div>
+
+      <div class="card">
+        <span class="step">パート2</span>
+        <h2>iPhone / iPadアプリ</h2>
+        <p>映像をキャプチャし、OBSからの接続を待ち受けます。iOSまたはiPadOS 15以降。App Storeで無料で入手でき、自動でアップデートされます。</p>
+
+        <a class="btn primary" href="{{APPSTORE}}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></svg>
+          App Storeで入手
+        </a>
+        <p class="sub">LensLink Camera。無料で、App内課金はありません。</p>
+
+        <ul class="oslist">
+          <li>
+            <span class="grow"><span class="name">TestFlightベータ</span>
+              <span class="file">App Reviewの前に新しいバージョンを入手</span></span>
+            <a class="btn small ghost" href="{{TESTFLIGHT}}">参加</a>
+          </li>
+          <li id="dl-ipa">
+            <span class="grow"><span class="name">サイドロード（署名なしビルド）</span>
+              <span class="file">LensLink-unsigned.ipa</span></span>
+            <a class="btn small ghost" href="{{REPO}}/releases/latest">ダウンロード</a>
+          </li>
+          <li>
+            <span class="grow"><span class="name">Xcodeでビルド</span>
+              <span class="file">ios-app/BUILDING.md</span></span>
+            <a class="btn small ghost" href="{{REPO}}/blob/main/ios-app/BUILDING.md">手順</a>
+          </li>
+        </ul>
+        <p class="sub">無料のApple IDでは、サイドロードしたアプリは7日で期限切れになり、Siriのフレーズも使えなくなります（<a href="/docs/install/#sideloading">理由</a>）。</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>インストールの前に</h2>
+      <p>よくつまずく2つの点です。</p>
+    </div>
+    <table class="spec">
+      <tbody>
+        <tr>
+          <td>OBS Studio 32以降</td>
+          <td><strong>ヘルプ → OBS Studioについて</strong>で確認できます。古いバージョンではプラグインが読み込まれません。</td>
+        </tr>
+        <tr>
+          <td>USBヘルパー（USB接続時のみ）</td>
+          <td>AppleのデバイスドライバはiTunesに含まれています。Linuxでは代わりに<code>usbmuxd</code>デーモンが必要で、macOSには標準で組み込まれています。Wi-Fiではどれも不要です。</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="cta">
+      <a class="btn primary" href="/docs/install/">インストールガイド</a>
+      <a class="btn ghost" href="{{REPO}}/releases">すべてのリリースと変更履歴</a>
+    </div>
+  </div>
+</section>

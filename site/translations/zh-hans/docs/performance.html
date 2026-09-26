@@ -1,0 +1,113 @@
+title: 延迟与性能
+description: LensLink 的延迟由哪些部分构成、如何测量、如何降低，以及 GPU 解码管线带来了哪些变化。
+source: c872f7d4c756
+---
+<h1>延迟与性能</h1>
+<p class="lede">
+  通过 USB 从摄像头到 OBS 大约 <strong>60 ms</strong>，1080p 和 4K 都是如此；Wi-Fi 更高，波动也更大。这个数字是持续实测的，而非估算，并显示在“状态”字段、状态栏和日志中。
+</p>
+
+<h2>延迟从哪里来</h2>
+<table>
+  <thead><tr><th>阶段</th><th>大约</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>拍摄与曝光</td><td>一帧</td><td>场景越亮，曝光越快，差别就体现在这里。</td></tr>
+    <tr><td>硬件编码</td><td>几 ms</td><td>VideoToolbox。无需调整。</td></tr>
+    <tr><td>链路</td><td>USB：小且稳定。Wi-Fi：不稳定</td><td>好的配置和令人头疼的配置，差别就在这一环。</td></tr>
+    <tr><td>解码</td><td>几 ms</td><td>默认使用 GPU，自动回退到软件解码。</td></tr>
+    <tr><td>进入场景</td><td>GPU 管线下不到 1 ms</td><td>否则需要从 GPU 显存复制出来再传回去。</td></tr>
+  </tbody>
+</table>
+
+<h2>降低延迟</h2>
+<ol>
+  <li><strong>使用 USB。</strong>最稳定，不受 Wi-Fi 拥堵影响，还能给手机充电。</li>
+  <li><strong>给场景打光。</strong>昏暗的房间会延长曝光时间，这会直接计入延迟。</li>
+  <li><strong>保留默认设置。</strong>低延迟模式和硬件解码出厂即已开启。</li>
+  <li><strong>不要过度设置规格。</strong>如果画面只是场景中一个 1000 px 宽的人物口播画面，1080p 并不算妥协。</li>
+  <li><strong>用长焦镜头代替大倍率数码变焦。</strong>放大后噪点多的视频压缩效果差，表现为码率和延迟的尖峰。</li>
+</ol>
+<div class="callout">
+  <p><strong>拥堵时丢弃，而不是排队。</strong>链路卡顿时，LensLink 会丢帧并短暂降低画质，而不是积压数据，因此延迟保持平稳，不会在推流过程中逐渐攀升。</p>
+</div>
+
+<h2>查看数据</h2>
+<ul>
+  <li><strong>OBS 状态栏：</strong><code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>，每个直播中的来源一条。</li>
+  <li><strong>LensLink 停靠窗口</strong>（<strong>视图 → 停靠窗口</strong>）：每个来源一行。</li>
+  <li><strong>手机上：</strong>直播界面状态菜单中的<strong>统计</strong>会显示同样的一行。把<strong>纯净画面</strong>设为空闲显示时，控制项淡出后它会特意保持可见。</li>
+  <li><strong>“状态”字段</strong>在连接时显示实测的拍摄到解码延迟。</li>
+</ul>
+<p>
+  这个数字是真实的：每秒进行一次 NTP 式的时钟偏差交换，自动音画同步也正是靠它实现的。
+</p>
+
+<h2>GPU 解码管线（测试版）</h2>
+<p>
+  通常，每个解码后的帧都要从 GPU 下载到系统内存，交给 OBS，再立即上传回 GPU 进行合成。在 4K60 下，这相当于每秒白白搬运约 2 GB 的像素。测试版管线把帧作为纹理直接交给 OBS，省去这一来回。
+</p>
+<p>
+  在<strong>工具 → LensLink 设置</strong>中开启。所有来源会一起切换，在重启 OBS 后生效。
+</p>
+
+<h3>实测结果</h3>
+<p>
+  十二种配置，每种约 25 秒实时视频，使用同一台 PC 和同一台手机，通过 Wi-Fi 连接。所有 GPU 管线测试中，像素复制量均为 0.00 MB/s。
+</p>
+<table>
+  <thead><tr><th>配置</th><th>每帧开销（ms）</th><th>像素复制（MB/s）</th><th>OBS CPU</th></tr></thead>
+  <tbody>
+    <tr><td>720p 60 HEVC</td><td>0.81 → 0.09</td><td>163 → 0</td><td>2.2% → 1.4%</td></tr>
+    <tr><td>1080p 60 H.264</td><td>2.11 → 0.10</td><td>370 → 0</td><td>2.3% → 1.6%</td></tr>
+    <tr><td>1080p 60 HEVC</td><td>1.42 → 0.09</td><td>373 → 0</td><td>2.6% → 1.4%</td></tr>
+    <tr><td>4K 30 HEVC</td><td>4.96 → 0.14</td><td>721 → 0</td><td>2.9% → 1.5%</td></tr>
+    <tr><td>4K 60 H.264</td><td>7.54 → 0.10</td><td>1221 → 0</td><td>4.1% → 1.8%</td></tr>
+    <tr><td>4K 60 HEVC</td><td>4.75 → 0.10</td><td>1439 → 0</td><td>4.1% → 1.6%</td></tr>
+  </tbody>
+</table>
+<p>
+  每帧开销下降 89–99%，而且分辨率越高收益越大：在 4K60 HEVC 下，标准管线每秒要让约 1.4 GB 数据经过系统内存，新管线将其完全去除，OBS 进程的 CPU 占用大约减半。延迟和帧率没有系统性差异，它们取决于网络和手机的编码器，而不是渲染路径。
+</p>
+
+<h3>各平台说明</h3>
+<table>
+  <tbody>
+    <tr><td>Windows</td><td>任何 OBS 32 支持的系统（Windows 10 1909+），使用共享的 D3D11 纹理。</td></tr>
+    <tr><td>macOS</td><td>任何 OBS 32 支持的系统（macOS 13+），通过 IOSurface 实现。10 位视频流是例外：VideoToolbox 会自行把它们转换为 8 位，因此 HDR 和 Apple Log 走标准路径，而不是这条管线。</td></tr>
+    <tr><td>Linux</td><td>需要 OBS 运行在 <strong>EGL</strong> 上（Wayland 和当前 X11 版本的默认设置），以及 <strong>VAAPI</strong> 驱动：Intel 和 AMD 的已内置在 Mesa 中；NVIDIA 需要 <code>nvidia-vaapi-driver</code>。</td></tr>
+    <tr><td>多 GPU</td><td>在不同 GPU 上解码和渲染时无法共享纹理；来源会自动回退。</td></tr>
+  </tbody>
+</table>
+<p>
+  回退按来源自动进行：最坏的情况就是标准管线，并在日志中写明原因。
+</p>
+
+<h3>GPU 品牌重要吗？</h3>
+<p>
+  没有操作系统那么重要。在所有现代 GPU 上，解码都由固定功能单元完成，插件调用的是平台自己的 API，而不是任何厂商专有的接口。
+</p>
+<table>
+  <tbody>
+    <tr><td>Windows</td><td>与厂商无关。任何当前 GPU 上使用 D3D11VA，回退方案为 DXVA2。</td></tr>
+    <tr><td>macOS</td><td>VideoToolbox，Apple 芯片和 Intel Mac 均可。</td></tr>
+    <tr><td>Linux，Intel 或 AMD</td><td>VAAPI 已包含在 Mesa 中，无需安装任何东西。</td></tr>
+    <tr><td>Linux，NVIDIA</td><td>需要 <code>nvidia-vaapi-driver</code>；回退方案为 VDPAU。这是唯一一处由品牌决定 GPU 管线能否启用的情况。</td></tr>
+    <tr><td>双 GPU 笔记本电脑</td><td>如果解码落在一块 GPU 上，而 OBS 在另一块上渲染，就无法共享纹理，来源会自行回退。</td></tr>
+    <tr><td>较旧的 GPU</td><td>没有 HEVC Main10 解码器的 GPU 会对 10 位视频流回退到软件解码；8 位不受影响。</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <p><strong>同时接入多台手机是解码负载，而不是编码负载。</strong>NVIDIA 对同时进行的 NVENC 会话数量的限制在这里不适用，因为电脑上没有任何编码。真正的限制是解码吞吐量和内存带宽，而这正是 GPU 管线所节省的。</p>
+</div>
+<p>
+  以上测量数据来自一台配备 NVIDIA 显卡的 Windows 电脑。这条管线之所以仍是测试版，部分原因在于其他组合（macOS IOSurface、Mesa VAAPI、<code>nvidia-vaapi-driver</code> 以及多 GPU 回退）更需要的是实际使用报告，而不是更多代码。
+</p>
+
+<h2>自己动手测量</h2>
+<p>
+  <strong>工具 → LensLink 设置 → 记录管线基准测试</strong>会每秒向插件的配置文件夹写入一行 CSV（路径见日志），并每五秒写一条摘要。每种配置推流十秒，然后比较一对结果：
+</p>
+<pre><code>python3 tools/bench-report.py BEFORE.csv AFTER.csv</code></pre>
+<p>
+  任何向 LensLink 提出的性能改动，都应附上这样的对比结果。
+</p>

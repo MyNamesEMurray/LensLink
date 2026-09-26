@@ -1,0 +1,135 @@
+title: 安装 LensLink
+description: 在 Windows、macOS 或 Linux 上将 LensLink 插件安装到 OBS Studio，并通过 App Store、TestFlight、侧载或 Xcode 在你的 iPhone 或 iPad 上安装 LensLink App。
+source: f21e1532e735
+---
+<h1>安装</h1>
+<p class="lede">
+  两部分缺一不可：OBS 中的插件，手机上的 App。如果只想看与你的配置相符的步骤，可以使用<a href="/setup/">设置向导</a>。
+</p>
+
+<h2>系统要求</h2>
+<ul>
+  <li><strong>OBS Studio 32 或更高版本</strong>（<strong>帮助 → 关于</strong>）。更早的版本无法加载插件。</li>
+  <li><strong>iOS 或 iPadOS 15 或更高版本。</strong></li>
+  <li><strong>使用 USB 时：</strong>Windows 上需要 iTunes（它提供 Apple 的设备驱动程序），Linux 上需要 <code>usbmuxd</code> 守护进程。macOS 已内置，使用 Wi-Fi 则都不需要。</li>
+</ul>
+<p><a class="btn small ghost" href="/download/">下载页面</a></p>
+
+<h2>插件</h2>
+<p>无论用以下哪种方式安装，之后都要重启 OBS。然后 <strong>源 → +</strong> 中应该会出现 <strong>LensLink Camera</strong> 和 <strong>LensLink Screen</strong>。</p>
+
+<h3>Windows</h3>
+<p>
+  运行 <code>LensLink-installer-windows-x64.exe</code>。它会找到你的 OBS 文件夹，并移除任何 1.0 之前版本的插件副本。
+</p>
+<p>
+  手动安装：将 <code>lenslink-windows-x64.zip</code> 解压到 <code>C:\Program Files\obs-studio\</code>，合并 <code>obs-plugins</code> 和 <code>data</code> 文件夹。
+</p>
+
+<h3>macOS</h3>
+<p>
+  打开 <code>LensLink-installer-macos-universal.pkg</code>。该安装包未经公证，所以第一次需要<strong>右键点按 → 打开</strong>。这是通用版本，同时支持 Apple 芯片和 Intel。
+</p>
+<p>如果改用 zip 包：解压到 <code>~/Library/Application Support/obs-studio/plugins/</code>，并清除隔离标记，否则 OBS 会拒绝加载它：</p>
+<pre><code>xattr -dr com.apple.quarantine \
+  ~/Library/Application\ Support/obs-studio/plugins/lenslink.plugin</code></pre>
+
+<h3>Linux</h3>
+<pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+<p>
+  如果插件没有出现，且日志中显示 <code>libavcodec.so.60: cannot open shared object file</code>，说明你使用的是 1.8 之前的版本，它的压缩包链接了构建机器上的 FFmpeg。更新版本，或从源代码构建。
+</p>
+
+<h3>从源代码构建</h3>
+<p>完整说明：
+<a href="{{REPO}}/blob/main/obs-plugin/BUILDING.md"><code>obs-plugin/BUILDING.md</code></a>。
+在 Debian 系的系统上：</p>
+<pre><code>sudo apt install cmake build-essential pkg-config \
+     libobs-dev libavcodec-dev libavutil-dev qt6-base-dev
+
+cd obs-plugin
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build</code></pre>
+<p>
+  <code>qt6-base-dev</code> 是可选的：它提供状态栏读数和可停靠的面板。其他部分不需要 Qt 也能构建。
+</p>
+
+<h2>App</h2>
+
+<h3>App Store（推荐）</h3>
+<p>
+  从 App Store 安装 <a href="{{APPSTORE}}">LensLink Camera</a>。它是免费的，会自动更新，而且 Siri 短语可以正常使用。
+</p>
+
+<h3>TestFlight 测试版</h3>
+<p>
+  如果想在新版本上架 App Store 之前抢先使用，可以通过
+  <a href="{{TESTFLIGHT}}">testflight.apple.com/join/N7Rth6m3</a> 加入。每个版本都会先发布到 TestFlight；Apple 批准更新后，App Store 才会收到它。
+</p>
+
+<h3>侧载</h3>
+<p>
+  使用 <a href="https://sideloadly.io">Sideloadly</a> 或类似工具，安装<a href="{{REPO}}/releases/latest">最新版本</a>中的 <code>LensLink-unsigned.ipa</code>。
+</p>
+<div class="callout warn">
+  <p><strong>这种方式会带来 Apple 的两项限制。</strong>使用免费 Apple ID 时，侧载的 App 会在 <strong>7 天</strong>后过期。重新安装即可续期，设置会保留。</p>
+  <p>重新签名还会改写 bundle ID，导致编译好的 Siri 短语数据失效：<em>“嘿 Siri，用 LensLink 开始推流”</em>会得到一个笼统的拒绝，尽管同一操作在快捷指令中可以正常运行。可以在快捷指令中使用 <code>lenslink://start</code>，或从 App Store 安装。</p>
+</div>
+
+<h3>Xcode</h3>
+<p>仓库中没有提交 <code>.xcodeproj</code>，它由 XcodeGen 生成。</p>
+<pre><code>brew install xcodegen
+cd ios-app && xcodegen generate && open LensLink.xcodeproj</code></pre>
+<p>签名以及旧版 Xcode 的相关说明：
+<a href="{{REPO}}/blob/main/ios-app/BUILDING.md"><code>ios-app/BUILDING.md</code></a>。</p>
+
+<h2>各操作系统的差异</h2>
+<p>
+  无论 OBS 运行在哪里，App、协议和每一项摄像头功能都完全相同。不同的是插件如何通过 USB 连接手机，以及如何把解码后的帧送到 GPU 上。
+</p>
+<table>
+  <thead><tr><th></th><th>Windows</th><th>macOS</th><th>Linux</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>USB 需要</td>
+      <td>iTunes，用于 Apple Mobile Device Service</td>
+      <td>无需额外安装，系统已内置</td>
+      <td><code>usbmuxd</code> 守护进程。大多数桌面发行版为了访问手机都会自带它；如果来源提示没有设备，安装 <code>usbmuxd</code> 软件包。</td>
+    </tr>
+    <tr>
+      <td>硬件解码</td>
+      <td>D3D11VA，其次是 DXVA2</td>
+      <td>VideoToolbox</td>
+      <td>VAAPI，其次是 VDPAU</td>
+    </tr>
+    <tr>
+      <td><a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPU 管线</a>需要</td>
+      <td>Windows 10 1909+</td>
+      <td>macOS 13+</td>
+      <td>基于 EGL 的 OBS，以及 VAAPI 驱动程序</td>
+    </tr>
+    <tr>
+      <td>GPU 管线上的 10 位</td>
+      <td>支持，格式为 P010</td>
+      <td>不支持：VideoToolbox 会自行转换为 8 位，因此 HDR 通过标准路径渲染</td>
+      <td>支持，格式为 P010</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+  其他一切，包括分辨率、编码格式、HDR 和 Apple Log 采集、绿幕、音画同步、远程启动、浏览器面板，都由手机或共享代码决定，在三个平台上表现一致。
+</p>
+
+<h2>更新</h2>
+<p>
+  在旧版本上直接运行新的插件安装程序，然后重启 OBS；App 通过 App Store 或 TestFlight 更新，或重新安装新的 <code>.ipa</code>。
+  两部分会协商协议版本，所以稍旧的 App 搭配较新的插件仍能正常工作。如果某个版本需要两端同时更新，其发行说明中会注明。
+</p>
+
+<h2>卸载</h2>
+<ul>
+  <li><strong>Windows：</strong>使用安装程序的卸载项，或删除 <code>obs-plugins\64bit\lenslink.dll</code> 和 <code>data\obs-plugins\lenslink\</code>。</li>
+  <li><strong>macOS：</strong>删除 <code>~/Library/Application Support/obs-studio/plugins/lenslink.plugin</code>。</li>
+  <li><strong>Linux：</strong>从 <code>~/.config/obs-studio/plugins/</code> 中删除解压出的文件。</li>
+  <li><strong>App：</strong>像平常一样删除即可。电脑上不会留下任何内容。</li>
+</ul>

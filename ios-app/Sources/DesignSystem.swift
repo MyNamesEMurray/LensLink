@@ -37,6 +37,11 @@ enum Theme {
     static let textPrimary = Color.white
     static let textSecondary = Color.white.opacity(0.6)
 
+    static let glassPanelSolid = Color.black.opacity(0.9)
+    static let glassChipSolid = Color(white: 0.22)
+    static let textSecondaryIncreased = Color.white.opacity(0.9)
+    static let hairlineStrong = Color.white.opacity(0.5)
+
     // Spacing scale
     enum Space {
         static let xs: CGFloat = 4
@@ -79,12 +84,28 @@ extension UIColor {
     }
 }
 
-/// A circular 44 pt glass control button (icon only). `active` fills it
+/// A circular 44 pt glass control button (icon only). `isOn` fills it
 /// with the accent colour (e.g. flashlight on).
 struct ControlButton: View {
+    let label: String
     let systemImage: String
-    var active = false
+    var isOn: Bool?
+    var highlighted: Bool
+    var destructive: Bool
+    var inputLabels: [String]
     let action: () -> Void
+
+    init(_ label: String, systemImage: String, isOn: Bool? = nil,
+         highlighted: Bool = false, destructive: Bool = false,
+         inputLabels: [String] = [], action: @escaping () -> Void) {
+        self.label = label
+        self.systemImage = systemImage
+        self.isOn = isOn
+        self.highlighted = highlighted
+        self.destructive = destructive
+        self.inputLabels = inputLabels
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -92,19 +113,93 @@ struct ControlButton: View {
                 .font(.system(size: 18, weight: .medium))
                 .foregroundColor(Theme.textPrimary)
                 .frame(width: Theme.controlButton, height: Theme.controlButton)
-                .background(active ? Theme.glassChipOn() : Theme.glassChip,
-                            in: Circle())
+                .glassBackground(Circle(), style: style)
+        }
+        .accessibilityLabel(label)
+        .accessibilityValue(stateValue)
+        .accessibilityInputLabels([label] + inputLabels)
+        .accessibilityShowsLargeContentViewer {
+            Label(label, systemImage: systemImage)
+        }
+    }
+
+    private var style: GlassStyle {
+        if destructive { return .solid(Theme.errorRed.opacity(0.9)) }
+        return (isOn ?? highlighted) ? .chipOn : .chip
+    }
+
+    private var stateValue: String {
+        guard let isOn else { return "" }
+        return isOn ? L("On") : L("Off")
+    }
+}
+
+enum GlassStyle {
+    case panel
+    case chip
+    case chipOn
+    case scrim(Double)
+    case solid(Color)
+}
+
+private struct GlassBackground<S: InsettableShape>: ViewModifier {
+    let shape: S
+    let style: GlassStyle
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        content
+            .background(fill, in: shape)
+            .overlay(shape.strokeBorder(Theme.hairlineStrong, lineWidth: 1)
+                        .opacity(contrast == .increased ? 1 : 0))
+    }
+
+    private var opaque: Bool { reduceTransparency || contrast == .increased }
+
+    private var fill: Color {
+        switch style {
+        case .panel: return opaque ? Theme.glassPanelSolid : Theme.glassPanel
+        case .chip: return opaque ? Theme.glassChipSolid : Theme.glassChip
+        case .chipOn: return opaque ? Theme.accent : Theme.glassChipOn()
+        case .scrim(let opacity):
+            return opaque ? Theme.glassPanelSolid : Color.black.opacity(opacity)
+        case .solid(let colour): return colour
         }
     }
 }
 
+private struct OnGlassText: ViewModifier {
+    let normal: Color
+    let increased: Color
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        content.foregroundColor(contrast == .increased ? increased : normal)
+    }
+}
+
 extension View {
+    func glassBackground<S: InsettableShape>(_ shape: S,
+                                             style: GlassStyle) -> some View {
+        modifier(GlassBackground(shape: shape, style: style))
+    }
+
+    func onGlassText(_ normal: Color,
+                     increased: Color = Theme.textPrimary) -> some View {
+        modifier(OnGlassText(normal: normal, increased: increased))
+    }
+
+    func secondaryOnGlass() -> some View {
+        onGlassText(Theme.textSecondary, increased: Theme.textSecondaryIncreased)
+    }
+
     /// Floating control panel: padding + translucent material + radius.
     func glassPanel() -> some View {
         self
             .padding(Theme.Space.l)
-            .background(Theme.glassPanel, in:
-                RoundedRectangle(cornerRadius: Theme.Radius.panel))
+            .glassBackground(RoundedRectangle(cornerRadius: Theme.Radius.panel),
+                             style: .panel)
     }
 
     /// Small pill used for the status chip.
@@ -112,6 +207,6 @@ extension View {
         self
             .padding(.horizontal, Theme.Space.m)
             .padding(.vertical, Theme.Space.s)
-            .background(Theme.glassPanel, in: Capsule())
+            .glassBackground(Capsule(), style: .panel)
     }
 }

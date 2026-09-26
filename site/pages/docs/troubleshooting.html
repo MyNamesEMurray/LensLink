@@ -52,13 +52,13 @@ data\obs-plugins\ios-camera-source\</code></pre>
 <p>
   Free Apple IDs expire sideloaded apps every 7 days. Re-install to refresh
   (settings are kept), or switch to the
-  <a href="{{TESTFLIGHT}}">TestFlight build</a>, which doesn't expire.
+  <a href="{{APPSTORE}}">App Store build</a>, which doesn't expire.
 </p>
 
 <h2>"Hey Siri, start streaming with LensLink" is not recognized (sideloaded only)</h2>
 <p>
   Re-signing rewrites the bundle ID, orphaning the compiled phrase data: Siri
-  refuses even though the same action works from Shortcuts. Use TestFlight, or a
+  refuses even though the same action works from Shortcuts. Use the App Store build, or a
   Shortcut with <code>lenslink://start</code>. Also check the app has launched
   once and that "Use with Siri" is on in <strong>Settings → Siri &amp; Search →
   LensLink</strong>.

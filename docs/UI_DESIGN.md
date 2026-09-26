@@ -91,8 +91,13 @@ touch resets the fuse, and it can't trigger while a sheet is open (the
 overlay would sit behind the sheet with its tap-to-wake unreachable).
 
 The status **word and colour are defined once** (`Streamer.Status.displayName`
-/ `.tint` in the app) and reused by every view; the web panel maps the
-plugin's status string to the same palette.
+/ `.tint` in the app) and reused by every view. The web panel colours its
+pill from the `tone` the plugin reports with every status in
+`/api/status` (`idle` grey, `wait` and `ready` amber, `live` green,
+`error` red), never from the status text, which is translated. A stream
+paused on the phone reports `ready`, and the moment between the TCP
+connect and the phone's HELLO reports `wait`, so the pill never flashes
+green before settling on standby.
 
 ### Tally (screen border)
 
@@ -273,14 +278,14 @@ surfaces.
 | Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
 | Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported |
 | White balance | web: segmented **AWB / Lock**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). Hidden if unsupported |
-| Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** In the app, in the tray's bottom row |
-| Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each back lens's magnification relative to Main, the active one in `cameraYellow` carrying the live zoom (`2.4×`) |
+| Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
+| Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one resets its zoom |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
 | Pause       | `pause.fill` / `play.fill`                 | Amber `glassChipOn` while paused; between the status pill and Stop |
 | Idle (app)  | `moon.fill` (Dim screen) / `eye.slash` (Clean feed) | App-only, an item in the status pill's menu; engages the chosen idle view now instead of waiting out the 10 s fuse. Absent in Standard |
 | Pulse (app) | `waveform.path`                            | App-only, in Options → Tally light: one glyph, `accent` when that status pulses and secondary when steady — the active-chip language, not a swapped icon |
-| Stats (app) | `gauge` / `checkmark`                      | App-only, an item in the status pill's menu; shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
+| Stats (app) | `gauge`, checked while on                  | App-only, a toggle in the status pill's menu (the menu's own checkmark, so VoiceOver hears the state); shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
 | Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen; while live **with depth assist**, a subject-distance control (0.5–5.0 m, readout `2.5 m` monospaced) appears: the **Subject** chip in the app's tray, a slider row on the web panel. Dragging always sets a real cutoff — full-left = tightest (0.5 m); **"All" (no cutoff)** is tapping the active Subject chip in the app and tapping the readout on the web, and while "All" the thumb parks at the far (5.0) end |
 
 ### The app icon (three appearances)
@@ -384,20 +389,22 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
 **The glance layer** — the whole screen for most of a stream:
 
 - **Top bar:** status pill (dot + word + a small `chevron.down`, left) ·
-  Pause · Stop (red). Glass chips. The pill is a **menu**: **Stats** (on/off,
-  `gauge` / `checkmark`) and, when an idle view is set, **Clean feed now** /
+  Pause · Stop (red). Glass chips. The pill is a **menu**: **Stats** (a
+  checkmark toggle) and, when an idle view is set, **Clean feed now** /
   **Dim screen now** — both are about the screen rather than the shot and
   earn no button of their own. With Stats on, a health pill (fps · Mb/s ·
   dropped) sits under the bar, leading-aligned.
 - **Notice row:** one row under the status bar for whatever needs saying
   — today the lip-sync readout. Nothing is drawn when there is nothing
   to say; never two pills stacked.
-- **Lens buttons** (bottom centre, back cameras only, as in the Camera
-  app): one round button per back lens labelled with its magnification
-  relative to Main (`.5`, `2`, `3`); the active one larger, in
-  `cameraYellow`, carrying the live zoom (`1×`, `2.4×`). Tapping switches
-  the physical lens. Hidden while the front camera is selected, and on
-  single-lens devices.
+- **Lens buttons** (bottom centre, as in the Camera app): one round
+  button per lens on the selected side, labelled with its magnification
+  relative to Main (`.5`, `2`, `3`); front lenses are measured against
+  the regular front camera instead (an iPad Pro's front ultra wide reads
+  about `.7`). The active one is larger, in `cameraYellow`, carrying the
+  live zoom (`1×`, `2.4×`). Tapping another switches the physical lens;
+  tapping the active one returns it to its own zoom (`1×` of that lens).
+  Hidden when the selected side has only one camera.
 - **Chevron** (`chevron.up` in a glass capsule) under the lens buttons
   opens the tray.
 - **Gestures:** pinch = zoom within the lens; **tap** = focus/expose at
@@ -544,10 +551,157 @@ Tools menu instead).
 - Sliders: track the finger live (no animation lag).
 - Status colour changes: cross-fade 200 ms.
 - Nothing loops or pulses; motion always encodes a real state change.
+- Reduce Motion takes out movement and keeps fades (§8).
 
 ---
 
-## 8. Reconciliation checklist (this revision)
+## 8. Accessibility
+
+The app declares Apple's Accessibility Nutrition Labels
+(`docs/APP_STORE.md` lists which, and the device checks behind each).
+That makes these design-system rules rather than extras: a control that
+breaks one breaks a claim on the store page.
+
+### Names and state
+
+- **Every icon-only control has a spoken name**, in the words the UI
+  already uses: "Flashlight", "Flip camera", "Stop camera", "Adjust
+  camera", "Close". `ControlButton` takes the name as a required
+  argument, so a glass chip can't be built without one.
+- **An on/off control also speaks its state**, as the value "On" or
+  "Off": the Flashlight, a tally row's pulse switch. One approach
+  everywhere. The *selected* trait means something else, "the chosen
+  one of several": the active lens button, the active dial chip, the
+  checked Format row.
+- A button whose label changes with its state (Pause / Resume) speaks
+  the label and no value.
+- **Voice Control names** (`accessibilityInputLabels`) put the spoken
+  name first, then the short words people actually say: "Stop", "Flip",
+  "Switch camera", "Adjust", "Wake", "Status", "Mirror". "Torch" and
+  "Light" are accepted for the Flashlight: an alias is what the user
+  says, not what we show, so "never Torch" (§5) still holds on screen.
+  Aliases are localized like any other string.
+- **Decorative images are hidden** where a word beside them already
+  says it: the computer glyph on the Setup card, row chevrons, the
+  dimmed screen's camera glyph. Transient echoes of a gesture (the
+  focus square, the drag readout) are hidden too. The dial's readout is
+  hidden in favour of the slider, which speaks the chip's name as its
+  label and the readout as its value.
+- The Mirror Screen button's name sits on the system broadcast picker's
+  own button, and our styled face under it is hidden, so VoiceOver
+  finds one button, not two.
+
+### Assistive technology suspends idle
+
+The idle view (§6.2) and the standby dim (§2) are fuses that touches
+reset, and VoiceOver and Switch Control produce no touches the fuse can
+see. While either runs (`AssistiveTech.suspendsIdle`, fed by iOS's
+status notifications) neither fuse burns. Turning one on while the
+screen is dimmed wakes it; turning it off restarts the fuse from zero
+instead of dimming at once. **Dim screen now** / **Clean feed now** in
+the status pill's menu still work on request: the wake hint is then a
+button, the clean feed's invisible tap catcher carries the same name,
+and "Wake" is the Voice Control name for both, because Voice Control
+has no running flag to suspend on.
+
+### Announcements and haptics
+
+Changes the operator would otherwise have to look for are spoken, only
+while VoiceOver runs, and queued behind whatever VoiceOver is already
+saying: going **Live** (also on regaining OBS, and on resume),
+**Paused**, an error (its own message), **Connection lost** mid-stream,
+**On air**, and **Sync locked**. The words are the existing vocabulary
+(`Status.displayName`, the tally statuses, the sync pill), never new
+phrasing. `Streamer` derives them from the state change itself,
+coalesced per run-loop turn: a status that passes through an
+intermediate state (an error that stops the stream) speaks only where
+it landed, and nothing fires because a view appeared again.
+
+Haptics are for everyone: a success tap on going Live (not on resume,
+which the operator just pressed), a warning when a running stream loses
+OBS or fails.
+
+### Differentiate Without Color
+
+Colour never carries meaning alone: every status dot sits beside its
+word, the sync dot beside its wording, and an auto chip wears a letter.
+With the setting on, the places that were colour-only gain words:
+
+- **The tally border** gets a badge naming the lit status ("On air",
+  "In preview", "Low battery"): trailing-aligned under the top bar,
+  stroked in the border's colour, and drawn above the dim overlay like
+  the border itself.
+- The dimmed battery readout adds "Low battery" under the percentage
+  whenever it is amber or red.
+- The tally list's pulse switch sits on an accent disc when on, instead
+  of only changing colour.
+
+### Reduce Transparency and Increase Contrast
+
+Glass over a bright picture can pull white text below a readable ratio.
+Both settings resolve in one place, `glassBackground(_:style:)` in
+`DesignSystem.swift`; no call site picks its own fill.
+
+| Token | Value | Replaces | When |
+|---|---|---|---|
+| `glassPanelSolid` | black @ 90% | `glassPanel`, the lens buttons' scrim | Reduce Transparency or Increase Contrast |
+| `glassChipSolid` | `#383838`, opaque | `glassChip` | Reduce Transparency or Increase Contrast |
+| *(accent)* | `accent` @ 100% | `glassChipOn` | Reduce Transparency or Increase Contrast |
+| `textSecondaryIncreased` | white @ 90% | `textSecondary`; the 80 to 85% chip and lens text goes to full white | Increase Contrast |
+| `hairlineStrong` | white @ 50%, 1 pt | no edge | Increase Contrast: every glass surface gets an edge |
+
+The Setup screen is a native grouped form and gets both settings from
+iOS. The web panel follows the same rules through `prefers-contrast:
+more` and `prefers-reduced-transparency: reduce`.
+
+### Larger Text
+
+Native forms (Setup, Options, Format, Tally light, Documentation)
+follow Dynamic Type all the way. At accessibility sizes the Setup
+card stacks Start or the phone's address under the computer's name
+instead of squeezing both into one row. The Live screen is an overlay
+on a picture and can't grow without limit: its text uses text styles
+clamped at `accessibility2` (twice the default footnote), and the
+controls that stay a fixed size (glass buttons, dial chips, lens
+buttons, the status, sync and health pills) show the **large content
+viewer** on a long press, with the name VoiceOver reads. Text over the
+picture uses text styles; `.system(size:)` stays for control glyphs
+and the deliberately huge battery readout.
+
+### Reduce Motion
+
+Motion that moves things goes: the tray and the idle view switch
+without animated layout, the focus square lands without its scale-in,
+and every tally pulse holds steady (§2). Fades and colour changes stay;
+they are not the motion the setting is about. The web panel drops its
+dot transition under `prefers-reduced-motion`.
+
+### Web panel
+
+Screen-reader basics, in the same vocabulary:
+
+- Icon-only buttons, sliders and selects without a visible label get
+  `aria-label` from the tooltip key they carry: `data-t-title` sets
+  both. An element with visible text keeps its text as its name, and
+  the tooltip becomes its description. ISO and Shutter are labelled by
+  their visible row labels.
+- Toggles and segmented buttons expose `aria-pressed`, kept in step by
+  the same functions that set their `on` class, so the two never
+  disagree. Source tabs too.
+- Sliders whose raw value means nothing (the shutter's log position,
+  subject distance, zoom, colour temperature) carry the readout as
+  `aria-valuetext`. The subject readout is a keyboard-reachable button.
+- Decorative SVGs are `aria-hidden`.
+- The status pill is not itself a live region: its text carries a
+  latency figure that changes every few seconds. A visually hidden
+  `role=status` region speaks the status only when its tone changes
+  (or a different error arrives); the sync wording is a polite live
+  region of its own. Text is only ever rewritten when it changed, so a
+  poll never re-announces.
+
+---
+
+## 9. Reconciliation checklist (this revision)
 
 - [x] Status **word** unified via `Status.displayName` (was two different
       strings for connecting across Setup vs Live).
