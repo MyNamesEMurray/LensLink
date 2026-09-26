@@ -1,0 +1,20 @@
+/* Siri phrase that starts the camera stream; keep ${applicationName} (the app name) */
+"Start streaming with ${applicationName}" = "Starte den Stream mit ${applicationName}";
+
+/* Siri phrase that starts the camera stream; keep ${applicationName} (the app name) */
+"Start the ${applicationName} camera" = "Starte die Kamera in ${applicationName}";
+
+/* Siri phrase that starts the camera stream; keep ${applicationName} (the app name) */
+"Start streaming to OBS with ${applicationName}" = "Starte den Stream zu OBS mit ${applicationName}";
+
+/* Siri phrase that starts the camera stream; keep ${applicationName} (the app name) */
+"Start ${applicationName}" = "Starte ${applicationName}";
+
+/* Siri phrase that stops the camera stream; keep ${applicationName} (the app name) */
+"Stop streaming with ${applicationName}" = "Beende den Stream mit ${applicationName}";
+
+/* Siri phrase that stops the camera stream; keep ${applicationName} (the app name) */
+"Stop the ${applicationName} camera" = "Stoppe die Kamera in ${applicationName}";
+
+/* Siri phrase that stops the camera stream; keep ${applicationName} (the app name) */
+"Stop ${applicationName}" = "Stoppe ${applicationName}";

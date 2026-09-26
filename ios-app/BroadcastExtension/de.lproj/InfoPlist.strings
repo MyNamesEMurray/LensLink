@@ -1,0 +1,2 @@
+/* Local Network permission prompt for the screen broadcast */
+"NSLocalNetworkUsageDescription" = "LensLink sendet deinen Bildschirm an OBS Studio in deinem lokalen Netzwerk.";

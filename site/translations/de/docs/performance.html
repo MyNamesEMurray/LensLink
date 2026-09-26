@@ -1,11 +1,11 @@
 title: Latenz und Leistung
-description: Woraus sich die Latenz von LensLink zusammensetzt, wie du sie misst, wie du sie senkst und was die GPU-Decodier-Pipeline ändert.
+description: Woraus sich die Latenz von LensLink zusammensetzt, wie du sie misst, wie du sie senkst und was die GPU-Dekodier-Pipeline ändert.
 source: c872f7d4c756
 ---
 <h1>Latenz und Leistung</h1>
 <p class="lede">
   Rund <strong>60 ms</strong> von der Kamera bis OBS über USB, bei 1080p wie bei
-  4K; über Wi-Fi ist es mehr und schwankt stärker. Der Wert wird laufend
+  4K; über WLAN ist es mehr und schwankt stärker. Der Wert wird laufend
   gemessen, nicht geschätzt, und im Statusfeld, in der Statusleiste und im Log
   angezeigt.
 </p>
@@ -15,18 +15,18 @@ source: c872f7d4c756
   <thead><tr><th>Stufe</th><th>Ungefähr</th><th>Hinweise</th></tr></thead>
   <tbody>
     <tr><td>Aufnahme und Belichtung</td><td>Ein Bild</td><td>Hellere Szenen werden schneller belichtet, und das macht sich hier bemerkbar.</td></tr>
-    <tr><td>Hardware-Codierung</td><td>Wenige ms</td><td>VideoToolbox. Nichts einzustellen.</td></tr>
-    <tr><td>Die Verbindung</td><td>USB: gering, stabil. Wi-Fi: schwankend</td><td>Die Stufe, die ein gutes Setup von einem frustrierenden unterscheidet.</td></tr>
-    <tr><td>Decodierung</td><td>Wenige ms</td><td>Standardmäßig auf der GPU, automatischer Rückfall auf Software.</td></tr>
+    <tr><td>Hardware-Kodierung</td><td>Wenige ms</td><td>VideoToolbox. Nichts einzustellen.</td></tr>
+    <tr><td>Die Verbindung</td><td>USB: gering, stabil. WLAN: schwankend</td><td>Die Stufe, die ein gutes Setup von einem frustrierenden unterscheidet.</td></tr>
+    <tr><td>Dekodierung</td><td>Wenige ms</td><td>Standardmäßig auf der GPU, automatischer Rückfall auf Software.</td></tr>
     <tr><td>In deine Szene</td><td>Unter einer Millisekunde mit der GPU-Pipeline</td><td>Sonst eine Kopie aus dem GPU-Speicher heraus und wieder zurück.</td></tr>
   </tbody>
 </table>
 
 <h2>Sie senken</h2>
 <ol>
-  <li><strong>Nutze USB.</strong> Am gleichmäßigsten, unempfindlich gegen überlastetes Wi-Fi, und es lädt das Smartphone.</li>
+  <li><strong>Nutze USB.</strong> Am gleichmäßigsten, unempfindlich gegen überlastetes WLAN, und es lädt das Smartphone.</li>
   <li><strong>Leuchte die Szene aus.</strong> Ein dunkler Raum verlängert die Belichtung, und das geht direkt vom Latenzbudget ab.</li>
-  <li><strong>Lass die Standardwerte an.</strong> Modus für niedrige Latenz und Hardware-Decodierung sind beide ab Werk aktiviert.</li>
+  <li><strong>Lass die Standardwerte an.</strong> Modus für niedrige Latenz und Hardware-Dekodierung sind beide ab Werk aktiviert.</li>
   <li><strong>Übertreib es nicht.</strong> Wenn die Aufnahme ein sprechender Kopf ist, der in deiner Szene 1000 px breit ist, ist 1080p kein Kompromiss.</li>
   <li><strong>Nutze das Teleobjektiv statt starkem Digitalzoom.</strong> Gezoomtes, verrauschtes Video lässt sich schlecht komprimieren, was sich als Spitzen bei Bitrate und Latenz zeigt.</li>
 </ol>
@@ -42,7 +42,7 @@ source: c872f7d4c756
   <li><strong>OBS-Statusleiste:</strong> <code>LensLink: iPhone 60 fps · 11.9 Mb/s · 43 ms</code>, ein Eintrag pro aktiver Quelle.</li>
   <li><strong>Das LensLink-Dock</strong> (<strong>Ansicht → Docks</strong>): eine Zeile pro Quelle.</li>
   <li><strong>Auf dem Smartphone:</strong> <strong>Statistik</strong> im Statusmenü des Live-Bildschirms zeigt dieselbe Zeile. Mit <strong>Sauberes Bild</strong> als Ruheansicht bleibt sie absichtlich sichtbar, wenn die Bedienelemente ausgeblendet werden.</li>
-  <li><strong>Das Statusfeld</strong> zeigt bei bestehender Verbindung die gemessene Latenz von der Aufnahme bis zur Decodierung.</li>
+  <li><strong>Das Statusfeld</strong> zeigt bei bestehender Verbindung die gemessene Latenz von der Aufnahme bis zur Dekodierung.</li>
 </ul>
 <p>
   Der Wert ist echt: Ein Abgleich des Uhrversatzes nach Art von NTP läuft einmal
@@ -50,9 +50,9 @@ source: c872f7d4c756
   möglich.
 </p>
 
-<h2>Die GPU-Decodier-Pipeline (Beta)</h2>
+<h2>Die GPU-Dekodier-Pipeline (Beta)</h2>
 <p>
-  Normalerweise wird jedes decodierte Bild von der GPU in den Arbeitsspeicher
+  Normalerweise wird jedes dekodierte Bild von der GPU in den Arbeitsspeicher
   heruntergeladen, an OBS übergeben und fürs Compositing sofort wieder
   hochgeladen – bei 4K60 etwa 2 GB/s an Pixeln, für nichts. Die Beta-Pipeline
   übergibt OBS das Bild als Textur und spart sich den Umweg.
@@ -65,7 +65,7 @@ source: c872f7d4c756
 <h3>Messergebnisse</h3>
 <p>
   Zwölf Konfigurationen, jeweils ca. 25 s Live-Video, derselbe PC und dasselbe
-  Smartphone über Wi-Fi. Die Pixelkopien lagen bei jedem Lauf mit der
+  Smartphone über WLAN. Die Pixelkopien lagen bei jedem Lauf mit der
   GPU-Pipeline bei 0,00 MB/s.
 </p>
 <table>
@@ -94,7 +94,7 @@ source: c872f7d4c756
     <tr><td>Windows</td><td>Jedes von OBS 32 unterstützte System (Windows 10 1909+), über gemeinsam genutzte D3D11-Texturen.</td></tr>
     <tr><td>macOS</td><td>Jedes von OBS 32 unterstützte System (macOS 13+), über IOSurface. Die Ausnahme sind 10-Bit-Streams: VideoToolbox wandelt sie selbst in 8 Bit um, deshalb werden HDR und Apple Log über den Standardpfad gerendert statt über diesen.</td></tr>
     <tr><td>Linux</td><td>Braucht OBS auf <strong>EGL</strong> (Standard unter Wayland und in aktuellen X11-Builds) und einen <strong>VAAPI</strong>-Treiber – in Mesa für Intel und AMD bereits enthalten; NVIDIA braucht <code>nvidia-vaapi-driver</code>.</td></tr>
-    <tr><td>Mehrere GPUs</td><td>Laufen Decodierung und Rendering auf verschiedenen GPUs, lassen sich keine Texturen teilen; die Quelle fällt automatisch zurück.</td></tr>
+    <tr><td>Mehrere GPUs</td><td>Laufen Dekodierung und Rendering auf verschiedenen GPUs, lassen sich keine Texturen teilen; die Quelle fällt automatisch zurück.</td></tr>
   </tbody>
 </table>
 <p>
@@ -104,7 +104,7 @@ source: c872f7d4c756
 
 <h3>Spielt der GPU-Hersteller eine Rolle?</h3>
 <p>
-  Eine kleinere als das Betriebssystem. Die Decodierung ist auf jeder modernen
+  Eine kleinere als das Betriebssystem. Die Dekodierung ist auf jeder modernen
   GPU ein fest verdrahteter Funktionsblock, und das Plugin spricht ihn über die
   plattformeigene API an statt über etwas Herstellerspezifisches.
 </p>
@@ -114,15 +114,15 @@ source: c872f7d4c756
     <tr><td>macOS</td><td>VideoToolbox, auf Apple Silicon wie auf Intel-Macs.</td></tr>
     <tr><td>Linux, Intel oder AMD</td><td>VAAPI ist bereits in Mesa enthalten – nichts zu installieren.</td></tr>
     <tr><td>Linux, NVIDIA</td><td>Braucht <code>nvidia-vaapi-driver</code>; VDPAU ist der Rückfall. Das ist die einzige Stelle, an der der Hersteller entscheidet, ob die GPU-Pipeline überhaupt greift.</td></tr>
-    <tr><td>Laptops mit zwei GPUs</td><td>Landet die Decodierung auf der einen und OBS rendert auf der anderen, lassen sich keine Texturen teilen, und die Quelle fällt von selbst zurück.</td></tr>
+    <tr><td>Laptops mit zwei GPUs</td><td>Landet die Dekodierung auf der einen und OBS rendert auf der anderen, lassen sich keine Texturen teilen, und die Quelle fällt von selbst zurück.</td></tr>
     <tr><td>Ältere GPUs</td><td>Eine GPU ohne HEVC-Main10-Decoder fällt bei 10-Bit-Streams auf Software zurück; 8 Bit ist nicht betroffen.</td></tr>
   </tbody>
 </table>
 <div class="callout">
-  <p><strong>Mehrere Smartphones gleichzeitig sind eine Decodier-, keine
-  Codierlast.</strong> NVIDIAs Grenze für gleichzeitige NVENC-Sitzungen greift
-  nicht – hier wird nichts auf dem Computer codiert. Was dich begrenzt, sind
-  Decodierdurchsatz und Speicherbandbreite, und genau die spart die
+  <p><strong>Mehrere Smartphones gleichzeitig sind eine Dekodier-, keine
+  Kodierlast.</strong> NVIDIAs Grenze für gleichzeitige NVENC-Sitzungen greift
+  nicht – hier wird nichts auf dem Computer kodiert. Was dich begrenzt, sind
+  Dekodierdurchsatz und Speicherbandbreite, und genau die spart die
   GPU-Pipeline.</p>
 </div>
 <p>

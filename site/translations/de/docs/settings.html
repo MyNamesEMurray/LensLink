@@ -15,12 +15,12 @@ source: 1afb7c72d111
   <thead><tr><th>Eigenschaft</th><th>Funktion</th></tr></thead>
   <tbody>
     <tr><td>Status</td><td>Nur lesbar: die aktuelle Phase, bei bestehender Verbindung dazu Gerät, Format und gemessene Latenz. <a href="/docs/connect/#reading-the-status-field">Statustabelle</a>.</td></tr>
-    <tr><td>Verbindung</td><td><strong>Wi-Fi – IP des Smartphones eingeben</strong> oder <strong>USB-Kabel</strong>.</td></tr>
-    <tr><td>Telefon</td><td>Nur Wi-Fi. Wähle ein Smartphone nach Namen oder tippe seine IP ein.</td></tr>
+    <tr><td>Verbindung</td><td><strong>WLAN – IP des Smartphones eingeben</strong> oder <strong>USB-Kabel</strong>.</td></tr>
+    <tr><td>Telefon</td><td>Nur WLAN. Wähle ein Smartphone nach Namen oder tippe seine IP ein.</td></tr>
     <tr><td>USB-Gerät</td><td>Nur USB. <strong>Auto</strong> oder ein bestimmtes Gerät, damit immer dasselbe Smartphone diese Quelle beliefert.</td></tr>
     <tr><td>Modus für niedrige Latenz</td><td>Das neueste Bild sofort rendern, statt zu glätten. Standardmäßig an.</td></tr>
-    <tr><td>Hardware-Decodierung (GPU)</td><td>Auf der GPU decodieren, mit automatischem Rückfall auf Software. Standardmäßig an.</td></tr>
-    <tr><td>Trennen, wenn diese Quelle nirgends angezeigt wird</td><td>Ausgeblendet (Auge aus oder in keiner sichtbaren Szene, Vorschau oder keinem Projektor) heißt getrennt, sodass das Smartphone nicht mehr codiert – das spart Akku und macht es für eine andere Quelle frei. Verbindet sich wieder, sobald die Quelle angezeigt wird; mit aktivem Autostart stoppt und startet es auch die Kamera.</td></tr>
+    <tr><td>Hardware-Dekodierung (GPU)</td><td>Auf der GPU dekodieren, mit automatischem Rückfall auf Software. Standardmäßig an.</td></tr>
+    <tr><td>Trennen, wenn diese Quelle nirgends angezeigt wird</td><td>Ausgeblendet (Auge aus oder in keiner sichtbaren Szene, Vorschau oder keinem Projektor) heißt getrennt, sodass das Smartphone nicht mehr kodiert – das spart Akku und macht es für eine andere Quelle frei. Verbindet sich wieder, sobald die Quelle angezeigt wird; mit aktivem Autostart stoppt und startet es auch die Kamera.</td></tr>
     <tr><td>Kamera des Smartphones automatisch starten, sobald es bereit ist</td><td>Fernstart, wenn die App geöffnet und im Leerlauf ist. Standardmäßig an.</td></tr>
     <tr><td>Kamera auf dem Smartphone starten / stoppen</td><td>Schaltflächen: sofort ausführen, einmalig.</td></tr>
     <tr><td>Stream pausieren / fortsetzen</td><td>Schaltflächen. Pausieren hält den Stream an – das Smartphone bleibt verbunden, OBS zeigt ein unscharfes Standbild mit Pause-Symbol –, und Fortsetzen kehrt zum Live-Bild zurück. Auch auf dem Live-Bildschirm des Smartphones und im Browser-Steuerfeld.</td></tr>
@@ -33,7 +33,7 @@ source: 1afb7c72d111
 </table>
 <p>
   Eine Quelle <strong>LensLink Screen</strong> hat nur die Eigenschaften für
-  Verbindung, Decodierung und Diagnose.
+  Verbindung, Dekodierung und Diagnose.
 </p>
 
 <h2>Plugin-Einstellungen (Werkzeuge → LensLink-Einstellungen)</h2>
@@ -41,11 +41,11 @@ source: 1afb7c72d111
 <table>
   <thead><tr><th>Einstellung</th><th>Funktion</th></tr></thead>
   <tbody>
-    <tr><td>GPU-Decodier-Pipeline (Beta)</td><td>Hält das decodierte Video auf der Grafikkarte. Gilt für alle Quellen, <strong>nach einem Neustart von OBS</strong>; fällt pro Quelle zurück, wo Texturen nicht geteilt werden können. <a href="/docs/performance/#the-gpu-decode-pipeline-beta">Details</a>.</td></tr>
+    <tr><td>GPU-Dekodier-Pipeline (Beta)</td><td>Hält das dekodierte Video auf der Grafikkarte. Gilt für alle Quellen, <strong>nach einem Neustart von OBS</strong>; fällt pro Quelle zurück, wo Texturen nicht geteilt werden können. <a href="/docs/performance/#the-gpu-decode-pipeline-beta">Details</a>.</td></tr>
     <tr><td>Browser-Steuerfeld</td><td>Stellt das <a href="/docs/web-panel/">Steuerfeld</a> über Loopback bereit. Standardmäßig an.</td></tr>
     <tr><td>Port des Steuerfelds</td><td>Standard <code>9980</code>.</td></tr>
     <tr><td>Ausführliche Diagnose im OBS-Log</td><td>Deutlich mehr Details pro Verbindung. An, um einen Fehler zu reproduzieren, danach wieder aus.</td></tr>
-    <tr><td>Empfangenes Video auf die Festplatte schreiben</td><td>Speichert den Rohstream, damit sich ein Decodierproblem ohne das Gerät reproduzieren lässt.</td></tr>
+    <tr><td>Empfangenes Video auf die Festplatte schreiben</td><td>Speichert den Rohstream, damit sich ein Dekodierproblem ohne das Gerät reproduzieren lässt.</td></tr>
     <tr><td>Diagnosebericht kopieren</td><td>Legt Versionen, Hardware, Einstellungen und den Verbindungszustand jeder Quelle in die Zwischenablage – und ins OBS-Log – für einen Fehlerbericht. Kein Video, kein Ton, keine persönlichen Daten.</td></tr>
     <tr><td>Pipeline-Benchmark aufzeichnen</td><td>Alle 5 Sekunden eine Zusammenfassung im Log und pro Sekunde ein CSV-Messwert im Konfigurationsordner des Plugins.</td></tr>
   </tbody>

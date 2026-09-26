@@ -1,5 +1,5 @@
 title: LensLink – dein iPhone als Kamera in OBS Studio
-description: LensLink macht ein iPhone oder iPad zu einer hochwertigen Kameraquelle in OBS Studio, über Wi-Fi oder USB. Bis zu 4K60 in H.264 oder HEVC, Kamerasteuerung in Echtzeit, automatische Lippensynchronität. Kostenlos und Open Source.
+description: LensLink macht ein iPhone oder iPad zu einer hochwertigen Kameraquelle in OBS Studio, über WLAN oder USB. Bis zu 4K60 in H.264 oder HEVC, Kamerasteuerung in Echtzeit, automatische Lippensynchronität. Kostenlos und Open Source.
 nav: home
 source: d5c6fc00fbbc
 ---
@@ -10,7 +10,7 @@ source: d5c6fc00fbbc
       <h1>Dein iPhone ist längst die beste Kamera, die du hast. <em>Hol sie in OBS.</em></h1>
       <p class="lede">
         Zwei OBS-Quellen – eine Kamera und eine Bildschirmspiegelung – direkt mit
-        deinem iPhone oder iPad verbunden, über Wi-Fi oder USB. Kein Treiber für
+        deinem iPhone oder iPad verbunden, über WLAN oder USB. Kein Treiber für
         eine virtuelle Kamera, kein RTMP-Server, kein Abo.
       </p>
       <div class="cta">
@@ -36,13 +36,13 @@ source: d5c6fc00fbbc
             <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span>
             <span class="chip stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
             </div>
-            <span class="pill health">60 fps · 11.9 Mb/s · 0 verworfen</span>
+            <span class="pill health">60 fps · 11.9 Mb/s · verworfen: 0</span>
           </div>
           <div class="panelmock">
             <div class="chiprow">
               <span class="chp">Zoom</span>
-              <span class="chp on">Belichtung</span>
-              <span class="chp">Verschluss<i>A</i></span>
+              <span class="chp on">Belicht.</span>
+              <span class="chp">Verschl.<i>A</i></span>
               <span class="chp">WA<i>A</i></span>
               <span class="chp">Fokus<i>A</i></span>
             </div>
@@ -109,8 +109,8 @@ source: d5c6fc00fbbc
       </div>
       <div>
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/><path d="M2 9a15 15 0 0 1 20 0"/></svg>
-        <h3>Wi-Fi oder USB</h3>
-        <p>USB braucht kein Netzwerk, hält die Latenz am stabilsten und lädt das Smartphone beim Streamen. Mit Wi-Fi fällt das Kabel weg.</p>
+        <h3>WLAN oder USB</h3>
+        <p>USB braucht kein Netzwerk, hält die Latenz am stabilsten und lädt das Smartphone beim Streamen. Mit WLAN fällt das Kabel weg.</p>
       </div>
       <div>
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
@@ -161,7 +161,7 @@ source: d5c6fc00fbbc
         <p>Haupt, Ultraweitwinkel, Tele, Frontkamera – mitten im Stream umgeschaltet, ohne dass die OBS-Quelle abbricht.</p>
       </div>
       <div>
-        <h3>GPU-Dekodierpipeline (Beta)</h3>
+        <h3>GPU-Dekodier-Pipeline (Beta)</h3>
         <p>Dekodiertes Video bleibt auf der Grafikkarte, statt den Umweg über den Arbeitsspeicher zu nehmen. Weniger CPU-Last und Latenz, vor allem bei 4K.</p>
       </div>
       <div>
@@ -181,8 +181,8 @@ source: d5c6fc00fbbc
     <table class="spec">
       <tbody>
         <tr><td>Video</td><td>Bis zu <span class="num">3840×2160</span> mit <span class="num">60 fps</span>, H.264 oder HEVC. HDR (HLG) und Apple Log als Beta.</td></tr>
-        <tr><td>Latenz</td><td>Etwa <span class="num">60 ms</span> über USB bei 1080p oder 4K. Über Wi-Fi höher und schwankender.</td></tr>
-        <tr><td>Übertragung</td><td>USB oder lokales Wi-Fi. Eine TCP-Verbindung, keine Weiterleitung über die Cloud.</td></tr>
+        <tr><td>Latenz</td><td>Etwa <span class="num">60 ms</span> über USB bei 1080p oder 4K. Über WLAN höher und schwankender.</td></tr>
+        <tr><td>Übertragung</td><td>USB oder lokales WLAN. Eine TCP-Verbindung, keine Weiterleitung über die Cloud.</td></tr>
         <tr><td>Audio</td><td>Optional das Mikrofon des Smartphones als Ton der Quelle, eine Zeitreferenz für die Lippensynchronität oder bei der Bildschirmspiegelung der Systemton.</td></tr>
         <tr><td>Computer</td><td>OBS Studio 32+ unter Windows, macOS oder Linux. USB unter Windows braucht iTunes für Apples Treiber.</td></tr>
         <tr><td>Smartphone</td><td>iPhone oder iPad mit iOS/iPadOS 15+.</td></tr>
@@ -202,7 +202,7 @@ source: d5c6fc00fbbc
     </div>
     <ul class="doccards">
       <li><a href="/docs/install/"><strong>Installation</strong><span>Plugin und App, für jede Plattform, auch aus dem Quellcode.</span></a></li>
-      <li><a href="/docs/connect/"><strong>Verbinden</strong><span>Wi-Fi, USB, mehrere Smartphones und jede Statusmeldung erklärt.</span></a></li>
+      <li><a href="/docs/connect/"><strong>Verbinden</strong><span>WLAN, USB, mehrere Smartphones und jede Statusmeldung erklärt.</span></a></li>
       <li><a href="/docs/camera/"><strong>Kamera und Bild</strong><span>Objektive, Formate, manuelle Belichtung, HDR, Apple Log, Greenscreen, gespeicherte Einstellungen.</span></a></li>
       <li><a href="/docs/troubleshooting/"><strong>Fehlerbehebung</strong><span>Symptom für Symptom, mit den Logzeilen, die du prüfen solltest.</span></a></li>
     </ul>

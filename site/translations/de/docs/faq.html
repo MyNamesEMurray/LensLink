@@ -1,6 +1,6 @@
 title: Häufige Fragen
 description: Kosten, Datenschutz, unterstützte Geräte, Android, Nutzung als virtuelle Kamera, Akku und wie sich LensLink mit einer Capture-Karte oder einer USB-Webcam vergleicht.
-source: 11108b31c9b2
+source: de29eb0c21eb
 ---
 <h1>Häufige Fragen</h1>
 
@@ -16,7 +16,7 @@ source: 11108b31c9b2
   Nein. Das Plugin wählt das Smartphone direkt über dein Netzwerk oder das Kabel
   an – kein Relay, kein Cloud-Dienst, keine Telemetrie. Der Stream ist
   unverschlüsselt, er ist also für vertrauenswürdige Netzwerke zu Hause und im
-  Studio gedacht, nicht für öffentliches Wi-Fi, das du mit anderen teilst.
+  Studio gedacht, nicht für öffentliches WLAN, das du mit anderen teilst.
 </p>
 
 <h2>Welche Geräte funktionieren?</h2>
@@ -33,10 +33,10 @@ source: 11108b31c9b2
   Übertragungsprotokoll mit ihr teilt.
 </p>
 
-<h2>Wi-Fi oder USB – was soll ich nehmen?</h2>
+<h2>WLAN oder USB – was soll ich nehmen?</h2>
 <p>
   USB, wann immer das Kabel nicht stört: kein Netzwerk, die stabilste Latenz,
-  unempfindlich gegen Überlastung, und es lädt das Smartphone. Wi-Fi ist für
+  unempfindlich gegen Überlastung, und es lädt das Smartphone. WLAN ist für
   Fälle gedacht, in denen das Smartphone an einem Ort stehen muss, den kein
   Kabel erreicht.
 </p>
@@ -53,7 +53,7 @@ source: 11108b31c9b2
 <p>
   So viele, wie dein Rechner dekodieren kann. Eine Quelle pro Smartphone, jede
   unabhängig verbunden, gesteuert und überwacht. Mit der
-  <a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPU-Dekodierpipeline</a>
+  <a href="/docs/performance/#the-gpu-decode-pipeline-beta">GPU-Dekodier-Pipeline</a>
   laufen auch mehrere 4K-Quellen entspannt.
 </p>
 
@@ -110,6 +110,20 @@ source: 11108b31c9b2
   Ja – mit dem <a href="/docs/web-panel/">Browser-Steuerfeld</a> unter
   <code>localhost:9980</code> und mit derselben HTTP-API dahinter, für Stream
   Decks und Skripte.
+</p>
+
+<h2>Funktioniert es mit VoiceOver und anderen Bedienungshilfen?</h2>
+<p>
+  Ja. Jedes Bedienelement der App hat einen gesprochenen Namen für VoiceOver und
+  die Sprachsteuerung, und VoiceOver sagt an, wenn der Stream live geht,
+  pausiert, auf Sendung geht oder die Verbindung zu OBS verliert. Solange
+  VoiceOver oder die Schaltersteuerung aktiv ist, dunkelt der Live-Bildschirm nie
+  von selbst ab und blendet seine Bedienelemente nie von selbst aus. Die App
+  berücksichtigt „Größerer Text“, „Bewegung reduzieren“, „Transparenz
+  reduzieren“, „Kontrast erhöhen“ und „Ohne Farben unterscheiden“, das den Namen
+  des Tally-Status neben dem farbigen Rahmen einblendet. Auch das
+  <a href="/docs/web-panel/">Browser-Steuerfeld</a> beschriftet seine
+  Bedienelemente für Screenreader.
 </p>
 
 <h2>Wie melde ich einen Fehler oder schlage eine Funktion vor?</h2>

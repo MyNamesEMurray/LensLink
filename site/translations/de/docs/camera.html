@@ -4,7 +4,7 @@ source: 32ffbd58274b
 ---
 <h1>Kamera, Objektive und Bild</h1>
 <p class="lede">
-  Das Bild entsteht auf dem Smartphone, vor der Codierung. Das Plugin decodiert,
+  Das Bild entsteht auf dem Smartphone, vor der Kodierung. Das Plugin dekodiert,
   was es bekommt, und verändert nichts.
 </p>
 
@@ -21,13 +21,13 @@ source: 32ffbd58274b
     <tr><td>Objektiv</td><td>Haupt, Ultraweitwinkel, Tele oder Frontkamera. Während des Streams umschaltbar.</td></tr>
     <tr><td>Auflösung</td><td>Bis zu 3840×2160. Höher ist nicht automatisch besser: Für die meisten Talking-Head-Aufnahmen ist 1080p60 besser als 4K30.</td></tr>
     <tr><td>Bildrate</td><td>30 oder 60. Passe sie an deine OBS-Leinwand an. <strong>Optionen → Hohe Bildrate</strong> (experimentell) ergänzt 120 und 240, wo die Kamera sie bietet.</td></tr>
-    <tr><td>Codec</td><td>HEVC sieht genauso aus wie H.264, braucht aber rund 40 % weniger Daten. Nutze es, außer dein OBS-Build kann es nicht decodieren.</td></tr>
-    <tr><td>Qualität</td><td><strong>Ausgewogen</strong> streamt mit einer Bitrate, die in gewöhnlichem Wi-Fi sicher ist. <strong>Maximal</strong> tastet sich weiter nach oben, solange die Verbindung sauber bleibt, bis etwa zum Sechsfachen davon über USB und zum Vierfachen über Wi-Fi, und pendelt sich knapp unter dem ein, was die Verbindung trägt. Außerdem stellt es den Encoder auf qualitätsorientierte Einstellungen um und streamt mit dem vollen Sensorauslesebereich. Mehr Daten und mehr Wärme; dafür ist USB der richtige Ort.</td></tr>
+    <tr><td>Codec</td><td>HEVC sieht genauso aus wie H.264, braucht aber rund 40 % weniger Daten. Nutze es, außer dein OBS-Build kann es nicht dekodieren.</td></tr>
+    <tr><td>Qualität</td><td><strong>Ausgewogen</strong> streamt mit einer Bitrate, die in gewöhnlichem WLAN sicher ist. <strong>Maximal</strong> tastet sich weiter nach oben, solange die Verbindung sauber bleibt, bis etwa zum Sechsfachen davon über USB und zum Vierfachen über WLAN, und pendelt sich knapp unter dem ein, was die Verbindung trägt. Außerdem stellt es den Encoder auf qualitätsorientierte Einstellungen um und streamt mit dem vollen Sensorauslesebereich. Mehr Daten und mehr Wärme; dafür ist USB der richtige Ort.</td></tr>
   </tbody>
 </table>
 <div class="callout">
   <p>Wenn die Quelle <em>„Verbunden, aber dieser OBS-Build kann den Stream nicht
-  decodieren“</em> meldet, fehlt diesem Build ein HEVC-Decoder. Stell die App
+  dekodieren“</em> meldet, fehlt diesem Build ein HEVC-Decoder. Stell die App
   auf H.264 um; sonst ändert sich nichts.</p>
 </div>
 
@@ -61,7 +61,7 @@ source: 32ffbd58274b
 <table>
   <thead><tr><th>Bedienelement</th><th>Funktion</th></tr></thead>
   <tbody>
-    <tr><td>Zoom</td><td>1× bis zum Maximum des Objektivs. Auf dem Live-Bildschirm mit zwei Fingern zoomen, eine Objektivtaste antippen oder den Zoom-Chip bzw. den Schieberegler im Steuerfeld nutzen.</td></tr>
+    <tr><td>Zoom</td><td>1× bis zum Maximum des Objektivs. Auf dem Live-Bildschirm mit zwei Fingern zoomen, auf eine Objektivtaste tippen oder den Zoom-Chip bzw. den Schieberegler im Steuerfeld nutzen.</td></tr>
     <tr><td>Belichtung</td><td>Im Automatikmodus ein Regler für die Belichtungskorrektur (auf dem Smartphone über das Bild wischen). Bewege <strong>Verschluss</strong>, um die Belichtung manuell zu steuern – der Belichtungs-Chip wird dann zu <strong>ISO</strong> –, oder wähle im Steuerfeld <strong>Manuell</strong>. Bei Kameras ohne diese Möglichkeit ist Manuell ausgeblendet.</td></tr>
     <tr><td>Fokus</td><td>Automatisch oder gesperrt mit einem Regler von nah bis fern. Im Automatikmodus folgt die Kamera Gesichtern (Optionen → Auf Gesichter fokussieren). Tippe auf die Vorschau, um dort zu fokussieren und zu belichten, bis sich die Szene ändert; halte den Finger darauf, um Fokus und Belichtung an dieser Stelle zu sperren.</td></tr>
     <tr><td>Weißabgleich</td><td>Automatisch oder gesperrt mit einem Regler von 2500–8000 K.</td></tr>

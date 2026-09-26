@@ -91,7 +91,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 
 <h2>Die Bildschirmübertragung stellt keine Verbindung her</h2>
 <ul>
-  <li><strong>Per Sideloading installierte Builds:</strong> Das Neusignieren kann die Erweiterung unbemerkt beschädigen; der Abschnitt „Bildschirmspiegelung“ auf dem Startbildschirm der App warnt, wenn sie fehlt. Builds aus TestFlight und dem App Store sind nicht betroffen.</li>
+  <li><strong>Per Sideloading installierte Builds:</strong> Das Neusignieren kann die Erweiterung unbemerkt beschädigen; der Einrichtungsbildschirm der App warnt unter „Bildschirm spiegeln“, wenn sie fehlt. Builds aus TestFlight und dem App Store sind nicht betroffen.</li>
   <li>Prüfe, ob die Quelle eine <strong>LensLink Screen</strong>-Quelle ist – eine Kameraquelle, die eine Übertragung erhält, meldet das in ihrem Statusfeld.</li>
 </ul>
 
@@ -110,13 +110,13 @@ data\obs-plugins\ios-camera-source\</code></pre>
   sodass sich Quellen in verschiedenen Szenen das Gerät teilen können.
 </p>
 
-<h2>Latenzspitzen über Wi-Fi beim Zoomen</h2>
+<h2>Latenzspitzen über WLAN beim Zoomen</h2>
 <p>
   Digitalzoom vergrößert das Sensorrauschen, das sich schlecht komprimieren
   lässt und die Bitrate hochtreibt. Nutze das Teleobjektiv oder wechsle zu USB.
 </p>
 
-<h2>„Verbunden, aber dieser OBS-Build kann den Stream nicht decodieren“</h2>
+<h2>„Verbunden, aber dieser OBS-Build kann den Stream nicht dekodieren“</h2>
 <p>
   Diesem Build fehlt ein HEVC-Decoder. Stell die App auf <strong>H.264</strong>
   um – dasselbe Bild, mehr Bandbreite.
