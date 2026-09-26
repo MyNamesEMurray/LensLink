@@ -1,6 +1,6 @@
 title: Recopie de l’écran
 description: Recopiez tout l’écran de votre iPhone ou iPad dans OBS avec son audio, grâce à la source LensLink Screen et à la diffusion intégrée d’iOS.
-source: 29f388d60573
+source: 8c2230d4ffc9
 ---
 <h1>Recopie de l’écran</h1>
 <p class="lede">
@@ -65,10 +65,23 @@ source: 29f388d60573
   <figcaption>OBS adapte alors chaque taille reçue à votre cadre au lieu de redimensionner votre mise en page.</figcaption>
 </figure>
 
+<h2>Fréquence d’images</h2>
+<p>
+  La propriété <strong>Fréquence d’images</strong> de la source choisit
+  60 fps (par défaut) ou 30 fps. À 30, le téléphone n’encode qu’une image sur
+  deux avec un débit plus faible, ce qui divise environ par deux son travail
+  d’encodage et la bande passante Wi-Fi. Cela convient aux diapositives, aux
+  documents et aux apps, et aide avec un Wi-Fi faible ; gardez 60 pour les
+  jeux et la vidéo. Le changement s’applique aussitôt, même en cours de
+  diffusion. iOS n’envoie une nouvelle image que lorsque quelque chose change
+  à l’écran : un écran immobile coûte donc peu dans les deux cas.
+</p>
+
 <h2>Ce que la source Screen n’a pas</h2>
 <p>
   Ni commandes de caméra ni panneau web : il n’y a rien à zoomer ni à mettre au
-  point. Ses propriétés se limitent à la connexion, au décodage et au diagnostic.
+  point. Ses propriétés se limitent à la connexion, au décodage, à la fréquence
+  d’images et au diagnostic.
 </p>
 
 <h2>Partager un téléphone entre deux sources</h2>

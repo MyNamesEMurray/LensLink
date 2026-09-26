@@ -1,0 +1,137 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:1.00000,1.00000,1.00000,1.00000",
+          "srgb:0.92549,0.94118,0.96863,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.09020,0.10196,0.13333,1.00000",
+          "srgb:0.05098,0.05490,0.07059,1.00000"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "layers": [
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.16471,0.40000,0.92549,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.48235,0.60784,0.85882,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            }
+          ],
+          "glass": true,
+          "image-name": "link-ring.png",
+          "name": "Link ring"
+        }
+      ],
+      "lighting": "individual",
+      "name": "Link",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      }
+    },
+    {
+      "layers": [
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.23922,0.48235,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.20392,0.41569,0.85882,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "srgb:0.80000,0.80000,0.80000,1.00000"
+              }
+            }
+          ],
+          "glass": true,
+          "image-name": "lens-ring.png",
+          "name": "Lens ring"
+        },
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "linear-gradient": [
+                  "srgb:0.43529,0.62745,1.00000,1.00000",
+                  "srgb:0.18039,0.37255,0.83922,1.00000"
+                ]
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "linear-gradient": [
+                  "srgb:0.37255,0.54118,0.85882,1.00000",
+                  "srgb:0.15686,0.32157,0.72157,1.00000"
+                ]
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "linear-gradient": [
+                  "srgb:0.76078,0.76078,0.76078,1.00000",
+                  "srgb:0.45098,0.45098,0.45098,1.00000"
+                ]
+              }
+            }
+          ],
+          "glass": true,
+          "image-name": "aperture.png",
+          "name": "Aperture"
+        }
+      ],
+      "lighting": "individual",
+      "name": "Lens",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.4
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

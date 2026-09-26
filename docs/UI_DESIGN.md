@@ -314,6 +314,28 @@ Adding an appearance means adding a palette in `make-icon.py` **and** an
 entry in `AppIcon.appiconset/Contents.json`; a PNG without the matching
 `appearances` key is dead weight the asset compiler ignores.
 
+### Liquid Glass (`AppIcon.icon`)
+
+iOS 26 and later draw the icon from `ios-app/Sources/AppIcon.icon`, an
+Icon Composer package that `make-icon.py` writes from the same geometry.
+It holds three white-on-transparent layers (the link ring, the lens ring
+with the keyline gap cut out, and the aperture dot), and `icon.json`
+colours each one per appearance, so the system adds the glass edges,
+highlights and depth itself. The link ring sits in its own front group,
+which is what lets it cast a shadow onto the lens ring.
+
+| Appearance | Differences from the flat icons above |
+|------------|---------------------------------------|
+| Default (light) | link ring `#2A66EC` at 20% translucency (the lens group uses 40%); the deep `#2E5FD6` looked dull under glass |
+| Dark | none |
+| Tinted | the same greys as the flat tinted icon, set explicitly; the system builds tinted from each layer's brightness, and the dark-mode blues all but vanished in tinted dark |
+| Clear | drawn entirely by the system |
+
+Icon Composer isn't needed to change it: edit `make-icon.py` and rerun
+it. The **iOS app (Xcode 27)** CI job renders all six renditions with
+Apple's `ictool` and uploads them as the `app-icon-previews` artifact;
+check those after any icon change.
+
 ---
 
 ## 6. Screen specifications

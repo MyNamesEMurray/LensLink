@@ -73,6 +73,7 @@ static void gpu_pipeline_free(struct ios_camera_source *s);
 #define S_AUTO_VIDEO_DELAY "audio_auto_video_delay"
 #define S_DEACTIVATE_HIDDEN "deactivate_when_hidden"
 #define S_AUTO_START "auto_start"
+#define S_SCREEN_FPS "screen_fps"
 
 /* Built-in OBS "Video Delay (Async)" filter. */
 #define ASYNC_DELAY_FILTER_ID "async_delay_filter"
@@ -121,6 +122,7 @@ struct ios_camera_source {
 	 * encoding (battery) and becomes usable by another LensLink source.
 	 * `showing` is maintained by the show/hide callbacks. */
 	volatile bool deactivate_hidden;
+	volatile int screen_fps;
 
 	/* Tally: `active` is program (what the audience sees), `showing` is
 	 * any view at all — preview, a projector, a hidden-but-rendered
@@ -666,6 +668,7 @@ struct client_state {
 	 * re-announce contract as tally). */
 	bool ref_valid;
 	bool ref_on;
+	int fps_sent;
 	uint64_t next_decoder_attempt; /* cooldown after create failure */
 	enum AVCodecID codec_id;
 	char name[128];
@@ -1542,6 +1545,22 @@ static void reference_tick(struct ios_camera_source *s,
 	c->ref_on = want;
 	send_control_cmd(c, want ? "{\"cmd\":\"reference\",\"on\":true}"
 				 : "{\"cmd\":\"reference\",\"on\":false}");
+}
+
+static void screen_fps_tick(struct ios_camera_source *s,
+			    struct client_state *c)
+{
+	if (!c->is_screen)
+		return;
+	int fps = s->screen_fps;
+	if (c->fps_sent == fps)
+		return;
+	c->fps_sent = fps;
+
+	char json[48];
+	snprintf(json, sizeof(json), "{\"cmd\":\"set_format\",\"fps\":%d}",
+		 fps);
+	send_control_cmd(c, json);
 }
 
 /* Asks the device to emit a fresh keyframe immediately. The screen
@@ -2743,6 +2762,7 @@ static void dial_loop(struct ios_camera_source *s)
 			control_tick(s, &client);
 			tally_tick(s, &client);
 			reference_tick(s, &client);
+			screen_fps_tick(s, &client);
 			diag_tick(s, &client);
 			stats_tick(s, &client);
 			if (client.out.failed)
@@ -2880,6 +2900,11 @@ static void extract_dial_host(const char *setting, char *out, size_t out_size)
 	out[n] = 0;
 }
 
+static int parse_screen_fps(obs_data_t *settings)
+{
+	return obs_data_get_int(settings, S_SCREEN_FPS) == 30 ? 30 : 60;
+}
+
 static void ios_camera_update(void *data, obs_data_t *settings)
 {
 	struct ios_camera_source *s = data;
@@ -2900,6 +2925,7 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 		obs_data_get_bool(settings, S_DEACTIVATE_HIDDEN);
 	s->auto_start = !s->is_screen_source &&
 			obs_data_get_bool(settings, S_AUTO_START);
+	s->screen_fps = parse_screen_fps(settings);
 
 	pthread_mutex_lock(&s->status_mutex);
 	bool was_syncing = s->audio_sync && s->audio_source[0];
@@ -3008,6 +3034,7 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 		obs_data_get_bool(settings, S_DEACTIVATE_HIDDEN);
 	s->auto_start = !s->is_screen_source &&
 			obs_data_get_bool(settings, S_AUTO_START);
+	s->screen_fps = parse_screen_fps(settings);
 	/* Armed at creation: an app already open and idle when this source
 	 * appears should start streaming right away. */
 	s->auto_start_armed = true;
@@ -3090,6 +3117,7 @@ static void ios_camera_get_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, S_AUTO_VIDEO_DELAY, false);
 	obs_data_set_default_bool(settings, S_DEACTIVATE_HIDDEN, false);
 	obs_data_set_default_bool(settings, S_AUTO_START, true);
+	obs_data_set_default_int(settings, S_SCREEN_FPS, 60);
 	/* Bookkeeping, not a user control: set (never cleared) after the
 	 * green-screen chroma-key filter has been auto-added once. */
 	obs_data_set_default_bool(settings, S_GS_FILTER_ADDED, false);
@@ -3256,7 +3284,14 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 		props, S_DEACTIVATE_HIDDEN, T_("DeactivateHidden"));
 	obs_property_set_long_description(deact, T_("DeactivateHidden.Desc"));
 
-	if (!screen) {
+	if (screen) {
+		obs_property_t *fps = obs_properties_add_list(
+			props, S_SCREEN_FPS, T_("ScreenFps"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+		obs_property_list_add_int(fps, T_("ScreenFps.60"), 60);
+		obs_property_list_add_int(fps, T_("ScreenFps.30"), 30);
+		obs_property_set_long_description(fps, T_("ScreenFps.Desc"));
+	} else {
 		/* Remote start: only cameras — iOS forbids starting a screen
 		 * broadcast without a tap on the phone. */
 		obs_property_t *auto_start = obs_properties_add_bool(

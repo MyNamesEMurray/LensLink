@@ -11,7 +11,8 @@ final class ScreenStreamPipeline {
     private var encoder: VideoEncoder?
     private var configuredWidth: Int32 = 0
     private var configuredHeight: Int32 = 0
-    private let fps: Int32 = 60
+    private var fps: Int32 = 60
+    private var lastEncodedPts = CMTime.invalid
 
     /// HEVC by default: it compresses screen/UI content ~40% smaller than
     /// H.264 at the same quality, cutting the wire bitrate. Devices without
@@ -45,6 +46,7 @@ final class ScreenStreamPipeline {
         /// the encoder. Guarded by the same lock so we never touch the
         /// encoder from the network queue.
         var pendingKeyframe = false
+        var requestedFps: Int32 = 60
     }
     private let countersLock = NSLock()
     private var counters = Counters()
@@ -175,16 +177,24 @@ final class ScreenStreamPipeline {
         }
     }
 
-    /// Control messages from the plugin. The only one the screen pipeline
-    /// acts on is a keyframe request (the plugin sends it after switching to
-    /// software decoding so the picture comes back right away).
+    /// Control messages from the plugin. The screen pipeline acts on a
+    /// keyframe request (the plugin sends it after switching to software
+    /// decoding so the picture comes back right away) and on `set_format`'s
+    /// `fps`, the frame rate the Screen source asks for.
     private func handleControl(_ data: Data) {
         guard let obj = try? JSONSerialization.jsonObject(with: data)
                 as? [String: Any],
               let cmd = obj["cmd"] as? String else { return }
-        if cmd == "keyframe" {
+        switch cmd {
+        case "keyframe":
             withCounters { $0.pendingKeyframe = true }
             log.info("keyframe requested by plugin")
+        case "set_format":
+            guard let fps = obj["fps"] as? Int, fps == 30 || fps == 60 else { return }
+            withCounters { $0.requestedFps = Int32(fps) }
+            log.info("frame rate \(fps) requested by plugin")
+        default:
+            break
         }
     }
 
@@ -194,14 +204,29 @@ final class ScreenStreamPipeline {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let width = Int32(CVPixelBufferGetWidth(pixelBuffer))
         let height = Int32(CVPixelBufferGetHeight(pixelBuffer))
-        withCounters { $0.videoSamples += 1 }
+        let requestedFps = withCounters { (c: inout Counters) -> Int32 in
+            c.videoSamples += 1
+            return c.requestedFps
+        }
 
-        // (Re)build the encoder on first frame and whenever the screen
-        // rotates (dimensions swap). The encoder has fixed dimensions.
-        if encoder == nil || width != configuredWidth || height != configuredHeight {
+        let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        if requestedFps < 60, lastEncodedPts.isValid, pts.isValid {
+            let elapsed = CMTimeGetSeconds(CMTimeSubtract(pts, lastEncodedPts))
+            if elapsed >= 0 && elapsed < 1.0 / Double(requestedFps) - 1.0 / 120.0 {
+                return
+            }
+        }
+        lastEncodedPts = pts
+
+        // (Re)build the encoder on first frame, whenever the screen
+        // rotates (dimensions swap), and when the plugin changes the frame
+        // rate. The encoder has fixed dimensions and rate.
+        if encoder == nil || width != configuredWidth || height != configuredHeight
+            || requestedFps != fps {
             encoder?.stop()
             let enc = VideoEncoder(codec: Self.codec, width: width, height: height,
-                                   fps: fps, bitrate: bitrate(width, height))
+                                   fps: requestedFps,
+                                   bitrate: bitrate(width, height, requestedFps))
             enc.onEncodedFrame = { [weak self] frame in
                 guard let self else { return }
                 self.withCounters {
@@ -220,13 +245,14 @@ final class ScreenStreamPipeline {
             encoder = enc
             configuredWidth = width
             configuredHeight = height
-            let br = bitrate(width, height)
+            fps = requestedFps
+            let br = bitrate(width, height, fps)
             withCounters {
                 $0.encoderBuilds += 1
                 $0.dims = "\(width)x\(height)"
                 $0.codecName = Self.codec.rawValue
             }
-            log.info("encoder built \(width)x\(height) \(Self.codec.rawValue, privacy: .public) @ \(br / 1_000_000) Mbps")
+            log.info("encoder built \(width)x\(height)@\(self.fps) \(Self.codec.rawValue, privacy: .public) @ \(br / 1_000_000) Mbps")
             client.sendVideoConfig(codec: Self.codec, width: width, height: height,
                                    fps: fps)
         }
@@ -243,10 +269,11 @@ final class ScreenStreamPipeline {
     }
 
     /// Screen content compresses well (lots of static regions), but detail
-    /// scales with resolution; ~5 bits per pixel-second, clamped.
-    private func bitrate(_ width: Int32, _ height: Int32) -> Int {
+    /// scales with resolution; ~5 bits per pixel-second at 60 fps, clamped,
+    /// then scaled to the frame rate so each frame keeps the same budget.
+    private func bitrate(_ width: Int32, _ height: Int32, _ fps: Int32) -> Int {
         let pixels = Int(width) * Int(height)
-        return min(16_000_000, max(6_000_000, pixels * 5))
+        return min(16_000_000, max(6_000_000, pixels * 5)) * Int(fps) / 60
     }
 
     // MARK: - System audio

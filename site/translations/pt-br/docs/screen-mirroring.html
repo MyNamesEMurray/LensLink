@@ -1,6 +1,6 @@
 title: Espelhamento de tela
 description: Espelhe a tela inteira do seu iPhone ou iPad no OBS, com o áudio, usando a fonte LensLink Screen e a transmissão nativa do iOS.
-source: 29f388d60573
+source: 8c2230d4ffc9
 ---
 <h1>Espelhamento de tela</h1>
 <p class="lede">
@@ -65,10 +65,23 @@ source: 29f388d60573
   <figcaption>O OBS passa a redimensionar cada tamanho recebido para caber na sua caixa, em vez de redimensionar o seu layout.</figcaption>
 </figure>
 
+<h2>Taxa de quadros</h2>
+<p>
+  A propriedade <strong>Taxa de quadros</strong> da fonte escolhe 60 fps (o
+  padrão) ou 30 fps. Em 30, o celular codifica um quadro sim, outro não, com
+  uma taxa de bits menor, o que reduz mais ou menos pela metade o trabalho de
+  codificação e a banda do Wi-Fi. Serve bem para slides, documentos e apps, e
+  ajuda com um Wi-Fi fraco; para jogos e vídeos, mantenha 60. A mudança vale
+  na hora, mesmo com a transmissão em andamento. O iOS só envia um quadro novo
+  quando algo muda na tela, então uma tela parada custa pouco de qualquer
+  jeito.
+</p>
+
 <h2>O que a fonte Screen não tem</h2>
 <p>
   Nada de controles de câmera nem de painel no navegador: não há nada para dar zoom
-  ou focar. As propriedades dela são a conexão, a decodificação e o diagnóstico.
+  ou focar. As propriedades dela são a conexão, a decodificação, a taxa de quadros e
+  o diagnóstico.
 </p>
 
 <h2>Compartilhando um celular entre duas fontes</h2>

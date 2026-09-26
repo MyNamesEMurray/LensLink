@@ -530,3 +530,31 @@ jobs:
         with:
           name: LensLink-unsigned-ipa-xcode27
           path: ios-app/LensLink-unsigned.ipa
+
+      - name: Render app icon previews and check Info.plist
+        if: always()
+        run: |
+          ICTOOL="$(dirname "$(xcode-select -p)")/Applications/Icon Composer.app/Contents/Executables/ictool"
+          "$ICTOOL" --version
+          mkdir -p icon-previews
+          for r in Default Dark ClearLight ClearDark TintedLight TintedDark; do
+            "$ICTOOL" Sources/AppIcon.icon --export-image \
+              --output-file "icon-previews/AppIcon-$r.png" \
+              --platform iOS --rendition "$r" --width 512 --height 512 --scale 2
+          done
+          if [ -f Payload/LensLink.app/Info.plist ]; then
+            plutil -extract UIBackgroundModes json -o - Payload/LensLink.app/Info.plist || true
+            plutil -extract NSScreenCaptureUsageDescription raw -o - Payload/LensLink.app/Info.plist || true
+          fi
+          if [ -f Payload/LensLink.app/Assets.car ]; then
+            xcrun assetutil --info Payload/LensLink.app/Assets.car \
+              | grep -E '"(Name|RenditionName|AssetType)"' | grep -i -B1 -A1 icon | head -60
+          fi
+        working-directory: ios-app
+
+      - name: Upload app icon previews
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-icon-previews
+          path: ios-app/icon-previews
