@@ -297,15 +297,18 @@ set of geometry — never hand-edited, and never re-drawn per variant:
 
 | Appearance | Background | Ink |
 |------------|-----------|-----|
-| Default (light) | our own `#171A22 → #0D0E12` vertical gradient, **opaque** (iOS forbids alpha here) | full brand palette: `accent` lens ring, `#8FB4FF` link ring |
+| Default (light) | our own `#FFFFFF → #ECF0F7` vertical gradient, **opaque** (iOS forbids alpha here) | `accent` lens ring and aperture dot; the link ring in the deep `#2E5FD6`, because the pale `#8FB4FF` washes out on white |
 | Dark | **transparent** — iOS draws its own dark backdrop | same hues at 86% brightness; a saturated blue glares on an all-dark home screen |
 | Tinted | **transparent** — iOS draws the user's tint | **greys only.** iOS discards hue and maps luminance through the tint, so the palette becomes a brightness ranking: link ring `#FFF`, lens ring `#CCC`, aperture dot `#C2` → `#73` |
 
-Two rules carry across all three: the link ring always reads brighter
-than the lens ring (that hierarchy is what the tinted variant preserves
-instead of colour), and the keyline gap that separates the two rings
-stays — on the transparent variants it reveals iOS's backdrop rather
-than ours, which is the same read.
+Three rules carry across all three. The link ring always stands out from
+the lens ring: brighter on the dark and tinted variants (the tinted one
+preserves that hierarchy instead of colour), deeper on the light default,
+where contrast against white does the same job. The light and dark icons
+look clearly different, so switching the home screen between light and
+dark visibly changes the icon. And the keyline gap that separates the two
+rings stays — on the transparent variants it reveals iOS's backdrop
+rather than ours, which is the same read.
 
 Adding an appearance means adding a palette in `make-icon.py` **and** an
 entry in `AppIcon.appiconset/Contents.json`; a PNG without the matching
