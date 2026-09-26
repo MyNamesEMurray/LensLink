@@ -13,13 +13,15 @@ tinted mode iOS throws the hue away and maps luminance through the
 colour the user picked, so that variant is authored in greys.
 
 Outputs (run from the repo root):
-  assets/icon-1024.png          app icon master (opaque — iOS forbids alpha)
-  assets/icon-1024-dark.png     dark-appearance master (transparent)
-  assets/icon-1024-tinted.png   tinted-appearance master (transparent, greys)
   assets/logo.png        icon on transparent, 512x512
-  assets/banner.png      icon + wordmark on transparent (README)
+  assets/banner-{light,dark}.png  icon + wordmark on transparent (README)
   assets/social-preview.png  1280x640 GitHub social preview (opaque)
-  ios-app/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024{,-dark,-tinted}.png
+  ios-app/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+      app icon (opaque — iOS forbids alpha)
+  ios-app/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024-dark.png
+      dark appearance (transparent)
+  ios-app/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024-tinted.png
+      tinted appearance (transparent, greys)
   ios-app/Sources/AppIcon.icon   layered Liquid Glass icon (iOS 26+)
 """
 
@@ -238,7 +240,6 @@ def main():
     icon = vertical_gradient(SIZE * S, LIGHT_BG_TOP, LIGHT_BG_BOTTOM).convert("RGBA")
     icon.alpha_composite(make_mark(SIZE, LIGHT))
     icon = icon.resize((SIZE, SIZE), Image.LANCZOS).convert("RGB")
-    icon.save(os.path.join(assets, "icon-1024.png"))
     icon.save(os.path.join(appiconset, "icon-1024.png"))
 
     # --- App icon, dark + tinted appearances: transparent RGBA ----------
@@ -249,7 +250,6 @@ def main():
     # the same read.
     for name, palette in (("dark", DARK), ("tinted", TINTED)):
         variant = make_mark(SIZE, palette).resize((SIZE, SIZE), Image.LANCZOS)
-        variant.save(os.path.join(assets, "icon-1024-%s.png" % name))
         variant.save(os.path.join(appiconset, "icon-1024-%s.png" % name))
 
     # --- Standalone logo: transparent, 512 ------------------------------
@@ -324,9 +324,8 @@ def main():
 
     write_icon_package(os.path.join(root, "ios-app", "Sources", "AppIcon.icon"))
 
-    print("wrote assets/icon-1024{,-dark,-tinted}.png, assets/logo.png,")
-    print("assets/banner-*.png, assets/social-preview.png,")
-    print("and the same three icons in",
+    print("wrote assets/logo.png, assets/banner-*.png,")
+    print("assets/social-preview.png, the three app icons in",
           os.path.relpath(appiconset, root) + ",")
     print("and the layered ios-app/Sources/AppIcon.icon")
 

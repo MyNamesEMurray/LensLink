@@ -3,13 +3,16 @@ obs-plugin/build*/
 
 # Xcode / XcodeGen
 ios-app/*.xcodeproj
-ios-app/LensLink.xcodeproj
 xcuserdata/
 DerivedData/
 *.xcworkspace
+ios-app/Payload/
+*.ipa
 
-# macOS
+# OS and editor files
 .DS_Store
+.vscode/
+.idea/
 
 # Python (assets/make-icon.py)
 __pycache__/
