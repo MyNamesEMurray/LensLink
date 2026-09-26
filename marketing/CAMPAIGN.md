@@ -2,7 +2,10 @@
 
 A launch-and-grow plan for LensLink (the free LensLink Camera app plus the
 open-source OBS plugin). It covers positioning, audiences, the creative set,
-channels, a 12-week calendar, budget tiers and how to measure it.
+channels, a 12-week calendar, the budget and how to measure it.
+
+**Budget: under $300 for the whole 12 weeks.** The plan is organic first;
+money only amplifies what has already worked for free (section 7).
 
 Creative drafts live in [`creative/`](creative/). They were generated with
 Higgsfield (GPT Image 2) and are concept art. See "Before anything ships"
@@ -239,8 +242,9 @@ LensLink is free, so pitch creators on content value, not affiliate
 revenue.
 
 - **Micro creators (2k to 50k followers)** in streaming tips, stream setup,
-  budget tech and mobile gaming. Offer early TestFlight builds, a shout-out
-  in release notes, and a small flat fee ($50 to $300) on the paid tiers.
+  budget tech and mobile gaming. No cash fees: offer early TestFlight
+  builds, a shout-out in release notes, and a co-hosted setup giveaway
+  (section 7).
 - **Tech and streaming explainers on YouTube** (OBS tutorial channels,
   "best webcam" reviewers). Pitch the story "free, open-source app beats a
   $150 webcam". Send a short press kit (section 8).
@@ -248,18 +252,20 @@ revenue.
   in the same light, mention "free, no subscription", link the App Store
   and lenslink.cam. They pick the tone.
 
-### Paid (only after the organic launch proves the message)
+### Paid (small, and only after organic proves the message)
 
-- **Apple Search Ads (first dollar).** Highest intent. Exact-match
-  keywords: "webcam", "obs", "obs camera", "iphone webcam", "camo",
-  "streaming camera", "virtual camera". Use a custom product page with
-  asset C. Start at $10 to $20 a day, keep CPA below $1.50 per install.
-- **Reddit ads.** Target r/obs, r/Twitch, r/streaming, r/podcasting with
-  asset C and D. Use conversation placements.
-- **TikTok Spark Ads.** Boost the best-performing organic clip rather than
-  producing ad-only content.
-- **YouTube (later).** In-feed ads on "iPhone webcam" and "OBS setup"
-  searches with the 30 s spot.
+- **Apple Search Ads ($150).** Highest intent, so it gets the first
+  dollar. Exact match only, five keywords: "obs camera", "iphone webcam",
+  "webcam for obs", "camo", "streaming camera". Skip broad terms like
+  "webcam" that burn budget. Custom product page with asset C. Hard cap
+  $5 a day for 30 days (weeks 3 to 6).
+- **Reddit ads ($60).** One promoted post, the organic post that already
+  did best, in r/obs, r/Twitch and r/streaming. $5 a day for 12 days
+  (weeks 3 and 4).
+- **Not in this budget:** TikTok Spark Ads (ad-group minimums of about
+  $20 a day would use a third of the budget in a week), YouTube ads and
+  creator fees. Boost organically instead: post natively on TikTok and
+  Shorts and let the algorithm decide.
 
 ## 6. 12-week calendar
 
@@ -268,24 +274,33 @@ revenue.
 | -2 to -1 | **Prep** | Record the real comparison and the 15/30/90 s videos. Fix creative flags. Build the lenslink.cam intent pages. Set up tracking links. Line up Product Hunt supporters and 10 creators. |
 | 1 | **Launch** | Product Hunt (Tue), Show HN (Wed), r/obs and r/opensource posts, 90 s tutorial live on YouTube, first 3 TikToks. |
 | 2 | **Community push** | r/Twitch, r/streaming, r/iphone, r/linux posts spaced out. OBS forum listing. Creator videos start landing. |
-| 3-4 | **Paid test** | Apple Search Ads on. Reddit ads A/B: asset C vs D. App Store Product Page Optimization test live. |
+| 3-4 | **Paid test** | Apple Search Ads on ($5/day cap). Reddit ad on the best organic post ($5/day, 12 days). App Store Product Page Optimization test live (free). |
 | 5-6 | **Feature spotlight** | Virtual green screen push to podcasters and educators (asset E). In-App Event. LinkedIn and r/podcasting. |
-| 7-8 | **Mobile gaming** | Screen mirroring push (asset F). Gaming Discord partners, TikTok gaming creators, Spark Ads on the best clip. |
+| 7-8 | **Mobile gaming** | Screen mirroring push (asset F). Gaming Discord partners, TikTok gaming creators. Setup giveaway with one gaming creator. |
 | 9-10 | **Pros** | Apple Log and HDR story: "Grade your live stream". Colourist and cinematography creators, r/colorists. |
-| 11-12 | **Review and scale** | Cut the channels above target CPA, double the winners, plan the next release's campaign around the next roadmap feature. |
+| 11-12 | **Review** | Spend any reserve on the winner. Tally cost per install per channel. Plan the next release's campaign around the next roadmap feature. |
 
-## 7. Budget tiers
+## 7. Budget: $290 of $300
 
-| | Bootstrap ($0) | Starter ($500/month) | Growth ($2,500/month) |
+| Line | Amount | How it's spent | When |
 |---|---|---|---|
-| Owned + community | All of it | All of it | All of it |
-| Apple Search Ads | none | $300 | $1,000 |
-| Reddit ads | none | $100 | $500 |
-| TikTok Spark Ads | none | $100 | $400 |
-| Creator fees | TestFlight access only | none | $600 (4 to 6 micro creators) |
+| Owned + community + organic video | $0 | Everything in sections 4 and 5 that isn't marked paid | All 12 weeks |
+| Apple Search Ads | $150 | Exact match, 5 keywords, $5/day cap, 30 days | Weeks 3-6 |
+| Reddit ads | $60 | One promoted post (the best organic one), $5/day, 12 days | Weeks 3-4 |
+| Setup giveaway | $50 | Two phone clamp mounts (about $25 each) for a "Rate my stream setup" giveaway co-hosted with a creator, in place of a fee | Weeks 7-8 |
+| Reserve | $30 | Goes to whichever paid line has the lowest cost per install; unspent if neither hits target | Weeks 11-12 |
+| **Total** | **$290** | $10 of headroom under the $300 limit | |
 
-Start at Bootstrap for the launch weeks. Move to Starter only once an
-organic post shows which message wins, then put money behind that message.
+Rules that keep it under $300:
+
+- Set the daily caps and a lifetime budget in each ad platform, so the
+  platform itself stops spending at the limit.
+- Pause any paid line whose cost per install is above $2 after its first
+  $30. Move what's left of it to the reserve.
+- Nothing paid runs until week 3. The launch weeks tell you which message
+  and asset to spend on.
+- Creative costs nothing extra: the 4 Higgsfield credits left cover the two
+  image fixes in section 10, and the videos are shot on your own phone.
 
 ## 8. Press kit
 
@@ -318,13 +333,17 @@ The app has no analytics by design, so measure at the edges.
 
 | Metric | Target |
 |---|---|
-| App Store downloads | 10,000 |
-| App Store rating | 4.6 or higher with 200+ ratings |
-| Plugin downloads (all platforms) | 8,000 |
-| GitHub stars | +1,500 |
+| App Store downloads | 5,000 (about 150 of them paid) |
+| App Store rating | 4.6 or higher with 100+ ratings |
+| Plugin downloads (all platforms) | 4,000 |
+| GitHub stars | +750 |
 | Product Hunt | Top 5 of the day |
-| Apple Search Ads CPA | under $1.50 |
-| Tutorial video views | 50,000 |
+| Paid cost per install | under $1.50 (pause above $2) |
+| Tutorial video views | 25,000 |
+
+These are lower than a funded campaign would target. With $290, paid
+brings in roughly 150 installs; the rest has to come from Reddit, Hacker
+News, Product Hunt, creators and search.
 
 ## 10. Before anything ships
 
