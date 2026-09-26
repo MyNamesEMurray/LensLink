@@ -137,6 +137,11 @@ to quote.
   branch pushes, and builds only the areas the PR touches (plugin on
   Ubuntu/Windows/macOS with `-Werror`; the app as an unsigned device build
   on macOS). PRs merge automatically once the required checks pass.
+- The plugin and app build steps live in composite actions under
+  `.github/actions/`, shared by `build.yml` and `release.yml`: change a
+  build there, never in one workflow. Only runs on `main` save the
+  libobs/FFmpeg caches; PRs restore them. Keep job names stable, since
+  branch protection requires the checks by name.
 - **Merging to `main` auto-releases** when `obs-plugin/`, `ios-app/`, or
   `installer/` changed: patch bump by default, or the bump named by a git
   trailer on its own line in any commit of the PR — `Release-Bump: minor`,

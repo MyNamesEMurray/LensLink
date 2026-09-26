@@ -1,0 +1,84 @@
+name: OBS plugin (Linux)
+description: >-
+  Builds lenslink.so against the distro libobs with the static
+  decode-only FFmpeg, verifies it, and packages
+  lenslink-linux-x86_64.tar.gz in the workspace root. Shared by
+  build.yml and release.yml, so a pull request builds exactly what a
+  release ships.
+
+inputs:
+  version:
+    description: >-
+      Release tag (v1.8.2) or version; a leading v is dropped. Empty for
+      pull requests: the binary then reports "dev".
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake pkg-config libobs-dev qt6-base-dev
+
+    # The release tarball has to run on every distro, but linking a
+    # shared FFmpeg pins an FFmpeg-major soname (libavcodec.so.60)
+    # that rolling distros no longer ship — the plugin then fails to
+    # load at all (issue #65; the same failure hit Windows as #91/#93
+    # when an OBS update moved its bundled FFmpeg). So all release
+    # builds link the minimal static FFmpeg this action builds.
+    - name: Build static FFmpeg (H.264/HEVC decode only)
+      uses: ./.github/actions/static-ffmpeg
+
+    # The grep guard: the status-bar/dock UI degrades *silently* when Qt6
+    # or obs-frontend-api.h is missing (that's how releases shipped
+    # without it once), so the build must fail instead.
+    #
+    # --exclude-libs,ALL hides the static FFmpeg's symbols in the module:
+    # the link fails without it (FFmpeg's asm uses PC-relative refs that
+    # need non-preemptible symbols), and the OBS process carries its own
+    # shared FFmpeg whose symbols must never interpose ours.
+    - name: Build plugin
+      shell: bash
+      working-directory: obs-plugin
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -o pipefail
+        version="${VERSION#v}"
+        extra=()
+        if [ -n "$version" ]; then
+          extra+=("-DLENSLINK_VERSION=$version")
+        fi
+        PKG_CONFIG_PATH="$GITHUB_WORKSPACE/ffmpeg-static/lib/pkgconfig" \
+        cmake -B build -DCMAKE_BUILD_TYPE=Release \
+          "${extra[@]}" \
+          -DCMAKE_MODULE_LINKER_FLAGS="-Wl,--exclude-libs,ALL" \
+          | tee configure.log
+        grep -q "frontend UI enabled" configure.log
+        cmake --build build
+
+    # Fail the build if the binary regressed to soname-coupled shared
+    # FFmpeg (the exact breakage of issue #65), or lost its VAAPI link.
+    # Plain `if grep`, not `! grep`: a `!` line that isn't the last
+    # command is non-fatal under the runner's bash -e, so the old
+    # negated form could never fail the step.
+    - name: Verify FFmpeg linked statically
+      shell: bash
+      run: |
+        readelf -d obs-plugin/build/lenslink.so | tee needed.log
+        if grep -E "NEEDED.*(libavcodec|libavutil)" needed.log; then
+          echo "::error::lenslink.so links shared FFmpeg (issue #65)"
+          exit 1
+        fi
+        grep -qE "NEEDED.*libva\.so" needed.log
+
+    - name: Package (extract into ~/.config/obs-studio/plugins)
+      shell: bash
+      run: |
+        mkdir -p stage/lenslink/bin/64bit stage/lenslink/data
+        cp obs-plugin/build/lenslink.so stage/lenslink/bin/64bit/
+        cp -r obs-plugin/data/* stage/lenslink/data/
+        tar czf lenslink-linux-x86_64.tar.gz -C stage lenslink

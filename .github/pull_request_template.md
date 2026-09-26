@@ -8,8 +8,8 @@
      OS, OBS version, device, and connection (Wi-Fi/USB) you tried — or
      that the change is docs/build-only. -->
 
-<!-- Releases: merging auto-releases a patch bump when obs-plugin/ or
-     ios-app/ changed. For a bigger bump put `Release-Bump: minor` or
+<!-- Releases: merging auto-releases a patch bump when obs-plugin/,
+     ios-app/ or installer/ changed. For a bigger bump put `Release-Bump: minor` or
      `Release-Bump: major` on its own line in a commit message;
      `Release-Skip: true` suppresses the release, and `Release-Beta: true`
      publishes it as a pre-release (still goes to TestFlight, but isn't

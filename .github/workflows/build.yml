@@ -17,13 +17,16 @@ on:
   workflow_dispatch:
 
 # A new push to a PR supersedes the previous run: cancel the stale one
-# instead of letting its builds (two on 10x-billed macOS runners) finish
+# instead of letting its builds (three on macOS runners) finish
 # for a commit nobody can merge anymore. Auto-merge waits on the checks of
 # the new head commit, so cancelling the old run costs nothing. Manual
 # dispatches get a unique group (run_id) and are never cancelled.
 concurrency:
   group: build-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   changes:
@@ -35,6 +38,7 @@ jobs:
       site: ${{ steps.diff.outputs.site }}
       l10n: ${{ steps.diff.outputs.l10n }}
       workflows: ${{ steps.diff.outputs.workflows }}
+      icon: ${{ steps.diff.outputs.icon }}
     steps:
       - uses: actions/checkout@v7
 
@@ -50,27 +54,28 @@ jobs:
             echo "site=true" >> "$GITHUB_OUTPUT"
             echo "l10n=true" >> "$GITHUB_OUTPUT"
             echo "workflows=true" >> "$GITHUB_OUTPUT"
+            echo "icon=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git fetch --depth=1 origin "$BASE"
           CHANGED=$(git diff --name-only "$BASE" HEAD)
           # A workflow edit rebuilds everything: it may change any job.
-          # .github/actions/ is in the plugin set: the static-ffmpeg
-          # composite action feeds the plugin builds.
+          # The composite actions in .github/actions/ feed the plugin and
+          # iOS builds, so each set includes its own.
           if echo "$CHANGED" | \
-             grep -qE '^(obs-plugin/|installer/|\.github/workflows/build\.yml|\.github/actions/)'; then
+             grep -qE '^(obs-plugin/|installer/|\.github/workflows/build\.yml|\.github/actions/(libobs|plugin-|static-ffmpeg))'; then
             echo "plugin=true" >> "$GITHUB_OUTPUT"
           else
             echo "plugin=false" >> "$GITHUB_OUTPUT"
           fi
           if echo "$CHANGED" | \
-             grep -qE '^(ios-app/|\.github/workflows/build\.yml)'; then
+             grep -qE '^(ios-app/|\.github/workflows/build\.yml|\.github/actions/(xcode-project|unsigned-ipa))'; then
             echo "ios=true" >> "$GITHUB_OUTPUT"
           else
             echo "ios=false" >> "$GITHUB_OUTPUT"
           fi
           if echo "$CHANGED" | \
-             grep -qE '^(site/|\.github/workflows/build\.yml)'; then
+             grep -qE '^(site/|assets/|\.github/workflows/build\.yml)'; then
             echo "site=true" >> "$GITHUB_OUTPUT"
           else
             echo "site=false" >> "$GITHUB_OUTPUT"
@@ -81,10 +86,16 @@ jobs:
           else
             echo "l10n=false" >> "$GITHUB_OUTPUT"
           fi
-          if echo "$CHANGED" | grep -qE '^\.github/workflows/'; then
+          if echo "$CHANGED" | grep -qE '^\.github/(workflows/|actions/|actionlint\.yaml)'; then
             echo "workflows=true" >> "$GITHUB_OUTPUT"
           else
             echo "workflows=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$CHANGED" | \
+             grep -qE '^(ios-app/Sources/AppIcon\.icon/|ios-app/Sources/Assets\.xcassets/AppIcon|assets/make-icon\.py|\.github/workflows/build\.yml)'; then
+            echo "icon=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "icon=false" >> "$GITHUB_OUTPUT"
           fi
 
   # GitHub validates expressions EVERYWHERE in a workflow file — comments
@@ -103,7 +114,8 @@ jobs:
       - name: actionlint
         run: |
           bash <(curl -fsSL \
-            https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash)
+            https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) \
+            1.7.12
           # -shellcheck= disables the shellcheck pass on run: blocks. It
           # only reported style notes on scripts that have shipped many
           # releases, plus one intentional unquoted expansion (the
@@ -150,288 +162,61 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install dependencies
+      - uses: ./.github/actions/plugin-linux
+
+      - name: Build with distro FFmpeg (-Wall -Wextra -Werror)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake pkg-config libobs-dev qt6-base-dev \
-            libavcodec-dev libavutil-dev
-
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall -Wextra -Werror"
-        working-directory: obs-plugin
-
-      - name: Build
-        run: cmake --build build
+          sudo apt-get install -y libavcodec-dev libavutil-dev
+          cmake -B build-distro -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall -Wextra -Werror"
+          cmake --build build-distro
         working-directory: obs-plugin
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v7
         with:
           name: lenslink-linux-x86_64
-          path: |
-            obs-plugin/build/lenslink.so
-            obs-plugin/data/
+          path: lenslink-linux-x86_64.tar.gz
+          retention-days: 7
 
   obs-plugin-windows:
     name: OBS plugin (Windows)
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: windows-2022
-    env:
-      # Pins the libobs the plugin compiles/links against, and the Qt6
-      # bundle for the status-bar/dock UI. FFmpeg deliberately does NOT
-      # come from this bundle: the plugin links its own static
-      # decode-only FFmpeg (.github/actions/static-ffmpeg), so an OBS
-      # update swapping its bundled FFmpeg DLLs can't break plugin
-      # loading (issues #91, #93).
-      OBS_REF: "32.1.2"
-      DEPS_TAG: "2025-08-23"
     steps:
       - uses: actions/checkout@v7
 
-      # No submodules here: cache-hit runs only need in-tree headers
-      # (libobs/, deps/w32-pthreads/). The recursive fetch is minutes of
-      # overhead, so it moves into the cache-miss build step below.
-      - name: Checkout obs-studio (for libobs)
-        uses: actions/checkout@v7
-        with:
-          repository: obsproject/obs-studio
-          ref: ${{ env.OBS_REF }}
-          path: obs-studio
-
-      - name: Download OBS prebuilt dependencies (for libobs; Qt6)
-        run: |
-          curl -L -o deps.zip "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/windows-deps-${{ env.DEPS_TAG }}-x64.zip"
-          7z x deps.zip -oobs-deps
-          # Qt6 (same bundle OBS itself builds with): needed only for the
-          # plugin's status-bar/dock UI. The plugin links Qt but resolves
-          # obs-frontend-api symbols at runtime, so libobs alone still
-          # suffices for the rest of the build.
-          curl -L -o deps-qt6.zip "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/windows-deps-qt6-${{ env.DEPS_TAG }}-x64.zip"
-          7z x -y deps-qt6.zip -oobs-deps
-
-      - name: Build static FFmpeg (H.264/HEVC decode only)
-        uses: ./.github/actions/static-ffmpeg
-
-      - name: Cache libobs build
-        id: cache-libobs
-        uses: actions/cache@v6
-        with:
-          path: obs-build
-          key: libobs-${{ env.OBS_REF }}-${{ env.DEPS_TAG }}
-
-      - name: Build libobs
-        if: steps.cache-libobs.outputs.cache-hit != 'true'
-        run: |
-          git -C obs-studio submodule update --init --recursive
-          cmake -S obs-studio -B obs-build -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}\obs-deps" `
-            -DENABLE_UI=OFF -DENABLE_FRONTEND=OFF -DENABLE_PLUGINS=OFF `
-            -DENABLE_BROWSER=OFF -DENABLE_SCRIPTING=OFF -DENABLE_WEBSOCKET=OFF `
-            -DENABLE_AJA=OFF
-          cmake --build obs-build --target libobs --config Release
-
-      # DISABLE_FIND_PACKAGE_PkgConfig: if a pkg-config on the runner
-      # ever resolved FFmpeg from the obs-deps bundle, the DLL would
-      # silently regress to importing OBS's avcodec-NN.dll; force the
-      # explicit static paths instead. The guard below backstops it.
-      - name: Build plugin
-        run: |
-          cmake -S obs-plugin -B plugin-build -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}\obs-deps" `
-            -DLIBOBS_INCLUDE_DIR="${{ github.workspace }}\obs-studio\libobs;${{ github.workspace }}\obs-build\config;${{ github.workspace }}\obs-studio\deps\w32-pthreads" `
-            -DLIBOBS_LIBRARY="${{ github.workspace }}\obs-build\libobs\Release\obs.lib;${{ github.workspace }}\obs-build\deps\w32-pthreads\Release\w32-pthreads.lib" `
-            -DOBS_FRONTEND_API_HINT="${{ github.workspace }}\obs-studio\frontend\api;${{ github.workspace }}\obs-studio\UI\obs-frontend-api" `
-            -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON `
-            -DFFMPEG_INCLUDE_DIR="${{ github.workspace }}\ffmpeg-static\include" `
-            -DAVCODEC_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avcodec.lib" `
-            -DAVUTIL_LIBRARY="${{ github.workspace }}\ffmpeg-static\lib\avutil.lib"
-          cmake --build plugin-build --config Release
-
-      # A lenslink.dll that imports avcodec-NN.dll/avutil-NN.dll only
-      # loads while OBS ships that exact FFmpeg major — the next OBS
-      # update breaks it with LoadLibrary error 126 (issues #91, #93).
-      # The obs.dll check keeps the negative check honest: an empty or
-      # misread dependents dump would otherwise pass it vacuously.
-      - name: Verify FFmpeg linked statically
-        run: |
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $dumpbin = & $vswhere -latest -products * `
-            -find "VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe" |
-            Select-Object -First 1
-          $deps = & $dumpbin /dependents plugin-build\Release\lenslink.dll | Out-String
-          Write-Host $deps
-          if ($deps -match "avcodec|avutil") {
-            throw "lenslink.dll imports OBS's FFmpeg DLLs (breaks on OBS updates)"
-          }
-          if ($deps -notmatch "obs\.dll") {
-            throw "obs.dll import missing - dependents dump looks wrong"
-          }
-
-      - name: Package (drop into C:\Program Files\obs-studio)
-        run: |
-          New-Item -ItemType Directory -Force -Path stage\obs-plugins\64bit | Out-Null
-          New-Item -ItemType Directory -Force -Path stage\data\obs-plugins\lenslink | Out-Null
-          Copy-Item plugin-build\Release\lenslink.dll stage\obs-plugins\64bit\
-          Copy-Item -Recurse obs-plugin\data\* stage\data\obs-plugins\lenslink\
-
-      # Compile the installer on PRs too, so a broken .iss can't reach a
-      # release build. Takes seconds.
-      - name: Build installer
-        run: |
-          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
-            choco install innosetup -y --no-progress
-          }
-          iscc /DAppVersion=0.0.0 installer\windows\lenslink.iss
+      - uses: ./.github/actions/plugin-windows
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v7
         with:
           name: lenslink-windows-x64
           path: |
-            stage/
+            lenslink-windows-x64.zip
             LensLink-installer-windows-x64.exe
+          retention-days: 7
 
   obs-plugin-macos:
     name: OBS plugin (macOS)
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: macos-15
-    env:
-      # Pins the libobs the plugin compiles/links against, and the Qt6
-      # bundle for the status-bar/dock UI (same pins as the Windows
-      # job). FFmpeg deliberately does NOT come from this bundle: the
-      # plugin links its own static decode-only FFmpeg
-      # (.github/actions/static-ffmpeg), so an OBS update swapping its
-      # bundled FFmpeg dylibs can't break plugin loading (issues #91,
-      # #93 hit exactly that on Windows).
-      OBS_REF: "32.1.2"
-      DEPS_TAG: "2025-08-23"
     steps:
       - uses: actions/checkout@v7
 
-      # No submodules here: cache-hit runs only need in-tree headers
-      # (libobs/). The recursive fetch is minutes of overhead, so it moves
-      # into the cache-miss build step below.
-      - name: Checkout obs-studio (for libobs)
-        uses: actions/checkout@v7
+      - uses: ./.github/actions/plugin-macos
         with:
-          repository: obsproject/obs-studio
-          ref: ${{ env.OBS_REF }}
-          path: obs-studio
-
-      - name: Download OBS prebuilt dependencies (for libobs; Qt6)
-        run: |
-          curl -L -o deps.tar.xz "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/macos-deps-${{ env.DEPS_TAG }}-universal.tar.xz"
-          mkdir obs-deps
-          tar -xJf deps.tar.xz -C obs-deps
-          # Qt6 for the status-bar/dock UI (see the Windows job note).
-          curl -L -o deps-qt6.tar.xz "https://github.com/obsproject/obs-deps/releases/download/${{ env.DEPS_TAG }}/macos-deps-qt6-${{ env.DEPS_TAG }}-universal.tar.xz"
-          tar -xJf deps-qt6.tar.xz -C obs-deps
-
-      - name: Build static FFmpeg (H.264/HEVC decode only)
-        uses: ./.github/actions/static-ffmpeg
-
-      # "macos" in the key: cache keys are not runner-scoped, and the
-      # Windows job already uses libobs-<ref>-<tag> for its MSVC build.
-      - name: Cache libobs build
-        id: cache-libobs
-        uses: actions/cache@v6
-        with:
-          path: obs-build
-          key: libobs-macos-${{ env.OBS_REF }}-${{ env.DEPS_TAG }}
-
-      # Xcode generator: obs-studio's macOS CMake requires it. Universal
-      # (arm64 + x86_64) to match the deps bundle and the official OBS app.
-      - name: Build libobs
-        if: steps.cache-libobs.outputs.cache-hit != 'true'
-        run: |
-          git -C obs-studio submodule update --init --recursive
-          # libobs-metal is a pure-Swift target added unconditionally on
-          # macOS; without obs-studio's own presets the Swift language is
-          # never enabled and CMake's generate step fails. We only need
-          # libobs, so drop it from the build.
-          sed -i '' 's|add_subdirectory(libobs-metal)||' obs-studio/CMakeLists.txt
-          cmake -S obs-studio -B obs-build -G Xcode \
-            -DCMAKE_PREFIX_PATH="$PWD/obs-deps" \
-            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="-" \
-            -DENABLE_UI=OFF -DENABLE_FRONTEND=OFF -DENABLE_PLUGINS=OFF \
-            -DENABLE_BROWSER=OFF -DENABLE_SCRIPTING=OFF
-          cmake --build obs-build --target libobs --config Release
-
-      # DISABLE_FIND_PACKAGE_PkgConfig: the runner ships a pkg-config,
-      # and CMake feeds it CMAKE_PREFIX_PATH (obs-deps) — without this
-      # the build could silently resolve OBS's shared FFmpeg instead of
-      # the static one. The guard below backstops it.
-      - name: Build plugin
-        run: |
-          cmake -S obs-plugin -B plugin-build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS="-Wall -Wextra -Werror" \
-            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
-            -DCMAKE_PREFIX_PATH="$PWD/obs-deps" \
-            -DOBS_FRONTEND_API_HINT="$PWD/obs-studio/frontend/api;$PWD/obs-studio/UI/obs-frontend-api" \
-            -DLIBOBS_INCLUDE_DIR="$PWD/obs-studio/libobs;$PWD/obs-build/config" \
-            -DLIBOBS_LIBRARY="$PWD/obs-build/libobs/Release/libobs.framework" \
-            -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON \
-            -DFFMPEG_INCLUDE_DIR="$PWD/ffmpeg-static/include" \
-            -DAVCODEC_LIBRARY="$PWD/ffmpeg-static/lib/libavcodec.a" \
-            -DAVUTIL_LIBRARY="$PWD/ffmpeg-static/lib/libavutil.a"
-          cmake --build plugin-build
-
-      # A lenslink.so referencing libavcodec.NN.dylib only loads while
-      # OBS ships that exact FFmpeg major — the next OBS update breaks
-      # it (the macOS twin of Windows issues #91, #93). The libobs check
-      # keeps the negative check honest. Plain `if grep`, not `! grep`:
-      # a `!` line that isn't last is non-fatal under bash -e.
-      - name: Verify FFmpeg linked statically
-        run: |
-          otool -L plugin-build/lenslink.so | tee deps.log
-          if grep -E "libav(codec|util)" deps.log; then
-            echo "::error::lenslink.so links OBS's shared FFmpeg dylibs"
-            exit 1
-          fi
-          grep -q "libobs" deps.log
-
-      # Assemble the .plugin bundle on PRs too, so a broken Info.plist or
-      # layout change can't reach a release build. Takes seconds.
-      - name: Package (drop into ~/Library/Application Support/obs-studio/plugins)
-        run: |
-          mkdir -p stage/lenslink.plugin/Contents/MacOS \
-                   stage/lenslink.plugin/Contents/Resources
-          cp plugin-build/lenslink.so stage/lenslink.plugin/Contents/MacOS/lenslink
-          sed "s/@VERSION@/0.0.0/" installer/macos/Info.plist \
-            > stage/lenslink.plugin/Contents/Info.plist
-          plutil -lint stage/lenslink.plugin/Contents/Info.plist
-          cp -R obs-plugin/data/ stage/lenslink.plugin/Contents/Resources/
-          codesign --force --sign - --deep stage/lenslink.plugin
-
-      # Two stages: pkgbuild makes the component, productbuild wraps it in
-      # a distribution that installs to the *user's* home (see
-      # installer/macos/distribution.xml for why that path is mandatory).
-      - name: Build installer
-        run: |
-          mkdir -p pkgroot
-          cp -R stage/lenslink.plugin pkgroot/
-          pkgbuild --root pkgroot \
-            --identifier com.lenslink.obs-plugin \
-            --version 0.0.0 \
-            --install-location "/Library/Application Support/obs-studio/plugins" \
-            --component-plist installer/macos/component.plist \
-            lenslink-component.pkg
-          sed "s/@VERSION@/0.0.0/" installer/macos/distribution.xml > distribution.xml
-          productbuild --distribution distribution.xml --package-path . \
-            LensLink-installer-macos-universal.pkg
+          strict: "true"
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v7
         with:
           name: lenslink-macos-universal
           path: |
-            stage/
+            lenslink-macos-universal.zip
             LensLink-installer-macos-universal.pkg
+          retention-days: 7
 
   ios-app:
     name: iOS app (LensLink)
@@ -443,38 +228,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode project
-        run: xcodegen generate
-        working-directory: ios-app
-
-      # Unsigned device build packaged as an .ipa: proves every Swift
-      # source compiles for the real platform, so a separate Simulator
-      # build would just double the (10x-billed) macOS minutes. The .ipa
-      # can't be installed as-is: sideload it with a tool that re-signs
-      # with your Apple ID (Sideloadly / AltStore).
-      - name: Build unsigned device IPA
-        run: |
-          set -o pipefail
-          xcodebuild build \
-            -project LensLink.xcodeproj \
-            -scheme LensLink \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO
-          mkdir -p Payload
-          cp -R DerivedData/Build/Products/Release-iphoneos/LensLink.app Payload/
-          zip -ry LensLink-unsigned.ipa Payload
-        working-directory: ios-app
-
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: LensLink-unsigned-ipa
-          path: ios-app/LensLink-unsigned.ipa
+      - uses: ./.github/actions/unsigned-ipa
 
   ios-app-xcode27:
     name: iOS app (Xcode 27)
@@ -484,55 +238,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Select Xcode 27
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_27.0*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
-          if [ -z "$XCODE" ]; then
-            XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
-          fi
-          if [ -z "$XCODE" ]; then
-            echo "::error::No release Xcode 27 on this runner image. Installed:"
-            ls /Applications | grep -i xcode || true
-            exit 1
-          fi
-          sudo xcode-select -s "$XCODE"
-          xcodebuild -version
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode project
-        run: xcodegen generate
-        working-directory: ios-app
-
-      # Unsigned device build packaged as an .ipa: proves every Swift
-      # source compiles for the real platform, so a separate Simulator
-      # build would just double the (10x-billed) macOS minutes. The .ipa
-      # can't be installed as-is: sideload it with a tool that re-signs
-      # with your Apple ID (Sideloadly / AltStore).
-      - name: Build unsigned device IPA
-        run: |
-          set -o pipefail
-          xcodebuild build \
-            -project LensLink.xcodeproj \
-            -scheme LensLink \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO
-          mkdir -p Payload
-          cp -R DerivedData/Build/Products/Release-iphoneos/LensLink.app Payload/
-          zip -ry LensLink-unsigned.ipa Payload
-        working-directory: ios-app
+      - uses: ./.github/actions/unsigned-ipa
+        with:
+          xcode: "27"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v7
         with:
           name: LensLink-unsigned-ipa-xcode27
           path: ios-app/LensLink-unsigned.ipa
+          retention-days: 7
 
       - name: Render app icon previews
-        if: always()
+        if: ${{ !cancelled() && needs.changes.outputs.icon == 'true' }}
         run: |
           ICTOOL="$(dirname "$(xcode-select -p)")/Applications/Icon Composer.app/Contents/Executables/ictool"
           "$ICTOOL" --version
@@ -549,8 +267,9 @@ jobs:
         working-directory: ios-app
 
       - name: Upload app icon previews
-        if: always()
+        if: ${{ !cancelled() && needs.changes.outputs.icon == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: app-icon-previews
           path: ios-app/icon-previews
+          retention-days: 7

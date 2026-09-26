@@ -20,9 +20,9 @@ runs:
   steps:
     # hashFiles of this action: editing any configure flag or build step
     # invalidates the cache automatically — no manual key bump to forget.
-    - name: Cache static FFmpeg
+    - name: Restore static FFmpeg
       id: cache
-      uses: actions/cache@v6
+      uses: actions/cache/restore@v6
       with:
         path: ffmpeg-static
         key: ffmpeg-static-${{ runner.os }}-${{ inputs.version }}-${{ hashFiles('.github/actions/static-ffmpeg/**') }}
@@ -136,3 +136,12 @@ runs:
         $script = "${env:GITHUB_ACTION_PATH}\build-windows.sh" -replace '\\', '/'
         C:\msys64\usr\bin\bash -l $script
         if ($LASTEXITCODE -ne 0) { throw "static FFmpeg build failed" }
+
+    - name: Save static FFmpeg
+      if: >-
+        steps.cache.outputs.cache-hit != 'true'
+        && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      uses: actions/cache/save@v6
+      with:
+        path: ffmpeg-static
+        key: ${{ steps.cache.outputs.cache-primary-key }}

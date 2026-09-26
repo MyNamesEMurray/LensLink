@@ -1,0 +1,45 @@
+name: Xcode project
+description: >-
+  Selects the Xcode to build with and generates ios-app/LensLink.xcodeproj
+  with XcodeGen.
+
+inputs:
+  xcode:
+    description: >-
+      Xcode major version to select, release builds only (never a beta).
+      Empty keeps the runner image's default Xcode.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # App Store Connect rejects uploads built with older SDKs ("must be
+    # built with the iOS 26 SDK or later"), so pick the release Xcode
+    # <major>.0 on the image, never one of its betas.
+    - name: Select Xcode ${{ inputs.xcode }}
+      if: inputs.xcode != ''
+      shell: bash
+      env:
+        XCODE_MAJOR: ${{ inputs.xcode }}
+      run: |
+        XCODE=$(ls -d "/Applications/Xcode_${XCODE_MAJOR}.0"*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+        if [ -z "$XCODE" ]; then
+          XCODE=$(ls -d "/Applications/Xcode_${XCODE_MAJOR}"*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+        fi
+        if [ -z "$XCODE" ]; then
+          echo "::error::No release Xcode $XCODE_MAJOR on this runner image. Installed:"
+          ls /Applications | grep -i xcode || true
+          exit 1
+        fi
+        sudo xcode-select -s "$XCODE"
+        xcodebuild -version
+
+    - name: Install XcodeGen
+      shell: bash
+      run: brew install xcodegen
+
+    - name: Generate Xcode project
+      shell: bash
+      working-directory: ios-app
+      run: xcodegen generate
