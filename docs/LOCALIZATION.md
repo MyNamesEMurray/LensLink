@@ -237,6 +237,7 @@ and everywhere at once rather than drifting.
 | White balance | Weißabgleich | Balance de blancos | Balance des blancs | ホワイトバランス | Equilíbrio de branco | 白平衡 |
 | Shutter | Verschluss | Obturador | Obturateur | シャッター | Obturador | 快门 |
 | Subject (green-screen distance) | Motiv | Sujeto | Sujet | 被写体 | Assunto | 主体 |
+| Dial chips, short forms (Exposure / Shutter / WB / Focus) | Belicht. / Verschl. / WA / Fokus | Expos. / Obtur. / WB / Enfoque | Expo / Vitesse / BB / MAP | 露出 / SS / WB / ピント | EV / Obtur. / WB / Foco | 曝光 / 快门 / 白平衡 / 对焦 |
 | Auto / Manual / Lock | Auto / Manuell / Sperren | Auto / Manual / Bloquear | Auto / Manuel / Verrouiller | 自動 / マニュアル / ロック | Auto / Manual / Travar | 自动 / 手动 / 锁定 |
 | All (no cutoff) | Alle | Todo | Tout | すべて | Tudo | 全部 |
 | Format | Format | Formato | Format | フォーマット | Formato | 格式 |
@@ -258,7 +259,7 @@ and everywhere at once rather than drifting.
 | USB cable | USB-Kabel | Cable USB | Câble USB | USBケーブル | Cabo USB | USB 线 |
 | source (OBS) | Quelle | fuente | source | ソース | fonte | 来源 |
 | Sources (OBS panel, in menu paths) | Quellen | Fuentes | Sources | ソース | Fontes | 源 |
-| View menu (OBS) | Ansicht | Vista | Affichage | 表示 | Visualizar | 视图 |
+| View menu (OBS) | Ansicht | Vista | Afficher | 表示 | Visualizar | 视图 |
 | Wi-Fi | WLAN | Wi-Fi | Wi-Fi | Wi-Fi | Wi-Fi | Wi-Fi |
 | tap (touch) | tippen | tocar | toucher | タップ | tocar | 轻点 |
 | Properties (OBS) | Eigenschaften | Propiedades | Propriétés | プロパティ | Propriedades | 设置 |

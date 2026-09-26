@@ -125,7 +125,7 @@ static const char control_page[] =
 	".btnrow:first-child{margin-top:0}"
 	".primary.toggle{background:rgba(255,255,255,.12)}"
 	".primary.toggle.on{background:var(--accent)}"
-	".lbl{font-size:13px;color:var(--txt2);width:48px;flex:none}"
+	".lbl{font-size:13px;color:var(--txt2);min-width:48px;white-space:nowrap;flex:none}"
 	"button:focus-visible,select:focus-visible,input:focus-visible,"
 	"[role=button]:focus-visible{outline:2px solid var(--accent);"
 	"outline-offset:2px}"
