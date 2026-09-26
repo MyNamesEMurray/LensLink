@@ -113,8 +113,11 @@ differs:
   watchdog, or the stream stopping with an error. Stopping from the
   system's screen-sharing indicator ends mirroring without an error.
 - Mirroring survives backgrounding through the `screen-capture` background
-  mode. If it stops the moment you leave LensLink, check the built app's
-  Info.plist still has it.
+  mode; Apple's ScreenCaptureKit docs also require the
+  `NSScreenCaptureUsageDescription` purpose string. When iOS suspends the
+  app on leaving it, OBS freezes on the last frame, every heartbeat stops
+  (not just `enc`), and the connection drops a while later. Check the
+  built app's Info.plist has both keys.
 - The extension-missing warning is hidden on iOS 27, since the extension
   isn't used there.
 
