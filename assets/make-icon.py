@@ -43,6 +43,7 @@ BG_BOTTOM = (0x0D, 0x0E, 0x12)
 LIGHT_BG_TOP = (0xFF, 0xFF, 0xFF)
 LIGHT_BG_BOTTOM = (0xEC, 0xF0, 0xF7)
 LINK_DEEP = (0x2E, 0x5F, 0xD6)
+LINK_GLASS = (0x2A, 0x66, 0xEC)
 
 # The four inks of the mark, so it can be re-coloured per icon appearance.
 Palette = collections.namedtuple("Palette", "ring link aperture_hi aperture_lo")
@@ -154,15 +155,20 @@ def icon_color(rgb):
     return "srgb:%.5f,%.5f,%.5f,1.00000" % tuple(c / 255 for c in rgb)
 
 
-def solid_fills(light, dark):
+def solid_fills(light, dark, tinted):
     return [{"value": {"solid": icon_color(light)}},
-            {"appearance": "dark", "value": {"solid": icon_color(dark)}}]
+            {"appearance": "dark", "value": {"solid": icon_color(dark)}},
+            {"appearance": "tinted", "value": {"solid": icon_color(tinted)}}]
 
 
-def gradient_fills(light, dark):
-    return [{"value": {"linear-gradient": [icon_color(c) for c in light]}},
-            {"appearance": "dark",
-             "value": {"linear-gradient": [icon_color(c) for c in dark]}}]
+def gradient_fills(light, dark, tinted=None):
+    fills = [{"value": {"linear-gradient": [icon_color(c) for c in light]}},
+             {"appearance": "dark",
+              "value": {"linear-gradient": [icon_color(c) for c in dark]}}]
+    if tinted:
+        fills.append({"appearance": "tinted",
+                      "value": {"linear-gradient": [icon_color(c) for c in tinted]}})
+    return fills
 
 
 def write_icon_package(path):
@@ -191,20 +197,23 @@ def write_icon_package(path):
         "fill-specializations": gradient_fills(
             (LIGHT_BG_TOP, LIGHT_BG_BOTTOM), (BG_TOP, BG_BOTTOM)),
         "groups": [
-            dict(glass, name="Link", layers=[{
-                "name": "Link ring", "image-name": "link-ring.png",
-                "glass": True,
-                "fill-specializations": solid_fills(
-                    LIGHT.link, DARK.link)}]),
+            dict(glass, name="Link",
+                 translucency={"enabled": True, "value": 0.2}, layers=[{
+                     "name": "Link ring", "image-name": "link-ring.png",
+                     "glass": True,
+                     "fill-specializations": solid_fills(
+                         LINK_GLASS, DARK.link, TINTED.link)}]),
             dict(glass, name="Lens", layers=[
                 {"name": "Lens ring", "image-name": "lens-ring.png",
                  "glass": True,
-                 "fill-specializations": solid_fills(LIGHT.ring, DARK.ring)},
+                 "fill-specializations": solid_fills(
+                     LIGHT.ring, DARK.ring, TINTED.ring)},
                 {"name": "Aperture", "image-name": "aperture.png",
                  "glass": True,
                  "fill-specializations": gradient_fills(
                      (LIGHT.aperture_hi, LIGHT.aperture_lo),
-                     (DARK.aperture_hi, DARK.aperture_lo))},
+                     (DARK.aperture_hi, DARK.aperture_lo),
+                     (TINTED.aperture_hi, TINTED.aperture_lo))},
             ]),
         ],
         "supported-platforms": {"squares": "shared"},
