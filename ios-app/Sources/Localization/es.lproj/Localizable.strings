@@ -27,6 +27,9 @@
 /* Camera (lens) name: the front camera */
 "Front" = "Frontal";
 
+/* Camera (lens) name: the front ultra wide camera, on iPads that have two front cameras */
+"Front (Ultra Wide)" = "Frontal (ultra gran angular)";
+
 /* Camera (lens) name: the ultra-wide back lens */
 "Ultra Wide (0.5×)" = "Ultra gran angular (0,5×)";
 

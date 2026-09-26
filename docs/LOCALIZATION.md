@@ -227,6 +227,7 @@ and everywhere at once rather than drifting.
 | Camera | Kamera | Cámara | Caméra | カメラ | Câmera | 摄像头 |
 | Lens | Objektiv | Lente | Objectif | レンズ | Lente | 镜头 |
 | Front | Frontkamera | Frontal | Avant | 前面 | Frontal | 前置 |
+| Front (Ultra Wide) | Frontkamera (Ultraweitwinkel) | Frontal (ultra gran angular) | Avant (ultra grand-angle) | 前面（超広角） | Frontal (ultra-angular) | 前置（超广角） |
 | Main (Wide) | Haupt (Weitwinkel) | Principal (gran angular) | Principal (grand-angle) | メイン（広角） | Principal (grande-angular) | 主摄（广角） |
 | Ultra Wide (0.5×) | Ultraweitwinkel (0,5×) | Ultra gran angular (0,5×) | Ultra grand-angle (0,5×) | 超広角（0.5×） | Ultra-angular (0,5×) | 超广角（0.5×） |
 | Telephoto | Tele | Teleobjetivo | Téléobjectif | 望遠 | Teleobjetiva | 长焦 |

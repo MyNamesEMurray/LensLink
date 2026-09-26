@@ -62,6 +62,7 @@ static const char *const web_text_keys[] = {
 	"Web.SubjectDistance",
 	"Web.SubjectAll.Tip",
 	"Web.Lens.Front",
+	"Web.Lens.FrontUltraWide",
 	"Web.Lens.MainWide",
 	"Web.Lens.UltraWide",
 	"Web.Lens.Telephoto",
@@ -314,7 +315,8 @@ static const char control_page[] =
 	"accent:'#3D7BFF'};"
 	"const TONE={idle:COL.grey,wait:COL.amber,ready:COL.amber,live:COL.live,"
 	"error:COL.red};"
-	"const LENS={'Front':t('Lens.Front'),'Main (Wide)':t('Lens.MainWide'),"
+	"const LENS={'Front':t('Lens.Front'),"
+	"'Front (Ultra Wide)':t('Lens.FrontUltraWide'),'Main (Wide)':t('Lens.MainWide'),"
 	"'Ultra Wide (0.5\\u00d7)':t('Lens.UltraWide'),'Telephoto':t('Lens.Telephoto')};"
 	/* Selected source id (from /api/sources); every request carries it. */
 	"let src=null;const q=()=>src==null?'':('?src='+src);"

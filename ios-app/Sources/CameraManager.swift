@@ -172,6 +172,7 @@ final class CameraManager: NSObject {
         var displayLabel: String {
             switch label {
             case "Front": return L("Front")
+            case "Front (Ultra Wide)": return L("Front (Ultra Wide)")
             case "Ultra Wide (0.5×)": return L("Ultra Wide (0.5×)")
             case "Telephoto": return L("Telephoto")
             case "Main (Wide)": return L("Main (Wide)")
@@ -208,7 +209,10 @@ final class CameraManager: NSObject {
     }
 
     private static func label(for device: AVCaptureDevice) -> String {
-        if device.position == .front { return "Front" }
+        if device.position == .front {
+            return device.deviceType == .builtInUltraWideCamera
+                ? "Front (Ultra Wide)" : "Front"
+        }
         switch device.deviceType {
         case .builtInUltraWideCamera: return "Ultra Wide (0.5×)"
         case .builtInTelephotoCamera: return "Telephoto"
