@@ -1,0 +1,17 @@
+/* ===== SampleHandler.swift ===== */
+
+/* Alert iOS shows when the screen broadcast fails to start; %@ = the system's error text */
+"Could not open the streaming port (%@). If the LensLink camera is streaming, stop it first — a device can send the camera or the screen, not both." = "无法打开推流端口（%@）。如果 LensLink 摄像头正在推流，先将其停止：一台设备只能发送摄像头或屏幕，不能同时发送两者。";
+
+/* Alert iOS shows when OBS never connects to the screen broadcast; %@ = technical listener state for bug reports */
+"OBS did not connect within 30 seconds [%@]. Check OBS has a LensLink Screen source pointing at this phone (USB, or this phone's Wi-Fi IP) — a LensLink Camera source won't accept a screen broadcast — and the camera stream isn't running." = "OBS 未在 30 秒内连接 [%@]。检查 OBS 中是否有指向这台手机（USB，或这台手机的 Wi-Fi IP）的 LensLink Screen 来源（LensLink Camera 来源不接受屏幕直播），并确认摄像头推流没有在运行。";
+
+/* ===== StreamClient.swift ===== */
+
+/* Status line error: the app couldn't open the network port OBS connects to (USB and Wi-Fi) */
+"Could not open USB listener" = "无法打开 USB 监听程序";
+
+/* ===== VideoEncoder.swift ===== */
+
+/* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
+"%1$@ encoder unavailable (%2$lld)" = "%1$@ 编码器不可用（%2$lld）";

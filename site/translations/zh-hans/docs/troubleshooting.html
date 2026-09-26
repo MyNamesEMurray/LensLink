@@ -26,7 +26,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 <h2>找不到 USB 设备（Windows）</h2>
 <ul>
   <li><strong>安装 iTunes</strong>：它提供 Apple 的设备驱动。在 Windows 上没有别的办法。</li>
-  <li>在手机解锁状态下<strong>点按“信任”</strong>。</li>
+  <li>在手机解锁状态下<strong>轻点“信任”</strong>。</li>
   <li><strong>使用数据线。</strong>界面上无法区分仅充电线和数据线。</li>
 </ul>
 <p>
@@ -48,7 +48,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 
 <h2>“嘿 Siri，用 LensLink 开始推流”无法识别（仅限侧载）</h2>
 <p>
-  重新签名会改写 Bundle ID，使编译好的语句数据失去对应：即使同一操作在快捷指令中可用，Siri 也会拒绝执行。改用 App Store 版本，或使用包含 <code>lenslink://start</code> 的快捷指令。另外，确认 App 至少启动过一次，并且在<strong>设置 → Siri 与搜索 → LensLink</strong> 中打开了“Use with Siri”。
+  重新签名会改写 Bundle ID，使编译好的语句数据失去对应：即使同一操作在快捷指令中可用，Siri 也会拒绝执行。改用 App Store 版本，或使用包含 <code>lenslink://start</code> 的快捷指令。另外，确认 App 至少启动过一次，并且在<strong>设置 → Siri 与搜索 → LensLink</strong> 中允许 LensLink 与 Siri 搭配使用（英文界面中的“Use with Siri”）。
 </p>
 
 <h2>控制中心视频效果缺失或呈灰色</h2>
@@ -74,7 +74,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 <h2>没有声音，或者听不到声音</h2>
 <ul>
   <li><strong>直播期间 DRM 应用没有声音：</strong>iOS 会将 Apple Music、Spotify 和 Netflix 静音。游戏、App 和浏览器的声音正常。</li>
-  <li><strong>录下了但听不到：</strong>在 OBS 的高级音频属性中，把<strong>音频监听</strong>设为<strong>监听并输出</strong>。</li>
+  <li><strong>录下了但听不到：</strong>在 OBS 的“高级音频设置”中，把<strong>音频监听</strong>设为<strong>监听并输出</strong>。</li>
   <li><strong>OBS 中没有手机麦克风：</strong>打开<strong>将手机麦克风发送到 OBS</strong>。如果<strong>自动音画同步参考</strong>已开启，就不会有：一个麦克风，只担一个角色。</li>
 </ul>
 
@@ -106,7 +106,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
 
 <h2>OBS 来源显示带暂停符号的模糊画面</h2>
 <p>
-  视频流是<strong>暂停</strong>了，而不是出了故障：手机仍然连接，摄像头也仍在运行，只是没有视频发出。要么是有人暂停了它（手机的直播界面、网页面板和来源属性中都有这个按钮），要么是 iOS 中断了摄像头，这发生在 iPad 上另一个 App 在 LensLink 旁边打开摄像头时。在以上任一处点继续即可；中断的情况下，摄像头恢复后会自动继续。
+  视频流是<strong>暂停</strong>了，而不是出了故障：手机仍然连接，摄像头也仍在运行，只是没有视频发出。要么是有人暂停了它（手机的直播界面、浏览器面板和来源设置中都有这个按钮），要么是 iOS 中断了摄像头，这发生在 iPad 上另一个 App 在 LensLink 旁边打开摄像头时。在以上任一处点继续即可；中断的情况下，摄像头恢复后会自动继续。
 </p>
 
 <h2>在手机上切换 App 时画面冻结或变黑</h2>
@@ -114,7 +114,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
   这是预期行为：iOS 会暂停不在屏幕上的 App 的摄像头拍摄，因此 LensLink 会干净地停止推流，来源随之变为空白。锁定手机也是一样。屏幕<em>直播</em>是例外，它会在切换 App 后继续运行；受支持的 iPad 在分屏浏览、侧拉或台前调度中与其他 App 并排时也会继续推流。
 </p>
 <p>
-  这种窗口本身没有任何按钮（iOS 15 之后，iOS 不再为这类窗口绘制按钮），所以轻点它即可回到 LensLink。把它推到屏幕边缘外会将其收起，而 iOS 只把摄像头借给它能看到的窗口，因此拍摄会暂停，绿色的摄像头指示点熄灭，OBS 保留最后一帧，直到你把窗口拉回来，届时推流会自动恢复。这是 iOS 关于后台拍摄的规则，不是 LensLink 的设置。如果想完全不碰手机就停止或暂停，可以在 OBS 或<a href="/docs/web-panel/">网页面板</a>中按<strong>停止</strong>或<strong>暂停</strong>，或者让 Siri 停止推流。
+  这种窗口本身没有任何按钮（iOS 15 之后，iOS 不再为这类窗口绘制按钮），所以轻点它即可回到 LensLink。把它推到屏幕边缘外会将其收起，而 iOS 只把摄像头借给它能看到的窗口，因此拍摄会暂停，绿色的摄像头指示点熄灭，OBS 保留最后一帧，直到你把窗口拉回来，届时推流会自动恢复。这是 iOS 关于后台拍摄的规则，不是 LensLink 的设置。如果想完全不碰手机就停止或暂停，可以在 OBS 或<a href="/docs/web-panel/">浏览器面板</a>中按<strong>停止</strong>或<strong>暂停</strong>，或者让 Siri 停止推流。
 </p>
 <p>
   在 iPad 上，让 LensLink 与其他 App 一起保持<em>在</em>屏幕上（分屏浏览、侧拉或台前调度），在支持多任务摄像头访问的机型上（iPadOS 16+）摄像头就会继续运行。如果 iPad 无法共享摄像头，状态会显示为<strong>摄像头已暂停：此 iPad 无法在屏幕上共享摄像头</strong>；在这种设备上全屏运行 LensLink。
@@ -125,7 +125,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
   <strong>工具 → LensLink 设置 → 复制诊断报告</strong>，然后粘贴到 <a href="{{REPO}}/issues">GitHub</a> 上的 issue 中。它会收集版本、硬件、图形设备、设置以及每个来源的连接状态，包括最后一次套接字错误，可以区分“App 没有运行”和“操作系统拒绝了连接”。不含视频、音频或个人数据。
 </p>
 <p>
-  没有 Qt 界面，或者要从脚本获取：<code>curl localhost:9980/api/diagnostics</code>。报告也会写入 OBS 日志，因此<strong>帮助 → 日志文件 → 上传当前日志文件</strong>也会带上它。
+  没有 Qt 界面，或者要从脚本获取：<code>curl localhost:9980/api/diagnostics</code>。报告也会写入 OBS 日志，因此<strong>帮助 → 日志文件 → 上传当前的日志文件</strong>也会带上它。
 </p>
 <p>
   值得一并提供的还有：App 中的<strong>选项 → 摄像头诊断</strong>，以及在开启<strong>详细诊断</strong>的情况下复现一次问题后的 OBS 日志。

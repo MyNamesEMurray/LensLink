@@ -46,7 +46,7 @@ source: 441ba810e72e
     <tr><td><code>GET /api/sources</code></td><td>所有来源：<code>id</code>、<code>name</code>、<code>connected</code>、<code>standby</code>、<code>screen</code>。</td></tr>
     <tr><td><code>GET /api/status</code></td><td><code>status</code> 文本（使用 OBS 的界面语言）及其 <code>tone</code>（<code>idle</code>、<code>wait</code>、<code>ready</code>、<code>live</code> 或 <code>error</code>，用于在不读取文本的情况下为其着色），另有 <code>screen</code>、<code>standby</code>、<code>connected</code>、<code>autoStart</code> 以及音画同步阶段 <code>sync</code>。</td></tr>
     <tr><td><code>GET /api/diagnostics</code></td><td>纯文本形式的完整诊断报告：版本、硬件、设置以及每个来源的状态。内容与“工具 → LensLink 设置”中的按钮相同。</td></tr>
-    <tr><td><code>GET /api/state</code></td><td>手机最近一次的摄像头状态快照：镜头、变焦、曝光、对焦、白平衡、支持的格式。来源属性读取的也是同一份缓存，三个界面正是靠它保持同步。</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>手机最近一次的摄像头状态快照：镜头、变焦、曝光、对焦、白平衡、支持的格式。来源设置读取的也是同一份缓存，三个界面正是靠它保持同步。</td></tr>
   </tbody>
 </table>
 
@@ -73,7 +73,7 @@ source: 441ba810e72e
 <table>
   <thead><tr><th>请求</th><th>效果</th></tr></thead>
   <tbody>
-    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code>：与自动启动复选框修改的是同一个属性。空请求体会被拒绝，而不会被当作 false。</td></tr>
+    <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code>：与自动启动复选框修改的是同一个设置。空请求体会被拒绝，而不会被当作 false。</td></tr>
     <tr><td><code>POST /api/recalibrate</code></td><td>无请求体。开始一次新的音画同步测量。</td></tr>
   </tbody>
 </table>

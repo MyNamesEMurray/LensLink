@@ -4,7 +4,7 @@ source: 3b19eded1e63
 ---
 <h1>远程启动</h1>
 <p class="lede">
-  夹在显示器后面的手机，不该为了点一下“开始”就得取下来。只要 App 已打开且处于空闲状态，OBS 就能自己启动摄像头。
+  夹在显示器后面的手机，不该为了轻点一下“启动”就得取下来。只要 App 已打开且处于空闲状态，OBS 就能自己启动摄像头。
 </p>
 
 <h2>为什么 App 必须保持打开</h2>
@@ -27,7 +27,7 @@ source: 3b19eded1e63
 
 <h3>从 OBS 启动</h3>
 <p>
-  只要 App 已连接，就可以使用来源属性中的<strong>启动手机上的摄像头</strong>和<strong>停止手机上的摄像头</strong>。
+  只要 App 已连接，就可以使用来源设置中的<strong>启动手机上的摄像头</strong>和<strong>停止手机上的摄像头</strong>。
 </p>
 
 <h3>从浏览器面板启动</h3>
@@ -42,7 +42,7 @@ source: 3b19eded1e63
   <li><strong>URL scheme：</strong><code>lenslink://start</code> 和 <code>lenslink://stop</code>。这是 iOS 15 上的方式，而且在任何系统上都能用。</li>
 </ul>
 <div class="callout warn">
-  <p><strong>Siri 语句与侧载不兼容。</strong>重新签名会改写 Bundle ID，使编译好的语句数据失去对应：即使同一操作在快捷指令中可用，Siri 也会拒绝执行。改用 App Store 版本，或 <code>lenslink://start</code>。另外，确认 App 至少启动过一次，并且在<strong>设置 → Siri 与搜索 → LensLink</strong> 中打开了“Use with Siri”。</p>
+  <p><strong>Siri 语句与侧载不兼容。</strong>重新签名会改写 Bundle ID，使编译好的语句数据失去对应：即使同一操作在快捷指令中可用，Siri 也会拒绝执行。改用 App Store 版本，或 <code>lenslink://start</code>。另外，确认 App 至少启动过一次，并且在<strong>设置 → Siri 与搜索 → LensLink</strong> 中允许 LensLink 与 Siri 搭配使用（英文界面中的“Use with Siri”）。</p>
 </div>
 
 <h2>切换场景也会启动和停止</h2>

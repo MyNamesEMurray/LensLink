@@ -11,11 +11,11 @@ source: 241eae9c8fb9
 <ol class="walk">
   <li>
     <strong>在 OBS 中添加来源</strong>
-    <p><strong>来源 → + → LensLink Screen</strong>，然后像设置摄像头来源一样把它指向手机。</p>
+    <p><strong>源 → + → LensLink Screen</strong>，然后像设置摄像头来源一样把它指向手机。</p>
   </li>
   <li>
     <strong>在手机上开始直播</strong>
-    <p>点按<strong>镜像屏幕</strong>，选择 <strong>LensLink Screen</strong>，再点按<strong>开始直播</strong>。这里必须使用 iOS 自己的选择器。</p>
+    <p>轻点<strong>镜像屏幕</strong>，选择 <strong>LensLink Screen</strong>，再轻点<strong>开始直播</strong>。这里必须使用 iOS 自己的选择器。</p>
   </li>
   <li>
     <strong>离开 App</strong>
@@ -34,7 +34,7 @@ source: 241eae9c8fb9
   <li><strong>不会发送你的麦克风。</strong>在 OBS 中单独接入你的麦克风。（摄像头来源可以传输手机麦克风；这个来源特意不这样做。）</li>
 </ul>
 <p>
-  如果要<em>听到</em>声音而不只是录下来，在 OBS 的高级音频属性中把该来源的<strong>音频监听</strong>设为<strong>监听并输出</strong>。
+  如果要<em>听到</em>声音而不只是录下来，在 OBS 的“高级音频设置”中把该来源的<strong>音频监听</strong>设为<strong>监听并输出</strong>。
 </p>
 
 <h2>固定来源尺寸</h2>
@@ -43,17 +43,17 @@ source: 241eae9c8fb9
 </p>
 <ol>
   <li>右键点击来源 → <strong>变换</strong> → <strong>编辑变换…</strong></li>
-  <li>将 <strong>Bounding Box Type</strong> 设为 <strong>Scale to inner bounds</strong>（“适应”）。</li>
+  <li>将<strong>边框类型</strong>设为<strong>等比缩放到框内</strong>（较新的 OBS 中为“边界类型”和“适应”）。</li>
   <li>把边界框设为你希望镜像画面占据的尺寸。</li>
 </ol>
 <figure>
-  <img src="/img/screen-fit-transform.png" alt="OBS 的“编辑变换”对话框，Bounding Box Type 设为 Scale to inner bounds" width="544" loading="lazy">
+  <img src="/img/screen-fit-transform.png" alt="OBS 的“编辑变换”对话框，边框类型设为等比缩放到框内" width="544" loading="lazy">
   <figcaption>之后 OBS 会把每种传入尺寸缩放到你的框内，而不是改变你的布局。</figcaption>
 </figure>
 
 <h2>Screen 来源没有的功能</h2>
 <p>
-  没有摄像头控制，也没有浏览器面板，因为没有什么需要变焦或对焦。它的属性只有连接、解码和诊断。
+  没有摄像头控制，也没有浏览器面板，因为没有什么需要变焦或对焦。它的设置只有连接、解码和诊断。
 </p>
 
 <h2>两个来源共用一台手机</h2>

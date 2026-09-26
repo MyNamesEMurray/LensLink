@@ -261,7 +261,7 @@ and everywhere at once rather than drifting.
 | View menu (OBS) | Ansicht | Vista | Affichage | 表示 | Visualizar | 视图 |
 | Wi-Fi | WLAN | Wi-Fi | Wi-Fi | Wi-Fi | Wi-Fi | Wi-Fi |
 | tap (touch) | tippen | tocar | toucher | タップ | tocar | 轻点 |
-| Properties (OBS) | Eigenschaften | Propiedades | Propriétés | プロパティ | Propriedades | 属性 |
+| Properties (OBS) | Eigenschaften | Propiedades | Propriétés | プロパティ | Propriedades | 设置 |
 | Tools menu (OBS) | Werkzeuge | Herramientas | Outils | ツール | Ferramentas | 工具 |
 | filter (OBS) | Filter | filtro | filtre | フィルタ | filtro | 滤镜 |
 | dock (OBS) | Dock | panel | dock | ドック | painel | 停靠窗口 |
