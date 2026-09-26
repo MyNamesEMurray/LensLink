@@ -1401,6 +1401,7 @@ final class Streamer: ObservableObject {
     private var isForeground = false
     /// A screen broadcast owns port 9979; standby must release it.
     private var screenCaptured = false
+    private var screenMirrorActive = false
 
     func sceneDidActivate() {
         isForeground = true
@@ -1416,9 +1417,15 @@ final class Streamer: ObservableObject {
         stopStandby()
     }
 
+    func setScreenMirrorActive(_ active: Bool) {
+        screenMirrorActive = active
+        updateStandby()
+    }
+
     private func updateStandby() {
         guard !isStreaming else { return }
         let want = remoteStartEnabled && isForeground && !screenCaptured
+            && !screenMirrorActive
         if want && !standbyActive {
             standbyActive = true
             client.setStandby(true)

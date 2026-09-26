@@ -104,6 +104,9 @@
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "Iniciar câmera";
 
+/* Setup screen (iOS 27+): the Mirror Screen button while the screen is being mirrored; stops it (also its VoiceOver label) */
+"Stop Mirroring" = "Parar espelhamento";
+
 /* Setup screen toggle: use the phone's microphone as the OBS source's audio */
 "Send phone mic to OBS" = "Enviar microfone do celular ao OBS";
 
@@ -229,7 +232,7 @@
 "One mic, one role — turning one on turns the other off." = "Um microfone, uma função: ativar uma opção desativa a outra.";
 
 /* Documentation sheet, Screen mirror section (Markdown: keep the ** markers) */
-"Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual." = "Transmite a tela inteira, com o áudio dos apps, para uma fonte **LensLink Screen**: ótimo para jogos de celular ou demonstrações de apps. O iOS silencia áudio com DRM (Apple Music, Netflix), e o seu microfone não é enviado: capte a sua voz no OBS como de costume.";
+"Streams your whole screen, with app audio, to a **LensLink Screen** source — great for mobile games or app demos. iOS mutes DRM audio (Apple Music, Netflix), and your microphone isn't sent — mic yourself in OBS as usual. On iOS 27 and later, **Mirror Screen** uses the system screen-sharing picker, and mirroring keeps running in the background until you stop it (from LensLink or the system's screen-sharing indicator)." = "Transmite a tela inteira, com o áudio dos apps, para uma fonte **LensLink Screen**: ótimo para jogos de celular ou demonstrações de apps. O iOS silencia áudio com DRM (Apple Music, Netflix), e o seu microfone não é enviado: capte a sua voz no OBS como de costume. No iOS 27 e posterior, **Espelhar tela** usa o seletor de compartilhamento de tela do sistema, e o espelhamento continua em segundo plano até você pará-lo (pelo LensLink ou pelo indicador de compartilhamento de tela do sistema).";
 
 /* Documentation section header */
 "Screen mirror" = "Espelhamento de tela";
@@ -321,6 +324,14 @@
 
 /* Shortcuts action description */
 "Stops the LensLink camera stream." = "Para a transmissão da câmera do LensLink.";
+
+/* ===== ScreenStreamPipeline.swift ===== */
+
+/* Screen mirror failure (an alert from the broadcast extension, or the red caption under the Setup screen buttons on iOS 27+); %@ = the system's error text */
+"Could not open the streaming port (%@). If the LensLink camera is streaming, stop it first — a device can send the camera or the screen, not both." = "Não foi possível abrir a porta de transmissão (%@). Se a câmera do LensLink estiver transmitindo, pare-a antes: um aparelho pode enviar a câmera ou a tela, não as duas.";
+
+/* Screen mirror failure when OBS never connects (alert or red caption, as above); %@ = technical listener state for bug reports */
+"OBS did not connect within 30 seconds [%@]. Check OBS has a LensLink Screen source pointing at this phone (USB, or this phone's Wi-Fi IP) — a LensLink Camera source won't accept a screen broadcast — and the camera stream isn't running." = "O OBS não se conectou em 30 segundos [%@]. Confira se o OBS tem uma fonte LensLink Screen apontada para este celular (USB ou o IP Wi-Fi deste celular), já que uma fonte LensLink Camera não aceita transmissão de tela, e se a transmissão da câmera não está rodando.";
 
 /* ===== StreamClient.swift ===== */
 
@@ -418,7 +429,7 @@
 /* VoiceOver label of the Live screen red Stop button */
 "Stop camera" = "Parar câmera";
 
-/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) */
+/* Voice Control: a shorter name the user can say for the Stop camera button (never shown) [also used in ContentView.swift, for Stop Mirroring] */
 "Stop" = "Parar";
 
 /* Voice Control: another name the user can say for the status pill menu (never shown) */

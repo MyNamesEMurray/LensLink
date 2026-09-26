@@ -54,10 +54,19 @@ each submission.
 > **Screen mirroring.** "Mirror Screen" starts a ReplayKit broadcast
 > through the bundled broadcast-upload extension, which streams the
 > phone's screen (with app audio, never the microphone) to a **LensLink
-> Screen** source in OBS. Test it the same way with that source type.
+> Screen** source in OBS. On iOS 27 and later it opens the system
+> screen-sharing picker instead and the app streams the screen itself
+> with ScreenCaptureKit; the button then reads "Stop Mirroring". Test it
+> the same way with that source type.
 >
-> **Background behaviour.** The app declares no background modes.
-> Streaming runs only while the app is on screen: leaving it or locking
+> **Background behaviour.** The app declares one background mode,
+> `screen-capture`, used only while the user is mirroring the screen to
+> OBS on iOS 27 and later. Mirroring starts only from the system
+> screen-sharing picker, keeps running while the user is in the app
+> they are mirroring, and stops from "Stop Mirroring" in LensLink or
+> from the system's screen-sharing indicator. The camera never runs in
+> the background.
+> Camera streaming runs only while the app is on screen: leaving it or locking
 > the phone stops the stream. On iPads that allow multitasking camera
 > access, streaming continues beside another app in Split View, Slide
 > Over and Stage Manager. Streaming only ever runs after the user taps
@@ -276,8 +285,9 @@ Reduce Transparency on its own):
 ## The multitasking camera entitlement
 
 Requested from Apple (form answers recorded below). The submitted build
-does not depend on it: the app declares no background modes and stops
-streaming when it leaves the screen. When granted: add the entitlement
+does not depend on it: the camera stream stops when the app leaves the
+screen (the app's one background mode, `screen-capture`, covers screen
+mirroring on iOS 27 and later, not the camera). When granted: add the entitlement
 to the app target in `project.yml` and update `docs/DEVELOPMENT.md`'s
 backgrounding section, the site's FAQ and this note.
 

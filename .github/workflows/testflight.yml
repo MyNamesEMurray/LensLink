@@ -46,7 +46,7 @@ concurrency:
 jobs:
   upload:
     name: Build & upload to TestFlight
-    runs-on: macos-15
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v7
 
@@ -60,13 +60,17 @@ jobs:
           fi
 
       # App Store Connect rejects uploads built with older SDKs ("must be
-      # built with the iOS 26 SDK or later"); the runner's default Xcode
-      # is older, so pick the newest Xcode 26.x on the image.
-      - name: Select Xcode 26
+      # built with the iOS 26 SDK or later"), and in-app screen mirroring
+      # (ScreenCaptureKit) needs the iOS 27 SDK, so pick the release
+      # Xcode 27.0 on the image, never one of its betas.
+      - name: Select Xcode 27
         run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          XCODE=$(ls -d /Applications/Xcode_27.0*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
           if [ -z "$XCODE" ]; then
-            echo "::error::No Xcode 26.x on this runner image. Installed:"
+            XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+          fi
+          if [ -z "$XCODE" ]; then
+            echo "::error::No release Xcode 27 on this runner image. Installed:"
             ls /Applications | grep -i xcode || true
             exit 1
           fi
