@@ -61,13 +61,10 @@ site/README.md         how the site is built and deployed (Cloudflare Pages)
 iOS stops camera capture for any app that isn't on screen. LensLink
 accepts that: `Streamer.sceneDidEnterBackground` stops the stream
 cleanly so OBS shows a blank source rather than a frozen frame, and
-locking the phone does the same. The camera never runs in the
-background, and the app's only `UIBackgroundModes` entry is
-`screen-capture`, which covers the in-app screen mirror on iOS 27 and
-later (`ScreenMirror.swift`, ScreenCaptureKit) and nothing else. Remote
-start (standby HELLO + `start_stream`) exists because of this rule, and
-the ReplayKit screen broadcast used before iOS 27 is unaffected: it runs
-in its own extension process.
+locking the phone does the same. The app declares **no**
+`UIBackgroundModes` at all. Remote start (standby HELLO +
+`start_stream`) exists because of this rule, and the ReplayKit screen
+broadcast is unaffected — it runs in its own extension process.
 
 The one sanctioned way to keep capturing beside another app is
 `AVCaptureSession.isMultitaskingCameraAccessEnabled` (set in
