@@ -16,8 +16,9 @@ translations of it.
 | Chinese (Simplified) | `zh-Hans` | `zh-CN` | `/zh-hans/` |
 
 The App Store screenshot captions (`tools/store-screenshots/captions/`)
-use the iOS codes. The store listing text itself (description, keywords,
-release notes) lives in App Store Connect, not in this repo.
+use the iOS codes. The store listing text (subtitle, promotional text,
+keywords, description, release notes) is translated in
+`docs/APP_STORE_LOCALIZED.md`, to paste into App Store Connect.
 
 Why these six: they are the largest non-English OBS user communities and
 App Store markets, and together they cover most streamers who would not
