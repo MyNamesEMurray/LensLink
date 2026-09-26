@@ -8,6 +8,7 @@
 //   node render.js [--raw DIR] [--out DIR] [--only name,name] [--lang de,ja|all]
 const fs = require('fs');
 const path = require('path');
+const { DEVICES, AVAILABLE, esc, launchBrowser, loadCaptions } = require('./common');
 
 const args = process.argv.slice(2);
 const opt = (flag, dflt) => {
@@ -18,19 +19,8 @@ const here = __dirname;
 const rawDir = path.resolve(opt('--raw', path.join(here, 'raw')));
 const outDir = path.resolve(opt('--out', path.join(here, 'out')));
 const only = opt('--only', '') ? opt('--only', '').split(',') : null;
-const captionsDir = path.join(here, 'captions');
-const available = fs.readdirSync(captionsDir).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
 const langArg = opt('--lang', '');
-const langs = !langArg ? [null] : langArg === 'all' ? ['en', ...available] : langArg.split(',');
-
-// App Store Connect sizes, portrait. `raw` names which capture feeds
-// each: the 6.5-inch set is rendered from the same iPhone captures as
-// the 6.9-inch one (App Store Connect asks for one or the other).
-const DEVICES = {
-  'iphone-6.9': { raw: 'iphone', w: 1320, h: 2868, pad: 120, h1: 104, p: 50, devw: 1120, radius: 140, bezel: 22 },
-  'iphone-6.5': { raw: 'iphone', w: 1284, h: 2778, pad: 116, h1: 101, p: 49, devw: 1090, radius: 136, bezel: 22 },
-  'ipad-13':    { raw: 'ipad',   w: 2064, h: 2752, pad: 140, h1: 120, p: 56, devw: 1700, radius: 100, bezel: 24 },
-};
+const langs = !langArg ? [null] : langArg === 'all' ? ['en', ...AVAILABLE] : langArg.split(',');
 
 // Where the battery pill sits in a capture, as fractions of its width
 // and height, per capture kind: iPhone's status bar flanks the Dynamic
@@ -40,41 +30,12 @@ const BATTERY = {
   ipad:   { sampleX: 0.985, y: 0.0135, coverX: 0.926, coverW: 0.052, coverY: 0.005, coverH: 0.017, bx: 0.934, bw: 0.028, bh: 0.0095 },
 };
 
-let chromium;
-try {
-  ({ chromium } = require('playwright'));
-} catch {
-  ({ chromium } = require('/opt/node22/lib/node_modules/playwright'));
-}
-
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-
 (async () => {
   const shots = JSON.parse(fs.readFileSync(path.join(here, 'shots.json'), 'utf8'));
   const template = fs.readFileSync(path.join(here, 'template.html'), 'utf8');
-  const captions = {};
-  for (const lang of langs) {
-    if (!lang || lang === 'en') continue;
-    const file = path.join(captionsDir, `${lang}.json`);
-    if (!fs.existsSync(file)) throw new Error(`no captions/${lang}.json (have: en, ${available.join(', ')})`);
-    captions[lang] = JSON.parse(fs.readFileSync(file, 'utf8'));
-    for (const shot of shots) {
-      const c = captions[lang][shot.name];
-      if (!c || !c.headline || !c.sub) throw new Error(`captions/${lang}.json is missing "${shot.name}"`);
-    }
-  }
+  const captions = loadCaptions(langs, shots);
 
-  // No browser download needed: an installed Edge or Chrome is driven
-  // directly, and Playwright's own Chromium is the last resort.
-  const attempts = [];
-  if (process.env.CHROMIUM_PATH) attempts.push({ executablePath: process.env.CHROMIUM_PATH });
-  attempts.push({ channel: 'msedge' }, { channel: 'chrome' }, {});
-  let browser, lastErr;
-  for (const a of attempts) {
-    try { browser = await chromium.launch({ headless: true, ...a }); break; }
-    catch (e) { lastErr = e; }
-  }
-  if (!browser) throw lastErr;
+  const browser = await launchBrowser();
   let made = 0;
   const missing = new Set();
 
