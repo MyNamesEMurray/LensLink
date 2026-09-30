@@ -591,22 +591,35 @@ struct ContentView: View {
 }
 
 /// The Settings app's row anatomy: a coloured rounded tile with a white
-/// symbol, then the title. Shared by the Setup screen and Options so the
-/// two read as one list style (docs/UI_DESIGN.md §6.1).
+/// symbol, then the title — and, for the Documentation index, a line of
+/// secondary text under it. Shared by the Setup screen, Options and
+/// Documentation so they read as one list style (docs/UI_DESIGN.md §6.1).
 struct SettingsRowLabel: View {
     let title: String
     let systemImage: String
     let color: Color
+    let subtitle: String?
 
-    init(_ title: String, systemImage: String, color: Color) {
+    init(_ title: String, systemImage: String, color: Color,
+         subtitle: String? = nil) {
         self.title = title
         self.systemImage = systemImage
         self.color = color
+        self.subtitle = subtitle
     }
 
     var body: some View {
         Label {
-            Text(title)
+            if let subtitle = subtitle {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                    Text(subtitle)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                Text(title)
+            }
         } icon: {
             Image(systemName: systemImage)
                 .font(.system(size: 14, weight: .semibold))
@@ -614,6 +627,7 @@ struct SettingsRowLabel: View {
                 .frame(width: 29, height: 29)
                 .background(color, in: RoundedRectangle(cornerRadius: 7,
                                                         style: .continuous))
+                .accessibilityHidden(true)
         }
     }
 }
