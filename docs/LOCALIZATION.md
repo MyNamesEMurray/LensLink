@@ -186,6 +186,7 @@ and everywhere at once rather than drifting.
 | English | de | es | fr | ja | pt-BR | zh-Hans |
 |---|---|---|---|---|---|---|
 | Not connected | Nicht verbunden | No conectado | Non connecté | 未接続 | Não conectado | 未连接 |
+| Armed — waiting for OBS | Scharf geschaltet – warten auf OBS | Armado: esperando a OBS | Armé – en attente d’OBS | リモート開始有効・OBSを待機中 | Armado: aguardando o OBS | 远程启动已开启，正在等待 OBS |
 | Waiting for OBS… | Warten auf OBS … | Esperando a OBS… | En attente d’OBS… | OBSを待機中… | Aguardando o OBS… | 正在等待 OBS… |
 | OBS connected — ready | OBS verbunden – bereit | OBS conectado: listo | OBS connecté – prêt | OBS接続済み・準備完了 | OBS conectado: pronto | OBS 已连接，就绪 |
 | Live | Live | En vivo | En direct | ライブ | Ao vivo | 直播中 |
@@ -208,6 +209,7 @@ and everywhere at once rather than drifting.
 | Lip sync / lip-sync | Lippensynchronität | Sincronía labial | Synchronisation labiale | リップシンク | Sincronia labial | 音画同步 |
 | Auto lip-sync reference | Automatische Lippensynchron-Referenz | Referencia de sincronía labial automática | Référence de synchro labiale auto | 自動リップシンク用リファレンス | Referência automática de sincronia labial | 自动音画同步参考 |
 | Remote start | Fernstart | Inicio remoto | Démarrage à distance | リモート開始 | Início remoto | 远程启动 |
+| Arm / Disarm Remote Start (armed = remote start allowed) | Fernstart scharf schalten / unscharf schalten | Armar / Desarmar inicio remoto | Armer / Désarmer le démarrage à distance | リモート開始を有効にする / 解除 | Armar / Desarmar início remoto | 开启 / 关闭远程启动 |
 | Auto-start | Autostart | Inicio automático | Démarrage auto | 自動開始 | Início automático | 自动启动 |
 | Standby | Bereitschaft | En espera | Veille | スタンバイ | Em espera | 待机 |
 | Start Camera | Kamera starten | Iniciar cámara | Démarrer la caméra | カメラを開始 | Iniciar câmera | 启动摄像头 |

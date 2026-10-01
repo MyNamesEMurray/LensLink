@@ -13,7 +13,7 @@ struct ConnectingDocumentationView: View {
             }
 
             Section {
-                Text("The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs.")
+                Text("The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While remote start is armed and OBS is connected, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs.")
             } header: {
                 Text("Connection")
             }

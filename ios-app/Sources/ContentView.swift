@@ -426,9 +426,9 @@ struct ContentView: View {
 
     @State private var extensionStatus = ""
 
-    /// The two things this screen exists to start, stacked: the camera
-    /// (accent) and the screen broadcast (the quieter fill). The
-    /// broadcast button's face is ours; the (invisible) system broadcast
+    /// The things this screen exists to start, stacked: the camera
+    /// (accent), remote start and the screen broadcast (the quieter
+    /// fill). The broadcast button's face is ours; the (invisible) system broadcast
     /// picker stretched over it receives the tap, because iOS won't
     /// start a broadcast any other way.
     private var startSection: some View {
@@ -448,6 +448,21 @@ struct ContentView: View {
                 ActionRowLabel(title: L("Start Camera"),
                                systemImage: "video.fill",
                                style: .primary)
+            }
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+
+            Button {
+                streamer.setRemoteStartArmed(!streamer.remoteStartArmed)
+            } label: {
+                ActionRowLabel(title: streamer.remoteStartArmed
+                                   ? L("Disarm Remote Start")
+                                   : L("Arm Remote Start"),
+                               systemImage: streamer.remoteStartArmed
+                                   ? "xmark.circle"
+                                   : "dot.radiowaves.left.and.right",
+                               style: .secondary)
             }
             .buttonStyle(.plain)
             .listRowInsets(EdgeInsets())

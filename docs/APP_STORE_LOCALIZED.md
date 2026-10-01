@@ -62,7 +62,7 @@ Dieselben Bedienelemente im Browser-Steuerfeld auf deinem Computer und direkt in
 Kameraeinstellungen merken: Ein einmal eingestelltes Bild bleibt eingestellt
 
 Für die Produktion gemacht
-Fernstart: OBS startet die Kamera, während die App bereitsteht
+Fernstart: Scharf schalten, und OBS startet die Kamera für dich
 Tally-Licht: Ein farbiger Rahmen zeigt, wann du auf Sendung bist
 Pausieren mit einem Standbild statt eines eingefrorenen Bildes
 Streamt auf iPads, die es unterstützen, neben anderen Apps weiter
@@ -128,7 +128,7 @@ Los mismos controles en un panel del navegador en tu computadora, y en el propio
 Recordar ajustes de cámara: una toma ajustada una vez se queda así
 
 Hecha para producción
-Inicio remoto: OBS inicia la cámara mientras la app está en espera
+Inicio remoto: ármalo y OBS inicia la cámara por ti
 Luz tally: un borde de color indica cuándo estás al aire
 Pausa con una imagen fija en lugar de un cuadro congelado
 Sigue transmitiendo junto a otras apps en los iPad compatibles
@@ -194,7 +194,7 @@ Les mêmes commandes dans un panneau web sur votre ordinateur, et dans OBS lui-m
 Mémoriser les réglages de la caméra : un plan réglé une fois le reste
 
 Conçue pour la production
-Démarrage à distance : OBS démarre la caméra pendant que l’app est en veille
+Démarrage à distance : armez-le, et OBS démarre la caméra pour vous
 Voyant tally : une bordure colorée indique quand vous êtes à l’antenne
 Mise en pause avec une image d’attente plutôt qu’une image gelée
 Continue de diffuser à côté d’autres apps sur les iPad compatibles
@@ -260,7 +260,7 @@ LensLink Cameraは、iPhoneやiPadをOBS Studio用のカメラにします。ス
 カメラ設定を記憶：一度決めた設定はそのまま
 
 本番のための機能
-リモート開始：アプリが待機している間に、OBSからカメラを開始
+リモート開始：有効にすると、OBSがカメラを開始
 タリーランプ：色付きの枠でオンエア中かどうかがわかります
 一時停止中は、固まった映像ではなく一時停止用の静止画を表示
 対応するiPadでは、ほかのアプリと並べてもストリーミングを継続
@@ -326,7 +326,7 @@ Os mesmos controles em um painel no navegador do seu computador, e no próprio O
 Memorizar ajustes da câmera: uma cena ajustada uma vez continua ajustada
 
 Feito para produção
-Início remoto: o OBS inicia a câmera enquanto o app está em espera
+Início remoto: arme e o OBS inicia a câmera para você
 Luz tally: uma borda colorida mostra quando você está no ar
 Pausa com uma imagem de espera em vez de um quadro congelado
 Continua transmitindo ao lado de outros apps nos iPads compatíveis
@@ -392,7 +392,7 @@ LensLink Camera 可以把你的 iPhone 或 iPad 变成 OBS Studio 的摄像头�
 记住摄像头设置：调好一次，就一直保持
 
 为制作而生
-远程启动：App 待机时，由 OBS 启动摄像头
+远程启动：开启后，由 OBS 启动摄像头
 Tally 灯：彩色边框提示你是否正在播出
 暂停时显示暂停画面，而不是卡住的画面
 在支持的 iPad 上，与其他 App 并排使用时也能继续推流

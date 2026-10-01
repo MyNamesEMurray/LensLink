@@ -125,11 +125,12 @@ Slide Over and Stage Manager.
   lens, resolution, frame rate, codec, and microphone mid-stream). With
   more than one phone connected, the panel shows a tab per source — one
   page controls them all.
-- **Remote start.** With the app open, OBS can start the camera for you —
-  automatically when the source connects, or from a button in the source's
-  properties or the browser panel. Siri works too: *"Start streaming with
-  LensLink."* Great for a phone mounted out of reach. (See "Remote start"
-  below.)
+- **Remote start.** Tap **Arm Remote Start** in the app and OBS can start
+  the camera for you — automatically when the source connects, or from a
+  button in the source's properties or the browser panel. Until you arm it,
+  opening the app never hands OBS the camera. Siri works too: *"Start
+  streaming with LensLink."* Great for a phone mounted out of reach. (See
+  "Remote start" below.)
 - **Screen mirroring.** Mirror your whole iPhone/iPad screen — with the
   app's audio — into a dedicated **LensLink Screen** source; great for
   mobile games or app demos. Works over Wi-Fi or USB, encoded in HEVC for
@@ -177,14 +178,18 @@ Slide Over and Stage Manager.
 ## Remote start
 
 A phone mounted behind a monitor or on a rig shouldn't need to be pulled
-down just to tap a button. While LensLink is open and idle, OBS can start
-the camera for you (turn off with **Remote start from OBS** in the app's
-**Options**):
+down just to tap a button. Set up the shot, then tap **Arm Remote Start**
+on the app's Setup screen: from then on, while LensLink is open and idle,
+OBS can start the camera for you. Until you arm it the app doesn't listen
+on the network at all, so opening it never starts a stream by itself, and
+nobody else on the network can start your camera. Arming lasts until you
+tap **Disarm Remote Start**, stop a stream on the phone, or leave the app.
+For a phone that lives on a rig, **Arm remote start on open** in the
+app's **Options** (off by default) arms it every time the app opens.
 
 - **Automatically.** The LensLink Camera source's **"Start the phone's
   camera automatically when it's ready"** option (on by default) starts
-  the stream as soon as the open, idle app becomes reachable. Open the
-  app — by hand, with Siri, or from a Shortcuts automation — and the
+  the stream as soon as the armed app becomes reachable. Arm it, and the
   video just appears in OBS.
 - **Buttons in OBS.** The source's properties have **Start camera on the
   phone** and **Stop camera on the phone**, and the browser panel
@@ -205,10 +210,11 @@ the camera for you (turn off with **Remote start from OBS** in the app's
   management for scene switching.
 
 iOS only runs the camera (and LensLink's listener) while the app is on
-screen, so remote start works whenever the app is in the foreground —
-that's why the Siri/Shortcut path opens the app first. Stopping the
-stream on the phone won't ping-pong: OBS only auto-starts when the app
-has just become reachable, not after you pressed Stop.
+screen, so remote start works whenever the app is armed and in the
+foreground — that's why the Siri/Shortcut path opens the app first.
+Stopping the stream on the phone disarms remote start, so OBS can't start
+it again until you arm it again; a stop from OBS (hiding the source)
+keeps it armed.
 
 ## Screen mirroring
 

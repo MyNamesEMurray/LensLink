@@ -58,7 +58,7 @@ long streams.*
 ### Optional pairing & encryption — close the trusted-LAN caveat — P1, medium
 The README honestly says the stream is unencrypted and intended for
 trusted networks, and remote start raises the stakes (any LAN peer
-could send `start_stream`). A one-time pairing (PIN shown in the app,
+could send `start_stream` while the app is armed). A one-time pairing (PIN shown in the app,
 entered in OBS) yielding a stored token, carried in the plugin's first
 packet and required for CONTROL — plus optional TLS via `NWProtocolTLS`
 with a pinned self-signed cert — would make the app safe on shared

@@ -61,8 +61,9 @@ each submission.
 > the phone stops the stream. On iPads that allow multitasking camera
 > access, streaming continues beside another app in Split View, Slide
 > Over and Stage Manager. Streaming only ever runs after the user taps
-> Start, the system camera indicator is on throughout, and it stops on
-> Stop, on lock, or from the computer. The microphone is used only while
+> Start Camera, or after they arm remote start and OBS starts it; the
+> system camera indicator is on throughout, and it stops on Stop, on
+> lock, or from the computer. The microphone is used only while
 > streaming and only when the user turns on "Send phone mic to OBS" (a
 > wireless mic) or "Auto lip-sync reference" (a timing signal the plugin
 > uses to align the user's own microphone; it is never heard).
@@ -74,9 +75,13 @@ each submission.
 > streaming with LensLink" are App Intents; `lenslink://start` and
 > `lenslink://stop` are the URL-scheme equivalents.
 >
-> **Remote start.** With "Remote start from OBS" on, OBS can start the
-> camera while the app is open and idle (the app listens on TCP port
-> 9979 and keeps the screen awake in that state, dimming after a minute).
+> **Remote start.** OBS can start the camera only after the user taps
+> "Arm Remote Start" on the Setup screen (or turns on "Arm remote start
+> on open" in Options). Until then the app doesn't listen on the
+> network at all. While armed and idle it listens on TCP port 9979 and
+> keeps the screen awake, dimming after a minute; arming ends on
+> "Disarm Remote Start", on a Stop on the phone, or when the app leaves
+> the screen.
 
 ## Store listing
 
@@ -121,7 +126,7 @@ Connect rejects them there): Phone camera for OBS Studio
 > - Remember camera settings: a shot dialed in once stays dialed-in
 >
 > **Built for production**
-> - Remote start: OBS starts the camera while the app sits idle
+> - Remote start: arm it, and OBS starts the camera for you
 > - Tally light: a colored border says when you're on air
 > - Pause with a held picture instead of a frozen frame
 > - Keeps streaming beside other apps on iPads that support it
@@ -255,7 +260,7 @@ and change Options.
       double-tap the wake hint: the controls come back.
 - [ ] Turn VoiceOver on while the screen is already dimmed (triple-click
       shortcut): the screen wakes.
-- [ ] Remote-start standby with Dim screen: the Setup screen never dims
+- [ ] Arm remote start with Dim screen: the Setup screen never dims
       while VoiceOver runs. Repeat these two with Switch Control.
 
 **Voice Control** (Settings → Accessibility → Voice Control):

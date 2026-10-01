@@ -56,6 +56,7 @@ colours so it also looks native on the phone.
 | State        | Token         | Hex       | Label            |
 |--------------|---------------|-----------|------------------|
 | Idle         | `idleGrey`    | `#8E8E93` | "Not connected"  |
+| Armed        | `connectAmber`| `#FF9F0A` | "Armed — waiting for OBS" |
 | Standby      | `connectAmber`| `#FF9F0A` | "OBS connected — ready" |
 | Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
@@ -73,9 +74,19 @@ taking the camera keeps its explanatory message instead, because there
 the sentence is the actionable part. Either way the plugin learns of it
 through STATE and says so rather than sitting on a frozen picture.
 
-Standby is the remote-start state: the app is idle but OBS is connected
-and can start the camera. It shares the amber of Connecting — both mean
-"linked, not yet live". On the web panel the standby state replaces the
+Remote start is something the user **arms**, never a side effect of
+opening the app: Idle means nothing on the network can reach the phone,
+so OBS can't start the camera before the user has set up the shot.
+**Arm Remote Start** on the Setup screen brings the listener up and
+the status to Armed; once OBS connects it becomes Standby. Standby is
+the remote-start state: the app is idle but OBS is connected and can
+start the camera. Armed and Standby share the amber of Connecting —
+"ready, not yet live". Arming lasts until **Disarm Remote Start**, a
+Stop on the phone (the Live screen, Siri, `lenslink://stop`), or the
+app leaving the screen; a stop sent from OBS (`stop_stream`) keeps it
+armed, so hide/show in OBS can start and stop the camera repeatedly.
+**Options → Arm remote start on open** (off by default) arms it each
+time the app comes on screen, for a phone mounted out of reach. On the web panel the standby state replaces the
 (dead) camera controls with a single accent **Start camera** button;
 while live, the panel ends in a red **Stop camera** button (Stop stays
 the one destructive control, mirroring the app's red Stop chip).
@@ -355,7 +366,7 @@ Symbol) and a title — top to bottom:
    appended while connected ("OBS connected — ready · OBS 32.0 · USB").
    On the right: in Standby, an accent **Start** capsule; otherwise the
    phone's Wi-Fi IP (monospaced, tap-to-copy), because the address is how
-   OBS finds this phone. Below, the Local Network warning when Bonjour
+   OBS finds this phone. Armed reads "Armed — waiting for OBS" here. Below, the Local Network warning when Bonjour
    was denied, and the "How to connect" disclosure with the two setup
    steps — collapsible, and it stays collapsed once read.
 3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
@@ -375,8 +386,10 @@ Symbol) and a title — top to bottom:
    nothing else carries one — and the model does the switching when a
    choice needs it (picking H.264 returns Color to Standard, picking a
    10-bit colour switches the codec to HEVC and turns green screen off).
-4. **Start** — two stacked full-width buttons: **Start Camera** in the
-   accent, **Mirror Screen** in the system's secondary fill (the system
+4. **Start** — three stacked full-width buttons: **Start Camera** in the
+   accent, then **Arm Remote Start** (`dot.radiowaves.left.and.right`;
+   **Disarm Remote Start** with `xmark.circle` while armed) and **Mirror
+   Screen**, both in the system's secondary fill (the system
    broadcast picker is stretched invisibly over the button face — iOS
    won't start a broadcast any other way). A broken broadcast extension
    warns above them.
@@ -398,8 +411,8 @@ switching mid-stream.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short, in the same icon-tile rows as Setup.
-First group, the things that matter during a stream: **Remote start from
-OBS**, **Idle view** (Standard / Clean feed / Dim screen), **Focus on
+First group, the things that matter during a stream: **Arm remote start
+on open** (default off; see §2), **Idle view** (Standard / Clean feed / Dim screen), **Focus on
 faces** (default on), and the pushed screen **Tally light** (row value: the statuses that light it,
 "On air, In preview"), and **Remember camera settings** (default on; see
 §6.2.1). Second group, the experiments and the diagnostics: **High frame rate**

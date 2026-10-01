@@ -18,6 +18,7 @@ enum StreamerDefaults {
 final class Streamer: ObservableObject {
     enum Status: Equatable {
         case idle
+        case armed
         /// Remote start: OBS is connected and can start the camera from
         /// the computer; the camera itself isn't running yet.
         case standby
@@ -35,6 +36,7 @@ final class Streamer: ObservableObject {
         var displayName: String {
             switch self {
             case .idle: return L("Not connected")
+            case .armed: return L("Armed — waiting for OBS")
             case .standby: return L("OBS connected — ready")
             case .connecting: return L("Waiting for OBS…")
             case .streaming: return L("Live")
@@ -47,6 +49,7 @@ final class Streamer: ObservableObject {
         var tint: Color {
             switch self {
             case .idle: return Theme.idleGrey
+            case .armed: return Theme.connectAmber
             case .standby: return Theme.connectAmber
             case .connecting: return Theme.connectAmber
             case .streaming: return Theme.liveGreen
@@ -538,13 +541,9 @@ final class Streamer: ObservableObject {
     var micOptions: [AudioReference.MicOption] {
         AudioReference.availableMics()
     }
-    /// Remote start: while the app is open and idle, keep listening so OBS
-    /// can start (and stop) the camera from the computer — the plugin's
-    /// auto-start, its "Start camera on the phone" button, or the web panel.
-    @Published var remoteStartEnabled: Bool {
+    @Published var armOnOpen: Bool {
         didSet {
-            UserDefaults.standard.set(remoteStartEnabled, forKey: "remoteStartEnabled")
-            updateStandby()
+            UserDefaults.standard.set(armOnOpen, forKey: "armOnOpen")
         }
     }
     @Published var micPermissionDenied = false
@@ -1133,7 +1132,7 @@ final class Streamer: ObservableObject {
                     AssistiveTech.announce(TallyStatus.connectionLost.displayName)
                     AssistiveTech.haptic(.warning)
                 }
-            case .idle, .standby:
+            case .idle, .armed, .standby:
                 break
             }
         }
@@ -1278,7 +1277,7 @@ final class Streamer: ObservableObject {
         sendMicAudio = defaults.bool(forKey: "sendMicAudio")
             && !defaults.bool(forKey: "sendAudioReference")
         selectedMicID = defaults.string(forKey: "selectedMic") ?? "auto"
-        remoteStartEnabled = defaults.object(forKey: "remoteStartEnabled") as? Bool ?? true
+        armOnOpen = defaults.bool(forKey: "armOnOpen")
 
         camera.setFaceDrivenFocus(faceFocus)
         updateSensorReadoutPreference()
@@ -1384,25 +1383,31 @@ final class Streamer: ObservableObject {
 
     // MARK: - Standby (remote start)
     //
-    // While the app is foreground and idle, the listener stays up in
-    // "standby": the HELLO advertises `standby: true` and the plugin can
-    // send `start_stream` — from its auto-start, the source's "Start
-    // camera on the phone" button, or the web panel. The camera never
+    // While remote start is armed and the app is foreground and idle,
+    // the listener stays up in "standby": the HELLO advertises
+    // `standby: true` and the plugin can send `start_stream` — from its
+    // auto-start, the source's "Start camera on the phone" button, or
+    // the web panel. Nothing listens until the user arms, so opening
+    // the app never hands OBS the camera by itself. The camera never
     // runs in standby; iOS suspends the listener with the app, so this
-    // only works while LensLink is on screen (open it by hand, by Siri,
-    // or via lenslink://start). Auto-lock counts as leaving the screen,
-    // so standby also holds the idle timer — otherwise the phone locks
-    // itself a few minutes after OBS disconnects and remote start
-    // silently dies (ContentView dims the screen to keep this cheap).
+    // only works while LensLink is on screen. Auto-lock counts as
+    // leaving the screen, so standby also holds the idle timer —
+    // otherwise the phone locks itself a few minutes after OBS
+    // disconnects and remote start silently dies (ContentView dims the
+    // screen to keep this cheap).
 
     /// Published for ContentView's standby dim overlay.
     @Published private(set) var standbyActive = false
+    @Published private(set) var remoteStartArmed = false
     /// Scene foreground state, driven by LensLinkApp.
     private var isForeground = false
     /// A screen broadcast owns port 9979; standby must release it.
     private var screenCaptured = false
 
     func sceneDidActivate() {
+        if !isForeground && armOnOpen {
+            remoteStartArmed = true
+        }
         isForeground = true
         updateStandby()
     }
@@ -1412,15 +1417,27 @@ final class Streamer: ObservableObject {
         // The camera can't capture in the background; stop cleanly so
         // OBS shows a blank source instead of a frozen frame. The standby
         // listener goes too: a suspended app can't be remote-started.
-        stop()
+        endStream()
+        remoteStartArmed = false
         stopStandby()
+    }
+
+    func setRemoteStartArmed(_ armed: Bool) {
+        remoteStartArmed = armed
+        if armed, case .error = status, !isStreaming {
+            status = .idle
+        }
+        updateStandby()
     }
 
     private func updateStandby() {
         guard !isStreaming else { return }
-        let want = remoteStartEnabled && isForeground && !screenCaptured
+        let want = remoteStartArmed && isForeground && !screenCaptured
         if want && !standbyActive {
             standbyActive = true
+            if status == .idle {
+                status = .armed
+            }
             client.setStandby(true)
             client.start(port: OBSCProtocol.usbPort)
         } else if !want {
@@ -1435,7 +1452,7 @@ final class Streamer: ObservableObject {
         updateIdleTimer()
         client.setStandby(false)
         client.disconnect()
-        if status == .standby {
+        if status == .armed || status == .standby {
             status = .idle
         }
     }
@@ -1455,10 +1472,10 @@ final class Streamer: ObservableObject {
               let cmd = command["cmd"] as? String else { return }
 
         // Stream lifecycle commands work regardless of streaming state,
-        // but only when the user has remote start enabled.
+        // but only while the user has remote start armed.
         switch cmd {
         case "start_stream":
-            if remoteStartEnabled, !isStreaming {
+            if remoteStartArmed, !isStreaming {
                 Task { await start() }
             }
             return
@@ -1470,8 +1487,8 @@ final class Streamer: ObservableObject {
         case "stop_stream":
             // Paired with the plugin's "Disconnect when hidden": hiding
             // the source stops the camera; showing it starts it again.
-            if remoteStartEnabled, isStreaming {
-                stop()
+            if remoteStartArmed, isStreaming {
+                endStream()
             }
             return
         case "identify":
@@ -1964,6 +1981,12 @@ final class Streamer: ObservableObject {
     }
 
     func stop() {
+        remoteStartArmed = false
+        endStream()
+        updateStandby()
+    }
+
+    private func endStream() {
         guard isStreaming else { return }
         rememberCurrentSettings(for: selectedLens.id)
         isStreaming = false
@@ -2000,10 +2023,9 @@ final class Streamer: ObservableObject {
         audioReference = nil
         micCapturePurpose = nil
 
-        // Back to standby (if enabled and foreground) so OBS can start the
-        // camera again without touching the phone. The plugin only
-        // auto-starts when the app was previously unreachable, so a manual
-        // stop here doesn't bounce straight back into streaming.
+        // Back to standby (if still armed and foreground) so OBS can start
+        // the camera again without touching the phone. Only a remote
+        // stop_stream gets here armed: a stop on the phone disarms first.
         updateStandby()
     }
 
@@ -2053,24 +2075,25 @@ final class Streamer: ObservableObject {
         }
     }
 
-    /// Status while idle in standby. Only the idle↔standby words are
+    /// Status while idle in standby. Only the idle/armed/standby words are
     /// managed here — an error message stays visible (the standby listener
     /// still works underneath it).
     private func handleStandbyClientState(_ state: StreamClient.State) {
         guard standbyActive else { return }
         switch state {
         case .connected:
-            if status == .idle || status == .standby {
+            if status == .idle || status == .armed || status == .standby {
                 status = .standby
             }
         case .disconnected, .connecting:
             if status == .standby {
-                status = .idle
+                status = .armed
             }
         case .failed(let message):
             // The listener itself died (e.g. the port is taken); standby
-            // can't work until something changes.
+            // can't work until the user arms again.
             standbyActive = false
+            remoteStartArmed = false
             updateIdleTimer()
             client.disconnect()
             status = .error(message)
@@ -2079,7 +2102,7 @@ final class Streamer: ObservableObject {
 
     private func stopKeepingError() {
         let currentStatus = status
-        stop()
+        endStream()
         status = currentStatus
     }
 }
