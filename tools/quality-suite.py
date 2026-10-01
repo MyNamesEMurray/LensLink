@@ -235,6 +235,55 @@ def score_config(ffmpeg, capture_dir, manifest, config, out_dir):
     }
 
 
+def decode_frame(ffmpeg, inputs, index, fmt):
+    cmd = [ffmpeg, "-hide_banner", "-loglevel", "error"] + inputs + [
+        "-vf", f"select=eq(n\\,{index}),format={fmt}", "-frames:v", "1",
+        "-f", "rawvideo", "-"]
+    result = subprocess.run(cmd, capture_output=True)
+    return result.stdout if result.returncode == 0 else b""
+
+
+def plane_shift(ffmpeg, capture_dir, manifest, config):
+    w, h, fps = manifest["width"], manifest["height"], manifest["fps"]
+    fmt = COMPARE_FORMAT[manifest["pixfmt"]]
+    index = max(0, min(config.get("frames", 1), manifest["frames"]) // 2)
+    dist = decode_frame(ffmpeg, ["-i", os.path.join(capture_dir,
+                                                    config["file"])],
+                        index, fmt)
+    ref = decode_frame(ffmpeg, ["-f", "rawvideo", "-pix_fmt",
+                                manifest["pixfmt"], "-s", f"{w}x{h}",
+                                "-r", str(fps), "-i",
+                                os.path.join(capture_dir,
+                                             manifest["reference"])],
+                       index, fmt)
+    if not dist or len(dist) != len(ref):
+        return None
+    ten_bit = fmt.endswith("10le")
+    chroma_w = w // 2
+    chroma_h = h if fmt.startswith("yuv422") else h // 2
+    planes = [(w, h), (chroma_w, chroma_h), (chroma_w, chroma_h)]
+    sample = 2 if ten_bit else 1
+    scale = 4.0 if ten_bit else 1.0
+    shifts = []
+    offset = 0
+    for pw, ph in planes:
+        size = pw * ph * sample
+        d_plane = memoryview(dist)[offset:offset + size]
+        r_plane = memoryview(ref)[offset:offset + size]
+        if ten_bit:
+            d_plane = d_plane.cast("H")
+            r_plane = r_plane.cast("H")
+        step = 13
+        total = 0
+        count = 0
+        for i in range(0, len(d_plane), step):
+            total += d_plane[i] - r_plane[i]
+            count += 1
+        shifts.append(total / count / scale if count else 0.0)
+        offset += size
+    return shifts
+
+
 def score_capture(ffmpeg, capture_dir, out_dir):
     with open(os.path.join(capture_dir, "manifest.json"),
               encoding="utf-8") as f:
@@ -257,6 +306,8 @@ def score_capture(ffmpeg, capture_dir, out_dir):
             log(f"    scoring {config['name']}")
             row.update(score_config(ffmpeg, capture_dir, manifest, config,
                                     out_dir))
+            row["shift"] = plane_shift(ffmpeg, capture_dir, manifest,
+                                       config)
         if (not row.get("error") and row["frames"] != manifest["frames"]):
             row["note"] = (f"{row['frames']} of {manifest['frames']} frames; "
                            "frames after a gap are misaligned")
@@ -268,30 +319,51 @@ def fmt(value, digits=2):
     return "n/a" if value is None else f"{value:.{digits}f}"
 
 
+def shift_text(shift):
+    if not shift:
+        return "n/a"
+    return "/".join(f"{v:+.1f}" for v in shift)
+
+
 def capture_table(title, manifest, rows):
+    camera_fps = manifest.get("cameraFps")
+    cadence = ""
+    if camera_fps and camera_fps < manifest["fps"] * 0.95:
+        cadence = (f" The camera delivered {camera_fps:.1f} fps during the "
+                   "capture (the encoders ran alongside), so consecutive "
+                   "frames are further apart than in a live stream: inter "
+                   "codecs (HEVC, H.264) see more motion per frame than "
+                   "they would live. Bitrates are per nominal frame rate.")
     lines = [
         f"## {title}",
         "",
         f"{manifest['width']}x{manifest['height']} at {manifest['fps']} fps, "
         f"{manifest['frames']} frames, reference {manifest['pixfmt']}"
         f"{' (10-bit 4:2:2)' if manifest['pixfmt'] == 'p210le' else ''}"
-        f"{', ' + str(manifest['skipped']) + ' frames skipped' if manifest.get('skipped') else ''}.",
+        f"{', ' + str(manifest['skipped']) + ' frames skipped' if manifest.get('skipped') else ''}."
+        f"{cadence}",
         "",
         "| Config | Mbps | VMAF | VMAF 1% low | VMAF worst | PSNR Y | "
-        "PSNR Cb | PSNR Cr | SSIM | Notes |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "PSNR Cb | PSNR Cr | SSIM | Shift Y/Cb/Cr | Notes |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for r in rows:
         if r.get("error"):
-            lines.append(f"| {r['name']} | | | | | | | | | "
+            lines.append(f"| {r['name']} | | | | | | | | | | "
                          f"failed: {r['error']} |")
             continue
+        note = r.get("note", "")
+        shift = r.get("shift")
+        if shift and max(abs(v) for v in shift) >= 1.0:
+            note = (note + "; " if note else "") + (
+                "levels or colours shifted against the source: PSNR is "
+                "dominated by the shift, not compression")
         lines.append(
             f"| {r['name']} | {fmt(r.get('mbps'), 1)} | {fmt(r.get('vmaf'))} | "
             f"{fmt(r.get('vmaf_p1'))} | {fmt(r.get('vmaf_min'))} | "
             f"{fmt(r.get('psnr_y'))} | {fmt(r.get('psnr_cb'))} | "
             f"{fmt(r.get('psnr_cr'))} | {fmt(r.get('ssim'), 4)} | "
-            f"{r.get('note', '')} |")
+            f"{shift_text(shift)} | {note} |")
     lines.append("")
     return lines
 

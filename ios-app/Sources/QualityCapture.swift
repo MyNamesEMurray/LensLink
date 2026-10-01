@@ -53,6 +53,8 @@ final class QualityCapture {
     private var reference: FileHandle?
     private var pixelFormat: OSType = 0
     private var captured = 0
+    private var firstPts: Double?
+    private var lastPts: Double = 0
     private var skipped = 0
     private var pendingWrites = 0
     private var finishing = false
@@ -136,6 +138,12 @@ final class QualityCapture {
             onStatusChange?()
             return
         }
+        let index = Int64(captured)
+        let cameraPts = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
+        if firstPts == nil {
+            firstPts = cameraPts
+        }
+        lastPts = cameraPts
         captured += 1
         pendingWrites += 1
         let done = captured >= frameTarget
@@ -154,8 +162,11 @@ final class QualityCapture {
             self.pendingWrites -= 1
             self.lock.unlock()
         }
+        let nominalPts = CMTime(value: index, timescale: fps)
+        let nominalDuration = CMTime(value: 1, timescale: fps)
         for encoder in encoders {
-            encoder.encode(sampleBuffer)
+            encoder.encode(pixelBuffer: pixelBuffer, pts: nominalPts,
+                           duration: nominalDuration)
         }
         if done {
             finishQueue.async { [weak self] in self?.finish() }
@@ -216,6 +227,8 @@ final class QualityCapture {
         let frames = captured
         let skippedFrames = skipped
         let format = pixelFormat
+        let span = lastPts - (firstPts ?? lastPts)
+        let cameraFps = frames > 1 && span > 0 ? Double(frames - 1) / span : 0
         lock.unlock()
         if failedEarly {
             return
@@ -271,6 +284,7 @@ final class QualityCapture {
             "fps": Int(fps),
             "frames": frames,
             "skipped": skippedFrames,
+            "cameraFps": (cameraFps * 100).rounded() / 100,
             "pixfmt": Self.ffmpegPixelFormat(format) ?? "",
             "capture422": capture422,
             "reference": "reference.yuv",
