@@ -13,6 +13,7 @@
 #include "web-control.h"
 #include "plugin-settings.h"
 #include "diagnostics.h"
+#include "pipeline-bench.h"
 
 #define MAX_REQUEST (16 * 1024)
 #define MAX_CONTROL_BODY 512
@@ -977,6 +978,56 @@ static void handle_client(socket_t client)
 		pthread_mutex_unlock(&g_reg.mutex);
 		respond(client, s ? "204 No Content" : "503 Service Unavailable",
 			"text/plain", s ? NULL : "no sources");
+		return;
+	}
+
+	if (strncmp(request, "GET /api/bench", 14) == 0) {
+		char file[1024], esc[2100], json[2300];
+		bool writing = false;
+		bool active = lenslink_bench_status(file, sizeof(file),
+						    &writing);
+		json_escape(file, esc, sizeof(esc));
+		snprintf(json, sizeof(json),
+			 "{\"active\":%s,\"writing\":%s,\"file\":\"%s\"}",
+			 active ? "true" : "false",
+			 writing ? "true" : "false", esc);
+		respond(client, "200 OK", "application/json", json);
+		return;
+	}
+
+	if (strncmp(request, "POST /api/bench", 15) == 0) {
+		if (content_length == 0) {
+			respond(client, "400 Bad Request", "text/plain",
+				"body required");
+			return;
+		}
+		const char *b = request + body_offset;
+		char label[64] = {0};
+		const char *k = strstr(b, "\"label\"");
+		if (k) {
+			const char *q = strchr(k + 7, ':');
+			q = q ? strchr(q, '"') : NULL;
+			if (q) {
+				size_t n = 0;
+				for (q++; *q && *q != '"' &&
+					  n + 1 < sizeof(label);
+				     q++)
+					label[n++] = *q;
+			}
+		}
+		bool run = false;
+		const char *on = strstr(b, "\"on\"");
+		if (on) {
+			on = strchr(on + 4, ':');
+			if (on) {
+				on++;
+				while (*on == ' ' || *on == '\t')
+					on++;
+				run = strncmp(on, "true", 4) == 0;
+			}
+		}
+		lenslink_bench_set_run(run, label);
+		respond(client, "204 No Content", "text/plain", NULL);
 		return;
 	}
 

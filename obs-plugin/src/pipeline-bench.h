@@ -45,6 +45,10 @@ void lenslink_bench_latency(int latency_ms, int rtt_ms);
  * those files into a comparison report. */
 void lenslink_bench_maybe_log(void);
 
+void lenslink_bench_set_run(bool on, const char *label);
+
+bool lenslink_bench_status(char *file, size_t file_size, bool *writing);
+
 /* Closes the sample file; module unload. */
 void lenslink_bench_shutdown(void);
 

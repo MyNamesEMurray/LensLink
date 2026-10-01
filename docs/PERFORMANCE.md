@@ -179,6 +179,35 @@ claim in this repo should cite.
 Any future performance PR should quote at least one of these numbers
 before/after.
 
+### Benchmark suite (the whole codec/latency matrix, scripted)
+
+`python3 tools/bench-suite.py` drives a live LensLink Camera source
+through the web panel and records one labelled run per configuration:
+
+| Run | Differs from A |
+|-----|----------------|
+| A | baseline: USB, HEVC, 1080p60, Balanced, hardware decoding, standard pipeline |
+| B | H.264 |
+| C | Quality Maximum |
+| D | 4K30, Maximum |
+| E | Wi-Fi |
+| E2 | Wi-Fi, 4K30, Maximum (compared with D) |
+| F | software decoding |
+| G | GPU decode pipeline |
+
+Format, codec and quality changes go over `/api/control`. The script
+prompts for the three it can't set (the source's Connection, its
+Hardware decoding checkbox, and the GPU pipeline, which needs an OBS
+restart) and checks each one against `/api/diagnostics` before
+recording. It opens a moving test pattern in the browser for the phone
+to film, so frame sizes are comparable between runs. Per run it starts
+a labelled sample file with `POST /api/bench`, which doesn't touch the
+saved benchmark setting, and copies it into the results folder with that
+run's diagnostics. At the end it runs `bench-report.py` for each pair
+against A (and E2 against D) and writes `summary.md`, a table of means
+for every run. `--runs`, `--duration`, `--settle` and `--cooldown`
+adjust the plan.
+
 ## Measured results: standard vs GPU pipeline
 
 Field measurements from the benchmark above — 12 configurations

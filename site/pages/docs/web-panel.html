@@ -88,6 +88,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <tbody>
     <tr><td><code>POST /api/autostart</code></td><td><code>{"on":true|false}</code> — the same property the auto-start checkbox edits. An empty body is rejected, not read as false.</td></tr>
     <tr><td><code>POST /api/recalibrate</code></td><td>No body. Starts a fresh lip-sync measurement.</td></tr>
+    <tr><td><code>POST /api/bench</code></td><td><code>{"on":true|false,"label":"A"}</code> — starts or ends a labelled pipeline-benchmark sample file, without changing the saved benchmark setting.</td></tr>
+    <tr><td><code>GET /api/bench</code></td><td>Whether a labelled run is active, and the path of the newest sample file.</td></tr>
   </tbody>
 </table>
 

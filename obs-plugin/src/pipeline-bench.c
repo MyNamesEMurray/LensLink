@@ -45,11 +45,20 @@ static uint64_t g_file_start_ns;
 static os_cpu_usage_info_t *g_cpu;
 
 static FILE *g_csv;
+static char g_csv_path[1024];
+
+static bool g_run_active;
+static char g_run_label[64];
+
+static bool bench_on(void)
+{
+	return g_run_active || lenslink_settings_benchmark();
+}
 
 void lenslink_bench_frame(uint64_t cost_ns, size_t bytes_copied, int width,
 			  int height)
 {
-	if (!lenslink_settings_benchmark())
+	if (!bench_on())
 		return;
 
 	pthread_mutex_lock(&g_mutex);
@@ -66,7 +75,7 @@ void lenslink_bench_frame(uint64_t cost_ns, size_t bytes_copied, int width,
 void lenslink_bench_stages(bool have_arrival, uint64_t arrival_ns,
 			   uint64_t decode_ns)
 {
-	if (!lenslink_settings_benchmark())
+	if (!bench_on())
 		return;
 
 	pthread_mutex_lock(&g_mutex);
@@ -85,7 +94,7 @@ void lenslink_bench_stages(bool have_arrival, uint64_t arrival_ns,
 
 void lenslink_bench_latency(int latency_ms, int rtt_ms)
 {
-	if (!lenslink_settings_benchmark())
+	if (!bench_on())
 		return;
 	pthread_mutex_lock(&g_mutex);
 	g_latency_ms = latency_ms;
@@ -108,10 +117,15 @@ static void csv_open(void)
 	os_mkdirs(dir);
 	bfree(dir);
 
-	char name[128];
-	snprintf(name, sizeof(name), "bench-%s-%lld.csv",
-		 lenslink_settings_gpu_pipeline() ? "gpu" : "standard",
-		 (long long)time(NULL));
+	char name[160];
+	const char *pipeline =
+		lenslink_settings_gpu_pipeline() ? "gpu" : "standard";
+	if (g_run_label[0])
+		snprintf(name, sizeof(name), "bench-%s-%s-%lld.csv",
+			 g_run_label, pipeline, (long long)time(NULL));
+	else
+		snprintf(name, sizeof(name), "bench-%s-%lld.csv", pipeline,
+			 (long long)time(NULL));
 	char *path = obs_module_config_path(name);
 	if (!path)
 		return;
@@ -124,6 +138,7 @@ static void csv_open(void)
 		      g_csv);
 		blog(LOG_INFO, "[lenslink][bench] writing samples to %s",
 		     path);
+		snprintf(g_csv_path, sizeof(g_csv_path), "%s", path);
 	}
 	bfree(path);
 }
@@ -135,6 +150,45 @@ static void csv_close(void)
 		g_csv = NULL;
 		blog(LOG_INFO, "[lenslink][bench] sample file closed");
 	}
+}
+
+void lenslink_bench_set_run(bool on, const char *label)
+{
+	pthread_mutex_lock(&g_mutex);
+	csv_close();
+	g_last_tick_ns = 0;
+	g_last_log_ns = 0;
+	g_run_active = on;
+	g_run_label[0] = 0;
+	if (on && label) {
+		size_t n = 0;
+		for (const char *c = label;
+		     *c && n + 1 < sizeof(g_run_label); c++) {
+			bool ok = (*c >= 'a' && *c <= 'z') ||
+				  (*c >= 'A' && *c <= 'Z') ||
+				  (*c >= '0' && *c <= '9') || *c == '-' ||
+				  *c == '_';
+			g_run_label[n++] = ok ? *c : '-';
+		}
+		g_run_label[n] = 0;
+	}
+	char shown[sizeof(g_run_label)];
+	snprintf(shown, sizeof(shown), "%s", g_run_label);
+	pthread_mutex_unlock(&g_mutex);
+	blog(LOG_INFO, "[lenslink][bench] run %s%s%s", on ? "started" : "ended",
+	     shown[0] ? ": " : "", shown);
+}
+
+bool lenslink_bench_status(char *file, size_t file_size, bool *writing)
+{
+	pthread_mutex_lock(&g_mutex);
+	bool active = g_run_active;
+	if (writing)
+		*writing = g_csv != NULL;
+	if (file && file_size)
+		snprintf(file, file_size, "%s", g_csv_path);
+	pthread_mutex_unlock(&g_mutex);
+	return active;
 }
 
 void lenslink_bench_shutdown(void)
@@ -152,7 +206,7 @@ void lenslink_bench_maybe_log(void)
 {
 	pthread_mutex_lock(&g_mutex);
 
-	if (!lenslink_settings_benchmark()) {
+	if (!bench_on()) {
 		/* Toggled off: finish the file so the report tool sees a
 		 * complete run. */
 		csv_close();
