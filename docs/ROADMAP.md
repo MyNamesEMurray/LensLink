@@ -158,6 +158,24 @@ item.*
   case + capability probe in the app, an `AV_CODEC_ID_AV1` mapping in the
   plugin — the decoder path is already codec-agnostic with GPU/software
   fallback. Until then HEVC is the right codec for a LAN/USB link.
+- **ProRes over USB.** Built and measured on an iPhone 15 Pro (branch
+  `claude/bench-stage-timings`, numbers in docs/PERFORMANCE.md): it
+  encodes in real time, but ProRes LT 1080p60 lands about 4 ms behind
+  HEVC Maximum for under 3 VMAF points (below what viewers notice), HQ
+  and 4K don't fit the ~300 Mbps USB path, decode is CPU-only on
+  Windows, and 10-bit 4:2:2 capture showed no keying advantage. Revisit
+  if Apple's USB path gets much faster or a keying workflow shows a
+  visible difference.
+- **A higher HEVC bitrate ceiling over USB.** Pinning Maximum at
+  100 Mbps (1080p60) bought +1.4 VMAF for about 6 ms more latency, all
+  of it transfer time. Maximum's current ceiling is the sweet spot.
+- **Low-latency GPU codecs (PyroWave and similar).** The PC side is
+  under 2 ms of a 36 ms 1080p60 pipeline, and the camera stage alone is
+  28 ms, so a faster decoder has nothing to win; they also need Vulkan,
+  which iOS doesn't have, and would encode on the phone's GPU instead
+  of its media engine.
+- **USB 3 cables.** No measurable difference from USB 2: the limit is
+  the usbmuxd path (about 37 MB/s), not the cable. Not worth advising.
 - **Micro-optimizations** (poll cadences, timesync/ping rates, web-panel
   polling, recv-buffer tuning): all measured or bounded at ≪1% — not
   worth the review risk.

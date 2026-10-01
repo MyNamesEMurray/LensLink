@@ -199,6 +199,79 @@ copy traffic is 2× the 8-bit figures. A before/after bench pair for a
 excluded: VideoToolbox converts 10-bit to 8-bit BGRA itself, so HDR
 there renders via the RGBA path).
 
+## Measured results: where the latency goes, and what other codecs buy
+
+An instrumented build (branch `claude/bench-stage-timings`) timed every
+frame from both ends: the app timestamped capture, encoder in, encoder
+out and the hand-off to the network; the plugin timed arrival, decode
+and the copy into OBS, all on the TIMESYNC-corrected clock. The same
+build switched experiments on and off at runtime and scored quality the
+way streaming services do: the phone encoded the same raw camera frames
+once per configuration and FFmpeg's VMAF compared each against the raw
+frames. iPhone 15 Pro over USB (Windows, D3D11VA decode), 60 s per
+latency run.
+
+**Where 36 ms of 1080p60 latency goes** (HEVC, Balanced):
+
+| Stage | ms |
+|---|---|
+| Capture → encoder input (sensor, ISP, delivery; stabilization already off) | 28.0 |
+| Encode (VideoToolbox HEVC) | 7.6 |
+| Encoder output → network stack | 0.3 |
+| USB transfer | ~0.15 |
+| Decode (D3D11VA) | 0.14 |
+| Into OBS (download + frame copy; ~0.1 on the GPU pipeline) | 1.5 |
+
+The camera stage dominates; the codec is a fifth of the total and the
+PC side is under 2 ms. No decoder change on the PC can buy more than
+that.
+
+**Encoder quality mode costs 47 ms at 4K and buys nothing.** 4K30 has
+exactly 1080p120's pixel rate, so `qualityPriorityAffordable` used to
+let Maximum's quality-first encoder mode through. Frame rate held, but
+each frame took 69 ms to encode instead of 22:
+
+| 4K30 Maximum | Capture → arrival | Encode | VMAF (same frames) |
+|---|---|---|---|
+| Quality mode (before) | 106.6 ms | 69.4 ms | 98.51 |
+| Speed mode (now) | 59.7 ms | 22.5 ms | 98.59 |
+
+Repeated with 10-bit 4:2:2 capture: VMAF 97.28 vs 97.37. Maximum now
+keeps speed mode above 1080p; at 1080p and below quality mode costs
+about 3.5 ms and stays.
+
+**The USB link carries about 300 Mbps, whatever the cable.** USB 2 and
+USB 3 (SuperSpeed confirmed) cables gave identical results in every
+run; the limit is the usbmuxd / Apple Mobile Device Service path, which
+sustained about 37 MB/s. Within that, bigger frames simply take longer
+to cross: pinning HEVC Maximum at 100 Mbps (1080p60) added 4.2 ms of
+transfer and about 6 ms end to end; 150 Mbps at 4K30 added 9.3 ms.
+
+**Encoder quality** (1080p60, VMAF against the raw frames; about 6
+points is the smallest difference most viewers notice):
+
+| Config | Mbps | VMAF | Worst frame |
+|---|---|---|---|
+| HEVC Balanced | 4.8 | 90.8 | 82.7 |
+| HEVC Maximum (USB ceiling) | 28 | 97.2 | 93.4 |
+| HEVC pinned at 100 Mbps | 100 | 98.7 | 96.7 |
+| ProRes 422 Proxy | 65 | 98.0 | 96.0 |
+| ProRes 422 LT | 174 | 99.8 | 98.5 |
+
+Maximum is the sweet spot: Balanced shows visible bad moments in
+motion, Maximum doesn't, and the steps above it are under 3 VMAF points
+for 3.5× to 6× the data. (During these captures the camera delivered
+fewer frames while seven encoders ran, which makes HEVC's job harder
+than live and favours ProRes; the ranking held anyway.)
+
+**ProRes works but doesn't pay.** The 15 Pro encodes ProRes in real
+time and faster than HEVC (5.5 ms vs 7.6 at 1080p60), but its frames
+are about 7× bigger: ProRes LT 1080p60 (~205 Mbps) streamed at 60 fps
+for 44 ms capture → arrival, about 4 ms behind HEVC Maximum, with
+software decode at about 1.2 ms and 4% OBS CPU. ProRes HQ at 1080p60
+and LT at 4K30 exceed the USB path (39 and 22 fps). Its colour scores
+showed no keying advantage over HEVC, even from 10-bit 4:2:2 capture.
+
 ## Apple capture guidance: what we follow, what we deliberately don't
 
 The iOS capture/encode path was audited against Apple's AVFoundation and
@@ -213,7 +286,9 @@ at `.serious` the bitrate is halved, at `.critical` it's quartered and
 the frame rate halves (60→30, 30→15), restored when pressure abates.
 
 **Quality → Maximum** (Format sheet) relaxes three of those on purpose,
-and only there: speed-over-quality off, the peak cap at 2×, keyframes
+and only there: speed-over-quality off (1080p and below only; above it
+quality mode costs ~47 ms per frame for no measurable gain, see the
+measured results above), the peak cap at 2×, keyframes
 every 4 s (the plugin requests one on join). It also turns the adaptive
 loop from "back off from a fixed target" into a probe: start at 2× the
 table, +15% per 3 clean seconds up to 6× (USB) or 4× (Wi-Fi) the table,
