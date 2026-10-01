@@ -127,6 +127,7 @@ void refresh()
 	QStringList dock_rows;
 	std::unordered_map<std::string, PrevSample> next;
 	int standby_count = 0;
+	int unarmed_count = 0;
 
 	for (size_t i = 0; i < count; i++) {
 		const lenslink_health &h = list[i];
@@ -142,6 +143,8 @@ void refresh()
 		if (h.connected && !h.standby) {
 			bar_parts << QStringLiteral("%1 %2").arg(
 				who, rates_text(h, prev, now));
+		} else if (h.connected && h.unarmed) {
+			unarmed_count++;
 		} else if (h.connected && h.standby) {
 			standby_count++;
 		}
@@ -176,6 +179,11 @@ void refresh()
 		status_label->setText(QStringLiteral("%1 %2").arg(
 			prefix, QString::fromUtf8(
 					obs_module_text("StatusBar.Standby"))));
+		status_label->setVisible(true);
+	} else if (unarmed_count > 0) {
+		status_label->setText(QStringLiteral("%1 %2").arg(
+			prefix, QString::fromUtf8(
+					obs_module_text("StatusBar.NotArmed"))));
 		status_label->setVisible(true);
 	} else {
 		status_label->setVisible(false);

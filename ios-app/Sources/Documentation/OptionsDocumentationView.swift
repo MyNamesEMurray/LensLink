@@ -13,7 +13,7 @@ struct OptionsDocumentationView: View {
             }
 
             Section {
-                Text("**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it the phone isn't listening, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"")
+                Text("**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it OBS can see the phone but can't start the camera, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"")
             } header: {
                 Text("Remote start")
             }

@@ -185,7 +185,9 @@ static void append_sources(struct dstr *d)
 			  h[i].transport[0] ? h[i].transport : "(none)");
 		dstr_catf(d, "  state:     %s%s\n",
 			  h[i].connected ? "connected" : "not connected",
-			  h[i].standby ? ", camera idle (standby)" : "");
+			  h[i].unarmed   ? ", camera idle (standby, not armed)"
+			  : h[i].standby ? ", camera idle (standby)"
+					 : "");
 		if (h[i].connected) {
 			dstr_catf(d, "  received:  %llu packets, %llu "
 				     "keyframes, %llu bytes\n",

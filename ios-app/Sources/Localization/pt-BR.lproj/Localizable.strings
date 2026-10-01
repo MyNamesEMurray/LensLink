@@ -244,7 +244,7 @@
 "Connecting to OBS" = "Conectar ao OBS";
 
 /* Documentation → Getting connected, Connection section (Markdown: keep the ** markers) */
-"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While remote start is armed and OBS is connected, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "O cartão no topo mostra o nome do seu computador quando o OBS se conecta, com a versão do OBS e se a conexão veio por USB ou Wi-Fi. Enquanto o início remoto está armado e o OBS está conectado, o botão **Iniciar** do cartão inicia a transmissão por aqui; caso contrário, o cartão mostra o endereço do celular, que é o que o OBS precisa.";
+"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "O cartão no topo mostra o nome do seu computador quando o OBS se conecta, com a versão do OBS e se a conexão veio por USB ou Wi-Fi. Enquanto o OBS está conectado e a câmera está ociosa, o botão **Iniciar** do cartão inicia a transmissão por aqui; caso contrário, o cartão mostra o endereço do celular, que é o que o OBS precisa.";
 
 /* Documentation section header on the Getting connected page */
 "Connection" = "Conexão";
@@ -325,7 +325,7 @@
 "Camera behavior" = "Comportamento da câmera";
 
 /* Documentation → Options, Remote start section (Markdown: keep the ** markers) */
-"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it the phone isn't listening, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**Armar início remoto**, abaixo de Iniciar câmera, deixa o OBS iniciar e parar a câmera para você. Até você tocar nele, o celular não fica escutando, então abrir o app nunca inicia uma transmissão sozinho. Ele fica armado até você tocar em Desarmar, parar uma transmissão no celular ou sair do app; o celular fica acordado enquanto espera. **Armar início remoto ao abrir** arma sempre que o app é aberto, para um celular montado fora de alcance. Siri: \"Comece a transmitir com o LensLink.\"";
+"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it OBS can see the phone but can't start the camera, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**Armar início remoto**, abaixo de Iniciar câmera, deixa o OBS iniciar e parar a câmera para você. Até você tocar nele, o OBS vê o celular mas não pode iniciar a câmera, então abrir o app nunca inicia uma transmissão sozinho. Ele fica armado até você tocar em Desarmar, parar uma transmissão no celular ou sair do app; o celular fica acordado enquanto espera. **Armar início remoto ao abrir** arma sempre que o app é aberto, para um celular montado fora de alcance. Siri: \"Comece a transmitir com o LensLink.\"";
 
 /* Documentation section header on the Options page */
 "Remote start" = "Início remoto";
@@ -430,6 +430,9 @@
 
 /* Status word: remote start is armed, no OBS has connected yet */
 "Armed — waiting for OBS" = "Armado: aguardando o OBS";
+
+/* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
+"OBS connected — not armed" = "OBS conectado: não armado";
 
 /* Status word: OBS is connected and can start the camera */
 "OBS connected — ready" = "OBS conectado: pronto";

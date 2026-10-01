@@ -244,7 +244,7 @@
 "Connecting to OBS" = "OBSに接続";
 
 /* Documentation → Getting connected, Connection section (Markdown: keep the ** markers) */
-"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While remote start is armed and OBS is connected, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "OBSが接続すると、上部のカードにコンピュータの名前が、OBSのバージョンやUSBとWi-Fiのどちらで接続したかとともに表示されます。リモート開始が有効でOBSが接続済みのときは、カードの**開始**ボタンでここからストリームを開始できます。それ以外のときは、OBSに必要なスマートフォンのアドレスがカードに表示されます。";
+"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "OBSが接続すると、上部のカードにコンピュータの名前が、OBSのバージョンやUSBとWi-Fiのどちらで接続したかとともに表示されます。OBSが接続済みでカメラがアイドル状態のときは、カードの**開始**ボタンでここからストリームを開始できます。それ以外のときは、OBSに必要なスマートフォンのアドレスがカードに表示されます。";
 
 /* Documentation section header on the Getting connected page */
 "Connection" = "接続";
@@ -325,7 +325,7 @@
 "Camera behavior" = "カメラの動作";
 
 /* Documentation → Options, Remote start section (Markdown: keep the ** markers) */
-"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it the phone isn't listening, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**リモート開始を有効にする**（「カメラを開始」の下）をタップすると、OBSがカメラを開始・停止できるようになります。タップするまでスマートフォンは接続を待ち受けないため、アプリを開いただけでストリームが始まることはありません。有効な状態は、「リモート開始を解除」をタップするか、スマートフォンでストリームを停止するか、アプリを離れるまで続きます。待機中はスマートフォンがスリープしません。**開いたときにリモート開始を有効にする**をオンにすると、アプリを開くたびに有効になります。手の届かない場所に固定したスマートフォン向けです。Siri：「LensLinkでストリーミングを開始」";
+"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it OBS can see the phone but can't start the camera, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**リモート開始を有効にする**（「カメラを開始」の下）をタップすると、OBSがカメラを開始・停止できるようになります。タップするまでOBSはスマートフォンを認識できてもカメラを開始できないため、アプリを開いただけでストリームが始まることはありません。有効な状態は、「リモート開始を解除」をタップするか、スマートフォンでストリームを停止するか、アプリを離れるまで続きます。待機中はスマートフォンがスリープしません。**開いたときにリモート開始を有効にする**をオンにすると、アプリを開くたびに有効になります。手の届かない場所に固定したスマートフォン向けです。Siri：「LensLinkでストリーミングを開始」";
 
 /* Documentation section header on the Options page */
 "Remote start" = "リモート開始";
@@ -430,6 +430,9 @@
 
 /* Status word: remote start is armed, no OBS has connected yet */
 "Armed — waiting for OBS" = "リモート開始有効・OBSを待機中";
+
+/* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
+"OBS connected — not armed" = "OBS接続済み・リモート開始は無効";
 
 /* Status word: OBS is connected and can start the camera */
 "OBS connected — ready" = "OBS接続済み・準備完了";

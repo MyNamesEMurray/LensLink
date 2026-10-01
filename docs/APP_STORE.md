@@ -77,9 +77,10 @@ each submission.
 >
 > **Remote start.** OBS can start the camera only after the user taps
 > "Arm Remote Start" on the Setup screen (or turns on "Arm remote start
-> on open" in Options). Until then the app doesn't listen on the
-> network at all. While armed and idle it listens on TCP port 9979 and
-> keeps the screen awake, dimming after a minute; arming ends on
+> on open" in Options). While the app is open and idle it listens on
+> TCP port 9979 so OBS can find it, but refuses to start the camera
+> until armed. While armed it also keeps the screen awake, dimming
+> after a minute; arming ends on
 > "Disarm Remote Start", on a Stop on the phone, or when the app leaves
 > the screen.
 

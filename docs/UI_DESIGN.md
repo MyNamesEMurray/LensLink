@@ -57,6 +57,7 @@ colours so it also looks native on the phone.
 |--------------|---------------|-----------|------------------|
 | Idle         | `idleGrey`    | `#8E8E93` | "Not connected"  |
 | Armed        | `connectAmber`| `#FF9F0A` | "Armed — waiting for OBS" |
+| Not armed    | `connectAmber`| `#FF9F0A` | "OBS connected — not armed" |
 | Standby      | `connectAmber`| `#FF9F0A` | "OBS connected — ready" |
 | Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
@@ -75,21 +76,29 @@ the sentence is the actionable part. Either way the plugin learns of it
 through STATE and says so rather than sitting on a frozen picture.
 
 Remote start is something the user **arms**, never a side effect of
-opening the app: Idle means nothing on the network can reach the phone,
-so OBS can't start the camera before the user has set up the shot.
-**Arm Remote Start** on the Setup screen brings the listener up and
-the status to Armed; once OBS connects it becomes Standby. Standby is
-the remote-start state: the app is idle but OBS is connected and can
-start the camera. Armed and Standby share the amber of Connecting —
-"ready, not yet live". Arming lasts until **Disarm Remote Start**, a
-Stop on the phone (the Live screen, Siri, `lenslink://stop`), or the
-app leaving the screen; a stop sent from OBS (`stop_stream`) keeps it
-armed, so hide/show in OBS can start and stop the camera repeatedly.
-**Options → Arm remote start on open** (off by default) arms it each
-time the app comes on screen, for a phone mounted out of reach. On the web panel the standby state replaces the
-(dead) camera controls with a single accent **Start camera** button;
-while live, the panel ends in a red **Stop camera** button (Stop stays
-the one destructive control, mirroring the app's red Stop chip).
+opening the app. The open app is always reachable — OBS finds it,
+connects, and shows its name — but until the user taps **Arm Remote
+Start** on the Setup screen it refuses to start the camera, so OBS
+can't go live before the shot is set up. That connected-but-refusing
+state is Not armed; once armed it is Standby, the remote-start state:
+the app is idle and OBS is connected and can start the camera. Armed is
+the same permission with no OBS connected yet. All three share the
+amber of Connecting — "linked or ready, not yet live" — and the word
+says which. Arming lasts until **Disarm Remote Start**, a Stop on the
+phone (the Live screen, Siri, `lenslink://stop`), or the app leaving
+the screen; a stop sent from OBS (`stop_stream`) keeps it armed, so
+hide/show in OBS can start and stop the camera repeatedly. **Options →
+Arm remote start on open** (off by default) arms it each time the app
+comes on screen, for a phone mounted out of reach.
+
+The plugin mirrors it: a not-armed phone reads "Connected — the camera
+is idle, but remote start isn't armed on the phone" in the source's
+status, "not armed (camera idle)" in OBS's status bar, and the web
+panel's Start panel swaps its **Start camera** button for a hint
+pointing at the phone. Armed standby replaces the (dead) camera
+controls with a single accent **Start camera** button; while live, the
+panel ends in a red **Stop camera** button (Stop stays the one
+destructive control, mirroring the app's red Stop chip).
 
 While remote start is armed the phone holds its idle timer (auto-lock
 would suspend the listener and kill remote start), so the Setup screen
@@ -364,9 +373,11 @@ Symbol) and a title — top to bottom:
    `identify` command; "OBS Studio" until then), and under it the status
    dot + `status.displayName`, with the OBS version and transport
    appended while connected ("OBS connected — ready · OBS 32.0 · USB").
-   On the right: in Standby, an accent **Start** capsule; otherwise the
+   On the right: in Standby or Not armed, an accent **Start** capsule; otherwise the
    phone's Wi-Fi IP (monospaced, tap-to-copy), because the address is how
-   OBS finds this phone. Armed reads "Armed — waiting for OBS" here. Below, the Local Network warning when Bonjour
+   OBS finds this phone. The Start capsule shows whenever OBS is
+   connected and the camera is idle, armed or not: it is the phone's own
+   tap. Below, the Local Network warning when Bonjour
    was denied, and the "How to connect" disclosure with the two setup
    steps — collapsible, and it stays collapsed once read.
 3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
@@ -564,7 +575,8 @@ A third surface lives inside OBS itself (Qt, `frontend-ui.cpp`): a
 one-line health readout in the main window's status bar
 (`LensLink: <device> 60 fps · 11.9 Mb/s · 43 ms`, live sources joined by
 `  |  `, hidden when nothing is
-connected; "ready (camera idle)" during standby) and a dockable
+connected; "ready (camera idle)" during standby, "not armed (camera
+idle)" when the phone hasn't armed remote start) and a dockable
 **LensLink** panel listing every source with its device, status, and
 rates. These render with OBS's native theme rather than our palette —
 inside OBS's chrome, OBS's design language wins; our vocabulary (the

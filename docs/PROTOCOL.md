@@ -39,12 +39,31 @@ extension); it lets the plugin label the source and, for `screen`, expect
 system audio (packet type 10) instead of camera controls. Absent = camera.
 
 An optional `"standby": true` means the app is reachable but the camera
-isn't running yet (the app is open and idle with remote start **armed**;
-an app that isn't armed doesn't listen at all). No video follows until the plugin sends a
-`start_stream` control command (type 7). The app re-sends HELLO (without
-`standby`) when the stream starts; the plugin also treats VIDEO_CONFIG as
-leaving standby, so either signal suffices. Absent = a live stream
-follows as usual.
+isn't running yet (the app is open and idle). No video follows until the
+plugin sends a `start_stream` control command (type 7). The app re-sends
+HELLO (without `standby`) when the stream starts; the plugin also treats
+VIDEO_CONFIG as leaving standby, so either signal suffices. Absent = a
+live stream follows as usual.
+
+Alongside `standby`, `"armed"` says whether the user has armed remote
+start on the phone. `"armed": false` means the app will refuse
+`start_stream`: the plugin shows that the phone is connected but not
+armed, offers no Start button, and does not auto-start. The app re-sends
+HELLO whenever arming changes, so `"armed": true` arriving on the same
+connection is the cue to auto-start. Absent = armed: apps from before
+arming existed honoured `start_stream` whenever they were in standby.
+
+```json
+{ "name": "Emma's iPhone", "app": "LensLink", "protocol": 1,
+  "kind": "camera", "standby": true, "armed": false }
+```
+
+A plugin older than `armed` ignores it, so to such a plugin an unarmed
+app looks like ordinary standby: it may auto-send `start_stream`, which
+the app refuses by re-sending its HELLO (the plugin then shows plain
+standby instead of "starting"). Once the user arms, that plugin's
+auto-start has already been spent, so the camera starts from its
+**Start camera on the phone** button or from the phone.
 
 ### 2 — VIDEO_CONFIG
 Sent after HELLO and again whenever the capture format changes.
@@ -240,17 +259,17 @@ stream the user already started, never turn a camera on.
 
 `start_stream` / `stop_stream` are the **remote start** commands: they
 start/stop the camera itself (not just the connection) and are honoured
-only while remote start is **armed** in the app: the user taps **Arm
-Remote Start** (or turns on **Arm remote start on open**), and it stays
-armed until they disarm it, stop a stream on the phone, or leave the app.
-A `stop_stream` keeps it armed. Before arming the app has no listener, so
-arming is what makes it reachable, and a plugin sees it exactly as an app
-that has just been opened. The plugin sends `start_stream` when the user
+only while remote start is **armed** in the app (see HELLO): the user
+taps **Arm Remote Start** (or turns on **Arm remote start on open**), and
+it stays armed until they disarm it, stop a stream on the phone, or leave
+the app. A `stop_stream` keeps it armed. A `start_stream` the app refuses
+makes it re-send its HELLO. The plugin sends `start_stream` when the user
 clicks **Start camera on the phone** (source properties or web panel), or
-automatically on receiving a standby HELLO when its **auto-start** option
-is enabled — but only if the app was previously unreachable (just armed,
-opened or foregrounded), so stopping the stream on the phone doesn't
-bounce straight back into streaming. With
+automatically on receiving an armed standby HELLO when its **auto-start**
+option is enabled — but only if the app was previously unreachable (just
+opened or foregrounded) or reported itself unarmed, so stopping the
+stream on the phone doesn't bounce straight back into streaming (a stop
+on the phone also disarms). With
 **Disconnect when this source isn't shown anywhere** plus auto-start, the
 plugin sends `stop_stream` before dropping the connection on hide and
 `start_stream` again on show.

@@ -244,7 +244,7 @@
 "Connecting to OBS" = "Se connecter à OBS";
 
 /* Documentation → Getting connected, Connection section (Markdown: keep the ** markers) */
-"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While remote start is armed and OBS is connected, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "Une fois OBS connecté, la carte du haut affiche le nom de votre ordinateur, sa version d’OBS et la liaison utilisée, USB ou Wi-Fi. Tant que le démarrage à distance est armé et qu’OBS est connecté, son bouton **Démarrer** lance le flux d’ici ; sinon, la carte affiche l’adresse du téléphone, celle dont OBS a besoin.";
+"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "Une fois OBS connecté, la carte du haut affiche le nom de votre ordinateur, sa version d’OBS et la liaison utilisée, USB ou Wi-Fi. Tant qu’OBS est connecté et que la caméra est inactive, son bouton **Démarrer** lance le flux d’ici ; sinon, la carte affiche l’adresse du téléphone, celle dont OBS a besoin.";
 
 /* Documentation section header on the Getting connected page */
 "Connection" = "Connexion";
@@ -325,7 +325,7 @@
 "Camera behavior" = "Comportement de la caméra";
 
 /* Documentation → Options, Remote start section (Markdown: keep the ** markers) */
-"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it the phone isn't listening, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**Armer le démarrage à distance**, sous Démarrer la caméra, permet à OBS de démarrer et d’arrêter la caméra pour vous. Tant que vous ne l’avez pas touché, le téléphone n’écoute pas : ouvrir l’app ne lance donc jamais un flux de lui-même. Il reste armé jusqu’à ce que vous touchiez Désarmer, arrêtiez un flux sur le téléphone ou quittiez l’app ; le téléphone reste éveillé pendant l’attente. **Armer le démarrage à distance à l’ouverture** l’arme à chaque ouverture de l’app, pour un téléphone fixé hors de portée. Siri : « Lance le streaming avec LensLink. »";
+"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it OBS can see the phone but can't start the camera, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**Armer le démarrage à distance**, sous Démarrer la caméra, permet à OBS de démarrer et d’arrêter la caméra pour vous. Tant que vous ne l’avez pas touché, OBS voit le téléphone mais ne peut pas démarrer la caméra : ouvrir l’app ne lance donc jamais un flux de lui-même. Il reste armé jusqu’à ce que vous touchiez Désarmer, arrêtiez un flux sur le téléphone ou quittiez l’app ; le téléphone reste éveillé pendant l’attente. **Armer le démarrage à distance à l’ouverture** l’arme à chaque ouverture de l’app, pour un téléphone fixé hors de portée. Siri : « Lance le streaming avec LensLink. »";
 
 /* Documentation section header on the Options page */
 "Remote start" = "Démarrage à distance";
@@ -430,6 +430,9 @@
 
 /* Status word: remote start is armed, no OBS has connected yet */
 "Armed — waiting for OBS" = "Armé – en attente d’OBS";
+
+/* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
+"OBS connected — not armed" = "OBS connecté – non armé";
 
 /* Status word: OBS is connected and can start the camera */
 "OBS connected — ready" = "OBS connecté – prêt";

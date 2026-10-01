@@ -38,6 +38,7 @@ static const char *const web_text_keys[] = {
 	"Web.AutoStart",
 	"Web.AutoStart.Tip",
 	"Web.StartHint",
+	"Web.NotArmedHint",
 	"Web.Pause",
 	"Web.Resume",
 	"Web.Manual",
@@ -168,7 +169,9 @@ static const char control_page[] =
 	"<button class='primary' id='startbtn' data-t='StartCamera'></button>"
 	"<button class='primary toggle' id='asbtn1' "
 	"data-t-title='AutoStart.Tip' data-t='AutoStart'></button></div>"
-	"<div class='hint' style='margin-top:12px' data-t='StartHint'></div></div>"
+	"<div class='hint' id='starthint' style='margin-top:12px' data-t='StartHint'></div>"
+	"<div class='hint' id='armhint' style='margin-top:12px;display:none' "
+	"data-t='NotArmedHint'></div></div>"
 	/* Hidden until the first poll confirms a live camera connection —
 	 * a default-visible panel flashed dead sliders and a Stop button
 	 * before any state was known. */
@@ -299,6 +302,7 @@ static const char control_page[] =
 	"fhintEl=$('fhint'),flashlightEl=$('flashlight'),flipEl=$('flip'),lensselEl=$('lenssel'),"
 	"panelEl=$('panel'),screennoteEl=$('screennote'),"
 	"startpanelEl=$('startpanel'),startbtnEl=$('startbtn'),"
+	"starthintEl=$('starthint'),armhintEl=$('armhint'),"
 	"fmtrowEl=$('fmtrow'),fmtresEl=$('fmtres'),fmtfpsEl=$('fmtfps'),"
 	"fmtcodecEl=$('fmtcodec'),stopbtnEl=$('stopbtn'),"
 	"pausebtnEl=$('pausebtn'),"
@@ -466,6 +470,10 @@ static const char control_page[] =
 	"panelEl.style.display=(s.connected&&!s.screen&&!s.standby)?'':'none';"
 	"screennoteEl.style.display=s.screen?'':'none';"
 	"startpanelEl.style.display=(s.standby&&!s.screen)?'':'none';"
+	"const unarmed=s.standby&&s.armed===false;"
+	"startbtnEl.style.display=unarmed?'none':'';"
+	"starthintEl.style.display=unarmed?'none':'';"
+	"armhintEl.style.display=unarmed?'':'none';"
 	"if(typeof s.autoStart==='boolean'&&Date.now()-lastTouch>2000)"
 	"asUI(s.autoStart);"
 	"if(s.screen||s.standby||!s.connected)return;"
@@ -877,10 +885,11 @@ static void handle_client(socket_t client)
 				json + o, sizeof(json) - o,
 				"%s{\"id\":%d,\"name\":\"%s\","
 				"\"connected\":%s,\"standby\":%s,"
-				"\"screen\":%s}",
+				"\"armed\":%s,\"screen\":%s}",
 				i ? "," : "", g_reg.entries[i].id, esc,
 				ios_camera_is_connected(s) ? "true" : "false",
 				ios_camera_is_standby(s) ? "true" : "false",
+				ios_camera_is_armed(s) ? "true" : "false",
 				ios_camera_is_screen(s) ? "true" : "false");
 		}
 		pthread_mutex_unlock(&g_reg.mutex);
@@ -913,7 +922,7 @@ static void handle_client(socket_t client)
 		char json[2304];
 		enum ios_camera_status_tone tone = STATUS_TONE_IDLE;
 		bool screen = false, standby = false, connected = false;
-		bool auto_start = false;
+		bool armed = false, auto_start = false;
 		const char *sync = "off";
 
 		pthread_mutex_lock(&g_reg.mutex);
@@ -923,6 +932,7 @@ static void handle_client(socket_t client)
 					       &tone);
 			screen = ios_camera_is_screen(s);
 			standby = ios_camera_is_standby(s);
+			armed = ios_camera_is_armed(s);
 			connected = ios_camera_is_connected(s);
 			auto_start = ios_camera_auto_start(s);
 			sync = ios_camera_sync_state(s);
@@ -936,10 +946,10 @@ static void handle_client(socket_t client)
 		json_escape(status, escaped, sizeof(escaped));
 		snprintf(json, sizeof(json),
 			 "{\"status\":\"%s\",\"tone\":\"%s\",\"screen\":%s,"
-			 "\"standby\":%s,\"connected\":%s,\"autoStart\":%s,"
-			 "\"sync\":\"%s\"}",
+			 "\"standby\":%s,\"armed\":%s,\"connected\":%s,"
+			 "\"autoStart\":%s,\"sync\":\"%s\"}",
 			 escaped, tone_name(tone), screen ? "true" : "false",
-			 standby ? "true" : "false",
+			 standby ? "true" : "false", armed ? "true" : "false",
 			 connected ? "true" : "false",
 			 auto_start ? "true" : "false", sync);
 		respond(client, "200 OK", "application/json", json);

@@ -187,6 +187,7 @@ and everywhere at once rather than drifting.
 |---|---|---|---|---|---|---|
 | Not connected | Nicht verbunden | No conectado | Non connecté | 未接続 | Não conectado | 未连接 |
 | Armed — waiting for OBS | Scharf geschaltet – warten auf OBS | Armado: esperando a OBS | Armé – en attente d’OBS | リモート開始有効・OBSを待機中 | Armado: aguardando o OBS | 远程启动已开启，正在等待 OBS |
+| OBS connected — not armed | OBS verbunden – nicht scharf geschaltet | OBS conectado: sin armar | OBS connecté – non armé | OBS接続済み・リモート開始は無効 | OBS conectado: não armado | OBS 已连接，未开启远程启动 |
 | Waiting for OBS… | Warten auf OBS … | Esperando a OBS… | En attente d’OBS… | OBSを待機中… | Aguardando o OBS… | 正在等待 OBS… |
 | OBS connected — ready | OBS verbunden – bereit | OBS conectado: listo | OBS connecté – prêt | OBS接続済み・準備完了 | OBS conectado: pronto | OBS 已连接，就绪 |
 | Live | Live | En vivo | En direct | ライブ | Ao vivo | 直播中 |

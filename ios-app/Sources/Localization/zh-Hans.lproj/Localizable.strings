@@ -244,7 +244,7 @@
 "Connecting to OBS" = "连接到 OBS";
 
 /* Documentation → Getting connected, Connection section (Markdown: keep the ** markers) */
-"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While remote start is armed and OBS is connected, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "OBS 连接后，顶部的卡片会显示你的电脑名称、OBS 版本，以及连接是经由 USB 还是 Wi-Fi。远程启动已开启且 OBS 已连接时，卡片上的**启动**按钮可以直接在这里开始推流；其他时候，卡片显示手机的地址，也就是 OBS 需要填写的内容。";
+"The card at the top names your computer once OBS connects, with its OBS version and whether it came in over USB or Wi-Fi. While OBS is connected and the camera is idle, its **Start** button starts the stream from here; otherwise the card shows the phone's address, which is what OBS needs." = "OBS 连接后，顶部的卡片会显示你的电脑名称、OBS 版本，以及连接是经由 USB 还是 Wi-Fi。OBS 已连接且摄像头空闲时，卡片上的**启动**按钮可以直接在这里开始推流；其他时候，卡片显示手机的地址，也就是 OBS 需要填写的内容。";
 
 /* Documentation section header on the Getting connected page */
 "Connection" = "连接";
@@ -325,7 +325,7 @@
 "Camera behavior" = "摄像头行为";
 
 /* Documentation → Options, Remote start section (Markdown: keep the ** markers) */
-"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it the phone isn't listening, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**开启远程启动**（在“启动摄像头”下方）让 OBS 替你启动和停止摄像头。在你轻点它之前，手机不会监听连接，所以打开 App 本身绝不会开始推流。开启状态会一直保持，直到你轻点“关闭远程启动”、在手机上停止推流或离开 App；等待期间手机保持唤醒。**打开 App 时开启远程启动**会在每次打开 App 时自动开启，适合固定在够不着的位置的手机。Siri：“用 LensLink 开始推流。”";
+"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it OBS can see the phone but can't start the camera, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**开启远程启动**（在“启动摄像头”下方）让 OBS 替你启动和停止摄像头。在你轻点它之前，OBS 能看到手机但无法启动摄像头，所以打开 App 本身绝不会开始推流。开启状态会一直保持，直到你轻点“关闭远程启动”、在手机上停止推流或离开 App；等待期间手机保持唤醒。**打开 App 时开启远程启动**会在每次打开 App 时自动开启，适合固定在够不着的位置的手机。Siri：“用 LensLink 开始推流。”";
 
 /* Documentation section header on the Options page */
 "Remote start" = "远程启动";
@@ -430,6 +430,9 @@
 
 /* Status word: remote start is armed, no OBS has connected yet */
 "Armed — waiting for OBS" = "远程启动已开启，正在等待 OBS";
+
+/* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
+"OBS connected — not armed" = "OBS 已连接，未开启远程启动";
 
 /* Status word: OBS is connected and can start the camera */
 "OBS connected — ready" = "OBS 已连接，就绪";

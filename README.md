@@ -128,7 +128,7 @@ Slide Over and Stage Manager.
 - **Remote start.** Tap **Arm Remote Start** in the app and OBS can start
   the camera for you — automatically when the source connects, or from a
   button in the source's properties or the browser panel. Until you arm it,
-  opening the app never hands OBS the camera. Siri works too: *"Start
+  OBS sees the phone but can't start the camera. Siri works too: *"Start
   streaming with LensLink."* Great for a phone mounted out of reach. (See
   "Remote start" below.)
 - **Screen mirroring.** Mirror your whole iPhone/iPad screen — with the
@@ -180,22 +180,23 @@ Slide Over and Stage Manager.
 A phone mounted behind a monitor or on a rig shouldn't need to be pulled
 down just to tap a button. Set up the shot, then tap **Arm Remote Start**
 on the app's Setup screen: from then on, while LensLink is open and idle,
-OBS can start the camera for you. Until you arm it the app doesn't listen
-on the network at all, so opening it never starts a stream by itself, and
-nobody else on the network can start your camera. Arming lasts until you
+OBS can start the camera for you. Until you arm it, OBS can find and
+connect to the phone (the source reads "remote start isn't armed on the
+phone") but the app refuses to start the camera, so opening it never
+starts a stream by itself. Arming lasts until you
 tap **Disarm Remote Start**, stop a stream on the phone, or leave the app.
 For a phone that lives on a rig, **Arm remote start on open** in the
 app's **Options** (off by default) arms it every time the app opens.
 
 - **Automatically.** The LensLink Camera source's **"Start the phone's
   camera automatically when it's ready"** option (on by default) starts
-  the stream as soon as the armed app becomes reachable. Arm it, and the
-  video just appears in OBS.
+  the stream the moment you arm the app. Arm it, and the video just
+  appears in OBS.
 - **Buttons in OBS.** The source's properties have **Start camera on the
   phone** and **Stop camera on the phone**, and the browser panel
   (`http://localhost:9980`) shows a **Start camera** button whenever the
-  app is connected but idle, and a red **Stop camera** button while it's
-  live — each with an **Auto-start** toggle beside it that flips the same
+  armed app is connected but idle (and a reminder to arm it when it
+  isn't), and a red **Stop camera** button while it's live — each with an **Auto-start** toggle beside it that flips the same
   setting as the properties checkbox. (Scriptable, too:
   `POST http://localhost:9980/api/control` with body
   `{"cmd":"start_stream"}` or `{"cmd":"stop_stream"}`.)

@@ -23,8 +23,8 @@ struct ContentView: View {
     @State private var showDocs = false
     @State private var showFormat = false
 
-    // Standby keeps the phone awake (see Streamer.updateIdleTimer) so
-    // remote start stays reachable; this dim overlay is what makes that
+    // Armed standby keeps the phone awake (see Streamer.updateIdleTimer)
+    // so remote start stays reachable; this dim overlay is what makes that
     // affordable — same pattern as StreamingView's, on a longer fuse
     // because this screen is also where settings get changed.
     @State private var dimmed = false
@@ -130,15 +130,15 @@ struct ContentView: View {
                 // being up: the overlay would sit behind the sheet with
                 // its tap-to-wake unreachable, leaving the screen dark
                 // with no visible way back.
-                if streamer.standbyActive
+                if streamer.awaitingRemoteStart
                     && streamer.idleAppearance == .dim &&
                     !assistive.suspendsIdle &&
                     !showOptions && !showDocs && !showFormat && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
-                } else if !streamer.standbyActive && dimmed {
-                    // Standby ended underneath the overlay (remote start
-                    // fired, toggle turned off, port lost) — wake up.
+                } else if !streamer.awaitingRemoteStart && dimmed {
+                    // Armed standby ended underneath the overlay (remote
+                    // start fired, disarmed, port lost) — wake up.
                     undim()
                 }
             }
@@ -311,7 +311,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var connectionAction: some View {
-        if streamer.status == .standby {
+        if streamer.status == .standby || streamer.status == .unarmedStandby {
             Button {
                 Task { await streamer.start() }
             } label: {

@@ -471,6 +471,25 @@ final class StreamClient {
         }
     }
 
+    private var armedMode = false
+
+    func setArmed(_ on: Bool) {
+        queue.async { [weak self] in
+            guard let self, self.armedMode != on else { return }
+            self.armedMode = on
+            if self.standbyMode, self.state == .connected {
+                self.sendHello()
+            }
+        }
+    }
+
+    func announce() {
+        queue.async { [weak self] in
+            guard let self, self.state == .connected else { return }
+            self.sendHello()
+        }
+    }
+
     private func sendHello() {
         var hello: [String: Any] = [
             "name": UIDevice.current.name,
@@ -480,6 +499,7 @@ final class StreamClient {
         ]
         if standbyMode {
             hello["standby"] = true
+            hello["armed"] = armedMode
         }
         guard let payload = try? JSONSerialization.data(withJSONObject: hello) else { return }
         send(OBSCProtocol.packet(type: .hello, payload: payload))
