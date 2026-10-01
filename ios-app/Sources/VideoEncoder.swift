@@ -85,12 +85,17 @@ final class VideoEncoder {
     }
 
     /// Whether the hardware encoder can be asked for quality over speed
-    /// and still keep up. Measured, not theoretical: 4K60 (497 Mpx/s)
-    /// fell to 45 fps in quality mode on a current iPhone; 1080p60 and
-    /// 1080p120 (249 Mpx/s) hold their rate. The line is drawn there.
+    /// and still keep up, in frame rate and in latency. Measured, not
+    /// theoretical: 4K60 (497 Mpx/s) fell to 45 fps in quality mode on a
+    /// current iPhone; 1080p60 and 1080p120 (249 Mpx/s) hold their rate.
+    /// 4K30 has the same pixel rate as 1080p120 and held 30 fps too, but
+    /// each frame took 69 ms to encode instead of 22 (iPhone 15 Pro), for
+    /// no measurable gain: VMAF 98.5 vs 98.6 at the same bitrate. So
+    /// frames above 1080p always stay in speed mode.
     static func qualityPriorityAffordable(width: Int32, height: Int32,
                                           fps: Int32) -> Bool {
-        Int64(width) * Int64(height) * Int64(fps) <= 1920 * 1080 * 120
+        Int64(width) * Int64(height) <= 1920 * 1080
+            && Int64(width) * Int64(height) * Int64(fps) <= 1920 * 1080 * 120
     }
 
     /// Whether this device can hardware-encode the codec (HEVC needs A10+).
