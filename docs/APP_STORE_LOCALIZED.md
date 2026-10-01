@@ -9,7 +9,8 @@ words of the name or subtitle, which search already matches.
 
 Keep this file in step with `APP_STORE.md`: when the English listing
 changes, the translations here change with it. Release notes are per
-version; the ones here are for 1.15.1.
+version; the ones here are for 1.16.0, which also covers 1.15.2 (pulled
+from review before it shipped).
 
 **Name:** LensLink Camera in every localization (the brand is not
 translated).
@@ -18,8 +19,7 @@ translated).
 is Latin American. If Spanish (Spain) is added too, paste the same text
 with these changes: subtitle `Cámara del móvil para OBS`; "computadora"
 → "ordenador" (promotional text and description); "video" → "vídeo" and
-"mantén presionado" → "mantén pulsado" (description); "ícono" →
-"icono" (What's New).
+"mantén presionado" → "mantén pulsado" (description).
 
 The French text carries no-break spaces before colons and inside « »,
 as French typography requires; keep them when pasting.
@@ -77,17 +77,16 @@ Auf dem Smartphone wird nichts aufgezeichnet, und nichts verlässt dein lokales 
 Erfordert OBS Studio und das kostenlose Open-Source-Plugin LensLink für Mac, Windows oder Linux: https://lenslink.cam
 ```
 
-**What's New (1.15.1):**
+**What's New (1.16.0):**
 
 ```text
-LensLink spricht jetzt deine Sprache, funktioniert besser mit Bedienungshilfen und hat ein neues Symbol.
+Du entscheidest jetzt, wann OBS deine Kamera starten darf, und 4K mit der Qualität „Maximal“ hat deutlich weniger Latenz.
 
-• Sechs neue Sprachen: Deutsch, Spanisch, Französisch, Japanisch, brasilianisches Portugiesisch und vereinfachtes Chinesisch. LensLink folgt der Sprache deines iPhone oder iPad, und auch das OBS-Plugin und das Browser-Steuerfeld sind übersetzt.
-• Bedienungshilfen: Jedes Bedienelement hat eine VoiceOver-Beschriftung und Namen für die Sprachsteuerung. VoiceOver sagt an, wenn du live gehst, pausierst oder die Verbindung zu OBS verlierst. Außerdem unterstützt die App „Ohne Farbe unterscheiden“, „Transparenz reduzieren“, „Kontrast erhöhen“, „Bewegung reduzieren“ und größere Schriftgrößen.
-• Objektivtasten für die Frontkamera: Auf iPads mit Ultraweitwinkel-Frontkamera wechselst du die Frontobjektive direkt auf dem Live-Bildschirm, genau wie die Objektive auf der Rückseite. Die Ultraweitwinkel-Frontkamera heißt jetzt „Frontkamera (Ultraweitwinkel)“ statt ein zweites Mal „Frontkamera“.
-• Tippe auf das Objektiv, das du gerade verwendest, um seinen Zoom zurückzusetzen, genau wie in der Kamera-App.
-• Die Bildschirmspiegelung kann jetzt mit 30 fps laufen, um Akku und WLAN-Bandbreite zu sparen. Wähle das in OBS in den Eigenschaften der Quelle LensLink Screen (erfordert das Plugin 1.15.1).
-• Ein neues App-Symbol mit heller und dunkler Variante und voller Liquid-Glass-Unterstützung ab iOS 26.
+• Fernstart scharf schalten: Das Öffnen von LensLink erlaubt OBS nicht mehr, die Kamera von selbst zu starten. Richte dein Bild ein und tippe dann auf „Fernstart scharf schalten“ unter „Kamera starten“. Bis dahin sieht OBS dein Smartphone, kann die Kamera aber nicht starten. Scharf bleibt es, bis du auf „Fernstart unscharf schalten“ tippst, den Stream auf dem Smartphone stoppst oder die App verlässt.
+• Für ein Smartphone, das außer Reichweite montiert ist: Schalte unter „Optionen“ die Option „Fernstart beim Öffnen scharf schalten“ ein.
+• Weniger Latenz in 4K mit der Qualität „Maximal“: Bei 4K30 auf einem iPhone 15 Pro sinkt sie von etwa 107 ms auf 60 ms, ohne sichtbaren Unterschied in der Bildqualität.
+• Die Dokumentation in der App ist jetzt nach Themen geordnet, vom Verbinden bis zu den Bedienungshilfen, mit einem Link zur vollständigen Anleitung im Web.
+• Aktualisiere auch das OBS-Plugin auf 1.16.0: Es zeigt an, wenn der Fernstart nicht scharf geschaltet ist, und startet die Kamera, sobald du ihn scharf schaltest.
 ```
 
 ## Spanish, Mexico (Español)
@@ -143,17 +142,16 @@ No se graba nada en el teléfono y nada sale de tu red local. Sin cuenta, sin in
 Requiere OBS Studio y el plugin LensLink, gratuito y de código abierto, para Mac, Windows o Linux: https://lenslink.cam
 ```
 
-**What's New (1.15.1):**
+**What's New (1.16.0):**
 
 ```text
-LensLink ahora habla tu idioma, funciona mejor con las funciones de accesibilidad y tiene un ícono nuevo.
+Ahora tú decides cuándo OBS puede iniciar tu cámara, y el 4K con calidad Máxima tiene mucha menos latencia.
 
-• Seis idiomas nuevos: alemán, español, francés, japonés, portugués de Brasil y chino simplificado. LensLink usa el idioma de tu iPhone o iPad, y el plugin de OBS y el panel de control en el navegador también están traducidos.
-• Accesibilidad: cada control tiene una etiqueta de VoiceOver y nombres para Control por voz. VoiceOver anuncia cuando sales en vivo, pausas o pierdes la conexión con OBS. La app también es compatible con Diferenciar sin color, Reducir transparencia, Aumentar contraste, Reducir movimiento y tamaños de texto más grandes.
-• Botones de lente para la cámara frontal: en los iPad con cámara frontal ultra gran angular, cambia de lente frontal directamente desde la pantalla En vivo, igual que con las lentes traseras. La cámara frontal ultra gran angular ahora aparece como “Frontal (ultra gran angular)” en lugar de un segundo “Frontal”.
-• Toca la lente que ya estás usando para restablecer su zoom, como en la app Cámara.
-• El duplicado de pantalla ahora puede funcionar a 30 fps para ahorrar batería y ancho de banda Wi-Fi. Elígelo en las propiedades de la fuente LensLink Screen en OBS (requiere el plugin 1.15.1).
-• Un ícono nuevo, con versiones clara y oscura y compatibilidad total con Liquid Glass en iOS 26 y posteriores.
+• Armar inicio remoto: abrir LensLink ya no permite que OBS inicie la cámara por sí solo. Prepara tu toma y luego toca “Armar inicio remoto”, debajo de Iniciar cámara. Hasta entonces, OBS puede ver tu teléfono pero no iniciar la cámara. Queda armado hasta que tocas “Desarmar inicio remoto”, detienes la transmisión en el teléfono o sales de la app.
+• Para un teléfono montado fuera de tu alcance, activa “Armar el inicio remoto al abrir” en Opciones.
+• Menos latencia en 4K con calidad Máxima: a 4K30 en un iPhone 15 Pro baja de unos 107 ms a 60 ms, sin diferencia visible en la calidad de imagen.
+• La documentación de la app ahora está organizada por temas, desde la conexión hasta la accesibilidad, con un enlace a la guía completa en línea.
+• Actualiza también el plugin de OBS a la versión 1.16.0: muestra cuándo el inicio remoto no está armado e inicia la cámara en cuanto lo armas.
 ```
 
 ## French (Français)
@@ -209,17 +207,16 @@ Rien n’est enregistré sur le téléphone, et rien ne quitte votre réseau loc
 Nécessite OBS Studio et le plugin LensLink, gratuit et open source, pour Mac, Windows ou Linux : https://lenslink.cam
 ```
 
-**What's New (1.15.1):**
+**What's New (1.16.0):**
 
 ```text
-LensLink parle désormais votre langue, fonctionne mieux avec les fonctionnalités d’accessibilité et arbore une nouvelle icône.
+Vous décidez désormais quand OBS peut démarrer votre caméra, et la 4K en qualité Maximale a nettement moins de latence.
 
-• Six nouvelles langues : allemand, espagnol, français, japonais, portugais du Brésil et chinois simplifié. LensLink suit la langue de votre iPhone ou iPad, et le plugin OBS ainsi que le panneau de contrôle web sont eux aussi traduits.
-• Accessibilité : chaque commande a une étiquette VoiceOver et des noms pour le Contrôle vocal. VoiceOver annonce le passage en direct, la mise en pause et la perte de connexion avec OBS. L’app prend aussi en charge Différencier sans couleur, Réduire la transparence, Augmenter le contraste, Réduire les animations et les grandes tailles de texte.
-• Boutons d’objectif pour la caméra avant : sur les iPad dotés d’une caméra avant ultra grand-angle, changez d’objectif avant directement depuis l’écran de direct, comme pour les objectifs arrière. La caméra avant ultra grand-angle s’appelle désormais « Avant (ultra grand-angle) » au lieu d’un second « Avant ».
-• Touchez l’objectif que vous utilisez déjà pour réinitialiser son zoom, comme dans l’app Appareil photo.
-• La recopie de l’écran peut désormais fonctionner à 30 fps pour économiser la batterie et la bande passante Wi-Fi. Choisissez cette option dans les propriétés de la source LensLink Screen dans OBS (nécessite le plugin 1.15.1).
-• Une nouvelle icône, avec des versions claire et sombre et une prise en charge complète de Liquid Glass sous iOS 26 et versions ultérieures.
+• Armer le démarrage à distance : ouvrir LensLink ne permet plus à OBS de démarrer la caméra de lui-même. Réglez votre plan, puis touchez « Armer le démarrage à distance », sous Démarrer la caméra. Jusque-là, OBS voit votre téléphone mais ne peut pas démarrer la caméra. Il reste armé jusqu’à ce que vous touchiez « Désarmer le démarrage à distance », arrêtiez le flux sur le téléphone ou quittiez l’app.
+• Pour un téléphone fixé hors de portée, activez « Armer le démarrage à distance à l’ouverture » dans Options.
+• Moins de latence en 4K avec la qualité Maximale : en 4K30 sur un iPhone 15 Pro, elle passe d’environ 107 ms à 60 ms, sans différence visible de qualité d’image.
+• La documentation de l’app est désormais organisée par thèmes, de la connexion à l’accessibilité, avec un lien vers le guide complet en ligne.
+• Mettez aussi à jour le plugin OBS en 1.16.0 : il indique quand le démarrage à distance n’est pas armé et démarre la caméra dès que vous l’armez.
 ```
 
 ## Japanese (日本語)
@@ -275,17 +272,16 @@ Siriとショートカット
 OBS Studioと、Mac、Windows、Linux用の無料のオープンソースLensLinkプラグインが必要です：https://lenslink.cam
 ```
 
-**What's New (1.15.1):**
+**What's New (1.16.0):**
 
 ```text
-LensLinkが多言語に対応しました。アクセシビリティ機能への対応も強化し、アイコンも一新しました。
+OBSがカメラを開始できるタイミングを自分で決められるようになりました。また、画質「最高」の4Kで遅延が大幅に減りました。
 
-• 6つの言語を追加：ドイツ語、スペイン語、フランス語、日本語、ポルトガル語（ブラジル）、簡体字中国語。LensLinkはiPhoneやiPadの言語設定に従って表示されます。OBSプラグインとブラウザコントロールパネルも翻訳されています。
-• アクセシビリティ：すべての操作項目にVoiceOverのラベルと音声コントロール用の名前が付きました。ライブの開始、一時停止、OBSとの接続が切れたときは、VoiceOverが読み上げます。「カラー以外で区別」「透明度を下げる」「コントラストを上げる」「視差効果を減らす」と、より大きな文字サイズにも対応しました。
-• 前面カメラのレンズボタン：前面に超広角カメラを搭載したiPadでは、背面のレンズと同じように、ライブ画面から前面のレンズを直接切り替えられます。前面の超広角カメラは、2つ目の「前面」ではなく「前面（超広角）」と表示されるようになりました。
-• 使用中のレンズボタンをタップすると、カメラAppと同じようにズームがリセットされます。
-• 画面ミラーリングを30 fpsで実行して、バッテリーとWi-Fiの帯域幅を節約できるようになりました。OBSのLensLink Screenソースのプロパティで選択してください（プラグイン1.15.1が必要です）。
-• 新しいAppアイコン。ライトとダークのバージョンがあり、iOS 26以降ではLiquid Glassに完全対応します。
+• リモート開始を有効にする：LensLinkを開いただけでOBSがカメラを開始することはなくなりました。撮影の準備をしてから、「カメラを開始」の下にある「リモート開始を有効にする」をタップします。それまではOBSからスマートフォンは見えますが、カメラを開始することはできません。有効な状態は、「リモート開始を解除」をタップするか、スマートフォンでストリームを停止するか、アプリを離れるまで続きます。
+• 手の届かない場所に固定したスマートフォンでは、オプションの「開いたときにリモート開始を有効にする」をオンにしてください。
+• 画質「最高」での4Kの遅延を短縮：iPhone 15 Proの4K30では約107msから60msに下がり、画質に目に見える違いはありません。
+• アプリ内のドキュメントをトピック別に整理しました。接続からアクセシビリティまでを扱い、オンラインの完全なガイドへのリンクもあります。
+• OBSプラグインも1.16.0にアップデートしてください。リモート開始が有効になっていないことを表示し、有効にした時点でカメラを開始します。
 ```
 
 ## Portuguese, Brazil (Português do Brasil)
@@ -341,17 +337,16 @@ Nada é gravado no celular, e nada sai da sua rede local. Sem conta, sem login, 
 Requer o OBS Studio e o plugin LensLink, gratuito e de código aberto, para Mac, Windows ou Linux: https://lenslink.cam
 ```
 
-**What's New (1.15.1):**
+**What's New (1.16.0):**
 
 ```text
-O LensLink agora fala o seu idioma, funciona melhor com os recursos de acessibilidade e tem um ícone novo.
+Agora você decide quando o OBS pode iniciar sua câmera, e o 4K com qualidade Máxima tem bem menos latência.
 
-• Seis novos idiomas: alemão, espanhol, francês, japonês, português do Brasil e chinês simplificado. O LensLink segue o idioma do seu iPhone ou iPad, e o plugin do OBS e o painel de controle no navegador também foram traduzidos.
-• Acessibilidade: todos os controles têm rótulo do VoiceOver e nomes para o Controle por Voz. O VoiceOver avisa quando você entra ao vivo, pausa ou perde a conexão com o OBS. O app também é compatível com Diferenciar Sem Cor, Reduzir Transparência, Aumentar Contraste, Reduzir Movimento e tamanhos de texto maiores.
-• Botões de lente para a câmera frontal: nos iPads com câmera frontal ultra-angular, troque de lente frontal direto na tela Ao vivo, como já acontece com as lentes traseiras. A câmera frontal ultra-angular agora aparece como “Frontal (ultra-angular)” em vez de um segundo “Frontal”.
-• Toque na lente que você já está usando para redefinir o zoom dela, como no app Câmera.
-• O espelhamento de tela agora pode rodar a 30 fps para economizar bateria e banda do Wi-Fi. Escolha essa opção nas propriedades da fonte LensLink Screen no OBS (requer o plugin 1.15.1).
-• Um ícone novo, com versões clara e escura e suporte completo ao Liquid Glass no iOS 26 ou posterior.
+• Armar início remoto: abrir o LensLink não permite mais que o OBS inicie a câmera sozinho. Prepare sua cena e depois toque em “Armar início remoto”, abaixo de Iniciar câmera. Até lá, o OBS vê o seu celular, mas não pode iniciar a câmera. Ele fica armado até você tocar em “Desarmar início remoto”, parar a transmissão no celular ou sair do app.
+• Para um celular montado fora de alcance, ative “Armar início remoto ao abrir” em Opções.
+• Menos latência em 4K com qualidade Máxima: em 4K30 num iPhone 15 Pro, ela cai de cerca de 107 ms para 60 ms, sem diferença visível na qualidade da imagem.
+• A documentação do app agora está organizada por tópicos, da conexão à acessibilidade, com um link para o guia completo online.
+• Atualize também o plugin do OBS para a versão 1.16.0: ele mostra quando o início remoto não está armado e inicia a câmera assim que você o arma.
 ```
 
 ## Chinese, Simplified (简体中文)
@@ -407,15 +402,14 @@ Siri 与快捷指令
 需要 OBS Studio 以及适用于 Mac、Windows 或 Linux 的免费开源 LensLink 插件：https://lenslink.cam
 ```
 
-**What's New (1.15.1):**
+**What's New (1.16.0):**
 
 ```text
-LensLink 现已支持多种语言，对辅助功能的支持更加完善，并换上了全新图标。
+现在由你决定 OBS 何时可以启动摄像头，并且画质“最高”下的 4K 延迟大幅降低。
 
-• 新增六种语言：德语、西班牙语、法语、日语、葡萄牙语（巴西）和简体中文。LensLink 会跟随 iPhone 或 iPad 的语言设置，OBS 插件和浏览器控制面板也已翻译。
-• 辅助功能：每个控件都有旁白标签和语音控制名称。开始直播、暂停或与 OBS 断开连接时，旁白会进行播报。App 还支持“不使用颜色区分”“降低透明度”“增强对比度”“减弱动态效果”以及更大的字体。
-• 前置镜头按钮：在配有前置超广角摄像头的 iPad 上，可以像切换后置镜头一样，直接在直播界面切换前置镜头。前置超广角摄像头现在显示为“前置（超广角）”，而不再是第二个“前置”。
-• 轻点当前正在使用的镜头，即可重置其变焦，与“相机” App 相同。
-• 屏幕镜像现在可以以 30 fps 运行，以节省电量和 Wi-Fi 带宽。请在 OBS 中 LensLink Screen 来源的设置里选择（需要 1.15.1 版插件）。
-• 全新 App 图标，提供浅色和深色版本，并在 iOS 26 及更高版本上全面支持液态玻璃效果。
+• 开启远程启动：打开 LensLink 后，OBS 不会再自行启动摄像头。先调好画面，再轻点“启动摄像头”下方的“开启远程启动”。在此之前，OBS 能看到你的手机，但无法启动摄像头。开启状态会一直保持，直到你轻点“关闭远程启动”、在手机上停止推流或离开 App。
+• 如果手机固定在够不着的位置，请在“选项”中打开“打开 App 时开启远程启动”。
+• 画质“最高”下的 4K 延迟更低：在 iPhone 15 Pro 上以 4K30 推流时，延迟从约 107 ms 降至 60 ms，画质没有可见差异。
+• App 内的文档现已按主题整理，从连接到辅助功能都有介绍，并附有完整在线指南的链接。
+• 也请将 OBS 插件更新到 1.16.0：它会显示远程启动尚未开启，并在你开启后立即启动摄像头。
 ```
