@@ -190,6 +190,7 @@ through the web panel and records one labelled run per configuration:
 | B | H.264 |
 | C | Quality Maximum |
 | D | 4K30, Maximum |
+| H | 4K30 (Balanced; compared with D) |
 | E | Wi-Fi |
 | E2 | Wi-Fi, 4K30, Maximum (compared with D) |
 | F | software decoding |

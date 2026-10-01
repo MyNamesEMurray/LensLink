@@ -42,6 +42,7 @@ RUNS = [
     ("C", "usb-hevc-1080p60-maximum", {"quality": "maximum"}),
     ("D", "usb-hevc-4k30-maximum",
      {"resolution": "4K", "fps": 30, "quality": "maximum"}),
+    ("H", "usb-hevc-4k30-balanced", {"resolution": "4K", "fps": 30}),
     ("E", "wifi-hevc-1080p60-balanced", {"transport": "Wi-Fi"}),
     ("E2", "wifi-hevc-4k30-maximum",
      {"transport": "Wi-Fi", "resolution": "4K", "fps": 30,
@@ -51,7 +52,7 @@ RUNS = [
 ]
 
 COMPARISONS = [("A", "B"), ("A", "C"), ("A", "D"), ("A", "E"),
-               ("D", "E2"), ("A", "F"), ("A", "G")]
+               ("D", "E2"), ("A", "F"), ("A", "G"), ("D", "H")]
 
 SUMMARY_COLUMNS = [
     ("latency_ms", "Capture->decode (ms)"),
