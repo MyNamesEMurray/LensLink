@@ -287,12 +287,15 @@ def main():
 
     md_out = "lenslink-bench-report.md"
     html_out = "lenslink-bench-report.html"
-    with open(md_out, "w") as f:
+    with open(md_out, "w", encoding="utf-8") as f:
         f.write(markdown_text)
-    with open(html_out, "w") as f:
+    with open(html_out, "w", encoding="utf-8") as f:
         f.write(html_text)
 
-    print("\n" + markdown_text)
+    try:
+        print("\n" + markdown_text)
+    except UnicodeEncodeError:
+        print("\n" + markdown_text.encode("ascii", "replace").decode())
     print(f"Wrote {md_out} and {html_out} (charts) to "
           f"{os.getcwd()}")
 

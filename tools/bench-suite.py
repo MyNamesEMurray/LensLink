@@ -374,7 +374,8 @@ def compare(out_dir, files, before, after):
     subprocess.run([sys.executable,
                     os.path.join(HERE, "bench-report.py"),
                     files[before], files[after]],
-                   cwd=sub, check=True, stdout=subprocess.DEVNULL)
+                   cwd=sub, check=True, stdout=subprocess.DEVNULL,
+                   env=dict(os.environ, PYTHONUTF8="1"))
     return sub
 
 
