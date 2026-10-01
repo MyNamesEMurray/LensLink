@@ -31,7 +31,8 @@ FLAVORS = ("proxy", "lt", "standard", "hq")
 def request(method, path, body=None):
     conn = http.client.HTTPConnection("127.0.0.1", PORT, timeout=5)
     try:
-        data = json.dumps(body).encode() if body is not None else None
+        data = (json.dumps(body, separators=(",", ":")).encode()
+                    if body is not None else None)
         headers = {"Host": f"localhost:{PORT}"}
         if data is not None:
             headers["Content-Type"] = "application/json"

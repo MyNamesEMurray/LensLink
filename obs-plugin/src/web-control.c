@@ -17,7 +17,7 @@
 #include "quality-capture.h"
 
 #define MAX_REQUEST (16 * 1024)
-#define MAX_CONTROL_BODY 512
+#define MAX_CONTROL_BODY 4096
 
 /*
  * Browser control panel, styled to docs/UI_DESIGN.md (shared palette,

@@ -45,28 +45,28 @@ CAPTURES = {
 }
 
 CONFIGS_1080P = [
-    {"name": "hevc-balanced", "codec": "hevc"},
-    {"name": "hevc-maximum", "codec": "hevc", "maximum": True,
-     "tableScale": 6},
-    {"name": "hevc-100mbps", "codec": "hevc", "maximum": True,
-     "bitrateMbps": 100},
-    {"name": "h264-balanced", "codec": "h264"},
+    {"name": "hevc-bal"},
+    {"name": "hevc-max", "maximum": True, "tableScale": 6},
+    {"name": "hevc-100", "maximum": True, "bitrateMbps": 100},
+    {"name": "h264-bal", "codec": "h264"},
     {"name": "prores-proxy", "codec": "prores", "prores": "proxy"},
-    {"name": "prores-lt", "codec": "prores", "prores": "lt"},
-    {"name": "prores-standard", "codec": "prores", "prores": "standard"},
+    {"name": "prores-lt", "codec": "prores"},
+    {"name": "prores-422", "codec": "prores", "prores": "standard"},
 ]
 
 CONFIGS_4K = [
-    {"name": "hevc-balanced", "codec": "hevc"},
-    {"name": "hevc-maximum-qualitymode", "codec": "hevc", "maximum": True,
-     "tableScale": 6, "qualityPriority": True},
-    {"name": "hevc-maximum-fix4k30", "codec": "hevc", "maximum": True,
-     "tableScale": 6, "qualityPriority": False},
-    {"name": "hevc-150mbps", "codec": "hevc", "maximum": True,
-     "bitrateMbps": 150, "qualityPriority": False},
+    {"name": "hevc-bal"},
+    {"name": "hevc-max-qmode", "maximum": True, "tableScale": 6,
+     "qualityPriority": True},
+    {"name": "hevc-max-fix", "maximum": True, "tableScale": 6,
+     "qualityPriority": False},
+    {"name": "hevc-150", "maximum": True, "bitrateMbps": 150,
+     "qualityPriority": False},
     {"name": "prores-proxy", "codec": "prores", "prores": "proxy"},
-    {"name": "prores-lt", "codec": "prores", "prores": "lt"},
+    {"name": "prores-lt", "codec": "prores"},
 ]
+
+PANEL_BODY_LIMIT = 512
 
 COMPARE_FORMAT = {"nv12": "yuv420p", "p010le": "yuv420p10le",
                   "p210le": "yuv422p10le"}
@@ -127,8 +127,14 @@ def run_capture(panel, src, capture_id, spec, frames, timeout):
     if status != 200:
         raise RuntimeError(f"/api/quality: HTTP {status} {payload}")
     configs = CONFIGS_4K if spec["resolution"] == "4K" else CONFIGS_1080P
-    panel.control(src, {"cmd": "quality_capture", "id": capture_id,
-                        "frames": frames, "configs": configs})
+    command = {"cmd": "quality_capture", "id": capture_id,
+               "frames": frames, "configs": configs}
+    size = len(json.dumps(command, separators=(",", ":")).encode())
+    if size > PANEL_BODY_LIMIT:
+        raise RuntimeError(f"the capture request is {size} bytes, over the "
+                           f"web panel's {PANEL_BODY_LIMIT}-byte limit; "
+                           "trim the config list")
+    panel.control(src, command)
 
     paused = False
     start = time.monotonic()
