@@ -563,9 +563,9 @@ final class StreamClient {
     }
 
     func sendVideoConfig(codec: VideoCodec, width: Int32, height: Int32, fps: Int32,
-                         color: StreamColor = .sdr) {
+                         color: StreamColor = .sdr, wireCodec: String? = nil) {
         var config: [String: Any] = [
-            "codec": codec.rawValue,
+            "codec": wireCodec ?? codec.rawValue,
             "width": Int(width),
             "height": Int(height),
             "fps": Int(fps),

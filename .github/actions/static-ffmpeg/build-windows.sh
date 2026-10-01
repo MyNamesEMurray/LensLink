@@ -32,7 +32,7 @@ prefix="$(cygpath -u "$GITHUB_WORKSPACE")/ffmpeg-static"
 	--disable-avformat --disable-avfilter --disable-swscale \
 	--disable-swresample --disable-avdevice --disable-network \
 	--disable-debug --disable-autodetect \
-	--enable-decoder=h264,hevc --enable-parser=h264,hevc \
+	--enable-decoder=h264,hevc,prores --enable-parser=h264,hevc \
 	--enable-d3d11va --enable-dxva2 \
 	--enable-hwaccel=h264_d3d11va,h264_d3d11va2,h264_dxva2 \
 	--enable-hwaccel=hevc_d3d11va,hevc_d3d11va2,hevc_dxva2 \

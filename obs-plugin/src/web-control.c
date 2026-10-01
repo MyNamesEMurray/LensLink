@@ -891,9 +891,9 @@ static void handle_client(socket_t client)
 	}
 
 	if (strncmp(request, "GET /api/state", 14) == 0) {
-		/* Must fit the source's whole device_state cache (2048) —
+		/* Must fit the source's whole device_state cache (4096) —
 		 * truncation here would hand the panel unparsable JSON. */
-		char state[2048] = {0};
+		char state[4096] = {0};
 		pthread_mutex_lock(&g_reg.mutex);
 		struct ios_camera_source *s = locked_pick_source(request);
 		if (s)

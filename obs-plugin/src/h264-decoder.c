@@ -195,6 +195,10 @@ struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id,
 	 * output appears — pure added latency for a live stream. The
 	 * encoder sends single-slice frames, so decode single-threaded. */
 	dec->ctx->thread_count = 1;
+	if (codec_id == AV_CODEC_ID_PRORES) {
+		dec->ctx->thread_type = FF_THREAD_SLICE;
+		dec->ctx->thread_count = 0;
+	}
 
 	if (allow_hw && !try_init_hw(dec, codec, hw_start))
 		blog(LOG_INFO,
@@ -290,6 +294,9 @@ static bool avframe_to_obs(const AVFrame *frame, struct obs_source_frame *out)
 	case AV_PIX_FMT_YUV420P10:
 		/* Software HEVC Main10 decode (HDR without a GPU decoder). */
 		out->format = VIDEO_FORMAT_I010;
+		break;
+	case AV_PIX_FMT_YUV422P10:
+		out->format = VIDEO_FORMAT_I210;
 		break;
 	default:
 		return false;
@@ -462,6 +469,8 @@ static bool decode_packet(struct h264_decoder *dec, obs_source_t *source,
 			size_t frame_bytes = px * 3 / 2;
 			if (out.format == VIDEO_FORMAT_I422)
 				frame_bytes = px * 2;
+			else if (out.format == VIDEO_FORMAT_I210)
+				frame_bytes = px * 4;
 			else if (out.format == VIDEO_FORMAT_P010 ||
 				 out.format == VIDEO_FORMAT_I010)
 				frame_bytes = px * 3;

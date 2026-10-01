@@ -191,7 +191,55 @@ final class Streamer: ObservableObject {
     private func encoderQualityPriority(width: Int32, height: Int32) -> Bool {
         quality == .maximum && !encoderSpeedFallback
             && VideoEncoder.qualityPriorityAffordable(width: width, height: height,
-                                                      fps: Int32(fps))
+                                                      fps: Int32(fps),
+                                                      latencyCap: dev.fix4k30)
+    }
+
+    struct DevFlags: Equatable {
+        var fix4k30 = false
+        var bitrateMbps = 0
+        var prores: ProResFlavor?
+    }
+
+    private(set) var dev = DevFlags() {
+        didSet {
+            guard dev != oldValue else { return }
+            if isStreaming {
+                reconfigureLiveCapture(formatChanged: true)
+            }
+            scheduleStateSend()
+        }
+    }
+
+    private var devProRes: ProResFlavor? {
+        VideoEncoder.proresSupported ? dev.prores : nil
+    }
+
+    private func applyDevCommand(_ command: [String: Any]) {
+        var next = dev
+        if let on = command["fix4k30"] as? Bool {
+            next.fix4k30 = on
+        }
+        if let mbps = command["bitrateMbps"] as? Int {
+            next.bitrateMbps = min(max(mbps, 0), 400)
+        }
+        if let raw = command["prores"] as? String {
+            next.prores = ProResFlavor(rawValue: raw)
+        }
+        dev = next
+    }
+
+    private func devStateSnapshot() -> [String: Any] {
+        let errors = encoder?.encodeErrorSummary() ?? (count: 0, status: noErr)
+        return [
+            "fix4k30": dev.fix4k30,
+            "bitrateMbps": dev.bitrateMbps,
+            "prores": devProRes?.rawValue ?? "",
+            "proresOK": VideoEncoder.proresSupported,
+            "wire": encoder?.wireCodec ?? "",
+            "encErr": errors.count,
+            "encStatus": Int(errors.status),
+        ]
     }
     /// The cameras this device actually has (Main / Ultra Wide / …).
     let availableLenses: [CameraManager.Lens]
@@ -284,7 +332,8 @@ final class Streamer: ObservableObject {
             color: color,
             maximumQuality: quality == .maximum,
             qualityPriority: encoderQualityPriority(width: size.width,
-                                                    height: size.height))
+                                                    height: size.height),
+            prores: color == .sdr ? devProRes : nil)
         do {
             try newEncoder.start()
         } catch {
@@ -300,7 +349,8 @@ final class Streamer: ObservableObject {
         client.sendVideoConfig(codec: activeCodec,
                                width: size.width, height: size.height,
                                fps: Int32(fps),
-                               color: color)
+                               color: color,
+                               wireCodec: newEncoder.wireCodec)
         startAdaptiveBitrate(
             target: resolution.bitrate(for: activeCodec, color: color, fps: fps))
     }
@@ -865,6 +915,7 @@ final class Streamer: ObservableObject {
             "frameRates": frameRates,
             "codecs": codecs,
             "quality": quality.rawValue,
+            "dev": devStateSnapshot(),
         ]
         // Absent = SDR — remote UIs key off the keys' absence, and an
         // SDR snapshot must look exactly as it did before HDR existed.
@@ -1465,6 +1516,9 @@ final class Streamer: ObservableObject {
         case "pipeline_stats":
             client.setPipelineStats(command["on"] as? Bool ?? false)
             return
+        case "dev":
+            applyDevCommand(command)
+            return
         case "pause_stream", "resume_stream":
             // Pause needs no remote-start permission: it holds a stream
             // the user already started, and can't turn the camera on.
@@ -1714,7 +1768,8 @@ final class Streamer: ObservableObject {
                                    color: color,
                                    maximumQuality: quality == .maximum,
                                    qualityPriority: encoderQualityPriority(
-                                       width: size.width, height: size.height))
+                                       width: size.width, height: size.height),
+                                   prores: color == .sdr ? devProRes : nil)
             try encoder.start()
         } catch {
             status = .error(error.localizedDescription)
@@ -1832,7 +1887,17 @@ final class Streamer: ObservableObject {
         adaptiveTask?.cancel()
         adaptiveTask = Task { [weak self] in
             let maximum = self?.quality == .maximum
-            var current = maximum ? target * 2 : target
+            let pinned: Int?
+            if let streamer = self, maximum, streamer.obsTransport == "usb",
+               streamer.dev.bitrateMbps > 0, streamer.encoder?.prores == nil {
+                pinned = streamer.dev.bitrateMbps * 1_000_000
+            } else {
+                pinned = nil
+            }
+            var current = pinned ?? (maximum ? target * 2 : target)
+            if let pinned {
+                self?.encoder?.setBitrate(pinned)
+            }
             var stableSeconds = 0
             var congestedLevel: Int?
             var lastCongestionAt: DispatchTime?
@@ -1886,7 +1951,9 @@ final class Streamer: ObservableObject {
                 let base = max(
                     1_000_000, Int(Double(target) * self.thermalBitrateScale))
                 let ceiling: Int
-                if maximum {
+                if let pinned {
+                    ceiling = pinned
+                } else if maximum {
                     ceiling = base * (self.obsTransport == "usb" ? 6 : 4)
                 } else {
                     ceiling = base
@@ -2040,7 +2107,8 @@ final class Streamer: ObservableObject {
             client.sendVideoConfig(codec: encoder?.codec ?? codec,
                                    width: size.width, height: size.height,
                                    fps: Int32(fps),
-                                   color: encoder?.color ?? activeColor)
+                                   color: encoder?.color ?? activeColor,
+                                   wireCodec: encoder?.wireCodec)
             // Fresh connection: make sure OBS gets a decodable frame ASAP,
             // and seed the remote UI with the current control state.
             encoder?.requestKeyframe()

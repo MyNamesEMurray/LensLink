@@ -233,7 +233,7 @@ struct ios_camera_source {
 	 * Guarded by status_mutex. Sized well past today's biggest snapshot
 	 * (mics/resolutions/lens lists + green screen): silent truncation
 	 * here breaks the web panel's JSON.parse. */
-	char device_state[2048];
+	char device_state[4096];
 
 	/* Health mirrors for the frontend UI (the live counters belong to
 	 * the dial thread's client_state; these are 1 Hz copies). Guarded
@@ -1778,14 +1778,18 @@ static void dump_open(struct client_state *c)
 	struct dstr path = {0};
 	dstr_printf(&path, "%s/lenslink-dump-%lld.%s", dir,
 		    (long long)time(NULL),
-		    c->codec_id == AV_CODEC_ID_HEVC ? "hevc" : "h264");
+		    c->codec_id == AV_CODEC_ID_HEVC     ? "hevc"
+		    : c->codec_id == AV_CODEC_ID_PRORES ? "prores"
+							: "h264");
 	bfree(dir);
 
 	c->dump_file = os_fopen(path.array, "wb");
 	if (c->dump_file)
 		blog(LOG_INFO,
 		     "[lenslink] dumping received %s stream to %s",
-		     c->codec_id == AV_CODEC_ID_HEVC ? "HEVC" : "H.264",
+		     c->codec_id == AV_CODEC_ID_HEVC     ? "HEVC"
+		     : c->codec_id == AV_CODEC_ID_PRORES ? "ProRes"
+							 : "H.264",
 		     path.array);
 	else
 		blog(LOG_WARNING, "[lenslink] stream dump: cannot open %s",
@@ -2040,6 +2044,8 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		}
 		enum AVCodecID id = strcmp(codec, "hevc") == 0
 					    ? AV_CODEC_ID_HEVC
+					    : strcmp(codec, "prores") == 0
+					    ? AV_CODEC_ID_PRORES
 					    : AV_CODEC_ID_H264;
 		if (id != c->codec_id) {
 			h264_decoder_destroy(c->decoder);

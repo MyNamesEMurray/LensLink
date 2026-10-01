@@ -14,6 +14,22 @@ enum VideoCodec: String, CaseIterable, Identifiable {
     }
 }
 
+enum ProResFlavor: String, CaseIterable {
+    case proxy
+    case lt
+    case standard
+    case hq
+
+    var vtCodecType: CMVideoCodecType {
+        switch self {
+        case .proxy: return kCMVideoCodecType_AppleProRes422Proxy
+        case .lt: return kCMVideoCodecType_AppleProRes422LT
+        case .standard: return kCMVideoCodecType_AppleProRes422
+        case .hq: return kCMVideoCodecType_AppleProRes422HQ
+        }
+    }
+}
+
 /// The stream's colour pipeline; everything downstream switches on this
 /// rather than on booleans.
 ///
@@ -73,9 +89,23 @@ final class VideoEncoder {
     /// watchdog is the backstop for a device the rule misjudges.
     private let qualityPriority: Bool
 
+    let prores: ProResFlavor?
+    private let errorLock = NSLock()
+    private var encodeErrors = 0
+    private var lastEncodeStatus: OSStatus = noErr
+
+    func encodeErrorSummary() -> (count: Int, status: OSStatus) {
+        errorLock.lock()
+        defer { errorLock.unlock() }
+        return (encodeErrors, lastEncodeStatus)
+    }
+
+    var wireCodec: String { prores == nil ? codec.rawValue : "prores" }
+
     init(codec: VideoCodec, width: Int32, height: Int32, fps: Int32, bitrate: Int,
          color: StreamColor = .sdr, maximumQuality: Bool = false,
-         qualityPriority: Bool = false) {
+         qualityPriority: Bool = false, prores: ProResFlavor? = nil) {
+        self.prores = prores
         self.codec = codec
         self.width = width
         self.height = height
@@ -91,9 +121,30 @@ final class VideoEncoder {
     /// fell to 45 fps in quality mode on a current iPhone; 1080p60 and
     /// 1080p120 (249 Mpx/s) hold their rate. The line is drawn there.
     static func qualityPriorityAffordable(width: Int32, height: Int32,
-                                          fps: Int32) -> Bool {
-        Int64(width) * Int64(height) * Int64(fps) <= 1920 * 1080 * 120
+                                          fps: Int32,
+                                          latencyCap: Bool = false) -> Bool {
+        if latencyCap, Int64(width) * Int64(height) > 1920 * 1080 {
+            return false
+        }
+        return Int64(width) * Int64(height) * Int64(fps) <= 1920 * 1080 * 120
     }
+
+    static let proresSupported: Bool = {
+        var session: VTCompressionSession?
+        let status = VTCompressionSessionCreate(
+            allocator: kCFAllocatorDefault,
+            width: 1920, height: 1080,
+            codecType: ProResFlavor.lt.vtCodecType,
+            encoderSpecification: nil,
+            imageBufferAttributes: nil,
+            compressedDataAllocator: nil,
+            outputCallback: nil, refcon: nil,
+            compressionSessionOut: &session)
+        if let session {
+            VTCompressionSessionInvalidate(session)
+        }
+        return status == noErr && session != nil
+    }()
 
     /// Whether this device can hardware-encode the codec (HEVC needs A10+).
     /// Cached: the probe creates a real hardware encoder session, far too
@@ -146,7 +197,7 @@ final class VideoEncoder {
             allocator: kCFAllocatorDefault,
             width: width,
             height: height,
-            codecType: codec.vtCodecType,
+            codecType: prores?.vtCodecType ?? codec.vtCodecType,
             encoderSpecification: nil,
             imageBufferAttributes: nil,
             compressedDataAllocator: nil,
@@ -157,7 +208,26 @@ final class VideoEncoder {
         guard status == noErr, let session else {
             throw NSError(domain: "VideoEncoder", code: Int(status),
                           userInfo: [NSLocalizedDescriptionKey:
-                            L("%1$@ encoder unavailable (%2$lld)", codec.label, Int(status))])
+                            L("%1$@ encoder unavailable (%2$lld)",
+                              prores == nil ? codec.label : "ProRes", Int(status))])
+        }
+
+        if prores != nil {
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_RealTime,
+                                 value: kCFBooleanTrue)
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ExpectedFrameRate,
+                                 value: NSNumber(value: fps))
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ColorPrimaries,
+                                 value: kCVImageBufferColorPrimaries_ITU_R_709_2)
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_TransferFunction,
+                                 value: kCVImageBufferTransferFunction_ITU_R_709_2)
+            VTSessionSetProperty(session, key: kVTCompressionPropertyKey_YCbCrMatrix,
+                                 value: kCVImageBufferYCbCrMatrix_ITU_R_709_2)
+            VTCompressionSessionPrepareToEncodeFrames(session)
+            lock.lock()
+            self.session = session
+            lock.unlock()
+            return
         }
 
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_RealTime,
@@ -230,7 +300,7 @@ final class VideoEncoder {
     func setBitrate(_ bitsPerSecond: Int) {
         lock.lock()
         defer { lock.unlock() }
-        guard let session else { return }
+        guard let session, prores == nil else { return }
         Self.applyBitrate(bitsPerSecond, to: session, peakFactor: peakFactor)
     }
 
@@ -304,17 +374,30 @@ final class VideoEncoder {
             infoFlagsOut: nil
         ) { [weak self] status, _, sampleBuffer in
             let encodedNs = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
-            guard status == noErr, let sampleBuffer else { return }
+            guard status == noErr, let sampleBuffer else {
+                self?.noteEncodeError(status)
+                return
+            }
             self?.emit(sampleBuffer, submittedNs: submittedNs, encodedNs: encodedNs)
         }
+    }
+
+    private func noteEncodeError(_ status: OSStatus) {
+        errorLock.lock()
+        encodeErrors += 1
+        lastEncodeStatus = status
+        errorLock.unlock()
     }
 
     private func emit(_ sampleBuffer: CMSampleBuffer, submittedNs: UInt64,
                       encodedNs: UInt64) {
         guard CMSampleBufferDataIsReady(sampleBuffer) else { return }
 
-        let isKeyframe = !sampleBufferIsNotSync(sampleBuffer)
-        guard let annexB = annexBData(from: sampleBuffer, includeParameterSets: isKeyframe) else { return }
+        let isKeyframe = prores != nil || !sampleBufferIsNotSync(sampleBuffer)
+        let payload = prores != nil
+            ? rawData(from: sampleBuffer)
+            : annexBData(from: sampleBuffer, includeParameterSets: isKeyframe)
+        guard let annexB = payload else { return }
 
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         let ptsNs = UInt64(max(0, CMTimeGetSeconds(pts)) * 1_000_000_000)
@@ -367,6 +450,18 @@ final class VideoEncoder {
         }
         guard status == noErr, let pointer else { return nil }
         return (pointer, size)
+    }
+
+    private func rawData(from sampleBuffer: CMSampleBuffer) -> Data? {
+        guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return nil }
+        let length = CMBlockBufferGetDataLength(blockBuffer)
+        guard length > 0 else { return nil }
+        var data = Data(count: length)
+        let status = data.withUnsafeMutableBytes { bytes in
+            CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: length,
+                                       destination: bytes.baseAddress!)
+        }
+        return status == kCMBlockBufferNoErr ? data : nil
     }
 
     /// Converts an AVCC (length-prefixed) sample buffer into Annex B,

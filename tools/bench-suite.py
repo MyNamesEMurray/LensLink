@@ -34,7 +34,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 BASE = {"transport": "USB", "hw": True, "gpu": False,
         "resolution": "1080p", "fps": 60, "codec": "hevc",
-        "quality": "balanced"}
+        "quality": "balanced", "fix4k30": False, "bitrateMbps": 0,
+        "prores": ""}
+
+DEV_KEYS = ("fix4k30", "bitrateMbps", "prores")
 
 RUNS = [
     ("A", "usb-hevc-1080p60-balanced", {}),
@@ -49,10 +52,29 @@ RUNS = [
       "quality": "maximum"}),
     ("F", "usb-hevc-1080p60-softwaredecode", {"hw": False}),
     ("G", "usb-hevc-1080p60-gpupipeline", {"gpu": True}),
+    ("D2", "usb-hevc-4k30-maximum-fix4k30",
+     {"resolution": "4K", "fps": 30, "quality": "maximum",
+      "fix4k30": True}),
+    ("C100", "usb-hevc-1080p60-maximum-100mbps",
+     {"quality": "maximum", "bitrateMbps": 100}),
+    ("D150", "usb-hevc-4k30-maximum-fix4k30-150mbps",
+     {"resolution": "4K", "fps": 30, "quality": "maximum",
+      "fix4k30": True, "bitrateMbps": 150}),
+    ("P1", "usb-prores-lt-1080p60", {"prores": "lt"}),
+    ("P2", "usb-prores-hq-1080p60", {"prores": "hq"}),
+    ("P3", "usb-prores-lt-4k30",
+     {"resolution": "4K", "fps": 30, "prores": "lt"}),
 ]
 
+GROUPS = {
+    "CORE": ["A", "B", "C", "D", "H", "E", "E2", "F", "G"],
+    "DEV": ["A", "C", "D", "H", "D2", "C100", "D150", "P1", "P2", "P3"],
+}
+
 COMPARISONS = [("A", "B"), ("A", "C"), ("A", "D"), ("A", "E"),
-               ("D", "E2"), ("A", "F"), ("A", "G"), ("D", "H")]
+               ("D", "E2"), ("A", "F"), ("A", "G"), ("D", "H"),
+               ("D", "D2"), ("C", "C100"), ("D2", "D150"), ("A", "P1"),
+               ("A", "P2"), ("H", "P3")]
 
 SUMMARY_COLUMNS = [
     ("latency_ms", "Capture->decode (ms)"),
@@ -202,17 +224,38 @@ def verify_manual(panel, cfg):
     decoder = (info["decoder"] or "").lower()
     if decoder and not cfg["hw"] and not decoder.startswith("software"):
         problems.append(f"decoder is {info['decoder']}, expected software")
-    if decoder and cfg["hw"] and decoder.startswith("software"):
+    if (decoder and cfg["hw"] and not cfg["prores"]
+            and decoder.startswith("software")):
         problems.append("decoder is software although hardware decoding "
                         "is expected (the GPU may have fallen back)")
     return info, problems
+
+
+def dev_wanted(cfg):
+    return {k: cfg[k] for k in DEV_KEYS}
+
+
+def dev_is_default(cfg):
+    return all(cfg[k] == BASE[k] for k in DEV_KEYS)
+
+
+def dev_matches(state, cfg):
+    dev = state.get("dev")
+    if dev is None:
+        return dev_is_default(cfg)
+    want_wire = "prores" if cfg["prores"] else cfg["codec"]
+    return (bool(dev.get("fix4k30")) == cfg["fix4k30"]
+            and int(dev.get("bitrateMbps", 0)) == cfg["bitrateMbps"]
+            and dev.get("prores", "") == cfg["prores"]
+            and dev.get("wire", want_wire) == want_wire)
 
 
 def state_matches(state, cfg):
     return (state.get("resolution") == cfg["resolution"]
             and int(state.get("fps", 0)) == cfg["fps"]
             and state.get("codec") == cfg["codec"]
-            and state.get("quality") == cfg["quality"])
+            and state.get("quality") == cfg["quality"]
+            and dev_matches(state, cfg))
 
 
 def apply_format(panel, src, cfg):
@@ -227,6 +270,16 @@ def apply_format(panel, src, cfg):
             raise RuntimeError(f"the phone doesn't offer {key}="
                                f"{cfg[key]} on this lens (offers "
                                f"{allowed})")
+    dev = state.get("dev")
+    if dev is None and not dev_is_default(cfg):
+        raise RuntimeError("this app build has no dev toggles; sideload "
+                           "the build from the claude/bench-stage-timings "
+                           "branch")
+    if cfg["prores"] and dev is not None and not dev.get("proresOK"):
+        raise RuntimeError("this iPhone can't create a real-time ProRes "
+                           "encoder (VideoToolbox refused it)")
+    if dev is not None:
+        panel.control(src, dict({"cmd": "dev"}, **dev_wanted(cfg)))
     if state.get("quality") != cfg["quality"]:
         panel.control(src, {"cmd": "set_quality",
                             "quality": cfg["quality"]})
@@ -335,6 +388,7 @@ def run_one(panel, run_id, label, cfg, args, out_dir, prev_cfg):
     log(f"Run {run_id}: settling for {args.settle} s")
     time.sleep(args.settle)
     info, _ = verify_manual(panel, cfg)
+    dev_before = panel.get_json(f"/api/state?src={src}").get("dev") or {}
 
     tag = f"{run_id}-{label}"
     panel.bench(True, tag)
@@ -361,6 +415,16 @@ def run_one(panel, run_id, label, cfg, args, out_dir, prev_cfg):
     with open(os.path.join(out_dir, f"diagnostics-{run_id}.txt"), "w",
               encoding="utf-8") as f:
         f.write(panel.diagnostics())
+    state_after = panel.get_json(f"/api/state?src={src}")
+    with open(os.path.join(out_dir, f"state-{run_id}.json"), "w",
+              encoding="utf-8") as f:
+        json.dump(state_after, f, indent=2)
+    dev_after = state_after.get("dev") or {}
+    new_errors = int(dev_after.get("encErr", 0)) - int(
+        dev_before.get("encErr", 0))
+    if new_errors > 0:
+        log(f"Run {run_id}: the phone's encoder rejected {new_errors} "
+            f"frames (status {dev_after.get('encStatus')})")
 
     rows = load_rows(dest)
     if len(rows) < max(5, args.duration // 2):
@@ -432,7 +496,8 @@ def main():
     parser.add_argument("--cooldown", type=int, default=0,
                         help="seconds to pause between runs (default 0)")
     parser.add_argument("--runs", default=",".join(r[0] for r in RUNS),
-                        help="comma-separated run ids (default: all)")
+                        help="comma-separated run ids or groups: core, "
+                             "dev (default: every run)")
     parser.add_argument("--out", default=None,
                         help="results folder (default: "
                              "lenslink-bench-<date>)")
@@ -440,7 +505,11 @@ def main():
                         help="don't open the motion pattern page")
     args = parser.parse_args()
 
-    wanted = [r.strip().upper() for r in args.runs.split(",") if r.strip()]
+    wanted = []
+    for item in args.runs.split(","):
+        item = item.strip().upper()
+        if item:
+            wanted += GROUPS.get(item, [item])
     unknown = [r for r in wanted if r not in {x[0] for x in RUNS}]
     if unknown:
         raise SystemExit(f"unknown run ids: {', '.join(unknown)}")
@@ -500,6 +569,15 @@ def main():
         try:
             panel.bench(False)
         except OSError:
+            pass
+
+    if any(not dev_is_default(dict(BASE, **r[2])) for r in plan):
+        try:
+            src = panel.camera_id()
+            if "dev" in panel.get_json(f"/api/state?src={src}"):
+                panel.control(src, dict({"cmd": "dev"}, **dev_wanted(BASE)))
+                log("Reset the phone's dev toggles to their defaults")
+        except (OSError, RuntimeError, ValueError):
             pass
 
     if prev and prev["gpu"]:

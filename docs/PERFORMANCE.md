@@ -204,6 +204,14 @@ through the web panel and records one labelled run per configuration:
 | F | software decoding |
 | G | GPU decode pipeline |
 
+The `dev` group (`--runs dev`) adds the app's experimental toggles, all
+over USB with no manual steps: D2 (4K30 Maximum with `fix4k30`), C100
+(1080p60 Maximum pinned at 100 Mbps), D150 (D2 pinned at 150 Mbps), and
+ProRes P1 (422 LT, 1080p60), P2 (422 HQ, 1080p60) and P3 (422 LT,
+4K30), compared with D, C, D2, A, A and H. `tools/lenslink-dev.py`
+shows or sets the same toggles by hand (`fix4k30=on bitrate=100
+prores=lt`, or `reset`); see the `dev` command in docs/PROTOCOL.md.
+
 Format, codec and quality changes go over `/api/control`. The script
 prompts for the three it can't set (the source's Connection, its
 Hardware decoding checkbox, and the GPU pipeline, which needs an OBS

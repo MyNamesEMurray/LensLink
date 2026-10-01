@@ -56,6 +56,10 @@ Payload: UTF-8 JSON, e.g.
 
 `codec` is `"h264"` or `"hevc"` and selects the plugin's decoder; a codec
 change mid-stream resets the decoder (the next keyframe re-initializes it).
+`"prores"` is experimental, sent only while the app's `dev` command has
+selected a ProRes 422 flavor (see CONTROL); a plugin that doesn't know it
+decodes it as H.264 and shows nothing, which is why only a plugin that
+sends `dev` can ever see it.
 `kind` mirrors the HELLO field. Dimensions/fps are informational; the
 authoritative values come from the bitstream parameter sets.
 
@@ -85,6 +89,11 @@ IDR/IRAP slice so a decoder can join mid-stream.
 
 `pts` is the capture presentation timestamp in nanoseconds. It only needs to
 be monotonic; OBS re-bases async timestamps itself.
+
+For `"prores"` the payload is one complete ProRes 422 frame exactly as
+VideoToolbox produced it (the frame-size word and `icpf` header first,
+as in a QuickTime sample). Every ProRes frame is intra-coded, so every
+packet carries the keyframe flag.
 
 ### 4 — PING
 Optional keep-alive, empty payload, sent by the app every ~2 s.
@@ -130,6 +139,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "green_screen", "on": true, "maxDistance": 2.5 }
 { "cmd": "identify", "host": "Studio-Mac", "obs": "32.0.1", "transport": "usb" }
 { "cmd": "pipeline_stats", "on": true }
+{ "cmd": "dev", "fix4k30": true, "bitrateMbps": 100, "prores": "lt" }
 ```
 
 `set_format` switches the capture format mid-stream; any subset of its
@@ -225,6 +235,20 @@ as PIPELINE_STATS packets (type 13), once a second, until `"on": false`
 or the connection ends. The plugin sends it while its pipeline benchmark
 is recording, on camera connections only. An older app ignores it and
 simply never sends type 13.
+
+`dev` sets the app's experimental benchmark toggles; any subset of its
+fields may be present, and they last until the app restarts. `fix4k30`
+keeps Maximum quality's encoder in speed mode above 1080p.
+`bitrateMbps` (0–400, 0 = off) pins Maximum quality's bitrate over USB
+instead of probing. `prores` (`"proxy"`, `"lt"`, `"standard"`, `"hq"`,
+or `""` for off) encodes ProRes 422 instead of H.264/HEVC on SDR
+streams, announced as `"codec": "prores"` in VIDEO_CONFIG. A change
+rebuilds a live encoder, like a format change. The STATE snapshot
+reports them as `"dev": { "fix4k30", "bitrateMbps", "prores",
+"proresOK" (whether this device can encode ProRes in real time),
+"wire" (the codec actually sent), "encErr" / "encStatus" (frames the
+encoder rejected, and its last error) }`. An older app ignores the
+command and sends no `dev` object.
 
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
