@@ -18,12 +18,24 @@ static uint64_t g_cost_max_ns;
 static uint64_t g_bytes;
 static int g_width, g_height;
 static int g_latency_ms;
+static int g_rtt_ms;
+static uint64_t g_arrivals;
+static uint64_t g_arrival_total_ns;
+static uint64_t g_arrival_max_ns;
+static uint64_t g_decodes;
+static uint64_t g_decode_total_ns;
+static uint64_t g_decode_max_ns;
 
 /* 5 s aggregation for the human-readable OBS-log line. */
 static uint64_t g_log_frames;
 static uint64_t g_log_cost_total_ns;
 static uint64_t g_log_cost_max_ns;
 static uint64_t g_log_bytes;
+static uint64_t g_log_arrivals;
+static uint64_t g_log_arrival_total_ns;
+static uint64_t g_log_decodes;
+static uint64_t g_log_decode_total_ns;
+static uint64_t g_log_decode_max_ns;
 
 static uint64_t g_last_tick_ns;
 static uint64_t g_last_log_ns;
@@ -51,13 +63,39 @@ void lenslink_bench_frame(uint64_t cost_ns, size_t bytes_copied, int width,
 	pthread_mutex_unlock(&g_mutex);
 }
 
-void lenslink_bench_latency(int latency_ms)
+void lenslink_bench_stages(bool have_arrival, uint64_t arrival_ns,
+			   uint64_t decode_ns)
+{
+	if (!lenslink_settings_benchmark())
+		return;
+
+	pthread_mutex_lock(&g_mutex);
+	if (have_arrival) {
+		g_arrivals++;
+		g_arrival_total_ns += arrival_ns;
+		if (arrival_ns > g_arrival_max_ns)
+			g_arrival_max_ns = arrival_ns;
+	}
+	g_decodes++;
+	g_decode_total_ns += decode_ns;
+	if (decode_ns > g_decode_max_ns)
+		g_decode_max_ns = decode_ns;
+	pthread_mutex_unlock(&g_mutex);
+}
+
+void lenslink_bench_latency(int latency_ms, int rtt_ms)
 {
 	if (!lenslink_settings_benchmark())
 		return;
 	pthread_mutex_lock(&g_mutex);
 	g_latency_ms = latency_ms;
+	g_rtt_ms = rtt_ms;
 	pthread_mutex_unlock(&g_mutex);
+}
+
+static double avg_ms(uint64_t total_ns, uint64_t count)
+{
+	return count ? (double)total_ns / (double)count / 1e6 : 0.0;
 }
 
 /* One CSV per enable-run, named by pipeline + wall time so before/after
@@ -80,7 +118,9 @@ static void csv_open(void)
 	g_csv = os_fopen(path, "w");
 	if (g_csv) {
 		fputs("time_s,pipeline,width,height,fps,avg_cost_ms,"
-		      "max_cost_ms,copy_mb_s,latency_ms,obs_cpu_pct\n",
+		      "max_cost_ms,copy_mb_s,latency_ms,obs_cpu_pct,"
+		      "arrival_ms,max_arrival_ms,decode_ms,max_decode_ms,"
+		      "rtt_ms\n",
 		      g_csv);
 		blog(LOG_INFO, "[lenslink][bench] writing samples to %s",
 		     path);
@@ -137,6 +177,17 @@ void lenslink_bench_maybe_log(void)
 		g_log_cost_total_ns = 0;
 		g_log_cost_max_ns = 0;
 		g_log_bytes = 0;
+		g_arrivals = 0;
+		g_arrival_total_ns = 0;
+		g_arrival_max_ns = 0;
+		g_decodes = 0;
+		g_decode_total_ns = 0;
+		g_decode_max_ns = 0;
+		g_log_arrivals = 0;
+		g_log_arrival_total_ns = 0;
+		g_log_decodes = 0;
+		g_log_decode_total_ns = 0;
+		g_log_decode_max_ns = 0;
 		if (!g_cpu)
 			g_cpu = os_cpu_usage_info_start();
 		if (!g_csv)
@@ -156,11 +207,23 @@ void lenslink_bench_maybe_log(void)
 	uint64_t cost_total = g_cost_total_ns;
 	uint64_t cost_max = g_cost_max_ns;
 	uint64_t bytes = g_bytes;
-	int w = g_width, h = g_height, lat = g_latency_ms;
+	int w = g_width, h = g_height, lat = g_latency_ms, rtt = g_rtt_ms;
+	uint64_t arrivals = g_arrivals;
+	uint64_t arrival_total = g_arrival_total_ns;
+	uint64_t arrival_max = g_arrival_max_ns;
+	uint64_t decodes = g_decodes;
+	uint64_t decode_total = g_decode_total_ns;
+	uint64_t decode_max = g_decode_max_ns;
 	g_frames = 0;
 	g_cost_total_ns = 0;
 	g_cost_max_ns = 0;
 	g_bytes = 0;
+	g_arrivals = 0;
+	g_arrival_total_ns = 0;
+	g_arrival_max_ns = 0;
+	g_decodes = 0;
+	g_decode_total_ns = 0;
+	g_decode_max_ns = 0;
 	g_last_tick_ns = now;
 
 	g_log_frames += frames;
@@ -168,19 +231,30 @@ void lenslink_bench_maybe_log(void)
 	if (cost_max > g_log_cost_max_ns)
 		g_log_cost_max_ns = cost_max;
 	g_log_bytes += bytes;
+	g_log_arrivals += arrivals;
+	g_log_arrival_total_ns += arrival_total;
+	g_log_decodes += decodes;
+	g_log_decode_total_ns += decode_total;
+	if (decode_max > g_log_decode_max_ns)
+		g_log_decode_max_ns = decode_max;
 
 	double cpu = g_cpu ? os_cpu_usage_info_query(g_cpu) : 0.0;
 	double seconds = (double)window_ns / 1e9;
 
 	if (frames > 0 && g_csv) {
 		fprintf(g_csv,
-			"%.1f,%s,%d,%d,%.1f,%.3f,%.3f,%.2f,%d,%.2f\n",
+			"%.1f,%s,%d,%d,%.1f,%.3f,%.3f,%.2f,%d,%.2f,"
+			"%.3f,%.3f,%.3f,%.3f,%d\n",
 			(double)(now - g_file_start_ns) / 1e9,
 			lenslink_settings_gpu_pipeline() ? "gpu" : "standard",
 			w, h, (double)frames / seconds,
 			(double)cost_total / (double)frames / 1e6,
 			(double)cost_max / 1e6,
-			(double)bytes / seconds / 1e6, lat, cpu);
+			(double)bytes / seconds / 1e6, lat, cpu,
+			avg_ms(arrival_total, arrivals),
+			(double)arrival_max / 1e6,
+			avg_ms(decode_total, decodes),
+			(double)decode_max / 1e6, rtt);
 		fflush(g_csv);
 	}
 
@@ -194,10 +268,18 @@ void lenslink_bench_maybe_log(void)
 	uint64_t lc = g_log_cost_total_ns;
 	uint64_t lm = g_log_cost_max_ns;
 	uint64_t lb = g_log_bytes;
+	double la = avg_ms(g_log_arrival_total_ns, g_log_arrivals);
+	double ld = avg_ms(g_log_decode_total_ns, g_log_decodes);
+	double ldm = (double)g_log_decode_max_ns / 1e6;
 	g_log_frames = 0;
 	g_log_cost_total_ns = 0;
 	g_log_cost_max_ns = 0;
 	g_log_bytes = 0;
+	g_log_arrivals = 0;
+	g_log_arrival_total_ns = 0;
+	g_log_decodes = 0;
+	g_log_decode_total_ns = 0;
+	g_log_decode_max_ns = 0;
 	g_last_log_ns = now;
 	pthread_mutex_unlock(&g_mutex);
 
@@ -211,4 +293,8 @@ void lenslink_bench_maybe_log(void)
 	     lenslink_settings_gpu_pipeline() ? "gpu" : "standard", w, h,
 	     (double)lf / log_seconds, (double)lc / (double)lf / 1e6,
 	     (double)lm / 1e6, (double)lb / log_seconds / 1e6, cpu);
+	blog(LOG_INFO,
+	     "[lenslink][bench] stages: capture->arrival avg %.2f ms | "
+	     "decode avg %.2f ms, max %.2f ms | link rtt %d ms",
+	     la, ld, ldm, rtt);
 }

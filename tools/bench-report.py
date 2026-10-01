@@ -31,7 +31,16 @@ METRICS = [
     ("obs_cpu_pct", "OBS process CPU", "%", True),
     ("latency_ms", "Capture→decode latency", "ms", True),
     ("fps", "Decoded frame rate", "fps", False),
+    ("arrival_ms", "Capture→arrival (phone encode + send + link)", "ms",
+     True),
+    ("max_arrival_ms", "Capture→arrival (worst)", "ms", True),
+    ("decode_ms", "Decode (libavcodec only)", "ms", True),
+    ("max_decode_ms", "Decode (worst)", "ms", True),
+    ("rtt_ms", "Link round trip", "ms", True),
 ]
+
+STAGE_COLUMNS = ("arrival_ms", "max_arrival_ms", "decode_ms",
+                 "max_decode_ms", "rtt_ms")
 
 
 def config_dirs():
@@ -88,6 +97,8 @@ def load(path):
                     "copy_mb_s": float(row["copy_mb_s"]),
                     "latency_ms": float(row["latency_ms"]),
                     "obs_cpu_pct": float(row["obs_cpu_pct"]),
+                    **{key: float(row[key])
+                       for key in STAGE_COLUMNS if row.get(key)},
                 })
             except (KeyError, ValueError) as err:
                 raise SystemExit(f"{path}: not a LensLink benchmark file "
@@ -117,6 +128,15 @@ def stats(values):
         "min": ordered[0],
         "max": ordered[-1],
     }
+
+
+def present(rows, key):
+    return all(key in r for r in rows)
+
+
+def shared_metrics(before, after):
+    return [m for m in METRICS
+            if present(before, m[0]) and present(after, m[0])]
 
 
 def fmt(x):
@@ -150,7 +170,7 @@ def build_markdown(before, after, before_path, after_path):
         "Before p95 | After p95 |",
         "|---|---:|---:|---:|---:|---:|",
     ]
-    for key, label, unit, lower_better in METRICS:
+    for key, label, unit, lower_better in shared_metrics(before, after):
         b = stats([r[key] for r in before])
         a = stats([r[key] for r in after])
         if b["mean"] > 0:
@@ -173,6 +193,13 @@ def build_markdown(before, after, before_path, after_path):
         "confirms the zero-copy path actually engaged; a nonzero value "
         "there means the automatic CPU fallback ran and the runs are not "
         "comparing what you think.",
+        "",
+        "Capture→arrival is when the plugin has the whole frame, so it "
+        "covers the phone's encode, its send queue and the link; half "
+        "the link round trip approximates the link's share. Decode "
+        "excludes the GPU download and OBS frame copy, which the "
+        "video-path cost covers. Runs recorded before the per-stage "
+        "columns existed omit those rows.",
     ]
     return "\n".join(lines) + "\n"
 
@@ -219,7 +246,7 @@ def svg_series(before, after, key, label, unit, width=640, height=200):
 def build_html(markdown_text, before, after):
     charts = "".join(
         svg_series(before, after, key, label, unit)
-        for key, label, unit, _ in METRICS)
+        for key, label, unit, _ in shared_metrics(before, after))
     table = "<pre>" + html.escape(markdown_text) + "</pre>"
     return f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">

@@ -129,8 +129,9 @@ description: What LensLink's latency is made of, how to measure it, how to lower
 <p>
   <strong>Tools → LensLink Settings → Record pipeline benchmark</strong> writes
   one CSV row per second into the plugin's config folder (path in the log), plus
-  a summary every five seconds. Stream ten seconds on each configuration, then
-  compare a pair:
+  a summary every five seconds. The summary also splits latency into stages:
+  capture to arrival (the phone's encode plus the link), decode, and the link's
+  round trip. Stream ten seconds on each configuration, then compare a pair:
 </p>
 <pre><code>python3 tools/bench-report.py BEFORE.csv AFTER.csv</code></pre>
 <p>

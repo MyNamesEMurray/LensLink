@@ -1727,7 +1727,8 @@ static void stats_tick(struct ios_camera_source *s, struct client_state *c)
 	snprintf(s->stat_device, sizeof(s->stat_device), "%.63s", c->name);
 	int latency_ms = (int)(s->last_video_latency_ns / 1000000);
 	pthread_mutex_unlock(&s->status_mutex);
-	lenslink_bench_latency(latency_ms);
+	lenslink_bench_latency(latency_ms,
+			       (int)(c->lat.offset_rtt / 1000000ULL));
 }
 
 static void dump_close(struct client_state *c)
@@ -2137,6 +2138,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			c->next_decoder_attempt = 0;
 			c->packets_at_decoder = c->video_packets;
 		}
+		uint64_t arrived_ns = os_gettime_ns();
 		if (!h264_decoder_decode(c->decoder, s->source, payload,
 					 hdr->payload_size, hdr->pts_ns)) {
 			c->decode_errors++;
@@ -2159,6 +2161,19 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			break;
 		}
 		latency_on_frame(&c->lat, hdr->pts_ns, os_gettime_ns());
+		{
+			int64_t arrival = 0;
+			if (c->lat.have_offset) {
+				arrival = (int64_t)arrived_ns -
+					  ((int64_t)hdr->pts_ns -
+					   c->lat.offset_ns);
+				if (arrival < 0)
+					arrival = 0;
+			}
+			lenslink_bench_stages(
+				c->lat.have_offset, (uint64_t)arrival,
+				h264_decoder_last_decode_ns(c->decoder));
+		}
 
 		/* First decoded frame is the key signal: if we see this, decode
 		 * works and any "black" is downstream (OBS transform/render). If

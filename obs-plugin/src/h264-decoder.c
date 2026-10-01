@@ -35,6 +35,9 @@ struct h264_decoder {
 	int last_width;
 	int last_height;
 	const char *last_format_name;
+
+	uint64_t call_output_ns;
+	uint64_t last_decode_ns;
 };
 
 /* GPU decode APIs to try, best-first per platform. */
@@ -230,6 +233,11 @@ const char *h264_decoder_hw_name(const struct h264_decoder *dec)
 	return name ? name : "hardware";
 }
 
+uint64_t h264_decoder_last_decode_ns(const struct h264_decoder *dec)
+{
+	return dec ? dec->last_decode_ns : 0;
+}
+
 uint64_t h264_decoder_frames_output(const struct h264_decoder *dec)
 {
 	return dec ? dec->frames_output : 0;
@@ -363,8 +371,8 @@ static bool avframe_to_obs(const AVFrame *frame, struct obs_source_frame *out)
 	return true;
 }
 
-bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
-			 const uint8_t *data, size_t size, uint64_t pts_ns)
+static bool decode_packet(struct h264_decoder *dec, obs_source_t *source,
+			  const uint8_t *data, size_t size, uint64_t pts_ns)
 {
 	dec->pkt->data = (uint8_t *)data;
 	dec->pkt->size = (int)size;
@@ -457,8 +465,10 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			else if (out.format == VIDEO_FORMAT_P010 ||
 				 out.format == VIDEO_FORMAT_I010)
 				frame_bytes = px * 3;
+			uint64_t cost = os_gettime_ns() - bench_start;
+			dec->call_output_ns += cost;
 			lenslink_bench_frame(
-				os_gettime_ns() - bench_start,
+				cost,
 				frame_bytes * (downloaded ? 2 : 1),
 				out_frame->width, out_frame->height);
 		}
@@ -484,4 +494,17 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 	}
 
 	return true;
+}
+
+bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
+			 const uint8_t *data, size_t size, uint64_t pts_ns)
+{
+	uint64_t start = os_gettime_ns();
+	dec->call_output_ns = 0;
+	bool ok = decode_packet(dec, source, data, size, pts_ns);
+	uint64_t total = os_gettime_ns() - start;
+	dec->last_decode_ns = total > dec->call_output_ns
+				      ? total - dec->call_output_ns
+				      : 0;
+	return ok;
 }

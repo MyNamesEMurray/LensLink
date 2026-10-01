@@ -130,9 +130,29 @@ log:
   healthy GPU-pipeline run; nonzero there means the fallback engaged).
 - **OBS process CPU** — sampled the same way OBS's own Stats dock does.
 
+A second line splits the latency into stages:
+
+```
+[lenslink][bench] stages: capture->arrival avg 41.50 ms |
+  decode avg 2.20 ms, max 5.00 ms | link rtt 1 ms
+```
+
+- **capture->arrival** — phone capture timestamp to the moment the
+  plugin holds the whole frame (TIMESYNC-corrected). It covers the
+  phone's encode, its send queue and the link; the plugin can't see
+  encode alone, but half the **link rtt** approximates the link's share,
+  so the remainder is mostly on the phone.
+- **decode** — wall time inside libavcodec for one access unit, with the
+  video-path cost above subtracted. With a hardware decoder, GPU work
+  that finishes asynchronously can land in the video-path cost (the
+  download waits for it) instead of here.
+
 While the toggle is on, the plugin also writes one CSV row **per second
 of live video** to `bench-<pipeline>-<epoch>.csv` in its config
 directory (the OBS log prints the exact path when the file opens).
+The stage numbers are in the `arrival_ms`, `max_arrival_ms`,
+`decode_ms`, `max_decode_ms` and `rtt_ms` columns; files from builds
+before those existed still load, without the stage rows.
 
 The before/after recipe:
 

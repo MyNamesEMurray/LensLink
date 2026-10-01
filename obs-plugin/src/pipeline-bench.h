@@ -32,8 +32,11 @@ extern "C" {
 void lenslink_bench_frame(uint64_t cost_ns, size_t bytes_copied,
 			  int width, int height);
 
+void lenslink_bench_stages(bool have_arrival, uint64_t arrival_ns,
+			   uint64_t decode_ns);
+
 /* Latest capture->decode latency (TIMESYNC-derived), for the CSV rows. */
-void lenslink_bench_latency(int latency_ms);
+void lenslink_bench_latency(int latency_ms, int rtt_ms);
 
 /* Rate-limited logger + CSV writer; call from any ~1 Hz maintenance
  * tick. While the setting is on, every second of live video appends a
