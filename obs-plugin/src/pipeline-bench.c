@@ -55,6 +55,24 @@ static bool bench_on(void)
 	return g_run_active || lenslink_settings_benchmark();
 }
 
+static struct lenslink_phone_stages g_phone;
+static uint64_t g_phone_at_ns;
+
+bool lenslink_bench_enabled(void)
+{
+	return bench_on();
+}
+
+void lenslink_bench_phone(const struct lenslink_phone_stages *stages)
+{
+	if (!bench_on())
+		return;
+	pthread_mutex_lock(&g_mutex);
+	g_phone = *stages;
+	g_phone_at_ns = os_gettime_ns();
+	pthread_mutex_unlock(&g_mutex);
+}
+
 void lenslink_bench_frame(uint64_t cost_ns, size_t bytes_copied, int width,
 			  int height)
 {
@@ -134,7 +152,8 @@ static void csv_open(void)
 		fputs("time_s,pipeline,width,height,fps,avg_cost_ms,"
 		      "max_cost_ms,copy_mb_s,latency_ms,obs_cpu_pct,"
 		      "arrival_ms,max_arrival_ms,decode_ms,max_decode_ms,"
-		      "rtt_ms\n",
+		      "rtt_ms,phone_capture_ms,phone_encode_ms,"
+		      "phone_encode_max_ms,phone_send_ms,phone_total_ms\n",
 		      g_csv);
 		blog(LOG_INFO, "[lenslink][bench] writing samples to %s",
 		     path);
@@ -242,6 +261,7 @@ void lenslink_bench_maybe_log(void)
 		g_log_decodes = 0;
 		g_log_decode_total_ns = 0;
 		g_log_decode_max_ns = 0;
+		g_phone_at_ns = 0;
 		if (!g_cpu)
 			g_cpu = os_cpu_usage_info_start();
 		if (!g_csv)
@@ -268,6 +288,8 @@ void lenslink_bench_maybe_log(void)
 	uint64_t decodes = g_decodes;
 	uint64_t decode_total = g_decode_total_ns;
 	uint64_t decode_max = g_decode_max_ns;
+	bool phone_fresh = g_phone_at_ns && now - g_phone_at_ns < 3000000000ULL;
+	struct lenslink_phone_stages phone = g_phone;
 	g_frames = 0;
 	g_cost_total_ns = 0;
 	g_cost_max_ns = 0;
@@ -298,7 +320,7 @@ void lenslink_bench_maybe_log(void)
 	if (frames > 0 && g_csv) {
 		fprintf(g_csv,
 			"%.1f,%s,%d,%d,%.1f,%.3f,%.3f,%.2f,%d,%.2f,"
-			"%.3f,%.3f,%.3f,%.3f,%d\n",
+			"%.3f,%.3f,%.3f,%.3f,%d",
 			(double)(now - g_file_start_ns) / 1e9,
 			lenslink_settings_gpu_pipeline() ? "gpu" : "standard",
 			w, h, (double)frames / seconds,
@@ -309,6 +331,13 @@ void lenslink_bench_maybe_log(void)
 			(double)arrival_max / 1e6,
 			avg_ms(decode_total, decodes),
 			(double)decode_max / 1e6, rtt);
+		if (phone_fresh)
+			fprintf(g_csv, ",%.3f,%.3f,%.3f,%.3f,%.3f\n",
+				phone.capture_ms, phone.encode_ms,
+				phone.encode_max_ms, phone.send_ms,
+				phone.total_ms);
+		else
+			fputs(",,,,,\n", g_csv);
 		fflush(g_csv);
 	}
 
@@ -339,6 +368,14 @@ void lenslink_bench_maybe_log(void)
 
 	if (lf == 0)
 		return; /* nothing streamed this window */
+
+	if (phone_fresh)
+		blog(LOG_INFO,
+		     "[lenslink][bench] phone: capture->encoder %.2f ms | "
+		     "encode %.2f ms (max %.2f) | encoder->sent %.2f ms | "
+		     "capture->sent %.2f ms",
+		     phone.capture_ms, phone.encode_ms, phone.encode_max_ms,
+		     phone.send_ms, phone.total_ms);
 
 	blog(LOG_INFO,
 	     "[lenslink][bench] pipeline=%s | %dx%d ~%.0f fps | "

@@ -47,6 +47,18 @@ void lenslink_bench_maybe_log(void);
 
 void lenslink_bench_set_run(bool on, const char *label);
 
+bool lenslink_bench_enabled(void);
+
+struct lenslink_phone_stages {
+	double capture_ms;
+	double encode_ms;
+	double encode_max_ms;
+	double send_ms;
+	double total_ms;
+};
+
+void lenslink_bench_phone(const struct lenslink_phone_stages *stages);
+
 bool lenslink_bench_status(char *file, size_t file_size, bool *writing);
 
 /* Closes the sample file; module unload. */

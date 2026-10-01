@@ -129,6 +129,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
 { "cmd": "green_screen", "on": true, "maxDistance": 2.5 }
 { "cmd": "identify", "host": "Studio-Mac", "obs": "32.0.1", "transport": "usb" }
+{ "cmd": "pipeline_stats", "on": true }
 ```
 
 `set_format` switches the capture format mid-stream; any subset of its
@@ -218,6 +219,12 @@ assist is active — the app clamps and ignores as needed. Green screen
 is SDR-only: arming it forces the Standard colour pipeline, and the
 STATE fields below keep every surface honest about what's running.
 Camera connections only; screen mirror ignores it.
+
+`pipeline_stats` asks the app to report its own per-frame stage timings
+as PIPELINE_STATS packets (type 13), once a second, until `"on": false`
+or the connection ends. The plugin sends it while its pipeline benchmark
+is recording, on camera connections only. An older app ignores it and
+simply never sends type 13.
 
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
@@ -361,6 +368,27 @@ and measure afresh (the app's sync pill tap; the web panel does the same
 thing via `POST /api/recalibrate`, no packet involved). Unknown commands
 are ignored, so new ones stay compatible; a plugin older than this type
 logs an unknown-type warning and carries on.
+
+### 13 — PIPELINE_STATS (app → plugin)
+Sent about once a second, only after a `pipeline_stats` command turned it
+on. Payload: UTF-8 JSON summarising the video frames handed to the network
+in that window, all in milliseconds on the app's host clock (the clock
+frame `pts` uses):
+
+```json
+{ "frames": 60,
+  "captureMs": 5.1, "captureMaxMs": 7.9,
+  "encodeMs": 22.4, "encodeMaxMs": 30.2,
+  "sendMs": 2.0, "sendMaxMs": 4.4,
+  "totalMs": 29.5, "totalMaxMs": 38.0 }
+```
+
+`capture` is frame `pts` to the frame entering the encoder (camera
+delivery plus any compositing), `encode` is encoder in to encoder out,
+`send` is encoder out to the network stack accepting the frame, and
+`total` is their sum per frame (so `totalMs` is the mean of sums, and the
+maxima are independent). Averages are means; `frames` is the sample
+count. Purely diagnostic: a plugin that never asks never receives it.
 
 ## Discovery (Bonjour)
 

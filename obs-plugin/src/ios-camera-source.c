@@ -668,6 +668,7 @@ struct client_state {
 	 * re-announce contract as tally). */
 	bool ref_valid;
 	bool ref_on;
+	bool stages_on;
 	int fps_sent;
 	uint64_t next_decoder_attempt; /* cooldown after create failure */
 	enum AVCodecID codec_id;
@@ -1547,6 +1548,27 @@ static void reference_tick(struct ios_camera_source *s,
 				 : "{\"cmd\":\"reference\",\"on\":false}");
 }
 
+static void pipeline_stats_tick(struct client_state *c)
+{
+	bool want = !c->is_screen && lenslink_bench_enabled();
+	if (c->stages_on == want)
+		return;
+	c->stages_on = want;
+	send_control_cmd(c, want ? "{\"cmd\":\"pipeline_stats\",\"on\":true}"
+				 : "{\"cmd\":\"pipeline_stats\",\"on\":false}");
+}
+
+static double json_number(const char *json, const char *key)
+{
+	char pattern[48];
+	snprintf(pattern, sizeof(pattern), "\"%s\"", key);
+	const char *p = strstr(json, pattern);
+	if (!p)
+		return 0.0;
+	p = strchr(p + strlen(pattern), ':');
+	return p ? strtod(p + 1, NULL) : 0.0;
+}
+
 static void screen_fps_tick(struct ios_camera_source *s,
 			    struct client_state *c)
 {
@@ -2388,6 +2410,22 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			s->cal_reset_requested = true;
 		break;
 	}
+	case OBSC_PKT_PIPELINE_STATS: {
+		char json[513];
+		size_t len = hdr->payload_size < 512 ? hdr->payload_size : 512;
+		memcpy(json, payload, len);
+		json[len] = '\0';
+		struct lenslink_phone_stages stages = {
+			.capture_ms = json_number(json, "captureMs"),
+			.encode_ms = json_number(json, "encodeMs"),
+			.encode_max_ms = json_number(json, "encodeMaxMs"),
+			.send_ms = json_number(json, "sendMs"),
+			.total_ms = json_number(json, "totalMs"),
+		};
+		if (json_number(json, "frames") > 0)
+			lenslink_bench_phone(&stages);
+		break;
+	}
 	default:
 		blog(LOG_WARNING, "[lenslink] unknown packet type %d",
 		     hdr->type);
@@ -2777,6 +2815,7 @@ static void dial_loop(struct ios_camera_source *s)
 			control_tick(s, &client);
 			tally_tick(s, &client);
 			reference_tick(s, &client);
+			pipeline_stats_tick(&client);
 			screen_fps_tick(s, &client);
 			diag_tick(s, &client);
 			stats_tick(s, &client);

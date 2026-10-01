@@ -55,6 +55,7 @@ enum obsc_packet_type {
 	 * packet — CONTROL's mirror image (e.g. {"cmd":"recalibrate"}).
 	 * Unknown commands are ignored, so new ones stay compatible. */
 	OBSC_PKT_REQUEST = 12,
+	OBSC_PKT_PIPELINE_STATS = 13,
 };
 
 /* Reference-audio format (fixed). */

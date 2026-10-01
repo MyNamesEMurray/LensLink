@@ -142,6 +142,11 @@ A second line splits the latency into stages:
   phone's encode, its send queue and the link; the plugin can't see
   encode alone, but half the **link rtt** approximates the link's share,
   so the remainder is mostly on the phone.
+- **phone** (a third line, when the app is new enough) — the app's own
+  timestamps, requested over CONTROL while the benchmark records
+  (`pipeline_stats`, docs/PROTOCOL.md): capture to encoder input,
+  encode, encoder output to the network stack, and their sum. Subtract
+  the phone's capture->sent from capture->arrival to get the link.
 - **decode** — wall time inside libavcodec for one access unit, with the
   video-path cost above subtracted. With a hardware decoder, GPU work
   that finishes asynchronously can land in the video-path cost (the
@@ -151,7 +156,10 @@ While the toggle is on, the plugin also writes one CSV row **per second
 of live video** to `bench-<pipeline>-<epoch>.csv` in its config
 directory (the OBS log prints the exact path when the file opens).
 The stage numbers are in the `arrival_ms`, `max_arrival_ms`,
-`decode_ms`, `max_decode_ms` and `rtt_ms` columns; files from builds
+`decode_ms`, `max_decode_ms` and `rtt_ms` columns, and the phone's in
+`phone_capture_ms`, `phone_encode_ms`, `phone_encode_max_ms`,
+`phone_send_ms` and `phone_total_ms` (blank in seconds the app sent
+none); files from builds
 before those existed still load, without the stage rows.
 
 The before/after recipe:

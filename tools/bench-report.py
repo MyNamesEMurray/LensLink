@@ -37,10 +37,17 @@ METRICS = [
     ("decode_ms", "Decode (libavcodec only)", "ms", True),
     ("max_decode_ms", "Decode (worst)", "ms", True),
     ("rtt_ms", "Link round trip", "ms", True),
+    ("phone_capture_ms", "Phone: capture→encoder", "ms", True),
+    ("phone_encode_ms", "Phone: encode", "ms", True),
+    ("phone_encode_max_ms", "Phone: encode (worst)", "ms", True),
+    ("phone_send_ms", "Phone: encoder→sent", "ms", True),
+    ("phone_total_ms", "Phone: capture→sent", "ms", True),
 ]
 
 STAGE_COLUMNS = ("arrival_ms", "max_arrival_ms", "decode_ms",
-                 "max_decode_ms", "rtt_ms")
+                 "max_decode_ms", "rtt_ms", "phone_capture_ms",
+                 "phone_encode_ms", "phone_encode_max_ms", "phone_send_ms",
+                 "phone_total_ms")
 
 
 def config_dirs():
@@ -131,7 +138,11 @@ def stats(values):
 
 
 def present(rows, key):
-    return all(key in r for r in rows)
+    return any(key in r for r in rows)
+
+
+def column(rows, key):
+    return [r for r in rows if key in r]
 
 
 def shared_metrics(before, after):
@@ -171,8 +182,8 @@ def build_markdown(before, after, before_path, after_path):
         "|---|---:|---:|---:|---:|---:|",
     ]
     for key, label, unit, lower_better in shared_metrics(before, after):
-        b = stats([r[key] for r in before])
-        a = stats([r[key] for r in after])
+        b = stats([r[key] for r in column(before, key)])
+        a = stats([r[key] for r in column(after, key)])
         if b["mean"] > 0:
             pct = (a["mean"] - b["mean"]) / b["mean"] * 100.0
             if abs(pct) < 2.0:
@@ -198,8 +209,11 @@ def build_markdown(before, after, before_path, after_path):
         "covers the phone's encode, its send queue and the link; half "
         "the link round trip approximates the link's share. Decode "
         "excludes the GPU download and OBS frame copy, which the "
-        "video-path cost covers. Runs recorded before the per-stage "
-        "columns existed omit those rows.",
+        "video-path cost covers. The phone rows come from the app's own "
+        "timestamps (capture, encoder in, encoder out, handed to the "
+        "network); capture→arrival minus phone capture→sent is the time "
+        "on the link. Runs recorded before a column existed omit its "
+        "rows.",
     ]
     return "\n".join(lines) + "\n"
 
@@ -207,6 +221,8 @@ def build_markdown(before, after, before_path, after_path):
 def svg_series(before, after, key, label, unit, width=640, height=200):
     """Two time-series polylines on one inline-SVG chart."""
     pad = 40
+    before = column(before, key)
+    after = column(after, key)
     all_vals = [r[key] for r in before] + [r[key] for r in after]
     top = max(all_vals) * 1.15 or 1.0
 

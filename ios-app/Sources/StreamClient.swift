@@ -105,6 +105,7 @@ final class StreamClient {
         inFlightFrames = 0
         waitingForKeyframe = false
         receiveBuffer.removeAll(keepingCapacity: false)
+        pipelineStatsOn = false
     }
 
     /// Queue-confined.
@@ -144,6 +145,75 @@ final class StreamClient {
     private var diagKeyframesSent = 0
     private var diagVideoBytes = 0
     private var diagAudioChunks = 0
+
+    private struct StageTotals {
+        var frames = 0
+        var captureNs: UInt64 = 0
+        var captureMaxNs: UInt64 = 0
+        var encodeNs: UInt64 = 0
+        var encodeMaxNs: UInt64 = 0
+        var sendNs: UInt64 = 0
+        var sendMaxNs: UInt64 = 0
+        var totalNs: UInt64 = 0
+        var totalMaxNs: UInt64 = 0
+
+        mutating func add(capture: UInt64, encode: UInt64, send: UInt64) {
+            frames += 1
+            captureNs += capture
+            captureMaxNs = max(captureMaxNs, capture)
+            encodeNs += encode
+            encodeMaxNs = max(encodeMaxNs, encode)
+            sendNs += send
+            sendMaxNs = max(sendMaxNs, send)
+            let total = capture + encode + send
+            totalNs += total
+            totalMaxNs = max(totalMaxNs, total)
+        }
+
+        func json() -> [String: Any] {
+            func ms(_ ns: UInt64) -> Double {
+                (Double(ns) / 1_000_000 * 1000).rounded() / 1000
+            }
+            let n = UInt64(max(frames, 1))
+            return [
+                "frames": frames,
+                "captureMs": ms(captureNs / n), "captureMaxMs": ms(captureMaxNs),
+                "encodeMs": ms(encodeNs / n), "encodeMaxMs": ms(encodeMaxNs),
+                "sendMs": ms(sendNs / n), "sendMaxMs": ms(sendMaxNs),
+                "totalMs": ms(totalNs / n), "totalMaxMs": ms(totalMaxNs),
+            ]
+        }
+    }
+
+    private var pipelineStatsOn = false
+    private var stageTotals = StageTotals()
+    private var stageWindowStart: UInt64 = 0
+
+    func setPipelineStats(_ on: Bool) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.pipelineStatsOn = on
+            self.stageTotals = StageTotals()
+            self.stageWindowStart = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+        }
+    }
+
+    private func recordStages(_ frame: VideoEncoder.EncodedFrame, sentNs: UInt64) {
+        guard pipelineStatsOn, frame.submittedNs != 0,
+              frame.submittedNs >= frame.ptsNanoseconds,
+              frame.encodedNs >= frame.submittedNs,
+              sentNs >= frame.encodedNs else { return }
+        stageTotals.add(capture: frame.submittedNs - frame.ptsNanoseconds,
+                        encode: frame.encodedNs - frame.submittedNs,
+                        send: sentNs - frame.encodedNs)
+        guard sentNs - stageWindowStart >= 1_000_000_000 else { return }
+        let report = stageTotals.json()
+        stageTotals = StageTotals()
+        stageWindowStart = sentNs
+        guard let payload = try? JSONSerialization.data(withJSONObject: report) else { return }
+        sendOnQueue(OBSCProtocol.packet(type: .pipelineStats, payload: payload),
+                    isVideoFrame: false)
+    }
 
     /// One-line health snapshot, safe to call from any thread.
     func debugStatus() -> String {
@@ -408,9 +478,11 @@ final class StreamClient {
     /// header and payload as two batched writes spares every frame a full
     /// memcpy into a combined buffer (packet() would copy the whole payload
     /// again just to gain a 20-byte prefix) — and the matching allocation.
-    private func sendVideoOnQueue(header: Data, payload: Data) {
+    private func sendVideoOnQueue(header: Data, payload: Data,
+                                  frame: VideoEncoder.EncodedFrame? = nil) {
         guard let connection else { return }
-        let completion = sendCompletion(for: connection, isVideoFrame: true)
+        let completion = sendCompletion(for: connection, isVideoFrame: true,
+                                        frame: frame)
         connection.batch {
             // The header rides with the payload; errors and accounting are
             // handled once, on the payload's completion.
@@ -420,7 +492,8 @@ final class StreamClient {
     }
 
     private func sendCompletion(for connection: NWConnection,
-                                isVideoFrame: Bool) -> NWConnection.SendCompletion {
+                                isVideoFrame: Bool,
+                                frame: VideoEncoder.EncodedFrame? = nil) -> NWConnection.SendCompletion {
         let enqueuedAt = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
         return .contentProcessed { [weak self, weak connection] error in
             guard let self else { return }
@@ -436,9 +509,13 @@ final class StreamClient {
                 if self.inFlightFrames > 0 {
                     self.inFlightFrames -= 1
                 }
-                let delay = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - enqueuedAt
+                let sentNs = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+                let delay = sentNs - enqueuedAt
                 if delay > self.maxSendDelayNs {
                     self.maxSendDelayNs = delay
+                }
+                if error == nil, let frame {
+                    self.recordStages(frame, sentNs: sentNs)
                 }
             }
             if let error, !Self.isCancellation(error) {
@@ -595,7 +672,8 @@ final class StreamClient {
                                              flags: flags,
                                              ptsNanoseconds: frame.ptsNanoseconds,
                                              payloadSize: frame.data.count)
-            self.sendVideoOnQueue(header: header, payload: frame.data)
+            self.sendVideoOnQueue(header: header, payload: frame.data,
+                                  frame: self.pipelineStatsOn ? frame : nil)
         }
     }
 

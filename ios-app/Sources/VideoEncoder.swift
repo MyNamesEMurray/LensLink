@@ -38,6 +38,8 @@ final class VideoEncoder {
         let data: Data
         let ptsNanoseconds: UInt64
         let isKeyframe: Bool
+        var submittedNs: UInt64 = 0
+        var encodedNs: UInt64 = 0
     }
 
     var onEncodedFrame: ((EncodedFrame) -> Void)?
@@ -292,6 +294,7 @@ final class VideoEncoder {
             frameProperties = [kVTEncodeFrameOptionKey_ForceKeyFrame: kCFBooleanTrue!] as CFDictionary
         }
 
+        let submittedNs = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
         VTCompressionSessionEncodeFrame(
             session,
             imageBuffer: imageBuffer,
@@ -300,12 +303,14 @@ final class VideoEncoder {
             frameProperties: frameProperties,
             infoFlagsOut: nil
         ) { [weak self] status, _, sampleBuffer in
+            let encodedNs = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
             guard status == noErr, let sampleBuffer else { return }
-            self?.emit(sampleBuffer)
+            self?.emit(sampleBuffer, submittedNs: submittedNs, encodedNs: encodedNs)
         }
     }
 
-    private func emit(_ sampleBuffer: CMSampleBuffer) {
+    private func emit(_ sampleBuffer: CMSampleBuffer, submittedNs: UInt64,
+                      encodedNs: UInt64) {
         guard CMSampleBufferDataIsReady(sampleBuffer) else { return }
 
         let isKeyframe = !sampleBufferIsNotSync(sampleBuffer)
@@ -314,7 +319,8 @@ final class VideoEncoder {
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         let ptsNs = UInt64(max(0, CMTimeGetSeconds(pts)) * 1_000_000_000)
 
-        onEncodedFrame?(EncodedFrame(data: annexB, ptsNanoseconds: ptsNs, isKeyframe: isKeyframe))
+        onEncodedFrame?(EncodedFrame(data: annexB, ptsNanoseconds: ptsNs, isKeyframe: isKeyframe,
+                                     submittedNs: submittedNs, encodedNs: encodedNs))
     }
 
     private func sampleBufferIsNotSync(_ sampleBuffer: CMSampleBuffer) -> Bool {

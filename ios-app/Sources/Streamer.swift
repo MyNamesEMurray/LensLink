@@ -1462,6 +1462,9 @@ final class Streamer: ObservableObject {
                 Task { await start() }
             }
             return
+        case "pipeline_stats":
+            client.setPipelineStats(command["on"] as? Bool ?? false)
+            return
         case "pause_stream", "resume_stream":
             // Pause needs no remote-start permission: it holds a stream
             // the user already started, and can't turn the camera on.

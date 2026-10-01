@@ -48,6 +48,7 @@ enum OBSCProtocol {
         /// backwards-compatible; an old plugin logs an unknown-type warning
         /// and carries on.
         case request = 12
+        case pipelineStats = 13
     }
 
     /// What a connection is streaming, sent in the HELLO / video config.
