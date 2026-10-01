@@ -320,6 +320,12 @@ final class CameraManager: NSObject {
     /// preference, never a tear.
     static var preferFullSensorReadout = false
 
+    static var prefer422SDR = false
+
+    private(set) var activePixelFormat: OSType = 0
+
+    private static let x422 = kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange
+
     private static func format(for device: AVCaptureDevice,
                                resolution: Resolution,
                                fps: Int32,
@@ -335,7 +341,7 @@ final class CameraManager: NSObject {
         // `requireDepth` (depth assist) additionally requires a format
         // that can pair with a depth stream — the depth sibling devices
         // carry both depth-capable and depth-less formats.
-        let candidates = device.formats.filter { format in
+        var candidates = device.formats.filter { format in
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
             guard dims.width == target.width, dims.height == target.height else {
                 return false
@@ -366,6 +372,14 @@ final class CameraManager: NSObject {
             }
             return format.videoSupportedFrameRateRanges
                 .contains { $0.maxFrameRate >= Double(fps) }
+        }
+        if color == .sdr, prefer422SDR {
+            let tenBit422 = candidates.filter {
+                CMFormatDescriptionGetMediaSubType($0.formatDescription) == x422
+            }
+            if !tenBit422.isEmpty {
+                candidates = tenBit422
+            }
         }
         guard let first = candidates.first else { return nil }
 
@@ -670,7 +684,7 @@ final class CameraManager: NSObject {
         // exactly.
         switch color {
         case .sdr:
-            session.automaticallyConfiguresCaptureDeviceForWideColor = true
+            session.automaticallyConfiguresCaptureDeviceForWideColor = !Self.prefer422SDR
         case .hlg, .log:
             session.automaticallyConfiguresCaptureDeviceForWideColor = false
         }
@@ -712,10 +726,14 @@ final class CameraManager: NSObject {
 
         try device.lockForConfiguration()
         device.activeFormat = format
+        let formatIs422 = CMFormatDescriptionGetMediaSubType(format.formatDescription)
+            == Self.x422
         switch color {
         case .sdr:
-            // The session manages colour (automatic wide colour, above).
-            break
+            if Self.prefer422SDR, formatIs422,
+               format.supportedColorSpaces.contains(.sRGB) {
+                device.activeColorSpace = .sRGB
+            }
         case .hlg:
             device.activeColorSpace = .HLG_BT2020
         case .log:
@@ -824,10 +842,11 @@ final class CameraManager: NSObject {
         // VideoToolbox accepts x422 into a Main10 HEVC session and
         // converts internally, so the encoder needs no pixel-format
         // knowledge.
-        let outputPixelFormat: OSType
+        var outputPixelFormat: OSType
         switch color {
         case .sdr:
-            outputPixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            outputPixelFormat = Self.prefer422SDR && formatIs422
+                ? Self.x422 : kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
         case .hlg:
             outputPixelFormat = kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
         case .log:
@@ -839,7 +858,10 @@ final class CameraManager: NSObject {
         // is connected to a device whose active format is 10-bit — and
         // assigning a format missing from that list raises an NSException
         // Swift cannot catch (the issue #81 TestFlight crash).
-        if color != .sdr,
+        if color == .sdr, outputPixelFormat == Self.x422,
+           !output.availableVideoPixelFormatTypes.contains(outputPixelFormat) {
+            outputPixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+        } else if color != .sdr,
            !output.availableVideoPixelFormatTypes.contains(outputPixelFormat) {
             // Degrade to SDR rather than crash — and rebuild the whole
             // graph (begin/commit pairs nest) so the format choice,
@@ -855,6 +877,7 @@ final class CameraManager: NSObject {
         output.videoSettings = [
             kCVPixelBufferPixelFormatTypeKey as String: outputPixelFormat
         ]
+        activePixelFormat = outputPixelFormat
 
         if let connection = output.connection(with: .video) {
             if connection.isVideoOrientationSupported {

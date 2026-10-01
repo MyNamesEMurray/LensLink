@@ -199,16 +199,78 @@ final class Streamer: ObservableObject {
         var fix4k30 = false
         var bitrateMbps = 0
         var prores: ProResFlavor?
+        var capture422 = false
     }
 
     private(set) var dev = DevFlags() {
         didSet {
             guard dev != oldValue else { return }
+            CameraManager.prefer422SDR = dev.capture422
             if isStreaming {
                 reconfigureLiveCapture(formatChanged: true)
             }
             scheduleStateSend()
         }
+    }
+
+    let qualityTap = QualityTap()
+    private var qualityCapture: QualityCapture?
+
+    private func startQualityCapture(_ command: [String: Any]) {
+        guard isStreaming else { return }
+        qualityCapture?.cancel()
+        qualityTap.set(nil)
+        let rawId = command["id"] as? String ?? "capture"
+        let id = String(rawId.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+            .prefix(40))
+        let frames = min(max(command["frames"] as? Int ?? 60, 1), 600)
+        let size = resolution.size
+        var configs: [QualityCapture.Config] = []
+        for item in command["configs"] as? [[String: Any]] ?? [] {
+            guard let rawName = item["name"] as? String else { continue }
+            let name = String(rawName.filter {
+                $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_"
+            }.prefix(40))
+            guard !name.isEmpty else { continue }
+            let codecName = item["codec"] as? String ?? "hevc"
+            let prores = codecName == "prores"
+                ? ProResFlavor(rawValue: item["prores"] as? String ?? "lt") ?? .lt : nil
+            let codec = VideoCodec(rawValue: codecName) ?? .hevc
+            let maximum = item["maximum"] as? Bool ?? false
+            let mbps = (item["bitrateMbps"] as? NSNumber)?.doubleValue ?? 0
+            let scale = (item["tableScale"] as? NSNumber)?.doubleValue ?? 1
+            let table = resolution.bitrate(for: codec, color: .sdr, fps: fps)
+            let bitrate = mbps > 0 ? Int(mbps * 1_000_000) : Int(Double(table) * scale)
+            let qualityPriority = item["qualityPriority"] as? Bool
+                ?? (maximum && VideoEncoder.qualityPriorityAffordable(
+                    width: size.width, height: size.height, fps: Int32(fps),
+                    latencyCap: dev.fix4k30))
+            configs.append(QualityCapture.Config(
+                name: name, codec: codec, prores: prores, bitrate: bitrate,
+                maximum: maximum, qualityPriority: qualityPriority))
+        }
+        guard !configs.isEmpty,
+              let capture = try? QualityCapture(id: id.isEmpty ? "capture" : id,
+                                                frames: frames,
+                                                width: size.width, height: size.height,
+                                                fps: Int32(fps),
+                                                capture422: dev.capture422,
+                                                configs: configs) else { return }
+        capture.onStatusChange = { [weak self] in
+            Task { @MainActor in self?.scheduleStateSend() }
+        }
+        capture.onReady = { [weak self, weak capture] files in
+            Task { @MainActor in
+                guard let self else { return }
+                self.qualityTap.set(nil)
+                self.client.sendFiles(files) { ok in
+                    capture?.transferFinished(ok: ok)
+                }
+            }
+        }
+        qualityCapture = capture
+        qualityTap.set(capture)
+        scheduleStateSend()
     }
 
     private var devProRes: ProResFlavor? {
@@ -226,6 +288,9 @@ final class Streamer: ObservableObject {
         if let raw = command["prores"] as? String {
             next.prores = ProResFlavor(rawValue: raw)
         }
+        if let on = command["capture422"] as? Bool {
+            next.capture422 = on
+        }
         dev = next
     }
 
@@ -239,7 +304,16 @@ final class Streamer: ObservableObject {
             "wire": encoder?.wireCodec ?? "",
             "encErr": errors.count,
             "encStatus": Int(errors.status),
+            "capture422": dev.capture422,
+            "pix": Self.fourCC(camera.activePixelFormat),
+            "qc": qualityCapture?.status ?? "",
         ]
+    }
+
+    private static func fourCC(_ code: OSType) -> String {
+        guard code != 0 else { return "" }
+        let bytes = [24, 16, 8, 0].map { UInt8((code >> UInt32($0)) & 0xff) }
+        return String(bytes: bytes, encoding: .ascii) ?? String(code)
     }
     /// The cameras this device actually has (Main / Ultra Wide / …).
     let availableLenses: [CameraManager.Lens]
@@ -382,7 +456,9 @@ final class Streamer: ObservableObject {
         if let compositor {
             camera.onSampleBuffer = { [weak encoder, compositor,
                                        still = pausedStill,
-                                       gate = pauseGate] sampleBuffer in
+                                       gate = pauseGate,
+                                       tap = qualityTap] sampleBuffer in
+                tap.offer(sampleBuffer)
                 // Fail-open is the compositor's contract: any
                 // Vision/Metal failure returns the original buffer
                 // untouched; nil only on pool exhaustion — drop the
@@ -406,7 +482,9 @@ final class Streamer: ObservableObject {
         } else {
             camera.onSampleBuffer = { [weak encoder,
                                        still = pausedStill,
-                                       gate = pauseGate] sampleBuffer in
+                                       gate = pauseGate,
+                                       tap = qualityTap] sampleBuffer in
+                tap.offer(sampleBuffer)
                 still.note(sampleBuffer)
                 // The gate sits here, at the encoder's input: while a
                 // stream is held the camera's frames simply aren't
@@ -1518,6 +1596,9 @@ final class Streamer: ObservableObject {
             return
         case "dev":
             applyDevCommand(command)
+            return
+        case "quality_capture":
+            startQualityCapture(command)
             return
         case "pause_stream", "resume_stream":
             // Pause needs no remote-start permission: it holds a stream

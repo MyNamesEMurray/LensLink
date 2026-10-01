@@ -59,6 +59,8 @@ final class VideoEncoder {
     }
 
     var onEncodedFrame: ((EncodedFrame) -> Void)?
+    var onCompressedSampleBuffer: ((CMSampleBuffer) -> Void)?
+    var realTime = true
 
     let codec: VideoCodec
     let color: StreamColor
@@ -214,7 +216,7 @@ final class VideoEncoder {
 
         if prores != nil {
             VTSessionSetProperty(session, key: kVTCompressionPropertyKey_RealTime,
-                                 value: kCFBooleanTrue)
+                                 value: realTime ? kCFBooleanTrue : kCFBooleanFalse)
             VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ExpectedFrameRate,
                                  value: NSNumber(value: fps))
             VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ColorPrimaries,
@@ -231,7 +233,7 @@ final class VideoEncoder {
         }
 
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_RealTime,
-                             value: kCFBooleanTrue)
+                             value: realTime ? kCFBooleanTrue : kCFBooleanFalse)
         switch color {
         case .sdr:
             VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ProfileLevel,
@@ -376,6 +378,10 @@ final class VideoEncoder {
             let encodedNs = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
             guard status == noErr, let sampleBuffer else {
                 self?.noteEncodeError(status)
+                return
+            }
+            if let tap = self?.onCompressedSampleBuffer {
+                tap(sampleBuffer)
                 return
             }
             self?.emit(sampleBuffer, submittedNs: submittedNs, encodedNs: encodedNs)
