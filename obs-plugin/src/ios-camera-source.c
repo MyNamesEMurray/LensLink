@@ -131,15 +131,15 @@ struct ios_camera_source {
 	volatile bool active;
 	volatile bool showing;
 
-	/* Remote start: when the app connects in standby (open but idle,
-	 * "Remote start from OBS" enabled), send it a start_stream command
-	 * automatically. `auto_start_armed` implements once-per-appearance:
-	 * it's set when the source is created, after the phone has been
-	 * unreachable for a couple of attempts (app closed/backgrounded), or
-	 * when we stop the camera ourselves on hide — and consumed by the
-	 * auto-start. So a manual stop on the phone doesn't bounce straight
-	 * back into streaming. armed/dial_failures are touched only by the
-	 * dial-loop thread. */
+	/* Remote start: when the app connects in standby (open, idle and
+	 * armed by the user), send it a start_stream command automatically.
+	 * `auto_start_armed` implements once-per-appearance: it's set when
+	 * the source is created, after the phone has been unreachable for a
+	 * couple of attempts (app closed/backgrounded), when the app reports
+	 * that remote start isn't armed, or when we stop the camera
+	 * ourselves on hide — and consumed by the auto-start. So a manual
+	 * stop on the phone doesn't bounce straight back into streaming.
+	 * armed/dial_failures are touched only by the dial-loop thread. */
 	volatile bool auto_start;
 	bool auto_start_armed;
 	int dial_failures;
@@ -259,6 +259,7 @@ struct ios_camera_source {
 	/* The connected app is idle in standby, waiting for start_stream.
 	 * Guarded by status_mutex; lets the web panel offer a Start button. */
 	bool standby;
+	bool unarmed;
 
 	pthread_mutex_t status_mutex;
 	struct dstr status;
@@ -318,6 +319,14 @@ bool ios_camera_is_standby(struct ios_camera_source *s)
 {
 	pthread_mutex_lock(&s->status_mutex);
 	bool v = s->standby;
+	pthread_mutex_unlock(&s->status_mutex);
+	return v;
+}
+
+bool ios_camera_is_armed(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	bool v = s->standby && !s->unarmed;
 	pthread_mutex_unlock(&s->status_mutex);
 	return v;
 }
@@ -415,6 +424,7 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		pthread_mutex_lock(&s->status_mutex);
 		h->connected = s->stat_connected;
 		h->standby = s->standby;
+		h->unarmed = s->unarmed;
 		h->frames = s->stat_frames;
 		h->bytes = s->stat_bytes;
 		h->video_packets = s->stat_packets;
@@ -658,6 +668,7 @@ struct client_state {
 	uint64_t packets_at_decoder;
 	bool is_screen; /* screen mirror (plays system audio) vs camera */
 	bool standby;   /* app is idle, waiting for a start_stream command */
+	bool unarmed;
 	/* Last tally state pushed to the device. Per connection, so a
 	 * reconnect re-announces rather than assuming the phone still knows. */
 	bool tally_valid;
@@ -1793,6 +1804,7 @@ static void client_disconnect(struct ios_camera_source *s,
 	s->device_state[0] = 0;
 	s->is_screen = false;
 	s->standby = false;
+	s->unarmed = false;
 	s->stat_connected = false;
 	s->stat_device[0] = 0;
 	pthread_mutex_unlock(&s->status_mutex);
@@ -1886,6 +1898,20 @@ static bool extract_json_bool(const char *json, const char *key)
 	return strncmp(p, "true", 4) == 0;
 }
 
+static bool extract_json_false(const char *json, const char *key)
+{
+	char pattern[64];
+	snprintf(pattern, sizeof(pattern), "\"%s\":", key);
+
+	const char *p = strstr(json, pattern);
+	if (!p)
+		return false;
+	p += strlen(pattern);
+	while (*p == ' ' || *p == '\t')
+		p++;
+	return strncmp(p, "false", 5) == 0;
+}
+
 /* Logs the H.264 stream's SPS profile/level once per decode stream — the
  * first thing to know when a GPU driver won't decode a stream software
  * handles fine (drivers gate on the advertised caps, not the content). */
@@ -1929,16 +1955,20 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		extract_json_string(json, "kind", kind, sizeof(kind));
 		c->is_screen = strcmp(kind, "screen") == 0;
 		c->standby = !c->is_screen && extract_json_bool(json, "standby");
+		c->unarmed = c->standby && extract_json_false(json, "armed");
 		c->connected_ns = os_gettime_ns();
 		pthread_mutex_lock(&s->status_mutex);
 		s->is_screen = c->is_screen;
 		s->standby = c->standby;
+		s->unarmed = c->unarmed;
 		s->stat_connected = true;
 		pthread_mutex_unlock(&s->status_mutex);
 		blog(LOG_INFO, "[lenslink] client connected: %s (%s%s)",
 		     c->name[0] ? c->name : "(unnamed)",
 		     c->is_screen ? "screen" : "camera",
-		     c->standby ? ", standby" : "");
+		     c->unarmed   ? ", standby, not armed"
+		     : c->standby ? ", standby"
+				  : "");
 		send_identify(s, c);
 		/* The phone picks what it streams, not this source; each source
 		 * type accepts only its own kind. Rejecting here (rather than
@@ -1952,6 +1982,12 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			     c->is_screen ? "screen" : "camera",
 			     s->is_screen_source ? "screen" : "camera");
 			return false;
+		}
+		if (c->unarmed) {
+			s->auto_start_armed = true;
+			set_status(s, STATUS_TONE_READY, "%s",
+				   T_("Status.NotArmed"));
+			break;
 		}
 		if (c->standby) {
 			/* Remote start: the app is open but idle. Kick the
@@ -2007,8 +2043,10 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		 * HELLO, but don't rely on it.) */
 		if (c->standby) {
 			c->standby = false;
+			c->unarmed = false;
 			pthread_mutex_lock(&s->status_mutex);
 			s->standby = false;
+			s->unarmed = false;
 			pthread_mutex_unlock(&s->status_mutex);
 			set_status(s, connected_tone(s), "%s %s",
 				   T_("Status.Connected"),

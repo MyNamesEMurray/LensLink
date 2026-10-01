@@ -23,8 +23,8 @@ struct ContentView: View {
     @State private var showDocs = false
     @State private var showFormat = false
 
-    // Standby keeps the phone awake (see Streamer.updateIdleTimer) so
-    // remote start stays reachable; this dim overlay is what makes that
+    // Armed standby keeps the phone awake (see Streamer.updateIdleTimer)
+    // so remote start stays reachable; this dim overlay is what makes that
     // affordable — same pattern as StreamingView's, on a longer fuse
     // because this screen is also where settings get changed.
     @State private var dimmed = false
@@ -130,15 +130,15 @@ struct ContentView: View {
                 // being up: the overlay would sit behind the sheet with
                 // its tap-to-wake unreachable, leaving the screen dark
                 // with no visible way back.
-                if streamer.standbyActive
+                if streamer.awaitingRemoteStart
                     && streamer.idleAppearance == .dim &&
                     !assistive.suspendsIdle &&
                     !showOptions && !showDocs && !showFormat && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
-                } else if !streamer.standbyActive && dimmed {
-                    // Standby ended underneath the overlay (remote start
-                    // fired, toggle turned off, port lost) — wake up.
+                } else if !streamer.awaitingRemoteStart && dimmed {
+                    // Armed standby ended underneath the overlay (remote
+                    // start fired, disarmed, port lost) — wake up.
                     undim()
                 }
             }
@@ -311,7 +311,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var connectionAction: some View {
-        if streamer.status == .standby {
+        if streamer.status == .standby || streamer.status == .unarmedStandby {
             Button {
                 Task { await streamer.start() }
             } label: {
@@ -426,9 +426,9 @@ struct ContentView: View {
 
     @State private var extensionStatus = ""
 
-    /// The two things this screen exists to start, stacked: the camera
-    /// (accent) and the screen broadcast (the quieter fill). The
-    /// broadcast button's face is ours; the (invisible) system broadcast
+    /// The things this screen exists to start, stacked: the camera
+    /// (accent), remote start and the screen broadcast (the quieter
+    /// fill). The broadcast button's face is ours; the (invisible) system broadcast
     /// picker stretched over it receives the tap, because iOS won't
     /// start a broadcast any other way.
     private var startSection: some View {
@@ -448,6 +448,21 @@ struct ContentView: View {
                 ActionRowLabel(title: L("Start Camera"),
                                systemImage: "video.fill",
                                style: .primary)
+            }
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+
+            Button {
+                streamer.setRemoteStartArmed(!streamer.remoteStartArmed)
+            } label: {
+                ActionRowLabel(title: streamer.remoteStartArmed
+                                   ? L("Disarm Remote Start")
+                                   : L("Arm Remote Start"),
+                               systemImage: streamer.remoteStartArmed
+                                   ? "xmark.circle"
+                                   : "dot.radiowaves.left.and.right",
+                               style: .secondary)
             }
             .buttonStyle(.plain)
             .listRowInsets(EdgeInsets())

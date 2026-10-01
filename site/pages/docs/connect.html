@@ -12,7 +12,7 @@ description: Connect the LensLink Camera source to your iPhone over Wi-Fi or USB
   <li>
     <strong>On the phone</strong>
     <p>Open LensLink, pick the camera and format, then tap <strong>Start Camera</strong>. The Setup screen shows the phone's Wi-Fi address; tap it to copy.</p>
-    <p>With <strong>Remote start from OBS</strong> on (the default), leaving the app open and idle is enough — OBS starts the camera itself.</p>
+    <p>Or tap <strong>Arm Remote Start</strong> instead, and OBS starts the camera itself. Until you do one or the other, OBS can see the phone but can't start it.</p>
   </li>
   <li>
     <strong>In OBS</strong>
@@ -98,7 +98,8 @@ description: Connect the LensLink Camera source to your iPhone over Wi-Fi or USB
   <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
   <tbody>
     <tr><td>Connected: …</td><td>Streaming. Carries device, format and measured latency.</td></tr>
-    <tr><td>Connected — the camera is idle</td><td>Standby: app reachable, not capturing. Start it here, from the browser panel, or on the phone.</td></tr>
+    <tr><td>Connected — the camera is idle</td><td>Standby: app armed and reachable, not capturing. Start it here, from the browser panel, or on the phone.</td></tr>
+    <tr><td>Connected — the camera is idle, but remote start isn't armed on the phone</td><td>The app is open but won't take a start from OBS. Tap <strong>Arm Remote Start</strong> on the phone (OBS then starts it, with auto-start on), or start the camera there.</td></tr>
     <tr><td>Starting the phone's camera…</td><td>Remote start sent; the camera is coming up.</td></tr>
     <tr><td>Trying to reach the phone at …</td><td>Wrong or unreachable address, or the app isn't in the foreground.</td></tr>
     <tr><td>Enter the phone's IP address</td><td>No host set on a Wi-Fi source.</td></tr>

@@ -1,54 +1,73 @@
 title: Remote start
-description: Start and stop the phone's camera from OBS, a browser button, Siri, a Shortcut or a URL — so a mounted phone never has to come down.
+description: Arm the app, then start and stop the phone's camera from OBS, a browser button, Siri, a Shortcut or a URL — so a mounted phone never has to come down.
 ---
 <h1>Remote start</h1>
 <p class="lede">
   A phone clamped behind a monitor shouldn't have to come down for someone to
-  tap Start. While the app is open and idle, OBS can start the camera itself.
+  tap Start. Arm remote start on the phone, and OBS can start the camera itself.
 </p>
+
+<h2>Arming</h2>
+<p>
+  Opening the app never hands OBS the camera. Set up the shot, then tap
+  <strong>Arm Remote Start</strong> on the Setup screen. Until you do, OBS can
+  find and connect to the phone, but the app refuses to start the camera — the
+  source says <em>remote start isn't armed on the phone</em> — and with
+  auto-start on, OBS starts it the moment you arm.
+</p>
+<p>
+  Arming lasts until you tap <strong>Disarm Remote Start</strong>, stop a
+  stream on the phone, or leave the app. A stop from OBS, such as hiding the
+  source, keeps it armed, so OBS can start the camera again later.
+</p>
+<div class="callout">
+  <p>For a phone that lives on a rig, turn on <strong>Arm remote start on
+  open</strong> in the app's <strong>Options</strong> and the app arms itself
+  every time it opens. It's off by default.</p>
+</div>
 
 <h2>Why the app has to be open</h2>
 <p>
   iOS runs the camera and LensLink's listener only while the app is on screen.
   Everything below exists because of that: the app announces
-  <strong>standby</strong> when it's open and idle, and OBS takes it from there.
+  <strong>standby</strong> when it's open and idle, says whether it's armed, and
+  OBS takes it from there.
 </p>
 <p>
   It's also why the Siri and Shortcuts paths open the app first, and why the
-  phone holds off auto-lock while standby is armed — locking would suspend the
-  listener. The Setup screen dims after a minute, in amber rather than green:
-  armed, not live.
+  phone holds off auto-lock while armed — locking would suspend the listener.
+  The Setup screen dims after a minute, in amber rather than green: armed, not
+  live.
 </p>
-<div class="callout">
-  <p>Remote start is on by default. Turn it off with <strong>Remote start from
-  OBS</strong> in the app's <strong>Options</strong>.</p>
-</div>
 
 <h2>The four ways to start</h2>
 
 <h3>Automatically, when the source connects</h3>
 <p>
   <strong>Start the phone's camera automatically when it's ready</strong> is on
-  by default: open the app and video appears, with no further input. It won't
-  ping-pong with you either — OBS auto-starts only when the app has just become
-  reachable, not after you pressed Stop.
+  by default: arm the app and video appears, with no further input. It won't
+  ping-pong with you either — pressing Stop on the phone disarms it, so OBS
+  can't start it again until you arm it again.
 </p>
 
 <h3>From OBS</h3>
 <p>
   <strong>Start camera on the phone</strong> and <strong>Stop camera on the
-  phone</strong> in the source properties, whenever the app is connected.
+  phone</strong> in the source properties, whenever the armed app is
+  connected. Unarmed, the phone refuses them.
 </p>
 
 <h3>From the browser panel</h3>
 <p>
   <a href="/docs/web-panel/">The panel</a> at
   <code>http://localhost:9980</code> shows <strong>Start camera</strong> while
-  the app is idle and a red <strong>Stop camera</strong> while it's live, each
-  with an <strong>Auto-start</strong> toggle beside it.
+  the armed app is idle (a reminder to arm it when it isn't) and a red
+  <strong>Stop camera</strong> while it's live, each with an
+  <strong>Auto-start</strong> toggle beside it.
 </p>
 
 <h3>From Siri, Shortcuts or a URL</h3>
+<p>These run on the phone and start the camera directly, so they need no arming.</p>
 <ul>
   <li><strong>Siri (iOS 16+):</strong> <em>"Hey Siri, start streaming with LensLink."</em></li>
   <li><strong>Shortcuts:</strong> <strong>Start Camera Stream</strong> and <strong>Stop Camera Stream</strong> actions — useful in automations, such as starting when the phone connects to a particular charger.</li>
@@ -86,14 +105,16 @@ curl -X POST http://localhost:9980/api/control \
 <h2>What to expect on the phone</h2>
 <table>
   <tbody>
-    <tr><td>App open, OBS not connected</td><td>Grey dot, "Not connected".</td></tr>
-    <tr><td>App open, OBS connected, camera idle</td><td>Amber dot, "OBS connected — ready". Standby: remote start armed.</td></tr>
-    <tr><td>Standby, untouched for a minute</td><td>The screen dims with an amber wake icon. Any tap wakes it; the listener never stops.</td></tr>
+    <tr><td>App open, not armed</td><td>Grey dot, "Not connected". Nothing but you can start the camera.</td></tr>
+    <tr><td>Not armed, OBS connected</td><td>Amber dot, "OBS connected — not armed". OBS can see the phone but not start it; the card's <strong>Start</strong> button still works.</td></tr>
+    <tr><td>Armed, OBS not connected</td><td>Amber dot, "Armed — waiting for OBS".</td></tr>
+    <tr><td>Armed, OBS connected, camera idle</td><td>Amber dot, "OBS connected — ready". Standby.</td></tr>
+    <tr><td>Armed, untouched for a minute</td><td>The screen dims with an amber wake icon. Any tap wakes it; the listener never stops.</td></tr>
     <tr><td>Started</td><td>Live screen, green dot, "Live".</td></tr>
   </tbody>
 </table>
 <p>
-  Standby dimming happens only when <strong>Idle view</strong> is <strong>Dim
+  This dimming happens only when <strong>Idle view</strong> is <strong>Dim
   screen</strong>, and never while you're touching the screen or have a sheet
   open.
 </p>

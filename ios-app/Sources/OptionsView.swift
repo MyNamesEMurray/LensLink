@@ -20,8 +20,8 @@ struct OptionsView: View {
                 // (SettingsRowLabel) so this sheet and the Setup screen
                 // read as one list style.
                 Section {
-                    Toggle(isOn: $streamer.remoteStartEnabled) {
-                        SettingsRowLabel(L("Remote start from OBS"),
+                    Toggle(isOn: $streamer.armOnOpen) {
+                        SettingsRowLabel(L("Arm remote start on open"),
                                          systemImage: "play.fill",
                                          color: Theme.liveGreen)
                     }

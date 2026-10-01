@@ -31,6 +31,7 @@ void ios_camera_copy_state(struct ios_camera_source *s, char *buf,
 void ios_camera_copy_name(struct ios_camera_source *s, char *buf, size_t size);
 bool ios_camera_is_screen(struct ios_camera_source *s);
 bool ios_camera_is_standby(struct ios_camera_source *s);
+bool ios_camera_is_armed(struct ios_camera_source *s);
 bool ios_camera_is_connected(struct ios_camera_source *s);
 bool ios_camera_auto_start(struct ios_camera_source *s);
 /* Lip-sync calibration stage: "off", "measuring", "locked" or "relocking"

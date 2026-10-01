@@ -19,7 +19,7 @@ description: Every LensLink setting in one place — the OBS source properties, 
     <tr><td>Low latency mode</td><td>Render the newest frame immediately rather than smoothing. On by default.</td></tr>
     <tr><td>Hardware decoding (GPU)</td><td>Decode on the GPU, falling back to software automatically. On by default.</td></tr>
     <tr><td>Disconnect when this source isn't shown anywhere</td><td>Hidden (eye off, or in no visible scene, preview or projector) means disconnected, so the phone stops encoding — saving battery and freeing it for another source. Reconnects when shown; with auto-start on, it also stops and starts the camera.</td></tr>
-    <tr><td>Start the phone's camera automatically when it's ready</td><td>Remote start, when the app is open and idle. On by default.</td></tr>
+    <tr><td>Start the phone's camera automatically when it's ready</td><td>Remote start, once the app is armed. On by default.</td></tr>
     <tr><td>Start / Stop camera on the phone</td><td>Buttons: do it now, once.</td></tr>
     <tr><td>Pause / Resume the stream</td><td>Buttons. Pause holds the stream — the phone stays connected, OBS shows a blurred still with a pause symbol — and Resume returns to live. Also on the phone's Live screen and in the web panel.</td></tr>
     <tr><td>Lip-sync audio source</td><td>Your real microphone — the one to align.</td></tr>
@@ -55,7 +55,7 @@ description: Every LensLink setting in one place — the OBS source properties, 
 <table>
   <thead><tr><th>Option</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td>Remote start from OBS</td><td>Lets OBS start the camera while the app is open and idle. The phone stays awake waiting; locking it or leaving the app ends standby.</td></tr>
+    <tr><td>Arm remote start on open</td><td>Arms <a href="/docs/remote-start/">remote start</a> every time the app opens, so OBS can start the camera without a tap. Off by default: otherwise tap <strong>Arm Remote Start</strong> on the Setup screen. The phone stays awake while armed; locking it or leaving the app disarms it.</td></tr>
     <tr><td>Idle view</td><td>What the Live screen becomes 10 seconds after your last touch. <strong>Standard</strong> keeps the controls; <strong>Clean feed</strong> shows only the picture (turn Stats on in the status menu first to keep the health line); <strong>Dim screen</strong> blanks it, drops the brightness and shows the battery level — and alone also dims remote-start standby, a minute in. Any tap restores the controls.</td></tr>
     <tr><td>High frame rate</td><td>Experimental: adds 120 and 240 fps to the Format sheet where the camera has them (1080p and 720p on recent iPhones). The bitrate grows with it, the phone runs hotter, and an OBS canvas at 60 shows every other frame at best — match the canvas, prefer USB. Off drops the rate back to 60.</td></tr>
     <tr><td>Allow system video effects</td><td>Experimental: lets iOS lower the capture frame rate, which Control Center's effects may require. Applies when the camera next starts.</td></tr>

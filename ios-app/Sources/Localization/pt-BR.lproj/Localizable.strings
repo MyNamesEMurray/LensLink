@@ -104,6 +104,12 @@
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "Iniciar câmera";
 
+/* Setup screen: button that lets OBS start the camera remotely until disarmed */
+"Arm Remote Start" = "Armar início remoto";
+
+/* Setup screen: the same button while remote start is armed; turns it off */
+"Disarm Remote Start" = "Desarmar início remoto";
+
 /* Setup screen toggle: use the phone's microphone as the OBS source's audio */
 "Send phone mic to OBS" = "Enviar microfone do celular ao OBS";
 
@@ -319,7 +325,7 @@
 "Camera behavior" = "Comportamento da câmera";
 
 /* Documentation → Options, Remote start section (Markdown: keep the ** markers) */
-"**Remote start from OBS**: while the app is open and idle, OBS can start the camera for you. The phone stays awake while it waits — locking it or leaving the app ends remote start. Siri: \"Start streaming with LensLink.\"" = "**Início remoto pelo OBS**: enquanto o app está aberto e ocioso, o OBS pode iniciar a câmera para você. O celular fica acordado enquanto espera; bloqueá-lo ou sair do app encerra o início remoto. Siri: \"Comece a transmitir com o LensLink.\"";
+"**Arm Remote Start**, under Start Camera, lets OBS start and stop the camera for you. Until you tap it OBS can see the phone but can't start the camera, so opening the app never starts a stream by itself. Arming lasts until you tap Disarm, stop a stream on the phone, or leave the app; the phone stays awake while it waits. **Arm remote start on open** arms it every time the app opens, for a phone that's mounted out of reach. Siri: \"Start streaming with LensLink.\"" = "**Armar início remoto**, abaixo de Iniciar câmera, deixa o OBS iniciar e parar a câmera para você. Até você tocar nele, o OBS vê o celular mas não pode iniciar a câmera, então abrir o app nunca inicia uma transmissão sozinho. Ele fica armado até você tocar em Desarmar, parar uma transmissão no celular ou sair do app; o celular fica acordado enquanto espera. **Armar início remoto ao abrir** arma sempre que o app é aberto, para um celular montado fora de alcance. Siri: \"Comece a transmitir com o LensLink.\"";
 
 /* Documentation section header on the Options page */
 "Remote start" = "Início remoto";
@@ -371,8 +377,8 @@
 
 /* ===== OptionsView.swift ===== */
 
-/* Options toggle: let OBS start the camera while the app is open */
-"Remote start from OBS" = "Início remoto pelo OBS";
+/* Options toggle: arm remote start every time the app opens */
+"Arm remote start on open" = "Armar início remoto ao abrir";
 
 /* Options picker: what the Live screen becomes after 10 seconds untouched [also used in Documentation/OptionsDocumentationView.swift] */
 "Idle view" = "Tela de repouso";
@@ -421,6 +427,12 @@
 
 /* Status word: nothing is connected */
 "Not connected" = "Não conectado";
+
+/* Status word: remote start is armed, no OBS has connected yet */
+"Armed — waiting for OBS" = "Armado: aguardando o OBS";
+
+/* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
+"OBS connected — not armed" = "OBS conectado: não armado";
 
 /* Status word: OBS is connected and can start the camera */
 "OBS connected — ready" = "OBS conectado: pronto";

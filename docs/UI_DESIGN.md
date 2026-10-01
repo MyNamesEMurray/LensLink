@@ -56,6 +56,8 @@ colours so it also looks native on the phone.
 | State        | Token         | Hex       | Label            |
 |--------------|---------------|-----------|------------------|
 | Idle         | `idleGrey`    | `#8E8E93` | "Not connected"  |
+| Armed        | `connectAmber`| `#FF9F0A` | "Armed — waiting for OBS" |
+| Not armed    | `connectAmber`| `#FF9F0A` | "OBS connected — not armed" |
 | Standby      | `connectAmber`| `#FF9F0A` | "OBS connected — ready" |
 | Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
@@ -73,12 +75,30 @@ taking the camera keeps its explanatory message instead, because there
 the sentence is the actionable part. Either way the plugin learns of it
 through STATE and says so rather than sitting on a frozen picture.
 
-Standby is the remote-start state: the app is idle but OBS is connected
-and can start the camera. It shares the amber of Connecting — both mean
-"linked, not yet live". On the web panel the standby state replaces the
-(dead) camera controls with a single accent **Start camera** button;
-while live, the panel ends in a red **Stop camera** button (Stop stays
-the one destructive control, mirroring the app's red Stop chip).
+Remote start is something the user **arms**, never a side effect of
+opening the app. The open app is always reachable — OBS finds it,
+connects, and shows its name — but until the user taps **Arm Remote
+Start** on the Setup screen it refuses to start the camera, so OBS
+can't go live before the shot is set up. That connected-but-refusing
+state is Not armed; once armed it is Standby, the remote-start state:
+the app is idle and OBS is connected and can start the camera. Armed is
+the same permission with no OBS connected yet. All three share the
+amber of Connecting — "linked or ready, not yet live" — and the word
+says which. Arming lasts until **Disarm Remote Start**, a Stop on the
+phone (the Live screen, Siri, `lenslink://stop`), or the app leaving
+the screen; a stop sent from OBS (`stop_stream`) keeps it armed, so
+hide/show in OBS can start and stop the camera repeatedly. **Options →
+Arm remote start on open** (off by default) arms it each time the app
+comes on screen, for a phone mounted out of reach.
+
+The plugin mirrors it: a not-armed phone reads "Connected — the camera
+is idle, but remote start isn't armed on the phone" in the source's
+status, "not armed (camera idle)" in OBS's status bar, and the web
+panel's Start panel swaps its **Start camera** button for a hint
+pointing at the phone. Armed standby replaces the (dead) camera
+controls with a single accent **Start camera** button; while live, the
+panel ends in a red **Stop camera** button (Stop stays the one
+destructive control, mirroring the app's red Stop chip).
 
 While remote start is armed the phone holds its idle timer (auto-lock
 would suspend the listener and kill remote start), so the Setup screen
@@ -353,9 +373,11 @@ Symbol) and a title — top to bottom:
    `identify` command; "OBS Studio" until then), and under it the status
    dot + `status.displayName`, with the OBS version and transport
    appended while connected ("OBS connected — ready · OBS 32.0 · USB").
-   On the right: in Standby, an accent **Start** capsule; otherwise the
+   On the right: in Standby or Not armed, an accent **Start** capsule; otherwise the
    phone's Wi-Fi IP (monospaced, tap-to-copy), because the address is how
-   OBS finds this phone. Below, the Local Network warning when Bonjour
+   OBS finds this phone. The Start capsule shows whenever OBS is
+   connected and the camera is idle, armed or not: it is the phone's own
+   tap. Below, the Local Network warning when Bonjour
    was denied, and the "How to connect" disclosure with the two setup
    steps — collapsible, and it stays collapsed once read.
 3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
@@ -375,8 +397,10 @@ Symbol) and a title — top to bottom:
    nothing else carries one — and the model does the switching when a
    choice needs it (picking H.264 returns Color to Standard, picking a
    10-bit colour switches the codec to HEVC and turns green screen off).
-4. **Start** — two stacked full-width buttons: **Start Camera** in the
-   accent, **Mirror Screen** in the system's secondary fill (the system
+4. **Start** — three stacked full-width buttons: **Start Camera** in the
+   accent, then **Arm Remote Start** (`dot.radiowaves.left.and.right`;
+   **Disarm Remote Start** with `xmark.circle` while armed) and **Mirror
+   Screen**, both in the system's secondary fill (the system
    broadcast picker is stretched invisibly over the button face — iOS
    won't start a broadcast any other way). A broken broadcast extension
    warns above them.
@@ -398,8 +422,8 @@ switching mid-stream.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short, in the same icon-tile rows as Setup.
-First group, the things that matter during a stream: **Remote start from
-OBS**, **Idle view** (Standard / Clean feed / Dim screen), **Focus on
+First group, the things that matter during a stream: **Arm remote start
+on open** (default off; see §2), **Idle view** (Standard / Clean feed / Dim screen), **Focus on
 faces** (default on), and the pushed screen **Tally light** (row value: the statuses that light it,
 "On air, In preview"), and **Remember camera settings** (default on; see
 §6.2.1). Second group, the experiments and the diagnostics: **High frame rate**
@@ -551,7 +575,8 @@ A third surface lives inside OBS itself (Qt, `frontend-ui.cpp`): a
 one-line health readout in the main window's status bar
 (`LensLink: <device> 60 fps · 11.9 Mb/s · 43 ms`, live sources joined by
 `  |  `, hidden when nothing is
-connected; "ready (camera idle)" during standby) and a dockable
+connected; "ready (camera idle)" during standby, "not armed (camera
+idle)" when the phone hasn't armed remote start) and a dockable
 **LensLink** panel listing every source with its device, status, and
 rates. These render with OBS's native theme rather than our palette —
 inside OBS's chrome, OBS's design language wins; our vocabulary (the

@@ -20,6 +20,7 @@ struct lenslink_health {
 	char status[512];      /* the source's status line */
 	bool connected;        /* a device connection is live */
 	bool standby;          /* connected, camera idle (remote start) */
+	bool unarmed;
 	bool is_screen;        /* LensLink Screen vs LensLink Camera */
 	uint64_t frames;       /* decoded frames, cumulative */
 	uint64_t bytes;        /* wire video bytes, cumulative */

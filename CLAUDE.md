@@ -168,7 +168,8 @@ One TCP connection. Every packet: 20-byte header (`OBSC` magic, version,
 type, flags, pts in **nanoseconds**, payload size) + payload. The app sends
 HELLO on connect; its `kind` field (`"camera"` or `"screen"`) routes the
 stream to the matching source type, and `"standby": true` means "app open
-and idle, waiting for remote start". Points that shape the code:
+and idle, waiting for remote start", with `"armed": false` when the user
+hasn't armed it (the app then refuses `start_stream`). Points that shape the code:
 
 - VIDEO carries Annex B access units; keyframes must be self-contained
   (parameter sets prepended) so a decoder can join mid-stream.
