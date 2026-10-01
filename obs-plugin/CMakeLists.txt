@@ -65,6 +65,7 @@ add_library(${PROJECT_NAME} MODULE
   src/plugin-settings.c
   src/gpu-frame.c
   src/pipeline-bench.c
+  src/quality-capture.c
   src/protocol.h
   src/web-control.h
   src/lipsync.h

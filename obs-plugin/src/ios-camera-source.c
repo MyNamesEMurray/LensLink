@@ -43,6 +43,7 @@
 #include "plugin-settings.h"
 #include "gpu-frame.h"
 #include "pipeline-bench.h"
+#include "quality-capture.h"
 
 #include <libavutil/frame.h>
 
@@ -2432,6 +2433,9 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			lenslink_bench_phone(&stages);
 		break;
 	}
+	case OBSC_PKT_FILE_CHUNK:
+		lenslink_quality_chunk(payload, hdr->payload_size);
+		break;
 	default:
 		blog(LOG_WARNING, "[lenslink] unknown packet type %d",
 		     hdr->type);

@@ -49,6 +49,7 @@ enum OBSCProtocol {
         /// and carries on.
         case request = 12
         case pipelineStats = 13
+        case fileChunk = 14
     }
 
     /// What a connection is streaming, sent in the HELLO / video config.

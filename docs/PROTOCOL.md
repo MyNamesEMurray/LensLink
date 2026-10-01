@@ -250,6 +250,35 @@ reports them as `"dev": { "fix4k30", "bitrateMbps", "prores",
 encoder rejected, and its last error) }`. An older app ignores the
 command and sends no `dev` object.
 
+`dev` also takes `capture422`: on SDR streams, capture 10-bit 4:2:2
+(`x422`) in Rec.709 where the format offers it, falling back to 8-bit
+4:2:0 where it doesn't. STATE's `dev` object adds `"capture422"`, `"pix"`
+(the four-character pixel format the camera actually delivers, e.g.
+`"420v"` or `"x422"`) and `"qc"` (the quality capture's status:
+`"capturing 12/60"`, `"writing"`, `"sending"`, `"done"` or
+`"error: …"`).
+
+```json
+{ "cmd": "quality_capture", "id": "1080p60-041500", "frames": 60,
+  "configs": [ { "name": "hevc-maximum", "codec": "hevc",
+                 "maximum": true, "tableScale": 6 },
+               { "name": "prores-lt", "codec": "prores", "prores": "lt" } ] }
+```
+
+`quality_capture` takes the next `frames` camera frames (1–600) as they
+arrive and, from those same frames, writes the raw frames (tightly
+packed planes, no row padding: `nv12`, `p010le` or `p210le`) plus one
+QuickTime file per config, each encoded by its own encoder (not real
+time, so nothing is dropped for speed). A config gives `codec`
+(`"hevc"`, `"h264"` or `"prores"` with a `prores` flavor), `maximum`,
+an optional `qualityPriority` (default: the live rule), and a bitrate as
+`bitrateMbps` or `tableScale` × the resolution's table bitrate (default
+1). Names may use letters, digits, `-` and `_`. The app then sends
+`reference.yuv`, each `<name>.mov`, and finally `manifest.json` (sizes,
+pixel format, per-config frame counts, bytes and errors) as FILE_CHUNK
+packets (type 14). Requires a running stream; a new capture cancels one
+in progress.
+
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
 
@@ -413,6 +442,27 @@ delivery plus any compositing), `encode` is encoder in to encoder out,
 `total` is their sum per frame (so `totalMs` is the mean of sums, and the
 maxima are independent). Averages are means; `frames` is the sample
 count. Purely diagnostic: a plugin that never asks never receives it.
+
+### 14 — FILE_CHUNK (app → plugin)
+One piece of a file the plugin asked for (today only `quality_capture`
+output). Payload, binary:
+
+| Size | Field |
+|------|-------|
+| 1 | name length *n* (1–100) |
+| *n* | file name, `[A-Za-z0-9._-]`, not starting with `.` |
+| 8 | offset of this chunk in the file |
+| 8 | total file size |
+| rest | data (the app sends 1 MiB chunks) |
+
+Chunks of a file arrive in order, files one after another, and the app
+reads the next chunk only once the network has accepted the previous
+one, so a large file never sits in memory. The plugin writes them into
+its config folder under `quality/<id>/` and only while a capture is
+armed (`POST /api/quality`); it rejects unsafe names, chunks out of
+order and data past the declared size, and treats `manifest.json`
+arriving complete as the end of the capture. A plugin that never arms
+ignores the type, and an older plugin logs an unknown-type warning.
 
 ## Discovery (Bonjour)
 

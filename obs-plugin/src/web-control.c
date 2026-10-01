@@ -14,6 +14,7 @@
 #include "plugin-settings.h"
 #include "diagnostics.h"
 #include "pipeline-bench.h"
+#include "quality-capture.h"
 
 #define MAX_REQUEST (16 * 1024)
 #define MAX_CONTROL_BODY 512
@@ -978,6 +979,39 @@ static void handle_client(socket_t client)
 		pthread_mutex_unlock(&g_reg.mutex);
 		respond(client, s ? "204 No Content" : "503 Service Unavailable",
 			"text/plain", s ? NULL : "no sources");
+		return;
+	}
+
+	if (strncmp(request, "GET /api/quality", 16) == 0) {
+		char json[3000];
+		lenslink_quality_status_json(json, sizeof(json));
+		respond(client, "200 OK", "application/json", json);
+		return;
+	}
+
+	if (strncmp(request, "POST /api/quality", 17) == 0) {
+		char id[64] = {0};
+		const char *k = content_length
+					? strstr(request + body_offset, "\"id\"")
+					: NULL;
+		if (k) {
+			const char *q = strchr(k + 4, ':');
+			q = q ? strchr(q, '"') : NULL;
+			if (q) {
+				size_t n = 0;
+				for (q++; *q && *q != '"' && n + 1 < sizeof(id);
+				     q++)
+					id[n++] = *q;
+			}
+		}
+		if (!lenslink_quality_arm(id)) {
+			respond(client, "400 Bad Request", "text/plain",
+				"id required (letters, digits, - and _)");
+			return;
+		}
+		char json[3000];
+		lenslink_quality_status_json(json, sizeof(json));
+		respond(client, "200 OK", "application/json", json);
 		return;
 	}
 

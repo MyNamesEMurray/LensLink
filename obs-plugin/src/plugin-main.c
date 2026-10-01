@@ -3,6 +3,7 @@
 #include "net-compat.h"
 #include "plugin-settings.h"
 #include "pipeline-bench.h"
+#include "quality-capture.h"
 #include "web-control.h"
 
 OBS_DECLARE_MODULE()
@@ -58,6 +59,7 @@ void obs_module_unload(void)
 #endif
 	web_control_shutdown();
 	lenslink_bench_shutdown();
+	lenslink_quality_shutdown();
 	lenslink_settings_shutdown();
 	net_shutdown();
 }

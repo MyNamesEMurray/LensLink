@@ -198,6 +198,76 @@ final class StreamClient {
         }
     }
 
+    private static let fileChunkSize = 1 << 20
+
+    func sendFiles(_ files: [(name: String, url: URL)],
+                   completion: @escaping (Bool) -> Void) {
+        queue.async { [weak self] in
+            guard let self, let connection = self.connection else {
+                completion(false)
+                return
+            }
+            self.sendNextFile(files[...], on: connection, completion: completion)
+        }
+    }
+
+    private func sendNextFile(_ files: ArraySlice<(name: String, url: URL)>,
+                              on connection: NWConnection,
+                              completion: @escaping (Bool) -> Void) {
+        guard let file = files.first else {
+            completion(true)
+            return
+        }
+        guard let handle = try? FileHandle(forReadingFrom: file.url),
+              let size = (try? FileManager.default
+                .attributesOfItem(atPath: file.url.path))?[.size] as? NSNumber else {
+            completion(false)
+            return
+        }
+        sendChunk(of: handle, name: file.name, offset: 0, total: size.uint64Value,
+                  on: connection) { [weak self] ok in
+            try? handle.close()
+            guard ok, let self else {
+                completion(false)
+                return
+            }
+            self.sendNextFile(files.dropFirst(), on: connection, completion: completion)
+        }
+    }
+
+    private func sendChunk(of handle: FileHandle, name: String, offset: UInt64,
+                           total: UInt64, on connection: NWConnection,
+                           done: @escaping (Bool) -> Void) {
+        guard self.connection === connection else {
+            done(false)
+            return
+        }
+        let data = (try? handle.read(upToCount: Self.fileChunkSize)) ?? Data()
+        let nameBytes = Data(name.utf8.prefix(255))
+        var payload = Data()
+        payload.reserveCapacity(1 + nameBytes.count + 16 + data.count)
+        payload.append(UInt8(nameBytes.count))
+        payload.append(nameBytes)
+        withUnsafeBytes(of: offset.bigEndian) { payload.append(contentsOf: $0) }
+        withUnsafeBytes(of: total.bigEndian) { payload.append(contentsOf: $0) }
+        payload.append(data)
+        let next = offset + UInt64(data.count)
+        let last = data.isEmpty || next >= total
+        connection.send(content: OBSCProtocol.packet(type: .fileChunk, payload: payload),
+                        completion: .contentProcessed { [weak self] error in
+            guard let self, error == nil else {
+                done(false)
+                return
+            }
+            if last {
+                done(true)
+            } else {
+                self.sendChunk(of: handle, name: name, offset: next, total: total,
+                               on: connection, done: done)
+            }
+        })
+    }
+
     private func recordStages(_ frame: VideoEncoder.EncodedFrame, sentNs: UInt64) {
         guard pipelineStatsOn, frame.submittedNs != 0,
               frame.submittedNs >= frame.ptsNanoseconds,

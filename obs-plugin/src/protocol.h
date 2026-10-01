@@ -56,6 +56,7 @@ enum obsc_packet_type {
 	 * Unknown commands are ignored, so new ones stay compatible. */
 	OBSC_PKT_REQUEST = 12,
 	OBSC_PKT_PIPELINE_STATS = 13,
+	OBSC_PKT_FILE_CHUNK = 14,
 };
 
 /* Reference-audio format (fixed). */

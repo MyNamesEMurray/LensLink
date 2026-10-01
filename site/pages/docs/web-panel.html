@@ -90,6 +90,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
     <tr><td><code>POST /api/recalibrate</code></td><td>No body. Starts a fresh lip-sync measurement.</td></tr>
     <tr><td><code>POST /api/bench</code></td><td><code>{"on":true|false,"label":"A"}</code> — starts or ends a labelled pipeline-benchmark sample file, without changing the saved benchmark setting.</td></tr>
     <tr><td><code>GET /api/bench</code></td><td>Whether a labelled run is active, and the path of the newest sample file.</td></tr>
+    <tr><td><code>POST /api/quality</code></td><td><code>{"id":"1080p60"}</code> — prepares a folder for an encoder quality capture from the phone (see <code>tools/quality-suite.py</code>).</td></tr>
+    <tr><td><code>GET /api/quality</code></td><td>That capture's progress: folder, files received, current file and bytes, done, error.</td></tr>
   </tbody>
 </table>
 

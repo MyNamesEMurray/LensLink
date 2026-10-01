@@ -225,6 +225,27 @@ against A (and E2 against D) and writes `summary.md`, a table of means
 for every run. `--runs`, `--duration`, `--settle` and `--cooldown`
 adjust the plan.
 
+### Encoder quality suite (VMAF, PSNR, SSIM)
+
+Latency is half of a codec decision; `python3 tools/quality-suite.py`
+measures the other half the way streaming services do. The phone takes
+a short burst of camera frames, keeps them raw as the reference, and
+encodes those same frames once per configuration (HEVC at the Balanced
+table, Maximum's 6× ceiling and a pinned 100/150 Mbps, H.264, ProRes
+Proxy/LT/422, and at 4K Maximum with and without quality mode), then
+sends everything to the plugin (`quality_capture` and FILE_CHUNK in
+docs/PROTOCOL.md; the plugin stores it under its config folder in
+`quality/`). The script scores every encode against the reference with
+FFmpeg's `libvmaf` filter (the 4K model above 1080p), matching frames by
+number, and writes `quality-summary.md`: VMAF mean, 1% low and worst
+frame, PSNR per plane (Cb/Cr is colour detail, which VMAF ignores and
+keying depends on), SSIM, and the real bitrate. Captures run at 1080p60
+and 4K30, each in 8-bit 4:2:0 and in 10-bit 4:2:2 (`capture422`), since
+a 4:2:2 codec can't show colour detail a 4:2:0 capture never had. The
+stream is held (`pause_stream`) while files transfer. It needs an FFmpeg
+with libvmaf (on Windows the gyan.dev "full" build); `--analyze <folder>`
+re-scores a capture without the phone.
+
 ## Measured results: standard vs GPU pipeline
 
 Field measurements from the benchmark above — 12 configurations
