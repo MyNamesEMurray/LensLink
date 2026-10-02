@@ -453,6 +453,7 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
             Button {
                 streamer.setRemoteStartArmed(!streamer.remoteStartArmed)
@@ -468,6 +469,7 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
             ZStack {
                 ActionRowLabel(title: L("Mirror Screen"),
@@ -478,6 +480,7 @@ struct ContentView: View {
             }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
         .onAppear {
             // Whether the extension survived sideloading — the broadcast
