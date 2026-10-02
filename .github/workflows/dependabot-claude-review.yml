@@ -57,7 +57,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: anthropics/claude-code-action@756cc22e19660d20e8cc9496b4f242475a7f7790 # v1.0.235
+      - uses: anthropics/claude-code-action@fd1c128679612beff4ca259c78021c506e8aa7a7 # v1.0.237
         if: steps.guard.outputs.run == 'true'
         env:
           # The action wires GITHUB_TOKEN into its *own* API calls, but a
