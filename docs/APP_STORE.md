@@ -155,6 +155,18 @@ Portuguese and Simplified Chinese have every field translated in
 [`APP_STORE_LOCALIZED.md`](APP_STORE_LOCALIZED.md). The name stays
 "LensLink Camera" in every language.
 
+**What's New** (1.16.2; covers 1.16.1 and 1.16.2):
+
+> Polish for the main screen and the tally light.
+>
+> - The Start Camera, Arm Remote Start and Mirror Screen buttons no longer have thin lines between them.
+> - The tally light border now follows your screen's rounded corners every time, including after you resize the LensLink window on iPad.
+
+The App Store version was created as 1.16.1 with build 1084, then
+renamed to 1.16.2 before submission so it could take the build with the
+separator fix: a v1.16.1 tag already existed, so that fix released as
+1.16.2.
+
 **What's New** (1.16.0; covers 1.15.2 and 1.16.0):
 
 > You now decide when OBS can start your camera, and 4K on Maximum quality has much lower latency.
@@ -179,8 +191,8 @@ carry its one change users see, the reorganized Documentation.
 > - Screen mirroring can now run at 30 fps to save battery and Wi-Fi bandwidth. Choose it in the LensLink Screen source's properties in OBS (needs the 1.15.1 plugin).
 > - A new app icon, with light and dark versions and full Liquid Glass support on iOS 26 and later.
 
-The App Store version must match the release tag the merge cut (1.16.0
-for the latest notes, build 1083): the build carries that version, and
+The App Store version must match the release tag the merge cut (1.16.2
+for the latest notes): the build carries that version, and
 App Store Connect only attaches a build whose version matches. App Store
 Connect also allows only one unreleased version at a time, so a version
 pulled from review (Developer Rejected) blocks creating the next one:
