@@ -14,3 +14,28 @@ function(lenslink_test name)
 endfunction()
 
 lenslink_test(protocol)
+lenslink_test(json-reader ${_src}/json-reader.c)
+lenslink_test(handshake ${_src}/handshake.c ${_src}/json-reader.c)
+
+# Fuzz harnesses for the parsers of untrusted input (tests/fuzz/). By
+# default each runs under a deterministic mutation driver as an ordinary
+# test; configure with -DLENSLINK_FUZZ_LIBFUZZER=ON (clang with libFuzzer)
+# to build real libFuzzer binaries instead, run by hand.
+option(LENSLINK_FUZZ_LIBFUZZER "Build the fuzz harnesses against libFuzzer" OFF)
+set(LENSLINK_FUZZ_ITERATIONS 200000 CACHE STRING
+    "Mutations per fuzz harness when run by ctest")
+
+function(lenslink_fuzz name)
+  add_executable(fuzz-${name} fuzz/fuzz-${name}.c ${ARGN})
+  target_include_directories(fuzz-${name} PRIVATE ${_src} fuzz)
+  if(LENSLINK_FUZZ_LIBFUZZER)
+    target_compile_options(fuzz-${name} PRIVATE -fsanitize=fuzzer)
+    target_link_options(fuzz-${name} PRIVATE -fsanitize=fuzzer)
+  else()
+    target_sources(fuzz-${name} PRIVATE fuzz/fuzz-driver.c)
+    add_test(NAME fuzz-${name}
+             COMMAND fuzz-${name} ${LENSLINK_FUZZ_ITERATIONS})
+  endif()
+endfunction()
+
+lenslink_fuzz(json ${_src}/handshake.c ${_src}/json-reader.c)

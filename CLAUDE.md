@@ -200,6 +200,10 @@ hasn't armed it (the app then refuses `start_stream`). Points that shape the cod
 - Transports: plain LAN dial, `usbmux.c` (usbmuxd client for USB),
   `mdns.c` (one-shot Bonjour browse of `_lenslink._tcp` for the Phone
   dropdown).
+- `handshake.c` parses HELLO and VIDEO_CONFIG with `json-reader.c`, a
+  bounded, allocation-free JSON reader (both unit-tested and fuzzed in
+  `obs-plugin/tests/`). Read new handshake fields there, never by
+  substring search.
 - `web-control.c` serves the browser control panel on `localhost:9980`
   plus `/api/state` and `/api/control`.
 - `plugin-settings.c` holds plugin-wide settings (Tools → LensLink
