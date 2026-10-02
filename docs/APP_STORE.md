@@ -215,12 +215,13 @@ matters; the Camera app's own screenshots are the reference for framing.
 exact store sizes; its `shots.json` names each capture. All but `obs` can
 be captured in the Simulator from a Debug build's screenshot mode
 (`tools/store-screenshots/capture.sh`, or the **Store screenshots**
-workflow); its README has the details. The same English
-captures serve every store language: `render.js --lang all` renders the
-headlines from `captions/<lang>.json` into `out/<lang>/`, one folder per
-App Store Connect localization (`es` for both Spanish ones), and
-`localize.js` does the same from the finished English screenshots when
-the raw captures are gone.
+workflow); its README has the details. The workflow captures the app in
+every store language, and `render.js --lang all` pairs each language's
+captures with its headlines from `captions/<lang>.json` into
+`out/<lang>/`, one folder per App Store Connect localization (`es` for
+both Spanish ones). Device captures are English only; `render.js` falls
+back to them, and `localize.js` recaptions finished English screenshots
+when the raw captures are gone.
 
 1. `home`: the computer card naming the Mac, "OBS connected — ready",
    Camera / Format / Green screen rows.

@@ -29,14 +29,20 @@ enum ScreenshotStage {
                 .environment["LENSLINK_SCREENSHOT_SCENE"],
               let image = UIImage(contentsOfFile: path) else { return nil }
         guard let cgImage = image.cgImage else { return image }
+        let bounds = ActiveScreen.screen?.bounds ?? .zero
+        let aspect = bounds.height > 0
+            ? min(bounds.width, bounds.height) / max(bounds.width, bounds.height) / sceneFill
+            : 9.0 / 16
         let height = CGFloat(cgImage.height)
-        let width = min(CGFloat(cgImage.width), height * 9 / 16)
+        let width = min(CGFloat(cgImage.width), height * aspect)
         let crop = CGRect(x: (CGFloat(cgImage.width) - width) / 2, y: 0,
                           width: width, height: height).integral
         guard let cropped = cgImage.cropping(to: crop) else { return image }
         return UIImage(cgImage: cropped, scale: image.scale,
                        orientation: image.imageOrientation)
     }()
+
+    private static let sceneFill: CGFloat = 0.885
 
     static let obsHost = "Studio Mac"
     static let obsVersion = "32.0.1"

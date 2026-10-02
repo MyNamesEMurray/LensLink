@@ -44,8 +44,19 @@
 <body>
   <h1>{{HEADLINE}}</h1>
   <p>{{SUB}}</p>
-  <div class="device"><img id="shot" src="{{IMG}}" alt="" data-full-battery="{{FULLBATTERY}}"></div>
+  <div class="device" data-fit="{{FIT}}"><img id="shot" src="{{IMG}}" alt="" data-full-battery="{{FULLBATTERY}}"></div>
   <script>
+    const device = document.querySelector('.device');
+    if (device.dataset.fit === 'true') {
+      const shot = document.getElementById('shot');
+      const size = () => {
+        const room = window.innerHeight - device.getBoundingClientRect().top - {{BEZEL}};
+        const inner = room * shot.naturalWidth / shot.naturalHeight;
+        device.style.width = Math.min({{DEVW}}, inner + 2 * {{BEZEL}}) + 'px';
+        device.dataset.fit = 'done';
+      };
+      if (shot.complete) size(); else shot.addEventListener('load', size, { once: true });
+    }
     // Screenshots taken on a low phone paint the battery pill red. When
     // the shot has a status bar, repaint that pill as a full white
     // battery: cover it with the colour just left of it, then draw the

@@ -7,6 +7,7 @@ Captures the App Store screenshots in the iOS Simulator (macOS, Xcode).
 
   capture.sh --app PATH/LensLink.app [--scene PICTURE] [--raw DIR]
              [--family iphone|ipad|all] [--appearance dark|light]
+             [--lang en,de,...|all]
 
 --app         a Debug simulator build of the app (Release has no screenshot mode)
 --scene       a portrait photo standing in for the camera on the Live shots;
@@ -14,10 +15,13 @@ Captures the App Store screenshots in the iOS Simulator (macOS, Xcode).
 --raw         where the captures go (default: raw/ next to this script)
 --family      which simulators to use (default: all)
 --appearance  the system appearance (default: dark)
+--lang        the app languages to capture in (default: en; all is every
+              store language)
 
-The captures are named <shot>-iphone.png and <shot>-ipad.png, the names
-render.js reads. The obs shot needs a real Mac behind the phone and is
-never captured here.
+The captures land in <raw>/<lang>/ as <shot>-iphone.png and
+<shot>-ipad.png, where render.js looks for each language's captures.
+The obs shot needs a real Mac behind the phone and is never captured
+here.
 EOF
 }
 
@@ -27,6 +31,7 @@ scene=""
 raw="$here/raw"
 family="all"
 appearance="dark"
+langs="en"
 bundle_id="com.exaltedpixels.LensLinkCamera"
 
 while [ $# -gt 0 ]; do
@@ -36,6 +41,7 @@ while [ $# -gt 0 ]; do
     --raw) raw="$2"; shift 2 ;;
     --family) family="$2"; shift 2 ;;
     --appearance) appearance="$2"; shift 2 ;;
+    --lang) langs="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -52,6 +58,26 @@ if [ -n "$scene" ]; then
   fi
   scene="$(cd "$(dirname "$scene")" && pwd)/$(basename "$scene")"
 fi
+if [ "$langs" = "all" ]; then
+  langs="en,de,es,fr,ja,pt-BR,zh-Hans"
+fi
+langs="${langs//,/ }"
+
+locale_for() {
+  case "$1" in
+    en) echo "en_US" ;;
+    de) echo "de_DE" ;;
+    es) echo "es_MX" ;;
+    fr) echo "fr_FR" ;;
+    ja) echo "ja_JP" ;;
+    pt-BR) echo "pt_BR" ;;
+    zh-Hans) echo "zh_CN" ;;
+    *) echo "error: no locale for language $1" >&2; exit 2 ;;
+  esac
+}
+for lang in $langs; do
+  locale_for "$lang" >/dev/null
+done
 mkdir -p "$raw"
 
 created=()
@@ -119,14 +145,22 @@ capture_family() {
     --batteryState discharging --batteryLevel 100
   xcrun simctl install "$udid" "$app"
 
-  local shot
-  for shot in $(shots_for); do
-    xcrun simctl terminate "$udid" "$bundle_id" >/dev/null 2>&1 || true
-    SIMCTL_CHILD_LENSLINK_SCREENSHOT_SCENE="$scene" \
-      xcrun simctl launch "$udid" "$bundle_id" -LensLinkScreenshots "$shot" >/dev/null
-    sleep 6
-    xcrun simctl io "$udid" screenshot --type=png "$raw/$shot-$name.png" >/dev/null 2>&1
-    echo "  $raw/$shot-$name.png"
+  local lang shot language
+  for lang in $langs; do
+    mkdir -p "$raw/$lang"
+    language="$lang"
+    if [ "$lang" = "es" ]; then
+      language="es-MX"
+    fi
+    for shot in $(shots_for); do
+      xcrun simctl terminate "$udid" "$bundle_id" >/dev/null 2>&1 || true
+      SIMCTL_CHILD_LENSLINK_SCREENSHOT_SCENE="$scene" \
+        xcrun simctl launch "$udid" "$bundle_id" -LensLinkScreenshots "$shot" \
+          -AppleLanguages "($language)" -AppleLocale "$(locale_for "$lang")" >/dev/null
+      sleep 6
+      xcrun simctl io "$udid" screenshot --type=png "$raw/$lang/$shot-$name.png" >/dev/null 2>&1
+      echo "  $raw/$lang/$shot-$name.png"
+    done
   done
   xcrun simctl shutdown "$udid" >/dev/null 2>&1 || true
 }

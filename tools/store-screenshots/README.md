@@ -44,9 +44,11 @@ only into Debug builds, so the App Store build has none of it.
 to 9:41 with full signal and battery, and captures `home`, `format` and
 `options`, plus `live-glance` and `live-tray` when given `--scene`: a
 portrait photo that stands in for the camera picture. Pick one worth
-looking at, as you would point the real camera. The app crops it to
-9:16 from the centre, the shape a 16:9 stream's preview takes on an
-upright phone, so keep the subject in the middle. The `obs` shot needs
+looking at, as you would point the real camera. The app crops it from
+the centre to nearly the screen's own shape (thin bars above and below
+on iPhone, edge to edge on the 13-inch iPad), so keep the subject in
+the middle. With `--lang`, each language is captured with the app in
+that language, into `raw/<lang>/`. The `obs` shot needs
 the phone with a real Mac behind it, so it is never captured here.
 
 ```bash
@@ -68,8 +70,14 @@ uploads the captures as the `store-screenshots-raw` artifact. Its
 it is sharp on both devices) is used, and the Live shots are skipped if
 there is neither. The version line under the iPad home shot shows the
 latest release tag and the `build_number` input (the build being
-submitted). Unzip the artifact into `raw/` and render as below, with
-`--keep-battery`.
+submitted). It captures every store language. Unzip the artifact into
+`raw/` and render as below, with `--keep-battery`.
+
+The iPad frame shrinks until its whole screen shows (`fit` in
+`common.js`), so the Live screen's tray isn't cut off at the bottom
+edge; the iPhone frames still run off it. The Format sheet is too short
+on iPad to show its Color section, so `format` lists only the iPhone in
+its `devices` and the iPad set leaves it out.
 
 ## Other languages
 
@@ -95,7 +103,9 @@ from its English caption (a file name containing the shot's name, e.g.
 down pixel for pixel and redraws only the caption area above it; a
 translation too long for that space is shrunk slightly to fit.
 
-**From raw captures**, rendering English and every translation at once:
+**From raw captures**, rendering English and every translation at once.
+A language's own captures in `raw/<lang>/` win; without them it falls
+back to the captures directly in `raw/`, the app in English:
 
 ```bash
 node render.js --lang all      # English plus every language

@@ -2,8 +2,10 @@
 // Composes App Store screenshots: a headline, a subline and the raw
 // device capture in a bezel, at the exact pixel sizes App Store Connect
 // accepts. Raw captures go in raw/<name>-iphone.png and
-// raw/<name>-ipad.png (the names are in shots.json); output lands in
-// out/. Needs Node and Playwright (npx playwright install chromium once).
+// raw/<name>-ipad.png (the names are in shots.json), or per language in
+// raw/<lang>/, which wins for that language (capture.sh writes there);
+// output lands in out/. A shot's `devices` limits it to those capture
+// kinds. Needs Node and Playwright (npx playwright install chromium once).
 //
 //   node render.js [--raw DIR] [--out DIR] [--only name,name] [--lang de,ja|all]
 //                  [--keep-battery]
@@ -51,8 +53,11 @@ const BATTERY = {
       if (only && !only.includes(shot.name)) continue;
       const text = captions[lang] ? captions[lang][shot.name] : shot;
       for (const [device, d] of Object.entries(DEVICES)) {
-        const raw = path.join(rawDir, `${shot.name}-${d.raw}.png`);
-        if (!fs.existsSync(raw)) { missing.add(path.relative(process.cwd(), raw)); continue; }
+        if (shot.devices && !shot.devices.includes(d.raw)) continue;
+        const file = `${shot.name}-${d.raw}.png`;
+        const localized = path.join(rawDir, lang || 'en', file);
+        const raw = fs.existsSync(localized) ? localized : path.join(rawDir, file);
+        if (!fs.existsSync(raw)) { missing.add(path.relative(process.cwd(), localized)); continue; }
         const img = 'data:image/png;base64,' + fs.readFileSync(raw).toString('base64');
         const html = template
           .replace(/{{W}}/g, d.w).replace(/{{H}}/g, d.h).replace(/{{PAD}}/g, d.pad)
@@ -61,11 +66,13 @@ const BATTERY = {
           .replace('{{LANG}}', lang || 'en')
           .replace('{{HEADLINE}}', esc(text.headline)).replace('{{SUB}}', esc(text.sub))
           .replace('{{IMG}}', img)
+          .replace('{{FIT}}', d.fit ? 'true' : 'false')
           .replace('{{FULLBATTERY}}', shot.statusBar && !keepBattery ? 'true' : 'false')
           .replace('{{BATTERY}}', JSON.stringify(BATTERY[d.raw]));
         const page = await browser.newPage({ viewport: { width: d.w, height: d.h }, deviceScaleFactor: 1 });
         await page.setContent(html, { waitUntil: 'load' });
-        await page.waitForFunction(() => document.getElementById('shot').dataset.fullBattery !== 'true');
+        await page.waitForFunction(() => document.getElementById('shot').dataset.fullBattery !== 'true'
+          && document.querySelector('.device').dataset.fit !== 'true');
         const out = path.join(langOut, `${shot.name}-${device}.png`);
         await page.screenshot({ path: out, clip: { x: 0, y: 0, width: d.w, height: d.h } });
         await page.close();

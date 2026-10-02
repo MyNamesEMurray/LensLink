@@ -97,7 +97,7 @@ jobs:
           APPEARANCE: ${{ inputs.appearance || 'dark' }}
         run: |
           args=(--app ios-app/DerivedData/Build/Products/Debug-iphonesimulator/LensLink.app
-                --raw "$RUNNER_TEMP/raw" --appearance "$APPEARANCE")
+                --raw "$RUNNER_TEMP/raw" --appearance "$APPEARANCE" --lang all)
           if [ -n "$SCENE" ]; then
             args+=(--scene "$SCENE")
           fi
