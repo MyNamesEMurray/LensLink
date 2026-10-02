@@ -26,8 +26,16 @@ enum ScreenshotStage {
 
     static let scene: UIImage? = {
         guard let path = ProcessInfo.processInfo
-            .environment["LENSLINK_SCREENSHOT_SCENE"] else { return nil }
-        return UIImage(contentsOfFile: path)
+                .environment["LENSLINK_SCREENSHOT_SCENE"],
+              let image = UIImage(contentsOfFile: path) else { return nil }
+        guard let cgImage = image.cgImage else { return image }
+        let height = CGFloat(cgImage.height)
+        let width = min(CGFloat(cgImage.width), height * 9 / 16)
+        let crop = CGRect(x: (CGFloat(cgImage.width) - width) / 2, y: 0,
+                          width: width, height: height).integral
+        guard let cropped = cgImage.cropping(to: crop) else { return image }
+        return UIImage(cgImage: cropped, scale: image.scale,
+                       orientation: image.imageOrientation)
     }()
 
     static let obsHost = "Studio Mac"

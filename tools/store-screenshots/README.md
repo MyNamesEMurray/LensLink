@@ -44,7 +44,9 @@ only into Debug builds, so the App Store build has none of it.
 to 9:41 with full signal and battery, and captures `home`, `format` and
 `options`, plus `live-glance` and `live-tray` when given `--scene`: a
 portrait photo that stands in for the camera picture. Pick one worth
-looking at, as you would point the real camera. The `obs` shot needs
+looking at, as you would point the real camera. The app crops it to
+9:16 from the centre, the shape a 16:9 stream's preview takes on an
+upright phone, so keep the subject in the middle. The `obs` shot needs
 the phone with a real Mac behind it, so it is never captured here.
 
 ```bash
