@@ -56,6 +56,7 @@ static void gpu_pipeline_clear(struct ios_camera_source *s);
 static void gpu_pipeline_free(struct ios_camera_source *s);
 #include "mdns.h"
 #include "health.h"
+#include "handshake.h"
 
 /* Bonjour service the app advertises while its listener is up. */
 #define LENSLINK_MDNS_SERVICE "_lenslink._tcp.local"
@@ -1821,47 +1822,20 @@ static void client_disconnect(struct ios_camera_source *s,
 			   T_("Status.Disconnected"));
 }
 
-static void extract_json_string(const char *json, const char *key, char *out,
-				size_t out_size)
-{
-	/* Tiny best-effort extraction of "key":"value" — enough for the
-	 * HELLO payload without pulling in a JSON dependency. */
-	char pattern[64];
-	snprintf(pattern, sizeof(pattern), "\"%s\"", key);
-
-	const char *p = strstr(json, pattern);
-	if (!p)
-		return;
-	p = strchr(p + strlen(pattern), ':');
-	if (!p)
-		return;
-	p++;
-	while (*p == ' ' || *p == '\t')
-		p++;
-	if (*p != '"')
-		return;
-	p++;
-
-	size_t i = 0;
-	while (*p && *p != '"' && i + 1 < out_size)
-		out[i++] = *p++;
-	out[i] = 0;
-}
-
-/* True only for a bare-boolean "key": true (same best-effort spirit as
- * extract_json_string). Absent key or any other value reads as false.
+/* True only for a bare-boolean "key": true, a best-effort read of the
+ * STATE snapshot. Absent key or any other value reads as false.
  * The pattern includes the ADJACENT colon: user-controlled string
  * values in the snapshot (Bluetooth mic names, say) can contain the
  * literal key text, and scanning to the *next* colon from a value hit
  * would read some other key's value. Quote+key+quote+colon cannot occur
  * inside JSON string content (an embedded quote is always escaped), so
  * this anchors to real keys only. JSONSerialization emits compact
- * "key":value with no space before the colon. */
-/* Same as extract_json_bool, but bounded by an explicit length so it can
- * read the packet payload itself rather than the NUL-terminated copy kept
- * for /api/state. That copy is capped, and a snapshot longer than the cap
- * loses whatever sits past it — which is how the "paused" flag could go
- * missing while everything else about the stream looked fine. */
+ * "key":value with no space before the colon.
+ * Bounded by an explicit length so it reads the packet payload itself
+ * rather than the NUL-terminated copy kept for /api/state. That copy is
+ * capped, and a snapshot longer than the cap loses whatever sits past it
+ * — which is how the "paused" flag could go missing while everything
+ * else about the stream looked fine. */
 static bool extract_json_bool_n(const char *json, size_t len, const char *key)
 {
 	char pattern[64];
@@ -1882,34 +1856,6 @@ static bool extract_json_bool_n(const char *json, size_t len, const char *key)
 		return len - j >= 4 && memcmp(json + j, "true", 4) == 0;
 	}
 	return false;
-}
-
-static bool extract_json_bool(const char *json, const char *key)
-{
-	char pattern[64];
-	snprintf(pattern, sizeof(pattern), "\"%s\":", key);
-
-	const char *p = strstr(json, pattern);
-	if (!p)
-		return false;
-	p += strlen(pattern);
-	while (*p == ' ' || *p == '\t')
-		p++;
-	return strncmp(p, "true", 4) == 0;
-}
-
-static bool extract_json_false(const char *json, const char *key)
-{
-	char pattern[64];
-	snprintf(pattern, sizeof(pattern), "\"%s\":", key);
-
-	const char *p = strstr(json, pattern);
-	if (!p)
-		return false;
-	p += strlen(pattern);
-	while (*p == ' ' || *p == '\t')
-		p++;
-	return strncmp(p, "false", 5) == 0;
 }
 
 /* Logs the H.264 stream's SPS profile/level once per decode stream — the
@@ -1945,17 +1891,21 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 {
 	switch (hdr->type) {
 	case OBSC_PKT_HELLO: {
-		char json[512] = {0};
-		size_t n = hdr->payload_size < sizeof(json) - 1
-				   ? hdr->payload_size
-				   : sizeof(json) - 1;
-		memcpy(json, payload, n);
-		extract_json_string(json, "name", c->name, sizeof(c->name));
-		char kind[16] = {0};
-		extract_json_string(json, "kind", kind, sizeof(kind));
-		c->is_screen = strcmp(kind, "screen") == 0;
-		c->standby = !c->is_screen && extract_json_bool(json, "standby");
-		c->unarmed = c->standby && extract_json_false(json, "armed");
+		/* Parsed whole or not at all (handshake.h): a malformed HELLO
+		 * reads as a camera that is not in standby, keeping the name
+		 * a previous HELLO gave. */
+		struct lenslink_hello hello;
+		if (!lenslink_hello_parse((const char *)payload,
+					  hdr->payload_size, &hello))
+			blog(LOG_WARNING,
+			     "[lenslink] malformed HELLO (%u bytes); treating "
+			     "it as a camera",
+			     (unsigned)hdr->payload_size);
+		if (hello.has_name)
+			snprintf(c->name, sizeof(c->name), "%s", hello.name);
+		c->is_screen = hello.is_screen;
+		c->standby = !c->is_screen && hello.standby;
+		c->unarmed = c->standby && hello.unarmed;
 		c->connected_ns = os_gettime_ns();
 		pthread_mutex_lock(&s->status_mutex);
 		s->is_screen = c->is_screen;
@@ -2025,18 +1975,16 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		blog(LOG_INFO, "[lenslink] video config: %.*s", log_len,
 		     (const char *)payload);
 
-		char json[512] = {0};
-		size_t n = hdr->payload_size < sizeof(json) - 1
-				   ? hdr->payload_size
-				   : sizeof(json) - 1;
-		memcpy(json, payload, n);
-
-		char codec[32] = {0};
-		extract_json_string(json, "codec", codec, sizeof(codec));
-		char kind[16] = {0};
-		extract_json_string(json, "kind", kind, sizeof(kind));
-		if (kind[0])
-			c->is_screen = strcmp(kind, "screen") == 0;
+		/* A malformed config changes neither codec nor kind. */
+		struct lenslink_video_config cfg;
+		if (!lenslink_video_config_parse((const char *)payload,
+						 hdr->payload_size, &cfg))
+			blog(LOG_WARNING,
+			     "[lenslink] malformed video config (%u bytes); "
+			     "keeping the current codec",
+			     (unsigned)hdr->payload_size);
+		if (cfg.has_kind)
+			c->is_screen = cfg.is_screen;
 
 		/* Video config means the stream is (re)starting — a standby
 		 * connection has left standby. (A remote start also re-sends
@@ -2053,7 +2001,8 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				   c->name[0] ? c->name
 					      : T_("Status.UnknownDevice"));
 		}
-		enum AVCodecID id = strcmp(codec, "hevc") == 0
+		enum AVCodecID id = !cfg.valid ? c->codec_id
+				    : cfg.codec == LENSLINK_CODEC_HEVC
 					    ? AV_CODEC_ID_HEVC
 					    : AV_CODEC_ID_H264;
 		if (id != c->codec_id) {

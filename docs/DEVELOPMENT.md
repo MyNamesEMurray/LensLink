@@ -24,6 +24,7 @@ Contributor and maintainer notes. End-user documentation is in the
 obs-plugin/            C plugin for OBS Studio (CMake)
   src/protocol.h       wire-protocol constants + header parsing
   src/ios-camera-source.c   the OBS source: dial loop, latency, lip sync
+  src/handshake.c      HELLO / VIDEO_CONFIG parsing (on src/json-reader.c)
   src/h264-decoder.c   libavcodec H.264/HEVC → obs_source_frame (GPU-capable)
   src/usbmux.c         usbmuxd client (USB transport)
   src/web-control.c    browser control panel (http://localhost:9980)
@@ -73,8 +74,11 @@ ctest --test-dir build-tests --output-on-failure
 
 Each test is one `test-<name>.c` built against the `src/` files it
 needs (`lenslink_test()` in `tests/CMakeLists.txt`), using the
-`CHECK` macros in `tests/test.h`. CI runs them under AddressSanitizer
-and UBSan.
+`CHECK` macros in `tests/test.h`. The parsers of phone input also have
+fuzz harnesses in `tests/fuzz/`: ctest runs each under a deterministic
+mutation driver (`LENSLINK_FUZZ_ITERATIONS`, default 200000), and
+`-DLENSLINK_FUZZ_LIBFUZZER=ON` with clang builds real libFuzzer binaries
+instead. CI runs all of them under AddressSanitizer and UBSan.
 
 Without a phone, `tools/fake-phone.py` (standard library only) speaks
 the phone side of the protocol: it listens on `127.0.0.1:9979`, sends
