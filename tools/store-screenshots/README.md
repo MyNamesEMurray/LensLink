@@ -66,7 +66,8 @@ uploads the captures as the `store-screenshots-raw` artifact. Its
 it is sharp on both devices) is used, and the Live shots are skipped if
 there is neither. The version line under the iPad home shot shows the
 latest release tag and the `build_number` input (the build being
-submitted). Unzip the artifact into `raw/` and render as below.
+submitted). Unzip the artifact into `raw/` and render as below, with
+`--keep-battery`.
 
 ## Other languages
 
@@ -104,6 +105,9 @@ Without `--lang`, `render.js` renders English into `out/` as before.
 Shots marked `"statusBar": true` in `shots.json` get their battery pill
 repainted as a full white battery, so a capture taken on a low phone
 doesn't ship with a red one; the time and signal icons stay as taken.
+Pass `--keep-battery` for `capture.sh`'s Simulator shots: their status
+bar is already full, and the repaint's position is tuned to device
+captures.
 
 `raw/` and `out/` are ignored by git: captures are large and personal to
 the device they came from, and the output is regenerated in seconds.

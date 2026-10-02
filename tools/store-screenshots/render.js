@@ -6,6 +6,10 @@
 // out/. Needs Node and Playwright (npx playwright install chromium once).
 //
 //   node render.js [--raw DIR] [--out DIR] [--only name,name] [--lang de,ja|all]
+//                  [--keep-battery]
+//
+// --keep-battery leaves the status bar as captured, for captures whose
+// battery is already full (capture.sh's Simulator shots).
 const fs = require('fs');
 const path = require('path');
 const { DEVICES, AVAILABLE, esc, launchBrowser, loadCaptions } = require('./common');
@@ -20,6 +24,7 @@ const rawDir = path.resolve(opt('--raw', path.join(here, 'raw')));
 const outDir = path.resolve(opt('--out', path.join(here, 'out')));
 const only = opt('--only', '') ? opt('--only', '').split(',') : null;
 const langArg = opt('--lang', '');
+const keepBattery = args.includes('--keep-battery');
 const langs = !langArg ? [null] : langArg === 'all' ? ['en', ...AVAILABLE] : langArg.split(',');
 
 // Where the battery pill sits in a capture, as fractions of its width
@@ -56,7 +61,7 @@ const BATTERY = {
           .replace('{{LANG}}', lang || 'en')
           .replace('{{HEADLINE}}', esc(text.headline)).replace('{{SUB}}', esc(text.sub))
           .replace('{{IMG}}', img)
-          .replace('{{FULLBATTERY}}', shot.statusBar ? 'true' : 'false')
+          .replace('{{FULLBATTERY}}', shot.statusBar && !keepBattery ? 'true' : 'false')
           .replace('{{BATTERY}}', JSON.stringify(BATTERY[d.raw]));
         const page = await browser.newPage({ viewport: { width: d.w, height: d.h }, deviceScaleFactor: 1 });
         await page.setContent(html, { waitUntil: 'load' });
