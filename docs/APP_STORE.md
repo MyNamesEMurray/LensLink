@@ -155,6 +155,19 @@ Portuguese and Simplified Chinese have every field translated in
 [`APP_STORE_LOCALIZED.md`](APP_STORE_LOCALIZED.md). The name stays
 "LensLink Camera" in every language.
 
+**What's New** (1.16.0; covers 1.15.2 and 1.16.0):
+
+> You now decide when OBS can start your camera, and 4K on Maximum quality has much lower latency.
+>
+> - Arm Remote Start: opening LensLink no longer lets OBS start the camera on its own. Set up your shot, then tap Arm Remote Start, under Start Camera. Until then, OBS can see your phone but can't start the camera. It stays armed until you tap Disarm Remote Start, stop the stream on the phone, or leave the app.
+> - For a phone mounted out of reach, turn on "Arm remote start on open" in Options.
+> - Lower latency at 4K with Maximum quality: at 4K30 on an iPhone 15 Pro it drops from about 107 ms to 60 ms, with no visible change in picture quality.
+> - The in-app Documentation is reorganized by topic, from getting connected to accessibility, with a link to the full guide online.
+> - Update the OBS plugin to 1.16.0 too: it shows when remote start isn't armed, and starts the camera the moment you arm it.
+
+1.15.2 was pulled from review before it shipped, so these notes also
+carry its one change users see, the reorganized Documentation.
+
 **What's New** (1.15.1, the first update; covers 1.14.0 to 1.15.1):
 
 > LensLink now speaks your language, works better with accessibility features, and has a new icon.
@@ -166,9 +179,13 @@ Portuguese and Simplified Chinese have every field translated in
 > - Screen mirroring can now run at 30 fps to save battery and Wi-Fi bandwidth. Choose it in the LensLink Screen source's properties in OBS (needs the 1.15.1 plugin).
 > - A new app icon, with light and dark versions and full Liquid Glass support on iOS 26 and later.
 
-The App Store version must match the release tag the merge cut (1.15.1
-here): the build carries that version, and App Store Connect only
-attaches a build whose version matches.
+The App Store version must match the release tag the merge cut (1.16.0
+for the latest notes, build 1083): the build carries that version, and
+App Store Connect only attaches a build whose version matches. App Store
+Connect also allows only one unreleased version at a time, so a version
+pulled from review (Developer Rejected) blocks creating the next one:
+change its Version field to the new release instead, as 1.15.2 became
+1.16.0.
 
 **What's New** (first version):
 
