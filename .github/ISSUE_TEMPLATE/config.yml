@@ -1,5 +1,11 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
   - name: Questions & help
     url: https://github.com/MyNamesEMurray/LensLink/discussions
-    about: Setup help, "how do I…", and general chat — faster than filing an issue, and other users can chime in.
+    about: Setup help, "how do I…", and general chat. Faster than filing an issue, and other users can chime in.
+  - name: Troubleshooting guide
+    url: https://lenslink.cam/docs/troubleshooting/
+    about: Symptom-by-symptom fixes for the most common problems, from the plugin not loading to USB and Wi-Fi connection issues.
+  - name: Report a security vulnerability
+    url: https://github.com/MyNamesEMurray/LensLink/security/advisories/new
+    about: Please report security issues privately, not as a public issue. SECURITY.md describes what's in scope.
