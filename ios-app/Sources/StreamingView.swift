@@ -21,11 +21,10 @@ struct StreamingView: View {
     /// Exposure bias when the one-finger drag began; nil while no drag
     /// is in flight. Doubles as the "show the EV readout" switch.
     @State private var dragBaseBias: Float?
-    @State private var previousBrightness: CGFloat = UIScreen.main.brightness
-    /// Whether `previousBrightness` is a level we still owe the system.
+    /// The level we still owe the system, and the screen we owe it to.
     /// Tracked rather than derived from the current mode: the mode can
     /// change while the screen is dimmed, and the restore must survive it.
-    @State private var brightnessLowered = false
+    @State private var loweredBrightness: LoweredBrightness?
     /// The adjust tray is up in place of the lens buttons.
     @State private var trayOpen = false
     /// The yellow square where the last tap or long press landed. Gone
@@ -259,10 +258,8 @@ struct StreamingView: View {
     /// no-op there (its menu item isn't drawn either).
     private func goIdle() {
         guard streamer.idleAppearance != .standard else { return }
-        if streamer.idleAppearance == .dim && !brightnessLowered {
-            previousBrightness = UIScreen.main.brightness
-            brightnessLowered = true
-            UIScreen.main.brightness = 0.05
+        if streamer.idleAppearance == .dim && loweredBrightness == nil {
+            loweredBrightness = LoweredBrightness.lower(to: 0.05)
         }
         withAnimation(reduceMotion ? nil : .default) { idle = true }
     }
@@ -278,9 +275,8 @@ struct StreamingView: View {
     /// writing a stale level over one the user (or iOS auto-brightness)
     /// has since changed is its own bug.
     private func restoreBrightness() {
-        guard brightnessLowered else { return }
-        brightnessLowered = false
-        UIScreen.main.brightness = previousBrightness
+        loweredBrightness?.restore()
+        loweredBrightness = nil
     }
 
     /// The Camera app's sun slider: one finger up or down on the picture
@@ -482,18 +478,17 @@ struct StreamingView: View {
     /// current device (their radii run ~40–55 pt) and errs by curving
     /// slightly *inside* the corner rather than getting cut off. Squared
     /// devices (SE, iPads) are detected by their zero bottom safe-area
-    /// inset and keep square corners.
-    private static let tallyCornerRadius: CGFloat = {
-        let bottomInset = UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.windows.first }
-            .first?.safeAreaInsets.bottom ?? 0
-        return bottomInset > 0 ? 58 : 0
-    }()
+    /// inset and keep square corners. Read per render, not cached: a
+    /// value taken before the window existed, or before an iPad window
+    /// was resized, would keep drawing the wrong corners.
+    private var tallyCornerRadius: CGFloat {
+        ActiveScreen.keyWindowSafeAreaInsets.bottom > 0 ? 58 : 0
+    }
 
     private func tallyEdge(_ colour: Color, width: CGFloat,
                            pulse: Bool) -> some View {
         TallyEdge(colour: colour, width: width, pulse: pulse,
-                  cornerRadius: Self.tallyCornerRadius)
+                  cornerRadius: tallyCornerRadius)
     }
 
     // MARK: - Top bar
