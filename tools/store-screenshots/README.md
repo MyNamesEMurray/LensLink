@@ -62,7 +62,8 @@ The **Store screenshots** workflow (`.github/workflows/screenshots.yml`,
 run from the Actions tab) does the same on the Xcode 27 runner and
 uploads the captures as the `store-screenshots-raw` artifact. Its
 `scene_url` input takes the photo; without it, a committed
-`scene.jpg` in this folder is used, and the Live shots are skipped if
+`scene.jpg` in this folder (2064 × 2752, the 13-inch iPad's screen, so
+it is sharp on both devices) is used, and the Live shots are skipped if
 there is neither. The version line under the iPad home shot shows the
 latest release tag and the `build_number` input (the build being
 submitted). Unzip the artifact into `raw/` and render as below.
