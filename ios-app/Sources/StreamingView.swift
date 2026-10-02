@@ -26,7 +26,11 @@ struct StreamingView: View {
     /// change while the screen is dimmed, and the restore must survive it.
     @State private var loweredBrightness: LoweredBrightness?
     /// The adjust tray is up in place of the lens buttons.
+#if DEBUG
+    @State private var trayOpen = ScreenshotStage.shot == .liveTray
+#else
     @State private var trayOpen = false
+#endif
     /// The yellow square where the last tap or long press landed. Gone
     /// again after a moment, or the instant the camera lets the tap
     /// point go; a value that lingered would read as a control.
@@ -41,7 +45,11 @@ struct StreamingView: View {
     @State private var dialTarget: DialTarget = .exposure
     /// Each back lens's magnification relative to Main, for the lens
     /// buttons' labels. Read once per stream: it walks the device list.
+#if DEBUG
+    @State private var lensFactors: [String: Double] = ScreenshotStage.lensFactors
+#else
     @State private var lensFactors: [String: Double] = [:]
+#endif
     /// Stream health pill (fps · Mb/s · dropped). Persisted: someone who
     /// turns it on is debugging and wants it next stream too. The streamer
     /// reads the same key to decide whether to sample health at all.
@@ -102,6 +110,16 @@ struct StreamingView: View {
                 }
             )
             .ignoresSafeArea()
+
+#if DEBUG
+            if let scene = ScreenshotStage.scene {
+                Image(uiImage: scene)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+#endif
 
             VStack(spacing: 0) {
                 if showsControls {

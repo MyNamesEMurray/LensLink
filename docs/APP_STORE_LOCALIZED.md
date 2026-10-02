@@ -9,8 +9,8 @@ words of the name or subtitle, which search already matches.
 
 Keep this file in step with `APP_STORE.md`: when the English listing
 changes, the translations here change with it. Release notes are per
-version; the ones here are for 1.16.0, which also covers 1.15.2 (pulled
-from review before it shipped).
+version; the ones here are for 1.16.2, which also covers 1.16.1 (its
+App Store version was renamed to 1.16.2 before it was submitted).
 
 **Name:** LensLink Camera in every localization (the brand is not
 translated).
@@ -77,16 +77,13 @@ Auf dem Smartphone wird nichts aufgezeichnet, und nichts verlässt dein lokales 
 Erfordert OBS Studio und das kostenlose Open-Source-Plugin LensLink für Mac, Windows oder Linux: https://lenslink.cam
 ```
 
-**What's New (1.16.0):**
+**What's New (1.16.2):**
 
 ```text
-Du entscheidest jetzt, wann OBS deine Kamera starten darf, und 4K mit der Qualität „Maximal“ hat deutlich weniger Latenz.
+Feinschliff für den Hauptbildschirm und das Tally-Licht.
 
-• Fernstart scharf schalten: Das Öffnen von LensLink erlaubt OBS nicht mehr, die Kamera von selbst zu starten. Richte dein Bild ein und tippe dann auf „Fernstart scharf schalten“ unter „Kamera starten“. Bis dahin sieht OBS dein Smartphone, kann die Kamera aber nicht starten. Scharf bleibt es, bis du auf „Fernstart unscharf schalten“ tippst, den Stream auf dem Smartphone stoppst oder die App verlässt.
-• Für ein Smartphone, das außer Reichweite montiert ist: Schalte unter „Optionen“ die Option „Fernstart beim Öffnen scharf schalten“ ein.
-• Weniger Latenz in 4K mit der Qualität „Maximal“: Bei 4K30 auf einem iPhone 15 Pro sinkt sie von etwa 107 ms auf 60 ms, ohne sichtbaren Unterschied in der Bildqualität.
-• Die Dokumentation in der App ist jetzt nach Themen geordnet, vom Verbinden bis zu den Bedienungshilfen, mit einem Link zur vollständigen Anleitung im Web.
-• Aktualisiere auch das OBS-Plugin auf 1.16.0: Es zeigt an, wenn der Fernstart nicht scharf geschaltet ist, und startet die Kamera, sobald du ihn scharf schaltest.
+• Zwischen den Tasten „Kamera starten“, „Fernstart scharf schalten“ und „Bildschirm spiegeln“ sind keine dünnen Linien mehr zu sehen.
+• Der Rahmen des Tally-Lichts folgt jetzt immer den abgerundeten Ecken deines Bildschirms, auch nachdem du auf dem iPad die Größe des LensLink-Fensters geändert hast.
 ```
 
 ## Spanish, Mexico (Español)
@@ -142,16 +139,13 @@ No se graba nada en el teléfono y nada sale de tu red local. Sin cuenta, sin in
 Requiere OBS Studio y el plugin LensLink, gratuito y de código abierto, para Mac, Windows o Linux: https://lenslink.cam
 ```
 
-**What's New (1.16.0):**
+**What's New (1.16.2):**
 
 ```text
-Ahora tú decides cuándo OBS puede iniciar tu cámara, y el 4K con calidad Máxima tiene mucha menos latencia.
+Mejoras en la pantalla principal y en la luz tally.
 
-• Armar inicio remoto: abrir LensLink ya no permite que OBS inicie la cámara por sí solo. Prepara tu toma y luego toca “Armar inicio remoto”, debajo de Iniciar cámara. Hasta entonces, OBS puede ver tu teléfono pero no iniciar la cámara. Queda armado hasta que tocas “Desarmar inicio remoto”, detienes la transmisión en el teléfono o sales de la app.
-• Para un teléfono montado fuera de tu alcance, activa “Armar el inicio remoto al abrir” en Opciones.
-• Menos latencia en 4K con calidad Máxima: a 4K30 en un iPhone 15 Pro baja de unos 107 ms a 60 ms, sin diferencia visible en la calidad de imagen.
-• La documentación de la app ahora está organizada por temas, desde la conexión hasta la accesibilidad, con un enlace a la guía completa en línea.
-• Actualiza también el plugin de OBS a la versión 1.16.0: muestra cuándo el inicio remoto no está armado e inicia la cámara en cuanto lo armas.
+• Los botones “Iniciar cámara”, “Armar inicio remoto” y “Duplicar pantalla” ya no tienen líneas delgadas entre ellos.
+• El borde de la luz tally ahora sigue siempre las esquinas redondeadas de tu pantalla, incluso después de cambiar el tamaño de la ventana de LensLink en el iPad.
 ```
 
 ## French (Français)
@@ -207,16 +201,13 @@ Rien n’est enregistré sur le téléphone, et rien ne quitte votre réseau loc
 Nécessite OBS Studio et le plugin LensLink, gratuit et open source, pour Mac, Windows ou Linux : https://lenslink.cam
 ```
 
-**What's New (1.16.0):**
+**What's New (1.16.2):**
 
 ```text
-Vous décidez désormais quand OBS peut démarrer votre caméra, et la 4K en qualité Maximale a nettement moins de latence.
+Finitions pour l’écran principal et le voyant tally.
 
-• Armer le démarrage à distance : ouvrir LensLink ne permet plus à OBS de démarrer la caméra de lui-même. Réglez votre plan, puis touchez « Armer le démarrage à distance », sous Démarrer la caméra. Jusque-là, OBS voit votre téléphone mais ne peut pas démarrer la caméra. Il reste armé jusqu’à ce que vous touchiez « Désarmer le démarrage à distance », arrêtiez le flux sur le téléphone ou quittiez l’app.
-• Pour un téléphone fixé hors de portée, activez « Armer le démarrage à distance à l’ouverture » dans Options.
-• Moins de latence en 4K avec la qualité Maximale : en 4K30 sur un iPhone 15 Pro, elle passe d’environ 107 ms à 60 ms, sans différence visible de qualité d’image.
-• La documentation de l’app est désormais organisée par thèmes, de la connexion à l’accessibilité, avec un lien vers le guide complet en ligne.
-• Mettez aussi à jour le plugin OBS en 1.16.0 : il indique quand le démarrage à distance n’est pas armé et démarre la caméra dès que vous l’armez.
+• Les boutons « Démarrer la caméra », « Armer le démarrage à distance » et « Recopier l’écran » ne sont plus séparés par de fines lignes.
+• Le contour du voyant tally suit désormais toujours les coins arrondis de votre écran, y compris après avoir redimensionné la fenêtre de LensLink sur iPad.
 ```
 
 ## Japanese (日本語)
@@ -272,16 +263,13 @@ Siriとショートカット
 OBS Studioと、Mac、Windows、Linux用の無料のオープンソースLensLinkプラグインが必要です：https://lenslink.cam
 ```
 
-**What's New (1.16.0):**
+**What's New (1.16.2):**
 
 ```text
-OBSがカメラを開始できるタイミングを自分で決められるようになりました。また、画質「最高」の4Kで遅延が大幅に減りました。
+メイン画面とタリーランプの表示を改善しました。
 
-• リモート開始を有効にする：LensLinkを開いただけでOBSがカメラを開始することはなくなりました。撮影の準備をしてから、「カメラを開始」の下にある「リモート開始を有効にする」をタップします。それまではOBSからスマートフォンは見えますが、カメラを開始することはできません。有効な状態は、「リモート開始を解除」をタップするか、スマートフォンでストリームを停止するか、アプリを離れるまで続きます。
-• 手の届かない場所に固定したスマートフォンでは、オプションの「開いたときにリモート開始を有効にする」をオンにしてください。
-• 画質「最高」での4Kの遅延を短縮：iPhone 15 Proの4K30では約107msから60msに下がり、画質に目に見える違いはありません。
-• アプリ内のドキュメントをトピック別に整理しました。接続からアクセシビリティまでを扱い、オンラインの完全なガイドへのリンクもあります。
-• OBSプラグインも1.16.0にアップデートしてください。リモート開始が有効になっていないことを表示し、有効にした時点でカメラを開始します。
+• 「カメラを開始」「リモート開始を有効にする」「画面をミラーリング」の各ボタンの間に細い線が表示されなくなりました。
+• タリーランプの枠が、iPadでLensLinkのウインドウサイズを変更した後も含め、常に画面の角の丸みに沿うようになりました。
 ```
 
 ## Portuguese, Brazil (Português do Brasil)
@@ -337,16 +325,13 @@ Nada é gravado no celular, e nada sai da sua rede local. Sem conta, sem login, 
 Requer o OBS Studio e o plugin LensLink, gratuito e de código aberto, para Mac, Windows ou Linux: https://lenslink.cam
 ```
 
-**What's New (1.16.0):**
+**What's New (1.16.2):**
 
 ```text
-Agora você decide quando o OBS pode iniciar sua câmera, e o 4K com qualidade Máxima tem bem menos latência.
+Ajustes na tela principal e na luz tally.
 
-• Armar início remoto: abrir o LensLink não permite mais que o OBS inicie a câmera sozinho. Prepare sua cena e depois toque em “Armar início remoto”, abaixo de Iniciar câmera. Até lá, o OBS vê o seu celular, mas não pode iniciar a câmera. Ele fica armado até você tocar em “Desarmar início remoto”, parar a transmissão no celular ou sair do app.
-• Para um celular montado fora de alcance, ative “Armar início remoto ao abrir” em Opções.
-• Menos latência em 4K com qualidade Máxima: em 4K30 num iPhone 15 Pro, ela cai de cerca de 107 ms para 60 ms, sem diferença visível na qualidade da imagem.
-• A documentação do app agora está organizada por tópicos, da conexão à acessibilidade, com um link para o guia completo online.
-• Atualize também o plugin do OBS para a versão 1.16.0: ele mostra quando o início remoto não está armado e inicia a câmera assim que você o arma.
+• Os botões “Iniciar câmera”, “Armar início remoto” e “Espelhar tela” não têm mais linhas finas entre eles.
+• A borda da luz tally agora sempre acompanha os cantos arredondados da sua tela, inclusive depois de redimensionar a janela do LensLink no iPad.
 ```
 
 ## Chinese, Simplified (简体中文)
@@ -402,14 +387,11 @@ Siri 与快捷指令
 需要 OBS Studio 以及适用于 Mac、Windows 或 Linux 的免费开源 LensLink 插件：https://lenslink.cam
 ```
 
-**What's New (1.16.0):**
+**What's New (1.16.2):**
 
 ```text
-现在由你决定 OBS 何时可以启动摄像头，并且画质“最高”下的 4K 延迟大幅降低。
+主界面和 Tally 灯的细节改进。
 
-• 开启远程启动：打开 LensLink 后，OBS 不会再自行启动摄像头。先调好画面，再轻点“启动摄像头”下方的“开启远程启动”。在此之前，OBS 能看到你的手机，但无法启动摄像头。开启状态会一直保持，直到你轻点“关闭远程启动”、在手机上停止推流或离开 App。
-• 如果手机固定在够不着的位置，请在“选项”中打开“打开 App 时开启远程启动”。
-• 画质“最高”下的 4K 延迟更低：在 iPhone 15 Pro 上以 4K30 推流时，延迟从约 107 ms 降至 60 ms，画质没有可见差异。
-• App 内的文档现已按主题整理，从连接到辅助功能都有介绍，并附有完整在线指南的链接。
-• 也请将 OBS 插件更新到 1.16.0：它会显示远程启动尚未开启，并在你开启后立即启动摄像头。
+• “启动摄像头”“开启远程启动”和“镜像屏幕”按钮之间不再出现细线。
+• Tally 灯的边框现在始终贴合屏幕的圆角，包括在 iPad 上调整 LensLink 窗口大小之后。
 ```

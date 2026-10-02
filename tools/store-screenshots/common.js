@@ -4,10 +4,12 @@ const path = require('path');
 // App Store Connect sizes, portrait. `raw` names which capture feeds
 // each: the 6.5-inch set is rendered from the same iPhone captures as
 // the 6.9-inch one (App Store Connect asks for one or the other).
+// `fit` shrinks the device until its whole screen shows, instead of
+// letting it run off the bottom edge.
 const DEVICES = {
   'iphone-6.9': { raw: 'iphone', w: 1320, h: 2868, pad: 120, h1: 104, p: 50, devw: 1120, radius: 140, bezel: 22 },
   'iphone-6.5': { raw: 'iphone', w: 1284, h: 2778, pad: 116, h1: 101, p: 49, devw: 1090, radius: 136, bezel: 22 },
-  'ipad-13':    { raw: 'ipad',   w: 2064, h: 2752, pad: 140, h1: 120, p: 56, devw: 1700, radius: 100, bezel: 24 },
+  'ipad-13':    { raw: 'ipad',   w: 2064, h: 2752, pad: 140, h1: 120, p: 56, devw: 1700, radius: 100, bezel: 24, fit: true },
 };
 
 let chromium;

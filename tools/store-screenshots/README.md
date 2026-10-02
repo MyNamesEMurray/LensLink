@@ -5,9 +5,10 @@ store listing uses, at the exact sizes App Store Connect accepts:
 **1320 × 2868** (6.9-inch iPhone), **1284 × 2778** (6.5-inch iPhone,
 from the same captures) and **2064 × 2752** (13-inch iPad).
 
-1. Take the captures on device (Volume up + Side button). The list of
-   shots, their headlines and the order they appear in is `shots.json`;
-   `docs/APP_STORE.md` says what each one should show.
+1. Take the captures, either in the Simulator (below) or on device
+   (Volume up + Side button). The list of shots, their headlines and the
+   order they appear in is `shots.json`; `docs/APP_STORE.md` says what
+   each one should show.
 2. Drop them in `raw/` as `<name>-iphone.png` and `<name>-ipad.png`,
    e.g. `raw/home-iphone.png`. Any iPhone or iPad capture works; it is
    scaled to fit the bezel.
@@ -27,6 +28,56 @@ from the same captures) and **2064 × 2752** (13-inch iPad).
    Upload whichever iPhone size the App Store Connect slot asks for.
    `--only home,live-glance` renders a subset; `--raw` and `--out`
    point elsewhere.
+
+## Capturing in the Simulator
+
+Debug builds of the app have a screenshot mode: launched with
+`-LensLinkScreenshots <shot>`, the app opens straight into that shot
+with staged state in place of a camera and an OBS connection. "OBS
+connected — ready" on Studio Mac, an iPhone Pro's lenses, 4K60 HEVC
+HDR on Maximum quality, and on the Live screen the tally on air and
+sync locked. The code is `ios-app/Sources/ScreenshotStage.swift`, compiled
+only into Debug builds, so the App Store build has none of it.
+
+`capture.sh` (macOS with Xcode) creates a fresh 6.9-inch iPhone and a
+13-inch iPad simulator on the newest iOS runtime, sets the status bar
+to 9:41 on Tue Jan 9 (the iPad shows the date) with full signal and battery, and captures `home`, `format` and
+`options`, plus `live-glance` and `live-tray` when given `--scene`: a
+portrait photo that stands in for the camera picture. Pick one worth
+looking at, as you would point the real camera. The app crops it from
+the centre to nearly the screen's own shape (thin bars above and below
+on iPhone, edge to edge on the 13-inch iPad), so keep the subject in
+the middle. With `--lang`, each language is captured with the app in
+that language, into `raw/<lang>/`. The `obs` shot needs
+the phone with a real Mac behind it, so it is never captured here.
+
+```bash
+cd ios-app && xcodegen generate
+xcodebuild build -project LensLink.xcodeproj -scheme LensLink \
+  -configuration Debug -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData \
+  CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=
+cd ../tools/store-screenshots
+./capture.sh --app ../../ios-app/DerivedData/Build/Products/Debug-iphonesimulator/LensLink.app \
+  --scene ~/Pictures/scene.jpg
+```
+
+The **Store screenshots** workflow (`.github/workflows/screenshots.yml`,
+run from the Actions tab) does the same on the Xcode 27 runner and
+uploads the captures as the `store-screenshots-raw` artifact. Its
+`scene_url` input takes the photo; without it, a committed
+`scene.jpg` in this folder (2064 × 2752, the 13-inch iPad's screen, so
+it is sharp on both devices) is used, and the Live shots are skipped if
+there is neither. The version line under the iPad home shot shows the
+latest release tag and the `build_number` input (the build being
+submitted). It captures every store language. Unzip the artifact into
+`raw/` and render as below, with `--keep-battery`.
+
+The iPad frame shrinks until its whole screen shows (`fit` in
+`common.js`), so the Live screen's tray isn't cut off at the bottom
+edge; the iPhone frames still run off it. The Format sheet is too short
+on iPad to show its Color section, so `format` lists only the iPhone in
+its `devices` and the iPad set leaves it out.
 
 ## Other languages
 
@@ -52,7 +103,9 @@ from its English caption (a file name containing the shot's name, e.g.
 down pixel for pixel and redraws only the caption area above it; a
 translation too long for that space is shrunk slightly to fit.
 
-**From raw captures**, rendering English and every translation at once:
+**From raw captures**, rendering English and every translation at once.
+A language's own captures in `raw/<lang>/` win; without them it falls
+back to the captures directly in `raw/`, the app in English:
 
 ```bash
 node render.js --lang all      # English plus every language
@@ -64,6 +117,9 @@ Without `--lang`, `render.js` renders English into `out/` as before.
 Shots marked `"statusBar": true` in `shots.json` get their battery pill
 repainted as a full white battery, so a capture taken on a low phone
 doesn't ship with a red one; the time and signal icons stay as taken.
+Pass `--keep-battery` for `capture.sh`'s Simulator shots: their status
+bar is already full, and the repaint's position is tuned to device
+captures.
 
 `raw/` and `out/` are ignored by git: captures are large and personal to
 the device they came from, and the output is regenerated in seconds.

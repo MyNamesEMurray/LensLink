@@ -155,6 +155,18 @@ Portuguese and Simplified Chinese have every field translated in
 [`APP_STORE_LOCALIZED.md`](APP_STORE_LOCALIZED.md). The name stays
 "LensLink Camera" in every language.
 
+**What's New** (1.16.2; covers 1.16.1 and 1.16.2):
+
+> Polish for the main screen and the tally light.
+>
+> - The Start Camera, Arm Remote Start and Mirror Screen buttons no longer have thin lines between them.
+> - The tally light border now follows your screen's rounded corners every time, including after you resize the LensLink window on iPad.
+
+The App Store version was created as 1.16.1 with build 1084, then
+renamed to 1.16.2 before submission so it could take the build with the
+separator fix: a v1.16.1 tag already existed, so that fix released as
+1.16.2.
+
 **What's New** (1.16.0; covers 1.15.2 and 1.16.0):
 
 > You now decide when OBS can start your camera, and 4K on Maximum quality has much lower latency.
@@ -179,8 +191,8 @@ carry its one change users see, the reorganized Documentation.
 > - Screen mirroring can now run at 30 fps to save battery and Wi-Fi bandwidth. Choose it in the LensLink Screen source's properties in OBS (needs the 1.15.1 plugin).
 > - A new app icon, with light and dark versions and full Liquid Glass support on iOS 26 and later.
 
-The App Store version must match the release tag the merge cut (1.16.0
-for the latest notes, build 1083): the build carries that version, and
+The App Store version must match the release tag the merge cut (1.16.2
+for the latest notes): the build carries that version, and
 App Store Connect only attaches a build whose version matches. App Store
 Connect also allows only one unreleased version at a time, so a version
 pulled from review (Developer Rejected) blocks creating the next one:
@@ -200,12 +212,16 @@ Required sets: **6.9-inch iPhone** and **13-inch iPad** (the app targets
 both device families). Take them on device with the tally lit where it
 matters; the Camera app's own screenshots are the reference for framing.
 `tools/store-screenshots/` adds the headline and bezel and outputs the
-exact store sizes; its `shots.json` names each capture. The same English
-captures serve every store language: `render.js --lang all` renders the
-headlines from `captions/<lang>.json` into `out/<lang>/`, one folder per
-App Store Connect localization (`es` for both Spanish ones), and
-`localize.js` does the same from the finished English screenshots when
-the raw captures are gone.
+exact store sizes; its `shots.json` names each capture. All but `obs` can
+be captured in the Simulator from a Debug build's screenshot mode
+(`tools/store-screenshots/capture.sh`, or the **Store screenshots**
+workflow); its README has the details. The workflow captures the app in
+every store language, and `render.js --lang all` pairs each language's
+captures with its headlines from `captions/<lang>.json` into
+`out/<lang>/`, one folder per App Store Connect localization (`es` for
+both Spanish ones). Device captures are English only; `render.js` falls
+back to them, and `localize.js` recaptions finished English screenshots
+when the raw captures are gone.
 
 1. `home`: the computer card naming the Mac, "OBS connected — ready",
    Camera / Format / Green screen rows.

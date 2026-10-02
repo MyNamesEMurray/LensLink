@@ -19,7 +19,10 @@
     "name": "format",
     "headline": "Balanced, or Maximum.",
     "sub": "Maximum finds the most your connection can carry and keeps it there.",
-    "statusBar": true
+    "statusBar": true,
+    "devices": [
+      "iphone"
+    ]
   },
   {
     "name": "options",

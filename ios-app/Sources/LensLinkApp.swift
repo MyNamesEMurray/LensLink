@@ -5,6 +5,12 @@ struct LensLinkApp: App {
     @StateObject private var streamer = Streamer.shared
     @Environment(\.scenePhase) private var scenePhase
 
+#if DEBUG
+    init() {
+        ScreenshotStage.registerDefaults()
+    }
+#endif
+
     var body: some Scene {
         WindowGroup {
             ContentView()

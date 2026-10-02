@@ -1362,6 +1362,9 @@ final class Streamer: ObservableObject {
                 self.updateStandby()
             }
         }
+#if DEBUG
+        applyScreenshotStage()
+#endif
     }
 
     /// Why capture stopped, in the operator's terms. The multiple-apps
@@ -1438,6 +1441,9 @@ final class Streamer: ObservableObject {
 
     private func updateStandby() {
         guard !isStreaming else { return }
+#if DEBUG
+        guard !ScreenshotStage.isActive else { return }
+#endif
         let want = isForeground && !screenCaptured
         if want && !standbyActive {
             standbyActive = true
@@ -2130,6 +2136,29 @@ final class Streamer: ObservableObject {
         status = currentStatus
     }
 }
+
+#if DEBUG
+extension Streamer {
+    fileprivate func applyScreenshotStage() {
+        guard ScreenshotStage.isActive else { return }
+        obsHost = ScreenshotStage.obsHost
+        obsVersion = ScreenshotStage.obsVersion
+        obsTransport = "lan"
+        remoteStartArmed = true
+        if ScreenshotStage.isLive {
+            isStreaming = true
+            status = .streaming
+            tally = .live
+            syncState = .locked
+            exposureBias = 0.3
+        } else {
+            standbyActive = true
+            standbyOBSConnected = true
+            refreshStandbyStatus()
+        }
+    }
+}
+#endif
 
 /// A locked Float cell bridging the main-actor `greenScreenMaxDistance`
 /// onto the capture queue: the compositor's `maxDistance` is
