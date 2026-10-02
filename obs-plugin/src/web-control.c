@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "net-compat.h"
 #include "web-control.h"
@@ -322,11 +323,14 @@ static const char control_page[] =
 	"const LENS={'Front':t('Lens.Front'),"
 	"'Front (Ultra Wide)':t('Lens.FrontUltraWide'),'Main (Wide)':t('Lens.MainWide'),"
 	"'Ultra Wide (0.5\\u00d7)':t('Lens.UltraWide'),'Telephoto':t('Lens.Telephoto')};"
-	/* Selected source id (from /api/sources); every request carries it. */
+	/* Selected source id (from /api/sources); every request carries it.
+	 * A 404 means that source is gone: drop the id and the next poll
+	 * re-picks from the list. */
 	"let src=null;const q=()=>src==null?'':('?src='+src);"
+	"const gone=r=>{if(r.status===404)src=null;return r.status===404};"
 	"let lastTouch=0;const touch=()=>lastTouch=Date.now();"
 	"const send=o=>{touch();"
-	"fetch('/api/control'+q(),{method:'POST',body:JSON.stringify(o)})};"
+	"fetch('/api/control'+q(),{method:'POST',body:JSON.stringify(o)}).then(gone)};"
 	"const deb=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);"
 	"t=setTimeout(()=>f(...a),ms)}};"
 	"const dz=deb(()=>send({cmd:'zoom',value:+zoomEl.value}),60);"
@@ -365,7 +369,7 @@ static const char control_page[] =
 	"asbtn1El.className=c;asbtn2El.className=c;"
 	"pressed(asbtn1El,on);pressed(asbtn2El,on)}"
 	"const toggleAS=()=>{touch();asUI(!autoStart);"
-	"fetch('/api/autostart'+q(),{method:'POST',body:JSON.stringify({on:autoStart})})};"
+	"fetch('/api/autostart'+q(),{method:'POST',body:JSON.stringify({on:autoStart})}).then(gone)};"
 	"asbtn1El.onclick=toggleAS;asbtn2El.onclick=toggleAS;"
 	/* Rebuild a select only when its option list changes (same pattern as
 	 * the lens picker); values stay raw, labels get a formatter. */
@@ -432,7 +436,7 @@ static const char control_page[] =
 	"recalEl.onclick=()=>{recalEl.style.display='none';"
 	"syncEl.textContent=t('Sync.Relocking');"
 	"syncdotEl.style.background=COL.amber;"
-	"fetch('/api/recalibrate'+q(),{method:'POST'})};"
+	"fetch('/api/recalibrate'+q(),{method:'POST'}).then(gone)};"
 	"async function poll(){try{"
 	/* Source list first: pick/keep a selection, tabs when >1. */
 	"const sj=await(await fetch('/api/sources')).json();"
@@ -450,7 +454,8 @@ static const char control_page[] =
 	"const b=document.createElement('button');b.textContent=x.name;"
 	"b.className=x.id===src?'on':'';pressed(b,x.id===src);"
 	"b.onclick=()=>{src=x.id;lastTouch=0;poll()};return b}))}"
-	"const s=await(await fetch('/api/status'+q())).json();"
+	"const sr=await fetch('/api/status'+q());if(gone(sr))return;"
+	"const s=await sr.json();"
 	"setText(statusEl,s.status||t('Idle'));dotEl.style.background=TONE[s.tone]||COL.grey;"
 	"say(s.tone==='error'?'error:'+s.status:s.tone,statusEl.textContent);"
 	/* Lip-sync stage: same words and colours as the phone's own light.
@@ -477,7 +482,8 @@ static const char control_page[] =
 	"if(typeof s.autoStart==='boolean'&&Date.now()-lastTouch>2000)"
 	"asUI(s.autoStart);"
 	"if(s.screen||s.standby||!s.connected)return;"
-	"const st=await(await fetch('/api/state'+q())).json();"
+	"const str=await fetch('/api/state'+q());if(gone(str))return;"
+	"const st=await str.json();"
 	/* Don't fight the operator's hand: only mirror app state when the panel
 	 * hasn't been touched for a couple of seconds. */
 	"if(Date.now()-lastTouch>2000&&typeof st.paused==='boolean')"
@@ -574,21 +580,72 @@ static struct {
 	int next_id;
 } g_reg = {.mutex = PTHREAD_MUTEX_INITIALIZER, .next_id = 1};
 
-/* ?src=<id> on the request line picks a source; no (or an unknown) id
- * falls back to the first registered one, so single-source setups and
- * scripts written before multi-source keep working unchanged. Caller
- * holds g_reg.mutex. */
-static struct ios_camera_source *locked_pick_source(const char *request)
+/* Looks for src=<id> among the query parameters of the request target
+ * (request line only). Returns 0 when absent, 1 with *id set, -1 when
+ * malformed: empty, not a non-negative integer, out of range, or given
+ * twice. */
+static int parse_src_param(const char *request, int *id)
 {
-	const char *nl = strpbrk(request, "\r\n");
-	const char *q = strstr(request, "src=");
-	if (q && nl && q < nl) {
-		int id = atoi(q + 4);
-		for (size_t i = 0; i < g_reg.count; i++)
-			if (g_reg.entries[i].id == id)
-				return g_reg.entries[i].src;
+	const char *sp = strchr(request, ' ');
+	if (!sp)
+		return 0;
+	const char *target = sp + 1;
+	const char *end = target + strcspn(target, " \r\n");
+	const char *p = memchr(target, '?', (size_t)(end - target));
+	int found = 0;
+	while (p && p < end) {
+		p++;
+		const char *amp = memchr(p, '&', (size_t)(end - p));
+		const char *stop = amp ? amp : end;
+		if (stop - p >= 4 && strncmp(p, "src=", 4) == 0) {
+			const char *d = p + 4;
+			int v = 0;
+			if (found || d == stop)
+				return -1;
+			for (; d < stop; d++) {
+				if (*d < '0' || *d > '9')
+					return -1;
+				if (v > (INT_MAX - (*d - '0')) / 10)
+					return -1;
+				v = v * 10 + (*d - '0');
+			}
+			*id = v;
+			found = 1;
+		}
+		p = amp;
 	}
-	return g_reg.count ? g_reg.entries[0].src : NULL;
+	return found;
+}
+
+enum pick_result { PICK_OK, PICK_NONE, PICK_UNKNOWN, PICK_BAD };
+
+/* ?src=<id> picks a source; without it the first registered source is
+ * used, so single-source setups and scripts written before multi-source
+ * keep working unchanged. An explicit id that is malformed or names no
+ * source picks nothing: acting on another phone instead would be worse
+ * than failing. Caller holds g_reg.mutex. */
+static enum pick_result locked_pick_source(const char *request,
+					   struct ios_camera_source **out)
+{
+	int id = 0;
+	int has = parse_src_param(request, &id);
+
+	*out = NULL;
+	if (has < 0)
+		return PICK_BAD;
+	if (!g_reg.count)
+		return PICK_NONE;
+	if (!has) {
+		*out = g_reg.entries[0].src;
+		return PICK_OK;
+	}
+	for (size_t i = 0; i < g_reg.count; i++) {
+		if (g_reg.entries[i].id == id) {
+			*out = g_reg.entries[i].src;
+			return PICK_OK;
+		}
+	}
+	return PICK_UNKNOWN;
 }
 
 static void set_timeouts(socket_t s, int seconds)
@@ -631,6 +688,19 @@ static void respond(socket_t s, const char *status_line,
 	send_str(s, header);
 	if (body)
 		send_str(s, body);
+}
+
+static void respond_pick_error(socket_t s, enum pick_result pick)
+{
+	if (pick == PICK_BAD)
+		respond(s, "400 Bad Request", "application/json",
+			"{\"error\":\"bad src\"}");
+	else if (pick == PICK_UNKNOWN)
+		respond(s, "404 Not Found", "application/json",
+			"{\"error\":\"unknown source\"}");
+	else
+		respond(s, "503 Service Unavailable", "text/plain",
+			"no sources");
 }
 
 /* Case-insensitive header lookup; returns pointer past "name:". */
@@ -902,14 +972,14 @@ static void handle_client(socket_t client)
 		/* Must fit the source's whole device_state cache (2048) —
 		 * truncation here would hand the panel unparsable JSON. */
 		char state[2048] = {0};
+		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
-		struct ios_camera_source *s = locked_pick_source(request);
+		enum pick_result pick = locked_pick_source(request, &s);
 		if (s)
 			ios_camera_copy_state(s, state, sizeof(state));
 		pthread_mutex_unlock(&g_reg.mutex);
 		if (!s) {
-			respond(client, "503 Service Unavailable",
-				"text/plain", "no sources");
+			respond_pick_error(client, pick);
 			return;
 		}
 		respond(client, "200 OK", "application/json", state);
@@ -925,8 +995,9 @@ static void handle_client(socket_t client)
 		bool armed = false, auto_start = false;
 		const char *sync = "off";
 
+		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
-		struct ios_camera_source *s = locked_pick_source(request);
+		enum pick_result pick = locked_pick_source(request, &s);
 		if (s) {
 			ios_camera_copy_status(s, status, sizeof(status),
 					       &tone);
@@ -939,8 +1010,7 @@ static void handle_client(socket_t client)
 		}
 		pthread_mutex_unlock(&g_reg.mutex);
 		if (!s) {
-			respond(client, "503 Service Unavailable",
-				"text/plain", "no sources");
+			respond_pick_error(client, pick);
 			return;
 		}
 		json_escape(status, escaped, sizeof(escaped));
@@ -965,28 +1035,34 @@ static void handle_client(socket_t client)
 				"body required");
 			return;
 		}
+		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
-		struct ios_camera_source *s = locked_pick_source(request);
+		enum pick_result pick = locked_pick_source(request, &s);
 		if (s)
 			ios_camera_set_auto_start(
 				s,
 				strstr(request + body_offset, "true") != NULL);
 		pthread_mutex_unlock(&g_reg.mutex);
-		respond(client, s ? "204 No Content" : "503 Service Unavailable",
-			"text/plain", s ? NULL : "no sources");
+		if (!s)
+			respond_pick_error(client, pick);
+		else
+			respond(client, "204 No Content", "text/plain", NULL);
 		return;
 	}
 
 	if (strncmp(request, "POST /api/recalibrate", 21) == 0) {
 		/* Drops the locked lip-sync mic figure and measures afresh —
 		 * the panel's Recalibrate button. No body. */
+		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
-		struct ios_camera_source *s = locked_pick_source(request);
+		enum pick_result pick = locked_pick_source(request, &s);
 		if (s)
 			ios_camera_recalibrate(s);
 		pthread_mutex_unlock(&g_reg.mutex);
-		respond(client, s ? "204 No Content" : "503 Service Unavailable",
-			"text/plain", s ? NULL : "no sources");
+		if (!s)
+			respond_pick_error(client, pick);
+		else
+			respond(client, "204 No Content", "text/plain", NULL);
 		return;
 	}
 
@@ -996,14 +1072,17 @@ static void handle_client(socket_t client)
 				"body required");
 			return;
 		}
+		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
-		struct ios_camera_source *s = locked_pick_source(request);
+		enum pick_result pick = locked_pick_source(request, &s);
 		if (s)
 			ios_camera_enqueue_control(s, request + body_offset,
 						   content_length);
 		pthread_mutex_unlock(&g_reg.mutex);
-		respond(client, s ? "204 No Content" : "503 Service Unavailable",
-			"text/plain", s ? NULL : "no sources");
+		if (!s)
+			respond_pick_error(client, pick);
+		else
+			respond(client, "204 No Content", "text/plain", NULL);
 		return;
 	}
 
