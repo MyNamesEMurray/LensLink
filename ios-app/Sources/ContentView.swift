@@ -29,7 +29,7 @@ struct ContentView: View {
     // because this screen is also where settings get changed.
     @State private var dimmed = false
     @State private var lastInteraction = Date()
-    @State private var previousBrightness: CGFloat = UIScreen.main.brightness
+    @State private var loweredBrightness: LoweredBrightness?
     @ObservedObject private var assistive = AssistiveTech.shared
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -152,20 +152,21 @@ struct ContentView: View {
         }
         .onDisappear {
             if dimmed {
-                UIScreen.main.brightness = previousBrightness
+                loweredBrightness?.restore()
+                loweredBrightness = nil
                 dimmed = false
             }
         }
     }
 
     private func dim() {
-        previousBrightness = UIScreen.main.brightness
-        UIScreen.main.brightness = 0.05
+        loweredBrightness = LoweredBrightness.lower(to: 0.05)
         withAnimation { dimmed = true }
     }
 
     private func undim() {
-        UIScreen.main.brightness = previousBrightness
+        loweredBrightness?.restore()
+        loweredBrightness = nil
         withAnimation { dimmed = false }
         lastInteraction = Date()
     }
