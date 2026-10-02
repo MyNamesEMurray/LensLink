@@ -12,9 +12,19 @@ Syntax only — type/API errors surface in the macOS CI job on PRs.
 Real behavior needs a device; say so rather than claiming a PASS.
 
 ## OBS plugin (C)
-No libobs dev environment in the container; the three-OS CI build on
-PRs is the compile check. Locale/string changes can only be
-cross-checked against the app/plugin sources, not observed in OBS.
+Build with `-Wall -Wextra -Werror` as in CLAUDE.md; Windows and macOS
+only build in CI on PRs. Unit tests: configure a second build dir with
+`-DLENSLINK_BUILD_TESTS=ON`, then `ctest --test-dir <dir>
+--output-on-failure`; add `-fsanitize=address,undefined` to
+`CMAKE_C_FLAGS` (with `-DENABLE_FRONTEND_UI=OFF`) to match CI.
+
+Wire behaviour without a phone: `python3 tools/fake-phone.py` listens on
+127.0.0.1:9979 (`--standby`, `--unarmed`, `--screen`, `--port`,
+`--frames N --once`). In OBS, set a source to Wi-Fi with Phone 127.0.0.1.
+Without OBS, a few lines of Python that dial it and read the 20-byte
+headers capture the exact HELLO/VIDEO_CONFIG bytes for a parser test.
+Locale/string changes can only be cross-checked against the app/plugin
+sources, not observed in OBS.
 
 ## GitHub Actions scripts (.github/scripts/*.py — App Store Connect)
 Drive the real script via its real invocation (`python3 <script>` with

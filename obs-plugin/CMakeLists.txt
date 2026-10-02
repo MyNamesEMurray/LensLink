@@ -146,6 +146,16 @@ endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 
+# --- unit tests (optional) ---------------------------------------------------
+# Standalone tests for the plugin's pure logic (tests/). Off by default, so
+# plugin and release builds are unchanged: configure with
+# -DLENSLINK_BUILD_TESTS=ON, build, then run ctest.
+option(LENSLINK_BUILD_TESTS "Build the plugin's unit tests" OFF)
+if(LENSLINK_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
+
 # --- install ---------------------------------------------------------------
 # Default layout matches a Linux system-wide OBS install; override
 # CMAKE_INSTALL_PREFIX / the two dirs below for other layouts, or just copy

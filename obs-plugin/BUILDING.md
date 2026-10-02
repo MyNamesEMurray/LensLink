@@ -66,11 +66,26 @@ Copy `build\Release\ios-camera-source.dll` to
 `C:\Program Files\obs-studio\obs-plugins\64bit\` and the `data\` folder to
 `C:\Program Files\obs-studio\data\obs-plugins\ios-camera-source\`.
 
+## Unit tests
+
+The plugin's pure logic has standalone tests in `tests/`, behind an
+opt-in CMake option (off by default):
+
+```bash
+cmake -B build-tests -DLENSLINK_BUILD_TESTS=ON
+cmake --build build-tests
+ctest --test-dir build-tests --output-on-failure
+```
+
 ## Verifying
 
 Start OBS → *Sources* → **+** → **LensLink Camera**. The properties dialog shows
 the connection settings and status. No inbound firewall rules are needed —
 the plugin makes outbound connections to the phone.
+
+No phone at hand? `python3 tools/fake-phone.py` (from the repository
+root) listens on `127.0.0.1:9979` and streams a test pattern: set the
+source's Connection to Wi-Fi and its Phone to `127.0.0.1`.
 
 ## Translations
 

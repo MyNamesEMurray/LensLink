@@ -178,6 +178,36 @@ jobs:
           path: lenslink-linux-x86_64.tar.gz
           retention-days: 7
 
+  # The plugin's standalone unit tests (obs-plugin/tests/), under ASan and
+  # UBSan. Tests only, so no composite action: release.yml never runs
+  # them. The project still configures against libobs and FFmpeg, so the
+  # distro packages come in; the Qt UI is off because the sanitizer flags
+  # are C-only and every test is C.
+  obs-plugin-tests:
+    name: OBS plugin unit tests (Linux)
+    needs: changes
+    if: needs.changes.outputs.plugin == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake pkg-config libobs-dev libavcodec-dev libavutil-dev
+
+      - name: Build with tests (-Wall -Wextra -Werror, sanitizers)
+        run: |
+          cmake -B build-tests -DCMAKE_BUILD_TYPE=Debug \
+            -DLENSLINK_BUILD_TESTS=ON -DENABLE_FRONTEND_UI=OFF \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all"
+          cmake --build build-tests --parallel
+        working-directory: obs-plugin
+
+      - name: Run tests
+        run: ctest --test-dir build-tests --output-on-failure
+        working-directory: obs-plugin
+
   obs-plugin-windows:
     name: OBS plugin (Windows)
     needs: changes

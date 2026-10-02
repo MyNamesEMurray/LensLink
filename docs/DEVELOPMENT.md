@@ -29,6 +29,7 @@ obs-plugin/            C plugin for OBS Studio (CMake)
   src/web-control.c    browser control panel (http://localhost:9980)
   src/diagnostics.c    the pasteable diagnostics report (Tools menu, /api/diagnostics)
   src/lipsync.c        audio cross-correlation for lip-sync calibration
+  tests/               opt-in unit tests for pure logic (-DLENSLINK_BUILD_TESTS=ON)
   data/locale/         en-US.ini (source) + one .ini per language
 ios-app/               SwiftUI companion app (XcodeGen project)
   Sources/VideoEncoder.swift    VideoToolbox encode + AVCC→Annex B
@@ -45,6 +46,7 @@ site/                  lenslink.cam — static site generator (stdlib only)
   i18n/                shell strings per language (en.json is the source)
   translations/        translated pages, mirroring pages/ per language
 tools/check-l10n.py    checks every localized surface (runs in CI)
+tools/fake-phone.py    stands in for the phone on 127.0.0.1 (see Testing)
 docs/PROTOCOL.md       wire protocol specification
 docs/UI_DESIGN.md      app + web-panel design system
 docs/LOCALIZATION.md   languages, how each surface is translated, glossary
@@ -55,6 +57,33 @@ site/README.md         how the site is built and deployed (Cloudflare Pages)
 
 - Plugin: [`obs-plugin/BUILDING.md`](../obs-plugin/BUILDING.md)
 - App: [`ios-app/BUILDING.md`](../ios-app/BUILDING.md)
+
+## Testing
+
+The plugin's pure logic (code with no libobs or FFmpeg dependency) has
+standalone unit tests in `obs-plugin/tests/`. They are off by default,
+so plugin and release builds are unchanged:
+
+```bash
+cd obs-plugin
+cmake -B build-tests -DLENSLINK_BUILD_TESTS=ON -DCMAKE_C_FLAGS="-Wall -Wextra -Werror"
+cmake --build build-tests
+ctest --test-dir build-tests --output-on-failure
+```
+
+Each test is one `test-<name>.c` built against the `src/` files it
+needs (`lenslink_test()` in `tests/CMakeLists.txt`), using the
+`CHECK` macros in `tests/test.h`. CI runs them under AddressSanitizer
+and UBSan.
+
+Without a phone, `tools/fake-phone.py` (standard library only) speaks
+the phone side of the protocol: it listens on `127.0.0.1:9979`, sends
+HELLO, STATE, VIDEO_CONFIG and a looping H.264 test pattern
+(`tools/testdata/pattern.h264`), answers TIMESYNC and prints every
+CONTROL command. Set a LensLink Camera source's Connection to Wi-Fi
+and its Phone to `127.0.0.1`, then run it; `--standby` and `--unarmed`
+exercise remote start, `--screen` announces a screen mirror (use a
+LensLink Screen source for that one).
 
 ## Backgrounding and multitasking camera access
 
@@ -102,6 +131,9 @@ which builds only the areas the PR touches:
   (the oldest one we support) and with Xcode 27, which ships to
   TestFlight. PRs that change the app icon also get rendered previews.
 - **Website**: `site/build.py` plus `site/check-links.py`.
+- **OBS plugin unit tests**: `obs-plugin/tests/` built with
+  `-DLENSLINK_BUILD_TESTS=ON` and `-Werror` on Ubuntu, run with `ctest`
+  under AddressSanitizer and UBSan.
 - **Localization**: `tools/check-l10n.py` checks the app, plugin, web
   panel and website strings against their English sources (see
   [`LOCALIZATION.md`](LOCALIZATION.md)).

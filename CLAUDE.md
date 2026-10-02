@@ -56,8 +56,10 @@ Read the matching doc before touching an area:
 
 ## Commands
 
-There is no test suite; verification is compile checks + CI + manual device
-testing. The `.claude/skills/verify` skill has per-surface verification
+Verification is compile checks + CI + manual device testing, plus opt-in
+plugin unit tests (`obs-plugin/tests/`, `-DLENSLINK_BUILD_TESTS=ON`, then
+`ctest`; CI runs them) and `tools/fake-phone.py`, a stand-in phone on
+127.0.0.1 (`docs/DEVELOPMENT.md`). The `.claude/skills/verify` skill has per-surface verification
 recipes for this container (including how to test the App Store Connect
 scripts against a local mock).
 
