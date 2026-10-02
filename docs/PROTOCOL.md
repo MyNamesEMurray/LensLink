@@ -134,6 +134,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "focus", "faces": true }
 { "cmd": "flashlight", "on": true }
 { "cmd": "flip" }
+{ "cmd": "selectLens", "label": "Ultra Wide (0.5×)" }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
 { "cmd": "white_balance", "mode": "auto" }
 { "cmd": "exposure", "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
@@ -172,6 +173,12 @@ safe on ordinary Wi-Fi, the adaptive loop only backs off from it) or
 a transport-set ceiling, with the encoder's quality-first settings). The
 STATE snapshot reports it as `quality`. A live stream rebuilds its
 encoder on the change, like a format change.
+
+`selectLens` switches to the lens whose `label` matches one of the STATE
+snapshot's `lenses` (English labels such as `"Main (Wide)"`, never
+translated). The app ignores an unknown label, and a lens that can't
+capture the current `resolution` / `fps`. `flip` is the shortcut that
+moves to a lens on the other side that supports the current format.
 
 `mic` selects which microphone feeds the phone-mic capture, hot-switchable
 mid-stream. Ids come from the STATE snapshot's `mics` list: `"auto"`
@@ -292,10 +299,14 @@ was made.
 
 The snapshot also carries white-balance and manual-exposure state
 (`whiteBalanceMode`/`whiteBalanceTemperature`, `exposureMode`/`iso`/
-`shutterSeconds` with their ranges, plus `supportsWhiteBalanceLock` and
-`supportsManualExposure` so UIs hide what the camera lacks) and the
-capture format (`resolution`/`fps`/`codec` with `resolutions`/
-`frameRates`/`codecs` capability lists for `set_format` pickers).
+`shutterSeconds` with their ranges `minISO`/`maxISO` and
+`minShutterSeconds`/`maxShutterSeconds` (the longest shutter is capped
+at one frame interval, so it follows `fps`), plus
+`supportsWhiteBalanceLock` and `supportsManualExposure` so UIs hide what
+the camera lacks), the lens (`lens`, the current label, and `lenses`,
+every label the phone has, for `selectLens` pickers) and the capture
+format (`resolution`/`fps`/`codec` with `resolutions`/`frameRates`/
+`codecs` capability lists for `set_format` pickers).
 
 While a 10-bit colour pipeline is active the snapshot says so —
 `"hdr": true` for HLG, `"color": "log"` for Apple Log — and the

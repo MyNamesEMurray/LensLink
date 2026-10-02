@@ -45,9 +45,25 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 <h2>The HTTP API</h2>
 <p>
   The panel is one client of a small HTTP API on the same port; a stream deck or
-  a script can be another. Every endpoint takes an optional
-  <code>?src=&lt;id&gt;</code>; without it the plugin picks the first suitable
-  source.
+  a script can be another. Every endpoint except <code>/api/sources</code> and
+  <code>/api/diagnostics</code> takes an optional <code>?src=&lt;id&gt;</code>,
+  with an <code>id</code> from <code>/api/sources</code>. Without it the plugin
+  uses the first registered source, the one <code>/api/sources</code> lists
+  first, which can be a LensLink Screen source. With more than one source,
+  pass <code>src</code>.
+</p>
+<table>
+  <thead><tr><th>Response</th><th>When</th></tr></thead>
+  <tbody>
+    <tr><td><code>404</code> <code>{"error":"unknown source"}</code></td><td><code>src</code> names no source: it was removed, or OBS restarted. The request does nothing, rather than reading or controlling a different phone.</td></tr>
+    <tr><td><code>400</code> <code>{"error":"bad src"}</code></td><td><code>src</code> is empty, not a whole number, or given twice.</td></tr>
+    <tr><td><code>503</code> <code>no sources</code></td><td>There are no LensLink sources at all.</td></tr>
+  </tbody>
+</table>
+<p>
+  Ids count up as sources are created and start over when OBS restarts, so
+  read them from <code>/api/sources</code> rather than storing one. The panel
+  itself re-picks a source when its id stops working.
 </p>
 
 <h3>Reading state</h3>
@@ -57,15 +73,41 @@ description: The LensLink control panel at localhost:9980 — the same camera co
     <tr><td><code>GET /api/sources</code></td><td>Every source: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>armed</code> (in standby and accepting <code>start_stream</code>), <code>screen</code>.</td></tr>
     <tr><td><code>GET /api/status</code></td><td><code>status</code> text (in OBS's language), its <code>tone</code> (<code>idle</code>, <code>wait</code>, <code>ready</code>, <code>live</code> or <code>error</code>, for coloring it without reading the text), plus <code>screen</code>, <code>standby</code>, <code>armed</code>, <code>connected</code>, <code>autoStart</code> and the lip-sync <code>sync</code> stage.</td></tr>
     <tr><td><code>GET /api/diagnostics</code></td><td>The whole diagnostics report as plain text — versions, hardware, settings and per-source state. Same content as the button in Tools → LensLink Settings.</td></tr>
-    <tr><td><code>GET /api/state</code></td><td>The phone's last camera-state snapshot: lenses, zoom, exposure, focus, white balance, supported formats. The same cache the source properties read, which is how the three surfaces stay in step.</td></tr>
+    <tr><td><code>GET /api/state</code></td><td>The phone's last camera-state snapshot (keys below), or <code>{}</code> before the phone has sent one. The same cache the source properties read, which is how the three surfaces stay in step.</td></tr>
+  </tbody>
+</table>
+
+<h3>State keys</h3>
+<p>
+  The snapshot is the app's own JSON, passed through as is. Keys an older app
+  doesn't know are simply absent, and a few flags (<code>greenScreen</code>,
+  <code>greenScreenDepth</code>, <code>micEnabled</code>, <code>hdr</code>)
+  appear only when true.
+</p>
+<table>
+  <thead><tr><th>Keys</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>paused</code>, <code>pauseReason</code></td><td>Whether video is held, and who held it: <code>"user"</code> (an operator pause) or <code>"camera"</code> (iOS interrupted capture).</td></tr>
+    <tr><td><code>zoom</code>, <code>maxZoom</code></td><td>Current zoom factor and its upper limit.</td></tr>
+    <tr><td><code>exposureBias</code></td><td>AE bias in EV.</td></tr>
+    <tr><td><code>exposureMode</code>, <code>iso</code>, <code>minISO</code>, <code>maxISO</code>, <code>shutterSeconds</code>, <code>minShutterSeconds</code>, <code>maxShutterSeconds</code>, <code>supportsManualExposure</code></td><td><code>"auto"</code> or <code>"manual"</code>, the current ISO and shutter, and the ranges the camera accepts. The longest shutter is capped at one frame, so <code>maxShutterSeconds</code> follows the frame rate.</td></tr>
+    <tr><td><code>focusMode</code>, <code>lensPosition</code>, <code>faceFocus</code>, <code>supportsFaceFocus</code></td><td><code>"auto"</code> or <code>"locked"</code>, the focus position (0 to 1), and face-driven focus.</td></tr>
+    <tr><td><code>whiteBalanceMode</code>, <code>whiteBalanceTemperature</code>, <code>supportsWhiteBalanceLock</code></td><td><code>"auto"</code> or <code>"locked"</code>, and the locked temperature in kelvin.</td></tr>
+    <tr><td><code>flashlight</code>, <code>hasFlashlight</code></td><td>Flashlight state, and whether this camera has one.</td></tr>
+    <tr><td><code>camera</code>, <code>lens</code>, <code>lenses</code></td><td><code>"front"</code> or <code>"back"</code>, the current lens's label, and the labels of every lens on the phone, such as <code>"Main (Wide)"</code> or <code>"Ultra Wide (0.5×)"</code>. Labels stay English; they are the values <code>selectLens</code> takes.</td></tr>
+    <tr><td><code>resolution</code>, <code>fps</code>, <code>codec</code>, <code>resolutions</code>, <code>frameRates</code>, <code>codecs</code></td><td>The current format, and the choices <code>set_format</code> accepts for the current lens.</td></tr>
+    <tr><td><code>quality</code></td><td><code>"balanced"</code> or <code>"maximum"</code>, as set by <code>set_quality</code>.</td></tr>
+    <tr><td><code>hdr</code>, <code>color</code></td><td><code>"hdr": true</code> for HLG, <code>"color": "log"</code> for Apple Log; both absent for standard color.</td></tr>
+    <tr><td><code>supportsGreenScreen</code>, <code>greenScreen</code>, <code>greenScreenDepth</code>, <code>greenScreenMaxDistance</code></td><td>Green screen support, whether it is on, whether depth assist is running, and the subject-distance cutoff in meters.</td></tr>
+    <tr><td><code>micEnabled</code>, <code>mic</code>, <code>mics</code></td><td>Present only while the phone mic is the source's audio: the selected mic's id, and every choice as <code>[{"id": "...", "name": "..."}]</code>. Send an <code>id</code> back with the <code>mic</code> command; <code>name</code> is for display.</td></tr>
   </tbody>
 </table>
 
 <h3>Sending commands</h3>
 <p>
-  <code>POST /api/control</code> takes one JSON command per request. Unknown
-  commands are ignored by design, so a newer panel and an older app degrade
-  rather than break.
+  <code>POST /api/control</code> takes one JSON command per request (up to 512
+  bytes) and passes it to the phone as is. Unknown commands are ignored by
+  design, so a newer panel and an older app degrade rather than break.
 </p>
 <pre><code>POST /api/control
 { "cmd": "zoom",          "value": 2.0 }
@@ -74,15 +116,27 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 { "cmd": "exposure",      "mode": "auto" }
 { "cmd": "focus",         "mode": "locked", "lensPosition": 0.42 }
 { "cmd": "focus",         "mode": "auto" }
+{ "cmd": "focus",         "faces": true }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
 { "cmd": "white_balance", "mode": "auto" }
 { "cmd": "flashlight",    "on": true }
 { "cmd": "flip" }
+{ "cmd": "selectLens",    "label": "Ultra Wide (0.5×)" }
 { "cmd": "start_stream" }
 { "cmd": "stop_stream" }
+{ "cmd": "pause_stream" }
+{ "cmd": "resume_stream" }
 { "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "set_quality",   "quality": "maximum" }
 { "cmd": "mic",           "id": "builtin:2" }
 { "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
+<ul>
+  <li><code>selectLens</code> switches to the lens whose <code>label</code> matches one in the state's <code>lenses</code>. The phone ignores a label it doesn't have, or a lens that can't do the current resolution and frame rate.</li>
+  <li><code>pause_stream</code> and <code>resume_stream</code> are the panel's <strong>Pause</strong> and <strong>Resume</strong>. They need no arming, since they can only hold a stream that is already running; the state's <code>paused</code> follows them.</li>
+  <li><code>set_quality</code> takes <code>"balanced"</code> or <code>"maximum"</code>, the app's Quality setting, and applies to a live stream straight away.</li>
+  <li><code>mic</code> takes an <code>id</code> from the state's <code>mics</code>; a stale id is ignored.</li>
+  <li>Camera commands apply only while the phone is streaming; sent while it is idle, they are dropped.</li>
+</ul>
 <table>
   <thead><tr><th>Request</th><th>Effect</th></tr></thead>
   <tbody>
