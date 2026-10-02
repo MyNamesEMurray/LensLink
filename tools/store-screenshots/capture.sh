@@ -116,7 +116,7 @@ capture_family() {
     --time "9:41" \
     --dataNetwork wifi --wifiMode active --wifiBars 3 \
     --cellularMode active --cellularBars 4 \
-    --batteryState charged --batteryLevel 100
+    --batteryState discharging --batteryLevel 100
   xcrun simctl install "$udid" "$app"
 
   local shot

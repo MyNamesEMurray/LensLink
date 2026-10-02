@@ -10,6 +10,12 @@ on:
           Live shots are skipped otherwise.
         required: false
         type: string
+      build_number:
+        description: >-
+          Build number for the version line on the iPad home shot, e.g. the
+          TestFlight build being submitted. Empty keeps the project default.
+        required: false
+        type: string
       appearance:
         description: System appearance
         required: false
@@ -37,6 +43,8 @@ jobs:
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: ./.github/actions/xcode-project
         with:
@@ -44,8 +52,18 @@ jobs:
 
       - name: Build for the simulator (Debug)
         working-directory: ios-app
+        env:
+          BUILD_NUMBER: ${{ inputs.build_number }}
         run: |
           set -o pipefail
+          extra=()
+          tag="$(git tag --list 'v*' --sort=-v:refname | grep -v -- - | head -1)"
+          if [ -n "$tag" ]; then
+            extra+=("MARKETING_VERSION=${tag#v}")
+          fi
+          if [ -n "$BUILD_NUMBER" ]; then
+            extra+=("CURRENT_PROJECT_VERSION=$BUILD_NUMBER")
+          fi
           xcodebuild build \
             -project LensLink.xcodeproj \
             -scheme LensLink \
@@ -55,7 +73,8 @@ jobs:
             -derivedDataPath DerivedData \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY=- \
-            DEVELOPMENT_TEAM=
+            DEVELOPMENT_TEAM= \
+            "${extra[@]}"
 
       - name: Fetch the scene picture
         id: scene
