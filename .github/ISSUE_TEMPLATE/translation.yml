@@ -1,0 +1,95 @@
+name: Translation problem
+description: A wrong, awkward, untranslated or truncated text in the app, the OBS plugin, the web panel or the website.
+title: "[Translation] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        LensLink ships in seven languages on every surface. Translators follow the glossary in [docs/LOCALIZATION.md](https://github.com/MyNamesEMurray/LensLink/blob/main/docs/LOCALIZATION.md), so terms there are used on purpose; if you think one of those is wrong, say so and why.
+
+        Translated website pages can lag behind the English ones for a while after an update. That's expected, but a page that stays stale is worth reporting.
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - German
+        - Spanish
+        - French
+        - Japanese
+        - Portuguese (Brazil)
+        - Chinese (Simplified)
+        - English (the source text itself is wrong or unclear)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where is the text?
+      multiple: true
+      options:
+        - iPhone / iPad app
+        - Screen mirroring (broadcast extension)
+        - OBS source properties or Tools → LensLink Settings
+        - Status bar readout or LensLink dock in OBS
+        - Browser control panel
+        - Website (lenslink.cam)
+        - App Store listing
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What's wrong?
+      multiple: true
+      options:
+        - Mistranslation (says something different)
+        - Awkward or unnatural wording
+        - Inconsistent terminology
+        - Still in English
+        - Truncated or doesn't fit
+        - Typo or grammar
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Where exactly?
+      description: The screen, menu or page URL where it appears.
+      placeholder: "App → Options → Lip sync, or https://lenslink.cam/fr/docs/connect/"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current text
+      description: Copy it exactly, or attach a screenshot below.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested text
+      render: text
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why, and anything else
+      description: Why the current text is wrong or confusing, and screenshots if it's truncated or out of place.
+
+  - type: input
+    id: versions
+    attributes:
+      label: Version
+      description: App or plugin version, if the text is in the app or the plugin.
+      placeholder: "LensLink v1.9.0 (1102) / plugin 1.9.0"

@@ -1,18 +1,56 @@
 name: Bug report
-description: A stream won't start, video/audio is wrong, something crashes…
+description: A stream won't start, video or audio is wrong, something crashes or doesn't work as documented.
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Please skim **[Tips & troubleshooting](https://github.com/MyNamesEMurray/LensLink#tips--troubleshooting)** first — several common problems (old plugin copies, sideload expiry, Siri quirks) have known fixes.
+        Thanks for taking the time to report this. Phone-to-OBS problems are hard to diagnose from a description alone, so this form asks for the handful of facts that usually pin one down.
+
+        Before filing, please skim **[Troubleshooting](https://lenslink.cam/docs/troubleshooting/)**: old plugin copies, USB drivers, the Local Network permission, sideload expiry and Siri quirks all have known fixes there.
+
+        Something slow rather than broken (latency, CPU use, dropped frames)? The **Performance problem** form asks for the numbers that help. Security issue? Please use [private vulnerability reporting](https://github.com/MyNamesEMurray/LensLink/security/advisories/new) instead of a public issue.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched [existing issues](https://github.com/MyNamesEMurray/LensLink/issues?q=is%3Aissue) and this isn't already reported.
+          required: true
+        - label: I checked [Troubleshooting](https://lenslink.cam/docs/troubleshooting/) and it doesn't cover this.
+          required: true
+        - label: I'm on the [latest release](https://github.com/MyNamesEMurray/LensLink/releases/latest) of the plugin and the app, or I've said below why I can't update.
+
   - type: textarea
     id: what
     attributes:
       label: What happened?
-      description: What did you do, what did you expect, and what happened instead?
+      description: A clear description of the problem. Include any error or status text exactly as shown, in OBS, the web panel or the app.
+      placeholder: The Camera source stays black, although the app shows OBS as connected.
     validations:
       required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest sequence that makes it happen, starting from a known state (OBS just started, app freshly opened, and so on).
+      placeholder: |
+        1. Open the LensLink app and tap Arm Remote Start
+        2. In OBS, add a LensLink Camera source and pick the phone from the Phone dropdown
+        3. Click Start in the source's properties
+        4. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
   - type: dropdown
     id: component
     attributes:
@@ -23,14 +61,75 @@ body:
         - Both / not sure
     validations:
       required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Which LensLink source?
+      options:
+        - LensLink Camera
+        - LensLink Screen (screen mirroring)
+        - Both
+        - Neither / not applicable
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which areas are involved?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - Plugin doesn't load / sources missing in OBS
+        - Finding or connecting to the phone
+        - Stream drops or reconnects
+        - Video (black, frozen, corrupted, wrong size or colours)
+        - Audio (missing, distorted, out of sync)
+        - Lip sync calibration
+        - Camera controls (zoom, focus, exposure, lens, Flashlight…)
+        - Remote start (Arm Remote Start, Siri, Shortcuts, lenslink:// links)
+        - Screen mirroring (broadcast extension)
+        - Browser control panel (localhost:9980)
+        - Status bar readout or LensLink dock in OBS
+        - GPU decode pipeline (beta)
+        - Installer
+        - App interface
+        - Crash or freeze
+        - Other
+
   - type: input
     id: versions
     attributes:
       label: Versions
-      description: App version (bottom of the app's main screen), plugin version (bottom of the LensLink source's properties, or Tools → LensLink Settings), OBS version, computer OS, phone model + iOS version.
-      placeholder: "app 1.0 (1031), plugin 1.6.0, OBS 32.1, Windows 11, iPhone 14 / iOS 18.2"
+      description: |
+        App version and build (bottom of the app's main screen), plugin version (bottom of the LensLink source's properties, or Tools → LensLink Settings), OBS version (Help → About), and phone or iPad model with its iOS version.
+        Opening this form from the app's **Report a problem** link fills in the phone side for you.
+      placeholder: "LensLink v1.9.0 (1102), iPhone15,2, iOS 18.2 · plugin 1.9.0 · OBS 32.1"
     validations:
       required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Computer OS
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple silicon)
+        - macOS (Intel)
+        - Linux
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os-details
+    attributes:
+      label: OS and GPU details
+      description: Exact OS version and graphics card. On Linux, also the distribution, Wayland or X11, and how OBS is installed (distro package, Flatpak, PPA, source).
+      placeholder: "Windows 11 24H2, NVIDIA RTX 3060 (driver 566.36)"
+
   - type: dropdown
     id: connection
     attributes:
@@ -39,6 +138,9 @@ body:
         - Wi-Fi
         - USB cable
         - Both / not sure
+    validations:
+      required: true
+
   - type: dropdown
     id: install
     attributes:
@@ -48,9 +150,69 @@ body:
         - TestFlight
         - Sideloaded
         - Built from source
+    validations:
+      required: true
+
+  - type: dropdown
+    id: plugin-install
+    attributes:
+      label: How is the plugin installed?
+      options:
+        - Installer (.exe / .pkg)
+        - Release zip or tarball, extracted by hand
+        - Built from source
+        - Not sure
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does it happen?
+      options:
+        - Every time
+        - Often
+        - Sometimes
+        - Happened once
+    validations:
+      required: true
+
+  - type: input
+    id: regression
+    attributes:
+      label: Did it work in an earlier version?
+      description: If this used to work, the last plugin or app version where it did. Leave empty if you don't know or it never worked.
+      placeholder: "Worked in plugin 1.8.2 / app 1.8.2 (1090)"
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Plugin diagnostics report
+      description: |
+        In OBS: **Tools → LensLink Settings → Copy a diagnostics report**, then paste it here. It carries versions, hardware, the graphics device, plugin settings and per-source connection state, and no video, audio or personal data. Without the Qt UI, run `curl localhost:9980/api/diagnostics`.
+      render: text
+
   - type: textarea
     id: log
     attributes:
       label: OBS log
       description: |
-        OBS → **Help → Log Files → Upload Current Log File**, and paste the URL here. If a stream won't start, first enable **"Verbose diagnostics in the OBS log"** in the LensLink source's properties, reproduce the problem, then upload — the diagnostics pinpoint the failing stage (see [docs/DEBUGGING-SCREEN-MIRROR.md](https://github.com/MyNamesEMurray/LensLink/blob/main/docs/DEBUGGING-SCREEN-MIRROR.md)).
+        If a stream won't start or drops, first turn on **Tools → LensLink Settings → Verbose diagnostics in the OBS log**, reproduce the problem once, then use OBS → **Help → Log Files → Upload Current Log File** and paste the URL here. Screen mirror failures: see [docs/DEBUGGING-SCREEN-MIRROR.md](https://github.com/MyNamesEMurray/LensLink/blob/main/docs/DEBUGGING-SCREEN-MIRROR.md).
+      placeholder: https://obsproject.com/logs/…
+
+  - type: textarea
+    id: camera-diagnostics
+    attributes:
+      label: Camera diagnostics (camera, video effects or format problems)
+      description: In the app, **Options → Camera diagnostics → Copy**, then paste it here.
+      render: text
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or recordings
+      description: Drag images or short clips in here. A photo of the OBS source next to the phone's screen often says more than a paragraph.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Network setup (mesh Wi-Fi, guest network, VPN, firewall), other plugins or virtual cameras in use, workarounds you've found, and so on.

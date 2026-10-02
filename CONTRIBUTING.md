@@ -45,6 +45,9 @@ but not marked "Latest" on GitHub. Details in
 
 Please use the issue forms — the bug form asks for the handful of facts
 (versions, connection type, OBS log) that make phone↔plugin problems
-diagnosable from one report. Check
+diagnosable from one report. Performance problems, translation
+mistakes and documentation errors have forms of their own, and security
+issues go through private vulnerability reporting (see
+[`SECURITY.md`](SECURITY.md)). Check
 [`docs/ROADMAP.md`](docs/ROADMAP.md) before filing a feature request; it
 may already be planned.

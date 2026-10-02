@@ -1,20 +1,81 @@
 name: Feature request
-description: An idea that would make LensLink better
+description: An idea that would make LensLink better.
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: |
-        Check **[docs/ROADMAP.md](https://github.com/MyNamesEMurray/LensLink/blob/main/docs/ROADMAP.md)** first — it may already be planned.
+        Thanks for the idea! Please check **[docs/ROADMAP.md](https://github.com/MyNamesEMurray/LensLink/blob/main/docs/ROADMAP.md)** first, since it may already be planned, and search existing issues so votes and discussion land in one place (a 👍 on an existing request helps more than a duplicate).
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you file
+      options:
+        - label: I checked the [roadmap](https://github.com/MyNamesEMurray/LensLink/blob/main/docs/ROADMAP.md) and [existing issues](https://github.com/MyNamesEMurray/LensLink/issues?q=is%3Aissue), and this isn't already planned or requested.
+          required: true
+
   - type: textarea
     id: problem
     attributes:
       label: What problem would this solve?
-      description: Describe the situation where you'd use it — the streaming setup, what's awkward today.
+      description: Describe the situation where you'd use it (your streaming setup, what you're trying to do, and what's awkward or impossible today).
+      placeholder: When I switch scenes I have to pick up the phone to change lenses, which shows on camera.
     validations:
       required: true
+
   - type: textarea
     id: idea
     attributes:
       label: Proposed solution
       description: How you imagine it working. Rough is fine.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where would it live?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - The iPhone / iPad app
+        - The OBS source (properties, behaviour)
+        - Tools → LensLink Settings
+        - Browser control panel
+        - Status bar readout or LensLink dock in OBS
+        - Screen mirroring
+        - Remote start, Siri or Shortcuts
+        - Installer or setup
+        - Website or documentation
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Workarounds you use today, other apps that do this, or other ways it could be solved.
+
+  - type: dropdown
+    id: importance
+    attributes:
+      label: How much would it help you?
+      options:
+        - Nice to have
+        - Would noticeably improve my workflow
+        - Blocks me from using LensLink for something
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd be willing to help build this (see [CONTRIBUTING.md](https://github.com/MyNamesEMurray/LensLink/blob/main/CONTRIBUTING.md)).
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Mockups, screenshots, links or examples.

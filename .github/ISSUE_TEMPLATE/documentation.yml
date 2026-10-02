@@ -1,0 +1,65 @@
+name: Documentation or website
+description: Something on lenslink.cam, the README or the in-app documentation is wrong, outdated, missing or confusing.
+title: "[Docs] "
+labels: [documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For wording problems in a translation, the **Translation problem** form is a better fit. For "how do I…" questions, [Discussions](https://github.com/MyNamesEMurray/LensLink/discussions) gets you an answer faster.
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where?
+      options:
+        - Website (lenslink.cam)
+        - README or other files in this repository
+        - In-app documentation
+        - OBS source properties or setting descriptions
+        - App Store listing
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Page or section
+      description: The URL, file path or screen.
+      placeholder: "https://lenslink.cam/docs/remote-start/"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What's the problem?
+      options:
+        - Wrong (doesn't match how LensLink behaves)
+        - Outdated (describes an older version)
+        - Missing (something isn't documented)
+        - Unclear or confusing
+        - Broken link, image or layout
+        - Typo
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: Details
+      description: What it says now, what's actually true or what you expected to find, and the version you're on if behaviour differs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested fix
+      description: Proposed wording, if you have some in mind.
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device (website layout problems)
+      placeholder: "Safari on iPhone 15, iOS 18.2"

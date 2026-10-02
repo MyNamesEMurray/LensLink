@@ -1,0 +1,144 @@
+name: Performance problem
+description: High latency, CPU or GPU use, dropped frames, stutter or heat, where things work but not well enough.
+title: "[Performance] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Performance reports are only actionable with numbers. The plugin can record them for you: turn on **Tools → LensLink Settings → Record pipeline benchmark**, stream for about 10 seconds, and the OBS log names the CSV file it wrote. [docs/PERFORMANCE.md](https://github.com/MyNamesEMurray/LensLink/blob/main/docs/PERFORMANCE.md) explains where the cycles go, and the [Performance page](https://lenslink.cam/docs/performance/) has tuning tips.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched [existing issues](https://github.com/MyNamesEMurray/LensLink/issues?q=is%3Aissue) and this isn't already reported.
+          required: true
+        - label: I'm on the [latest release](https://github.com/MyNamesEMurray/LensLink/releases/latest) of the plugin and the app.
+
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: What's the symptom?
+      multiple: true
+      options:
+        - High or growing latency
+        - Latency spikes
+        - Dropped or skipped frames
+        - Stutter or uneven motion
+        - High CPU use in OBS
+        - High GPU use in OBS
+        - Phone gets hot or throttles
+        - Phone battery drains fast
+        - Audio drifts out of sync over time
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: Describe it
+      description: What you see, how bad it is, and when it starts (immediately, after N minutes, only when zoomed, only with several sources…).
+    validations:
+      required: true
+
+  - type: textarea
+    id: numbers
+    attributes:
+      label: Measurements
+      description: |
+        The status bar or dock readout (latency, fps, bitrate), the `[lenslink][bench]` lines from the OBS log, and if you compared two setups, the output of `python3 tools/bench-report.py BEFORE.csv AFTER.csv`. You can also attach the CSV files.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: stream
+    attributes:
+      label: Stream settings
+      description: Resolution, frame rate, codec (H.264 or HEVC), bitrate, and lens.
+      placeholder: "3840×2160, 60 fps, HEVC, 50 Mbps, Wide"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Which LensLink source?
+      options:
+        - LensLink Camera
+        - LensLink Screen (screen mirroring)
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: sources-count
+    attributes:
+      label: How many LensLink sources are streaming at once?
+      placeholder: "1"
+
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options:
+        - Wi-Fi
+        - USB cable
+        - Both, and both are affected
+        - Both, but only Wi-Fi is affected
+    validations:
+      required: true
+
+  - type: input
+    id: network
+    attributes:
+      label: Network (Wi-Fi only)
+      description: Router or mesh system, Wi-Fi band (2.4 / 5 / 6 GHz), and whether the computer is wired or on Wi-Fi.
+      placeholder: "Wi-Fi 6 router, phone on 5 GHz, PC wired"
+
+  - type: dropdown
+    id: decode
+    attributes:
+      label: Decoding
+      description: Hardware decoding is a source property; the GPU decode pipeline is in Tools → LensLink Settings.
+      options:
+        - Hardware decoding, standard pipeline
+        - Hardware decoding, GPU decode pipeline (beta)
+        - Software decoding
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: App version and build, plugin version, OBS version, phone or iPad model with its iOS version.
+      placeholder: "LensLink v1.9.0 (1102), iPhone15,2, iOS 18.2 · plugin 1.9.0 · OBS 32.1"
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: Computer
+      description: OS version, CPU, GPU and driver version.
+      placeholder: "Windows 11 24H2, Ryzen 7 5800X, RTX 3060 (driver 566.36)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Plugin diagnostics report
+      description: "**Tools → LensLink Settings → Copy a diagnostics report**, then paste it here (or `curl localhost:9980/api/diagnostics`)."
+      render: text
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Other things running in OBS (encoding preset, other heavy sources or filters), what you've already tried, and whether an earlier version performed better.
