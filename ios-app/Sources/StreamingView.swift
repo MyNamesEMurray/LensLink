@@ -26,7 +26,11 @@ struct StreamingView: View {
     /// change while the screen is dimmed, and the restore must survive it.
     @State private var loweredBrightness: LoweredBrightness?
     /// The adjust tray is up in place of the lens buttons.
+#if DEBUG
+    @State private var trayOpen = ScreenshotStage.shot == .liveTray
+#else
     @State private var trayOpen = false
+#endif
     /// The yellow square where the last tap or long press landed. Gone
     /// again after a moment, or the instant the camera lets the tap
     /// point go; a value that lingered would read as a control.
@@ -102,6 +106,16 @@ struct StreamingView: View {
                 }
             )
             .ignoresSafeArea()
+
+#if DEBUG
+            if let scene = ScreenshotStage.scene {
+                Image(uiImage: scene)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+#endif
 
             VStack(spacing: 0) {
                 if showsControls {

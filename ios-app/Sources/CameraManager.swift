@@ -184,6 +184,9 @@ final class CameraManager: NSObject {
     /// Enumerates the cameras present on this device, back lenses first
     /// (Main, Ultra Wide, Telephoto), then front.
     static func availableLenses() -> [Lens] {
+#if DEBUG
+        if ScreenshotStage.isActive { return ScreenshotStage.lenses }
+#endif
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInWideAngleCamera, .builtInUltraWideCamera,
                           .builtInTelephotoCamera],
@@ -240,6 +243,9 @@ final class CameraManager: NSObject {
     /// measured against the regular front camera instead, to the nearest
     /// tenth. nil where a device is missing.
     static func zoomFactorRelativeToMain(_ lens: Lens) -> Double? {
+#if DEBUG
+        if ScreenshotStage.isActive { return ScreenshotStage.zoomFactor(lens) }
+#endif
         if lens.position == .front { return frontFactor(for: lens) }
         guard lens.position == .back else { return nil }
         if let exact = switchOverFactor(for: lens) { return exact }
@@ -543,6 +549,9 @@ final class CameraManager: NSObject {
     /// unsupported combos are never offered.
     static func supports(resolution: Resolution, fps: Int32,
                          lens: Lens, color: StreamColor = .sdr) -> Bool {
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
         guard let device = device(for: lens) else { return false }
         return format(for: device, resolution: resolution, fps: fps,
                       color: color) != nil
@@ -561,6 +570,9 @@ final class CameraManager: NSObject {
     /// `VideoEncoder.hdrSupported`: it walks every lens's format table,
     /// far too expensive to run per SwiftUI render of the picker.
     static let appleLogCaptureAvailable: Bool = {
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
         guard #available(iOS 17.0, *) else { return false }
         return availableLenses().contains { lens in
             guard let device = device(for: lens) else { return false }
@@ -1153,7 +1165,10 @@ final class CameraManager: NSObject {
     /// Whether the active camera supports locking white balance to custom
     /// gains (the temperature slider). Front cameras on some devices don't.
     var supportsWhiteBalanceLock: Bool {
-        activeDevice?.isLockingWhiteBalanceWithCustomDeviceGainsSupported ?? false
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
+        return activeDevice?.isLockingWhiteBalanceWithCustomDeviceGainsSupported ?? false
     }
 
     func setAutoWhiteBalance() {
@@ -1183,7 +1198,10 @@ final class CameraManager: NSObject {
     }
 
     var supportsManualExposure: Bool {
-        activeDevice?.isExposureModeSupported(.custom) ?? false
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
+        return activeDevice?.isExposureModeSupported(.custom) ?? false
     }
 
     /// ISO limits of the active format (manual exposure).
@@ -1231,7 +1249,12 @@ final class CameraManager: NSObject {
         }
     }
 
-    var hasFlashlight: Bool { activeDevice?.hasTorch ?? false }
+    var hasFlashlight: Bool {
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
+        return activeDevice?.hasTorch ?? false
+    }
 
     func setFlashlight(_ on: Bool) {
         withLockedDevice { device in

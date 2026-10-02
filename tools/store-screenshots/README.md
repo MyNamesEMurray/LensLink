@@ -5,9 +5,10 @@ store listing uses, at the exact sizes App Store Connect accepts:
 **1320 × 2868** (6.9-inch iPhone), **1284 × 2778** (6.5-inch iPhone,
 from the same captures) and **2064 × 2752** (13-inch iPad).
 
-1. Take the captures on device (Volume up + Side button). The list of
-   shots, their headlines and the order they appear in is `shots.json`;
-   `docs/APP_STORE.md` says what each one should show.
+1. Take the captures, either in the Simulator (below) or on device
+   (Volume up + Side button). The list of shots, their headlines and the
+   order they appear in is `shots.json`; `docs/APP_STORE.md` says what
+   each one should show.
 2. Drop them in `raw/` as `<name>-iphone.png` and `<name>-ipad.png`,
    e.g. `raw/home-iphone.png`. Any iPhone or iPad capture works; it is
    scaled to fit the bezel.
@@ -27,6 +28,42 @@ from the same captures) and **2064 × 2752** (13-inch iPad).
    Upload whichever iPhone size the App Store Connect slot asks for.
    `--only home,live-glance` renders a subset; `--raw` and `--out`
    point elsewhere.
+
+## Capturing in the Simulator
+
+Debug builds of the app have a screenshot mode: launched with
+`-LensLinkScreenshots <shot>`, the app opens straight into that shot
+with staged state in place of a camera and an OBS connection. "OBS
+connected — ready" on Studio Mac, an iPhone Pro's lenses, 4K60 HEVC
+HDR on Maximum quality, and on the Live screen the tally on air and
+sync locked. The code is `ios-app/Sources/ScreenshotStage.swift`, compiled
+only into Debug builds, so the App Store build has none of it.
+
+`capture.sh` (macOS with Xcode) creates a fresh 6.9-inch iPhone and a
+13-inch iPad simulator on the newest iOS runtime, sets the status bar
+to 9:41 with full signal and battery, and captures `home`, `format` and
+`options`, plus `live-glance` and `live-tray` when given `--scene`: a
+portrait photo that stands in for the camera picture. Pick one worth
+looking at, as you would point the real camera. The `obs` shot needs
+the phone with a real Mac behind it, so it is never captured here.
+
+```bash
+cd ios-app && xcodegen generate
+xcodebuild build -project LensLink.xcodeproj -scheme LensLink \
+  -configuration Debug -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData \
+  CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=
+cd ../tools/store-screenshots
+./capture.sh --app ../../ios-app/DerivedData/Build/Products/Debug-iphonesimulator/LensLink.app \
+  --scene ~/Pictures/scene.jpg
+```
+
+The **Store screenshots** workflow (`.github/workflows/screenshots.yml`,
+run from the Actions tab) does the same on the Xcode 27 runner and
+uploads the captures as the `store-screenshots-raw` artifact. Its
+`scene_url` input takes the photo; without it, a committed
+`scene.jpg` in this folder is used, and the Live shots are skipped if
+there is neither. Unzip the artifact into `raw/` and render as below.
 
 ## Other languages
 

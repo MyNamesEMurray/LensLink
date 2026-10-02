@@ -19,9 +19,14 @@ struct ContentView: View {
     // in a second sheet (DocumentationView) so the sections themselves
     // are pure controls. Format (resolution · frame rate · codec) is a
     // third sheet behind one row, the Camera app's own pattern.
+#if DEBUG
+    @State private var showOptions = ScreenshotStage.shot == .options
+    @State private var showFormat = ScreenshotStage.shot == .format
+#else
     @State private var showOptions = false
-    @State private var showDocs = false
     @State private var showFormat = false
+#endif
+    @State private var showDocs = false
 
     // Armed standby keeps the phone awake (see Streamer.updateIdleTimer)
     // so remote start stays reachable; this dim overlay is what makes that

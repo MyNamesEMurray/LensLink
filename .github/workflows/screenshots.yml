@@ -1,0 +1,91 @@
+name: Store screenshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      scene_url:
+        description: >-
+          Optional URL of a portrait photo for the Live shots. Without it,
+          tools/store-screenshots/scene.jpg is used if present, and the
+          Live shots are skipped otherwise.
+        required: false
+        type: string
+      appearance:
+        description: System appearance
+        required: false
+        default: dark
+        type: choice
+        options:
+          - dark
+          - light
+  pull_request:
+    paths:
+      - ios-app/Sources/ScreenshotStage.swift
+      - tools/store-screenshots/capture.sh
+      - .github/workflows/screenshots.yml
+
+concurrency:
+  group: screenshots-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Capture store screenshots
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/xcode-project
+        with:
+          xcode: "27"
+
+      - name: Build for the simulator (Debug)
+        working-directory: ios-app
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project LensLink.xcodeproj \
+            -scheme LensLink \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM=
+
+      - name: Fetch the scene picture
+        id: scene
+        env:
+          SCENE_URL: ${{ inputs.scene_url }}
+        run: |
+          if [ -n "$SCENE_URL" ]; then
+            curl -fsSL "$SCENE_URL" -o "$RUNNER_TEMP/scene-download"
+            echo "path=$RUNNER_TEMP/scene-download" >> "$GITHUB_OUTPUT"
+          elif [ -f tools/store-screenshots/scene.jpg ]; then
+            echo "path=$PWD/tools/store-screenshots/scene.jpg" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Capture
+        env:
+          SCENE: ${{ steps.scene.outputs.path }}
+          APPEARANCE: ${{ inputs.appearance || 'dark' }}
+        run: |
+          args=(--app ios-app/DerivedData/Build/Products/Debug-iphonesimulator/LensLink.app
+                --raw "$RUNNER_TEMP/raw" --appearance "$APPEARANCE")
+          if [ -n "$SCENE" ]; then
+            args+=(--scene "$SCENE")
+          fi
+          tools/store-screenshots/capture.sh "${args[@]}"
+
+      - name: Upload captures
+        uses: actions/upload-artifact@v7
+        with:
+          name: store-screenshots-raw
+          path: ${{ runner.temp }}/raw
+          retention-days: 7

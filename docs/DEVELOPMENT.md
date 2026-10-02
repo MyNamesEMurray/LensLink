@@ -156,6 +156,14 @@ evicting the ones every PR needs. The downloaded FFmpeg source and OBS
 dependency bundles are checked against pinned checksums, so a new FFmpeg
 version or `deps-tag` needs its checksums added next to the pin.
 
+[`.github/workflows/screenshots.yml`](../.github/workflows/screenshots.yml)
+(**Store screenshots**) is separate and not a required check: run from
+the Actions tab, it builds the app for the Simulator and captures the
+App Store screenshots in its Debug-only screenshot mode
+([`tools/store-screenshots/README.md`](../tools/store-screenshots/README.md)).
+It also runs on a pull request that changes the screenshot mode, the
+capture script or the workflow itself.
+
 A maintainer enables auto-merge on a PR; it then merges once the
 required Build checks pass (branch protection on `main`).
 

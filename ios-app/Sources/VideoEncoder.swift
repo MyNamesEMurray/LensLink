@@ -106,6 +106,11 @@ final class VideoEncoder {
     }
 
     private static let hevcSupported: Bool = {
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-LensLinkScreenshots") {
+            return true
+        }
+#endif
         var session: VTCompressionSession?
         let status = VTCompressionSessionCreate(
             allocator: kCFAllocatorDefault,
@@ -126,6 +131,11 @@ final class VideoEncoder {
     /// gate for the HDR toggle. Cached for the same reason as
     /// `hevcSupported`; any error means unsupported.
     static let hdrSupported: Bool = {
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-LensLinkScreenshots") {
+            return true
+        }
+#endif
         var session: VTCompressionSession?
         let status = VTCompressionSessionCreate(
             allocator: kCFAllocatorDefault,
