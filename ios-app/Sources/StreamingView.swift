@@ -45,7 +45,11 @@ struct StreamingView: View {
     @State private var dialTarget: DialTarget = .exposure
     /// Each back lens's magnification relative to Main, for the lens
     /// buttons' labels. Read once per stream: it walks the device list.
+#if DEBUG
+    @State private var lensFactors: [String: Double] = ScreenshotStage.lensFactors
+#else
     @State private var lensFactors: [String: Double] = [:]
+#endif
     /// Stream health pill (fps · Mb/s · dropped). Persisted: someone who
     /// turns it on is debugging and wants it next stream too. The streamer
     /// reads the same key to decide whether to sample health at all.

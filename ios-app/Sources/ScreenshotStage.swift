@@ -44,12 +44,17 @@ enum ScreenshotStage {
     ]
 
     static func zoomFactor(_ lens: CameraManager.Lens) -> Double {
-        guard lens.position == .back else { return 1 }
-        switch lens.deviceType {
-        case .builtInUltraWideCamera: return 0.5
-        case .builtInTelephotoCamera: return 4
+        switch lens.label {
+        case "Ultra Wide (0.5×)": return 0.5
+        case "Telephoto": return 4
         default: return 1
         }
+    }
+
+    static var lensFactors: [String: Double] {
+        guard isActive else { return [:] }
+        return Dictionary(uniqueKeysWithValues:
+            lenses.map { ($0.id, zoomFactor($0)) })
     }
 
     static func registerDefaults() {
