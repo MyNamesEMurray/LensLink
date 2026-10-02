@@ -28,6 +28,7 @@ on:
     paths:
       - ios-app/Sources/ScreenshotStage.swift
       - tools/store-screenshots/capture.sh
+      - tools/store-screenshots/scene.jpg
       - .github/workflows/screenshots.yml
 
 concurrency:
