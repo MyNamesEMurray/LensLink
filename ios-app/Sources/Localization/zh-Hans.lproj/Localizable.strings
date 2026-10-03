@@ -289,7 +289,7 @@
 "Lenses & zoom" = "镜头与变焦";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光锁定在该处（AE/AF 锁定）：“对焦”按钮变为锁定，“曝光”按钮变为 ISO，轻点其中任一按钮即可解除。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and set Exposure to ISO in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光固定在画面的该区域（AE/AF 锁定）：无论手机指向哪里，摄像头都会持续对该区域里的内容对焦和测光，方框会一直显示，直到轻点画面或“对焦”按钮将其解除。如需冻结对焦和曝光，请在面板中锁定对焦并把曝光设为 ISO。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "对焦与曝光";

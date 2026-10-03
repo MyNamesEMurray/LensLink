@@ -929,6 +929,9 @@ final class CameraManager: NSObject {
 
     /// A tap-to-focus point is in force (see `focusAndExpose(at:)`).
     private var tapPointActive = false
+    /// The tap point is pinned (long press): scene changes don't let it
+    /// go, only a tap or a focus mode change does.
+    private var tapPointPinned = false
     private var subjectAreaObserver: NSObjectProtocol?
 
     /// Fires when a tap point has been let go of because the scene
@@ -955,6 +958,7 @@ final class CameraManager: NSObject {
     /// subject walked). No timer of ours: the camera says when.
     private func installFocusDefaults() {
         tapPointActive = false
+        releasePin()
         withLockedDevice { device in
             device.isSubjectAreaChangeMonitoringEnabled = true
         }
@@ -976,7 +980,7 @@ final class CameraManager: NSObject {
     /// A lock is a lock — `.locked` focus and `.custom` exposure are
     /// left exactly where they are.
     private func subjectAreaDidChange() {
-        guard tapPointActive else { return }
+        guard tapPointActive, !tapPointPinned else { return }
         tapPointActive = false
         let centre = CGPoint(x: 0.5, y: 0.5)
         withLockedDevice { device in
@@ -995,59 +999,11 @@ final class CameraManager: NSObject {
         onTapPointReset?()
     }
 
-    /// Long press: a one-shot focus and exposure scan at the point, then
-    /// a report of where the lens and the exposure landed, so the caller
-    /// can hold them as a lock — the Camera app's AE/AF Lock. Completion
-    /// arrives once both scans have settled (KVO on the device's own
-    /// adjusting flags), or after two seconds regardless, on an
-    /// arbitrary queue. A fixed-focus camera reports a nil lens
-    /// position.
-    func lockFocusAndExposure(
-        at devicePoint: CGPoint,
-        completion: @escaping (_ lensPosition: Float?, _ iso: Float,
-                               _ shutterSeconds: Double) -> Void) {
-        guard let device = activeDevice else { return }
-        tapPointActive = false
-        applyFaceDriven(false)
-        withLockedDevice { device in
-            if device.isFocusPointOfInterestSupported,
-               device.isFocusModeSupported(.autoFocus) {
-                device.focusPointOfInterest = devicePoint
-                device.focusMode = .autoFocus
-            }
-            if device.isExposurePointOfInterestSupported,
-               device.isExposureModeSupported(.autoExpose) {
-                device.exposurePointOfInterest = devicePoint
-                device.exposureMode = .autoExpose
-            }
-        }
-
-        var observers: [NSKeyValueObservation] = []
-        var done = false
-        let lock = NSLock()
-        let finish: (Bool) -> Void = { force in
-            lock.lock()
-            defer { lock.unlock() }
-            guard !done else { return }
-            guard force || (!device.isAdjustingFocus
-                            && !device.isAdjustingExposure) else { return }
-            done = true
-            observers.forEach { $0.invalidate() }
-            observers.removeAll()
-            let lens: Float? = device.isLockingFocusWithCustomLensPositionSupported
-                ? device.lensPosition : nil
-            completion(lens, device.iso, device.exposureDuration.seconds)
-        }
-        observers.append(device.observe(\.isAdjustingFocus, options: [.new]) {
-            _, _ in finish(false)
-        })
-        observers.append(device.observe(\.isAdjustingExposure, options: [.new]) {
-            _, _ in finish(false)
-        })
-        // The scans may already be over (fixed-focus front camera), and
-        // a scan that never reports back must not strand the lock.
-        sessionQueue.asyncAfter(deadline: .now() + 0.1) { finish(false) }
-        sessionQueue.asyncAfter(deadline: .now() + 2) { finish(true) }
+    /// A pinned point let go of by anything but a new tap.
+    private func releasePin() {
+        guard tapPointPinned else { return }
+        tapPointPinned = false
+        onTapPointReset?()
     }
 
     // MARK: - Live camera controls
@@ -1099,6 +1055,7 @@ final class CameraManager: NSObject {
     /// switching focus modes doesn't silently discard the ISO/shutter lock.
     func setContinuousAutoFocus(resetExposure: Bool = true) {
         tapPointActive = false
+        releasePin()
         applyFaceDriven(faceDrivenFocus)
         withLockedDevice { device in
             if device.isFocusModeSupported(.continuousAutoFocus) {
@@ -1114,6 +1071,7 @@ final class CameraManager: NSObject {
     /// Locks focus, optionally at a specific lens position (0 = closest,
     /// 1 = infinity). Without a position, freezes focus where it is.
     func lockFocus(lensPosition: Float?) {
+        releasePin()
         withLockedDevice { device in
             if let lensPosition,
                device.isLockingFocusWithCustomLensPositionSupported {
@@ -1127,11 +1085,16 @@ final class CameraManager: NSObject {
 
     /// One-shot focus + exposure at a point of interest (0…1 device coords).
     /// `includeExposure` is false while manual exposure is active, so a
-    /// focus tap doesn't discard the ISO/shutter lock.
-    func focusAndExpose(at devicePoint: CGPoint, includeExposure: Bool = true) {
+    /// focus tap doesn't discard the ISO/shutter lock. `pinned` (long
+    /// press) keeps the point through scene changes, so auto focus and
+    /// exposure keep metering that spot of the frame wherever the phone
+    /// points.
+    func focusAndExpose(at devicePoint: CGPoint, includeExposure: Bool = true,
+                        pinned: Bool = false) {
         // The tap outranks the faces until the scene changes
         // (subjectAreaDidChange), never for the rest of the stream.
         tapPointActive = true
+        tapPointPinned = pinned
         applyFaceDriven(false)
         withLockedDevice { device in
             if device.isFocusPointOfInterestSupported,

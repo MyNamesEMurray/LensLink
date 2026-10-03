@@ -775,26 +775,14 @@ final class Streamer: ObservableObject {
                               includeExposure: exposureSetting == .auto)
     }
 
-    /// Long press on the Live screen: the Camera app's AE/AF Lock. One
-    /// scan at the point, then focus is held at the lens position it
-    /// found and exposure at the ISO and shutter it chose — as the same
-    /// locked / manual states the tray's chips show, so the lock reads
-    /// and releases like any other (tap Focus, tap ISO).
+    /// Long press on the Live screen: pins the point, so auto focus and
+    /// exposure keep metering that spot of the frame until a tap or a
+    /// focus mode change lets it go.
     func lockFocusAndExposure(at devicePoint: CGPoint) {
-        camera.lockFocusAndExposure(at: devicePoint) { [weak self] lens, iso, shutter in
-            Task { @MainActor [weak self] in
-                guard let self, self.isStreaming else { return }
-                if let lens {
-                    self.lensPosition = lens
-                    self.focusSetting = .locked
-                }
-                if self.camera.supportsManualExposure {
-                    self.iso = iso
-                    self.shutterSeconds = shutter
-                    self.exposureSetting = .manual
-                }
-            }
-        }
+        if focusSetting == .locked { focusSetting = .auto }
+        camera.focusAndExpose(at: devicePoint,
+                              includeExposure: exposureSetting == .auto,
+                              pinned: true)
     }
 
     /// Debounced push of the control state to the plugin (for its web UI).

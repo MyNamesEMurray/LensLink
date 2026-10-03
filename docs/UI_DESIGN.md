@@ -462,12 +462,14 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   later. The point holds until the camera's own subject-area monitoring
   says the scene changed, then auto (faces, or centre-weighted) takes
   over again — never a timer of ours, and never for the rest of the
-  stream. **Long press** (0.5 s) = **AE/AF Lock** at the point: one scan,
-  then focus is held at the lens position it found and exposure at the
-  ISO and shutter it chose, as the same locked / manual states the chips
-  show ("AE/AF Lock" tag under the square, 1.8 s); releasing is tapping
-  Focus or ISO, and a tap on the picture releases the focus lock (the
-  manual exposure stays, like any manual ISO). A **one-finger vertical drag** = exposure bias (the Camera app's sun
+  stream. **Long press** (0.5 s) = **AE/AF Lock**, a pinned point: auto
+  focus and exposure keep metering that spot of the frame through scene
+  changes, wherever the phone points, and the square stays up with its
+  "AE/AF Lock" tag for as long as the pin holds. A tap on the picture or
+  any focus mode change (the Focus chip, a lens switch) lets it go.
+  Freezing focus and exposure outright is the chips' job: Focus locked,
+  Exposure on ISO. A tap on the picture also releases a locked Focus
+  (a manual exposure stays, like any manual ISO). A **one-finger vertical drag** = exposure bias (the Camera app's sun
   slider: six stops per screen height, a `cameraYellow` readout centred
   while the finger is down, inert in manual exposure). With those, the
   tray stays closed unless the operator means it.

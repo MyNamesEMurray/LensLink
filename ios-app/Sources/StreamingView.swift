@@ -27,9 +27,9 @@ struct StreamingView: View {
     @State private var loweredBrightness: LoweredBrightness?
     /// The adjust tray is up in place of the lens buttons.
     @State private var trayOpen = false
-    /// The yellow square where the last tap or long press landed. Gone
-    /// again after a moment, or the instant the camera lets the tap
-    /// point go; a value that lingered would read as a control.
+    /// The yellow square where the last tap or long press landed. A tap's
+    /// is gone again after a moment; a long press's stays while the point
+    /// is pinned. Either goes the instant the camera lets the point go.
     @State private var focusMark: FocusMark?
 
     private struct FocusMark: Equatable {
@@ -144,8 +144,8 @@ struct StreamingView: View {
                 .accessibilityHidden(true)
                 .id(mark.id)
                 .task(id: mark.id) {
-                    try? await Task.sleep(
-                        nanoseconds: mark.locked ? 1_800_000_000 : 1_000_000_000)
+                    guard !mark.locked else { return }
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                     guard !Task.isCancelled, focusMark?.id == mark.id else { return }
                     withAnimation(.easeOut(duration: 0.3)) { focusMark = nil }
                 }
@@ -1132,7 +1132,7 @@ struct StreamingView: View {
 
 /// The Camera app's focus square: a thin yellow rounded rectangle that
 /// lands with a small scale-in, plus an "AE/AF Lock" tag under it for a
-/// long press. Drawn where the finger was; the parent decides when it
+/// pinned point. Drawn where the finger was; the parent decides when it
 /// goes.
 private struct FocusIndicator: View {
     let locked: Bool
