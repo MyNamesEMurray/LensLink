@@ -24,6 +24,15 @@ struct OptionsView: View {
                                          systemImage: "camera.aperture",
                                          color: Theme.cameraYellow)
                     }
+                    Picker(selection: $streamer.stabilization) {
+                        ForEach(Streamer.Stabilization.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    } label: {
+                        SettingsRowLabel(L("Stabilization"),
+                                         systemImage: "waveform.path",
+                                         color: Theme.cameraYellow)
+                    }
                     Toggle(isOn: $streamer.rememberCameraSettings) {
                         SettingsRowLabel(L("Remember camera settings"),
                                          systemImage: "clock.arrow.circlepath",
