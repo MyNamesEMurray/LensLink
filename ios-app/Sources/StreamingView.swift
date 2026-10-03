@@ -1695,8 +1695,8 @@ private struct SubjectGlyph: View {
             ZStack {
                 Image(systemName: "viewfinder")
                 Canvas { context, size in
-                    let step = size.width / 9.6
-                    let dot = step * 0.8
+                    let step = size.width / 12
+                    let dot = step * 0.75
                     var y = step / 2
                     while y < size.height {
                         var x = step / 2
