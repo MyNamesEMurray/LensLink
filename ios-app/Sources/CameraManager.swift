@@ -272,6 +272,17 @@ final class CameraManager: NSObject {
         return max(0.1, (ratio * 10).rounded() / 10)
     }
 
+    static func nativeCropZoomFactor(resolution: Resolution, fps: Int32,
+                                     color: StreamColor) -> CGFloat? {
+        guard #available(iOS 16.0, *),
+              let device = device(for: defaultLens),
+              let format = format(for: device, resolution: resolution,
+                                  fps: fps, color: color) else { return nil }
+        let limit = min(format.videoMaxZoomFactor, 10)
+        return format.secondaryNativeResolutionZoomFactors
+            .first { $0 > 1 && $0 <= limit }
+    }
+
     private static func switchOverFactor(for lens: Lens) -> Double? {
         let virtualTypes: [AVCaptureDevice.DeviceType] = [
             .builtInTripleCamera, .builtInDualWideCamera, .builtInDualCamera,

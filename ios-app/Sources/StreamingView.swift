@@ -51,6 +51,7 @@ struct StreamingView: View {
 #else
     @State private var lensFactors: [String: Double] = [:]
 #endif
+    @State private var nativeCrop: CGFloat?
     /// Stream health pill (fps · Mb/s · dropped). Persisted: someone who
     /// turns it on is debugging and wants it next stream too. The streamer
     /// reads the same key to decide whether to sample health at all.
@@ -109,9 +110,9 @@ struct StreamingView: View {
                     if phase == .began {
                         pinchBaseZoom = streamer.zoom
                     }
-                    streamer.zoom = min(
+                    streamer.zoom = snappedZoom(min(
                         max(pinchBaseZoom * scale, 1),
-                        streamer.camera.maxZoomFactor)
+                        streamer.camera.maxZoomFactor))
                 },
                 onVerticalDrag: { phase, travel in
                     verticalDrag(phase, travel: travel)
@@ -242,6 +243,9 @@ struct StreamingView: View {
         // future remote command) must not strand the screen dark or
         // control-less in a mode that no longer applies.
         .onChange(of: streamer.idleAppearance) { _ in wake() }
+        .onChange(of: streamer.resolution) { _ in refreshNativeCrop() }
+        .onChange(of: streamer.fps) { _ in refreshNativeCrop() }
+        .onChange(of: streamer.activeColor) { _ in refreshNativeCrop() }
         // Battery monitoring is a device-wide flag, so it is held only
         // while this screen exists — the Setup screen has nothing to show.
         .onAppear {
@@ -732,6 +736,30 @@ struct StreamingView: View {
             factors[lens.id] = CameraManager.zoomFactorRelativeToMain(lens)
         }
         lensFactors = factors
+        refreshNativeCrop()
+    }
+
+    private func refreshNativeCrop() {
+        nativeCrop = CameraManager.nativeCropZoomFactor(
+            resolution: streamer.resolution, fps: Int32(streamer.fps),
+            color: streamer.activeColor)
+    }
+
+    private func snappedZoom(_ zoom: CGFloat) -> CGFloat {
+        guard let crop = nativeCrop, streamer.selectedLens == mainLens,
+              abs(zoom - crop) < 0.08 else { return zoom }
+        return crop
+    }
+
+    private var mainLens: CameraManager.Lens? {
+        streamer.availableLenses.first {
+            $0.position == .back && $0.deviceType == .builtInWideAngleCamera
+        }
+    }
+
+    private var onNativeCrop: Bool {
+        guard let crop = nativeCrop else { return false }
+        return streamer.selectedLens == mainLens && streamer.zoom == crop
     }
 
     /// The Camera app's lens row: one round button per back lens, the
@@ -742,35 +770,61 @@ struct StreamingView: View {
     private var lensButtons: some View {
         HStack(spacing: Theme.Space.s) {
             ForEach(sideLenses) { lens in
-                let active = lens == streamer.selectedLens
-                Button {
-                    touched()
-                    if active {
+                let selected = lens == streamer.selectedLens
+                let active = selected && !(lens == mainLens && onNativeCrop)
+                lensChip(lensButtonLabel(lens, active: active),
+                         active: active,
+                         accessibilityLabel: lens.displayLabel,
+                         accessibilityValue: lensAccessibilityValue(lens, active: active),
+                         accessibilityHint: lensAccessibilityHint(active: selected)) {
+                    if selected {
                         if streamer.zoom != 1 { streamer.zoom = 1 }
                     } else {
                         streamer.selectedLens = lens
                     }
-                } label: {
-                    Text(lensButtonLabel(lens, active: active))
-                        .font(.system(size: active ? 13 : 11, weight: .bold,
-                                      design: .rounded).monospacedDigit())
-                        .onGlassText(active ? Theme.cameraYellow
-                                            : Theme.textPrimary.opacity(0.85),
-                                     increased: active ? Theme.cameraYellow
-                                                       : Theme.textPrimary)
-                        .frame(width: active ? 38 : 32,
-                               height: active ? 38 : 32)
-                        .glassBackground(Circle(),
-                                         style: .scrim(active ? 0.6 : 0.45))
                 }
-                .accessibilityLabel(lens.displayLabel)
-                .accessibilityValue(lensAccessibilityValue(lens, active: active))
-                .accessibilityHint(lensAccessibilityHint(active: active))
-                .accessibilityAddTraits(active ? .isSelected : [])
-                .accessibilityShowsLargeContentViewer {
-                    Text(lensButtonLabel(lens, active: active))
+                if lens == mainLens, let crop = nativeCrop {
+                    let label = Self.compactFactor(Double(crop))
+                    lensChip(onNativeCrop ? label + "×" : label,
+                             active: onNativeCrop,
+                             accessibilityLabel: lens.displayLabel,
+                             accessibilityValue: label + "×",
+                             accessibilityHint: "") {
+                        if !selected { streamer.selectedLens = lens }
+                        streamer.zoom = crop
+                    }
                 }
             }
+        }
+    }
+
+    private func lensChip(_ label: String, active: Bool,
+                          accessibilityLabel: String,
+                          accessibilityValue: String,
+                          accessibilityHint: String,
+                          action: @escaping () -> Void) -> some View {
+        Button {
+            touched()
+            action()
+        } label: {
+            Text(label)
+                .font(.system(size: active ? 13 : 11, weight: .bold,
+                              design: .rounded).monospacedDigit())
+                .onGlassText(active ? Theme.cameraYellow
+                                    : Theme.textPrimary.opacity(0.85),
+                             increased: active ? Theme.cameraYellow
+                                               : Theme.textPrimary)
+                .frame(width: active ? 38 : 32,
+                       height: active ? 38 : 32)
+                .glassBackground(Circle(),
+                                 style: .scrim(active ? 0.6 : 0.45))
+        }
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint(accessibilityHint)
+        .accessibilityAddTraits(active ? .isSelected : [])
+        .accessibilityShowsLargeContentViewer {
+            Text(label)
         }
     }
 
@@ -1039,7 +1093,8 @@ struct StreamingView: View {
     @ViewBuilder private func dialSlider(_ target: DialTarget) -> some View {
         switch target {
         case .zoom:
-            slider($streamer.zoom,
+            slider(Binding(get: { streamer.zoom },
+                           set: { streamer.zoom = snappedZoom($0) }),
                    in: 1...max(streamer.camera.maxZoomFactor, 1.1),
                    target: target)
         case .exposure:
