@@ -1696,7 +1696,7 @@ private struct SubjectGlyph: View {
                 Image(systemName: "viewfinder")
                 Canvas { context, size in
                     let step = size.width / 9.6
-                    let dot = step * 0.64
+                    let dot = step * 0.8
                     var y = step / 2
                     while y < size.height {
                         var x = step / 2
