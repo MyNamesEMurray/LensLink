@@ -276,6 +276,9 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**Motiv** wirkt, während die Tiefenunterstützung läuft: Alles, was weiter vom iPhone entfernt ist als die Grenze, wird zum Hintergrund – so blendest du jemanden aus, der hinter dir vorbeigeht. Es startet auf **Auto** und hält die Grenze etwa 0,6 m hinter dir; ein **A** auf der Taste zeigt das an. Tippe auf die leuchtende Greenscreen-Taste neben den Objektivtasten, um den Regler zu öffnen: Ziehe, um einen Abstand festzulegen, oder über 5 m hinaus für **Alle** (keine Grenze), und tippe erneut auf die Taste für Auto.";
 
+/* Documentation → Camera & picture, Depth assist section: the stripes shown while the Subject dial is open */
+"While the Subject dial is open, stripes on the picture show what the green screen paints out, so you can see who the cutoff drops. The picture itself stays the plain camera; the green appears in OBS." = "Solange das Motiv-Rad offen ist, zeigen Streifen im Bild, was der Greenscreen übermalt, damit du siehst, wen die Grenze ausblendet. Das Bild selbst bleibt die normale Kamera; das Grün erscheint in OBS.";
+
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "Tiefenunterstützung";
 
@@ -689,9 +692,6 @@
 
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "%1$@-Encoder nicht verfügbar (%2$lld)";
-
-/* Live screen: a pill shown when the Subject dial opens, since the phone preview is the plain camera and the green only appears in OBS */
-"Green screen shows in OBS, not in this preview" = "Der Greenscreen ist in OBS zu sehen, nicht in dieser Vorschau";
 
 /* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
 "Hold to turn on green screen" = "Halten, um den Greenscreen einzuschalten";

@@ -171,7 +171,7 @@ Portuguese and Simplified Chinese have every field translated in
 > - The tray's chips are Focus, WB, EV, ISO and Shutter, and the EV, ISO and Shutter dials click between stops.
 > - Zoom moves to the lens row: tap the yellow lens button for a zoom dial, and tap it again to reset the zoom.
 > - Green screen has its own button next to the lens buttons. Hold it to turn green screen on or off; where depth assist runs, a tap opens the Subject dial.
-> - The Subject distance now starts on Auto, which keeps the cutoff just behind you.
+> - The Subject distance now starts on Auto, which keeps the cutoff just behind you. While you drag it, stripes on the picture show what gets cut.
 > - Update the OBS plugin to 1.17.0 too: its browser control panel gains white balance calibration, Natural motion blur and the Auto subject distance.
 
 **What's New** (1.16.2; covers 1.16.1 and 1.16.2):
