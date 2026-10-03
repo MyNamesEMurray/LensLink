@@ -76,6 +76,8 @@ final class CameraManager: NSObject {
               _onDepthData = newValue }
     }
     private var _onDepthData: ((AVDepthData) -> Void)?
+    private var _onWhiteSample: ((CVPixelBuffer) -> Void)?
+    private var whiteSampleID = 0
 
     /// Capture was interrupted (phone call, Camera app, a second app on
     /// screen where the iPad won't share the camera) or resumed.
@@ -1191,13 +1193,128 @@ final class CameraManager: NSObject {
         }
     }
 
-    func grayWorldWhiteBalance()
-        -> AVCaptureDevice.WhiteBalanceTemperatureAndTintValues? {
+    func calibrateWhiteBalance(
+        at devicePoint: CGPoint, rounds: Int = 3,
+        completion: @escaping
+            (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void) {
         guard let device = activeDevice,
               device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
-        else { return nil }
-        return device.temperatureAndTintValues(
-            for: Self.legal(device.grayWorldDeviceWhiteBalanceGains, device))
+        else { return completion(nil) }
+        var gains = device.deviceWhiteBalanceGains
+        var left = rounds
+        func step() {
+            sampleColor(at: devicePoint) { rgb in
+                guard let rgb else { return completion(nil) }
+                gains.redGain *= rgb.g / rgb.r
+                gains.blueGain *= rgb.g / rgb.b
+                let least = min(gains.redGain, gains.greenGain, gains.blueGain)
+                gains.redGain /= least
+                gains.greenGain /= least
+                gains.blueGain /= least
+                gains = Self.legal(gains, device)
+                self.withLockedDevice { $0.setWhiteBalanceModeLocked(with: gains) }
+                left -= 1
+                if left > 0 {
+                    self.sessionQueue.asyncAfter(deadline: .now() + 0.3) { step() }
+                } else {
+                    completion(device.temperatureAndTintValues(for: gains))
+                }
+            }
+        }
+        step()
+    }
+
+    private func sampleColor(
+        at devicePoint: CGPoint,
+        completion: @escaping ((r: Float, g: Float, b: Float)?) -> Void) {
+        sessionQueue.async { [weak self] in
+            guard let self, let output = self.videoOutput else {
+                return completion(nil)
+            }
+            let size: CGFloat = 0.04
+            let patch = output.outputRectConverted(fromMetadataOutputRect: CGRect(
+                x: devicePoint.x - size / 2, y: devicePoint.y - size / 2,
+                width: size, height: size))
+            self.callbackLock.lock()
+            self.whiteSampleID += 1
+            let id = self.whiteSampleID
+            self._onWhiteSample = { pixels in
+                completion(Self.meanColor(pixels, in: patch))
+            }
+            self.callbackLock.unlock()
+            self.sessionQueue.asyncAfter(deadline: .now() + 1) {
+                self.callbackLock.lock()
+                let stale = id == self.whiteSampleID && self._onWhiteSample != nil
+                if stale { self._onWhiteSample = nil }
+                self.callbackLock.unlock()
+                if stale { completion(nil) }
+            }
+        }
+    }
+
+    private func deliverWhiteSample(_ sampleBuffer: CMSampleBuffer) {
+        callbackLock.lock()
+        let handler = _onWhiteSample
+        _onWhiteSample = nil
+        callbackLock.unlock()
+        if let handler, let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            handler(pixels)
+        }
+    }
+
+    private static func meanColor(_ pixels: CVPixelBuffer, in rect: CGRect)
+        -> (r: Float, g: Float, b: Float)? {
+        guard CVPixelBufferGetPlaneCount(pixels) == 2 else { return nil }
+        CVPixelBufferLockBaseAddress(pixels, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixels, .readOnly) }
+        let width = CGFloat(CVPixelBufferGetWidth(pixels))
+        let height = CGFloat(CVPixelBufferGetHeight(pixels))
+        let normalized = rect.maxX <= 1.01 && rect.maxY <= 1.01
+        let frame = normalized
+            ? CGRect(x: rect.minX * width, y: rect.minY * height,
+                     width: rect.width * width, height: rect.height * height)
+            : rect
+        let wide = CVPixelBufferGetPixelFormatType(pixels)
+            != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            && CVPixelBufferGetPixelFormatType(pixels)
+            != kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+        func mean(plane: Int, channels: Int) -> [Float]? {
+            guard let base = CVPixelBufferGetBaseAddressOfPlane(pixels, plane)
+            else { return nil }
+            let planeWidth = CVPixelBufferGetWidthOfPlane(pixels, plane)
+            let planeHeight = CVPixelBufferGetHeightOfPlane(pixels, plane)
+            let rowBytes = CVPixelBufferGetBytesPerRowOfPlane(pixels, plane)
+            let sx = CGFloat(planeWidth) / width
+            let sy = CGFloat(planeHeight) / height
+            let x0 = max(0, Int(frame.minX * sx))
+            let x1 = min(planeWidth, max(x0 + 1, Int(frame.maxX * sx)))
+            let y0 = max(0, Int(frame.minY * sy))
+            let y1 = min(planeHeight, max(y0 + 1, Int(frame.maxY * sy)))
+            guard x0 < x1, y0 < y1 else { return nil }
+            var sums = [Float](repeating: 0, count: channels)
+            for y in y0..<y1 {
+                let row = base + y * rowBytes
+                for x in x0..<x1 {
+                    for c in 0..<channels {
+                        let i = x * channels + c
+                        sums[c] += wide
+                            ? Float(row.load(fromByteOffset: i * 2, as: UInt16.self)) / 65535
+                            : Float(row.load(fromByteOffset: i, as: UInt8.self)) / 255
+                    }
+                }
+            }
+            let count = Float((x1 - x0) * (y1 - y0))
+            return sums.map { $0 / count }
+        }
+        guard let luma = mean(plane: 0, channels: 1),
+              let chroma = mean(plane: 1, channels: 2) else { return nil }
+        let y = (luma[0] - 16.0 / 255) * 255 / 219
+        let cb = (chroma[0] - 0.5) * 255 / 224
+        let cr = (chroma[1] - 0.5) * 255 / 224
+        func linear(_ v: Float) -> Float { pow(max(v, 0.001), 2.2) }
+        return (linear(y + 1.5748 * cr),
+                linear(y - 0.1873 * cb - 0.4681 * cr),
+                linear(y + 1.8556 * cb))
     }
 
     /// Gains outside 1...maxWhiteBalanceGain throw an exception when set
@@ -1300,6 +1417,7 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
+        deliverWhiteSample(sampleBuffer)
         onSampleBuffer?(sampleBuffer)
     }
 }
@@ -1341,6 +1459,7 @@ extension CameraManager: AVCaptureDataOutputSynchronizerDelegate {
         guard let syncedVideo, !syncedVideo.sampleBufferWasDropped else {
             return
         }
+        deliverWhiteSample(syncedVideo.sampleBuffer)
         onSampleBuffer?(syncedVideo.sampleBuffer)
     }
 }

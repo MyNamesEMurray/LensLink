@@ -152,9 +152,10 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "identify", "host": "Studio-Mac", "obs": "32.0.1", "transport": "usb" }
 ```
 
-`white_balance` with `"mode": "calibrate"` locks white balance to the
-camera's gray-world estimate, meant for a frame filled with white paper or
-a gray card. The result arrives in STATE as `"locked"` with the measured
+`white_balance` with `"mode": "calibrate"` locks white balance so the
+centre of the picture (white paper or a gray card held there) comes out
+neutral; the app measures that patch in live frames over a few rounds.
+The app's own eyedropper does the same at a tapped point. The result arrives in STATE as `"locked"` with the measured
 `whiteBalanceTemperature` and `whiteBalanceTint`. An app older than this
 command treats it as `"auto"`.
 

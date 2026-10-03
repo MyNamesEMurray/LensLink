@@ -605,7 +605,10 @@
 "Calibrate" = "Kalibrieren";
 
 /* Live screen adjust tray hint: white balance on auto */
-"Auto · fill the frame with white paper and tap the eyedropper" = "Auto · Bild mit weißem Papier füllen und auf die Pipette tippen";
+"Auto · tap the eyedropper, then white paper in the picture" = "Auto · auf die Pipette tippen, dann im Bild auf weißes Papier";
+
+/* Live screen adjust tray hint: waiting for a tap on white paper to calibrate white balance */
+"Tap the white paper in the picture" = "Tippe im Bild auf das weiße Papier";
 
 /* Live screen adjust tray hint: setting set by hand; %@ = chip name */
 "Manual · tap %@ for auto" = "Manuell · für Auto auf %@ tippen";

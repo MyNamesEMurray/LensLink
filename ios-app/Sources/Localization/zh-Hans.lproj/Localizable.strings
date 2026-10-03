@@ -605,7 +605,10 @@
 "Calibrate" = "校准";
 
 /* Live screen adjust tray hint: white balance on auto */
-"Auto · fill the frame with white paper and tap the eyedropper" = "自动 · 让白纸填满画面，然后轻点吸管";
+"Auto · tap the eyedropper, then white paper in the picture" = "自动 · 轻点吸管，再轻点画面中的白纸";
+
+/* Live screen adjust tray hint: waiting for a tap on white paper to calibrate white balance */
+"Tap the white paper in the picture" = "轻点画面中的白纸";
 
 /* Live screen adjust tray hint: setting set by hand; %@ = chip name */
 "Manual · tap %@ for auto" = "手动 · 轻点“%@”恢复自动";

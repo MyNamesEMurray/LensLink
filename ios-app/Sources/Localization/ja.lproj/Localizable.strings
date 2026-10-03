@@ -605,7 +605,10 @@
 "Calibrate" = "キャリブレーション";
 
 /* Live screen adjust tray hint: white balance on auto */
-"Auto · fill the frame with white paper and tap the eyedropper" = "自動 · 白い紙で画面を埋めてスポイトをタップ";
+"Auto · tap the eyedropper, then white paper in the picture" = "自動 · スポイトをタップしてから画面内の白い紙をタップ";
+
+/* Live screen adjust tray hint: waiting for a tap on white paper to calibrate white balance */
+"Tap the white paper in the picture" = "画面内の白い紙をタップ";
 
 /* Live screen adjust tray hint: setting set by hand; %@ = chip name */
 "Manual · tap %@ for auto" = "マニュアル · %@をタップで自動";

@@ -647,11 +647,15 @@ final class Streamer: ObservableObject {
         }
     }
 
-    func calibrateWhiteBalance() {
-        guard let values = camera.grayWorldWhiteBalance() else { return }
-        whiteBalanceSetting = .locked
-        whiteBalanceTint = min(max(values.tint, -150), 150)
-        whiteBalanceTemperature = min(max(values.temperature, 2500), 8000)
+    func calibrateWhiteBalance(at devicePoint: CGPoint = CGPoint(x: 0.5, y: 0.5)) {
+        camera.calibrateWhiteBalance(at: devicePoint) { [weak self] values in
+            Task { @MainActor [weak self] in
+                guard let self, let values else { return }
+                self.whiteBalanceSetting = .locked
+                self.whiteBalanceTint = min(max(values.tint, -150), 150)
+                self.whiteBalanceTemperature = min(max(values.temperature, 2500), 8000)
+            }
+        }
     }
     enum ExposureSetting: Equatable {
         case auto
