@@ -522,6 +522,22 @@ final class FrameCompositor {
     // [maxDistance - FEATHER, maxDistance].
     constant float DEPTH_FEATHER_M = 0.15;
 
+    // Edge-aware (joint bilateral) upsampling of the low-res matte.
+    // The mask and depth map are ~15x coarser than a 4K frame, so a
+    // plain bilinear upsample draws their texel grid as stair steps
+    // and smears the person's edge over the background. Each output
+    // pixel instead averages the 3x3 nearest matte texels, weighted by
+    // distance (in matte texels) and by how close the frame's colour
+    // at that texel is to this pixel's colour, so the edge follows
+    // the real outline in the picture.
+    constant float SIGMA_SPACE = 0.9;
+    constant float SIGMA_RANGE = 0.08;
+    constant float3 RANGE_WEIGHT = float3(1.0, 2.0, 2.0); // Y, Cb, Cr
+    // Final contrast on alpha: keeps a soft edge but leaves fewer
+    // half-green fringe pixels for OBS's chroma key to choke on.
+    constant float EDGE_LO = 0.15;
+    constant float EDGE_HI = 0.85;
+
     struct Params {
         float maxDistance; // meters; <= 0 disables the depth cutoff
         float hasDepth;    // > 0.5 when the depth texture is real
@@ -529,9 +545,9 @@ final class FrameCompositor {
 
     // One thread per 2x2 luma quad (grid = chroma-plane dimensions).
     kernel void greenScreenComposite(
-        texture2d<float, access::read>   srcY    [[texture(0)]],
-        texture2d<float, access::read>   srcCbCr [[texture(1)]],
-        texture2d<float, access::sample> mask    [[texture(2)]],
+        texture2d<float, access::sample> srcY    [[texture(0)]],
+        texture2d<float, access::sample> srcCbCr [[texture(1)]],
+        texture2d<float, access::read>   mask    [[texture(2)]],
         texture2d<float, access::sample> depth   [[texture(3)]],
         texture2d<float, access::write>  outY    [[texture(4)]],
         texture2d<float, access::write>  outCbCr [[texture(5)]],
@@ -550,37 +566,75 @@ final class FrameCompositor {
         const uint lumaW = outY.get_width();
         const uint lumaH = outY.get_height();
         const float2 lumaSize = float2(lumaW, lumaH);
+        const int2 maskSize = int2(mask.get_width(), mask.get_height());
+        const float2 maskScale = float2(maskSize) / lumaSize;
+        const bool gateDepth = params.hasDepth > 0.5 && params.maxDistance > 0.0;
 
-        float alphaSum = 0.0;
-        for (uint i = 0; i < 4; ++i) {
-            const uint2 px = uint2(min(2 * gid.x + (i & 1u), lumaW - 1),
-                                   min(2 * gid.y + (i >> 1), lumaH - 1));
-            // The mask is far smaller than the frame (~256 wide): this
-            // bilinear upsample IS the edge feather.
-            const float2 uv = (float2(px) + 0.5) / lumaSize;
-            float alpha = mask.sample(bilinear, uv).r;
-
+        // The matte texels around this quad: alpha (depth gate folded
+        // in at the texel, so the cutoff edge is refined too), position
+        // and the frame's colour there.
+        const float2 quadCenter = (float2(gid * 2u) + 1.0) * maskScale - 0.5;
+        const int2 base = int2(floor(quadCenter + 0.5));
+        float lowA[9];
+        float2 lowP[9];
+        float3 lowG[9];
+        for (int k = 0; k < 9; ++k) {
+            const int2 t = clamp(base + int2(k % 3 - 1, k / 3 - 1),
+                                 int2(0), maskSize - 1);
+            const float2 tuv = (float2(t) + 0.5) / float2(maskSize);
+            float a = mask.read(uint2(t)).r;
             // Depth gate: 1 inside the cutoff, ramping to 0 at it.
             // NaN (depth holes / no reading) must NEVER classify as
             // background — every comparison against NaN is false, so
             // test isnan() FIRST and fall through to "no depth
             // opinion" (gate stays 1).
-            if (params.hasDepth > 0.5 && params.maxDistance > 0.0) {
-                const float d = depth.sample(bilinear, uv).r;
+            if (gateDepth) {
+                const float d = depth.sample(bilinear, tuv).r;
                 if (!isnan(d)) {
-                    alpha *= 1.0 - smoothstep(
+                    a *= 1.0 - smoothstep(
                         params.maxDistance - DEPTH_FEATHER_M,
                         params.maxDistance, d);
                 }
             }
+            lowA[k] = a;
+            lowP[k] = float2(t);
+            lowG[k] = float3(srcY.sample(bilinear, tuv).r,
+                             srcCbCr.sample(bilinear, tuv).rg);
+        }
 
+        const float2 cbcr = srcCbCr.read(gid).rg;
+        const float spaceK = 1.0 / (2.0 * SIGMA_SPACE * SIGMA_SPACE);
+        const float rangeK = 1.0 / (2.0 * SIGMA_RANGE * SIGMA_RANGE);
+
+        float alphaSum = 0.0;
+        for (uint i = 0; i < 4; ++i) {
+            const uint2 px = uint2(min(2 * gid.x + (i & 1u), lumaW - 1),
+                                   min(2 * gid.y + (i >> 1), lumaH - 1));
             const float y = srcY.read(px).r;
+            const float3 g = float3(y, cbcr);
+            const float2 p = (float2(px) + 0.5) * maskScale - 0.5;
+
+            float wSum = 0.0, aSum = 0.0, sSum = 0.0, sASum = 0.0;
+            for (int k = 0; k < 9; ++k) {
+                const float2 ds = p - lowP[k];
+                const float3 dg = (g - lowG[k]) * RANGE_WEIGHT;
+                const float ws = exp(-dot(ds, ds) * spaceK);
+                const float w = ws * exp(-dot(dg, dg) * rangeK);
+                wSum += w;
+                aSum += w * lowA[k];
+                sSum += ws;
+                sASum += ws * lowA[k];
+            }
+            // No neighbour looks like this pixel (a colour unlike any
+            // sampled texel): fall back to the plain spatial blend.
+            float alpha = wSum > 1e-4 ? aSum / wSum : sASum / sSum;
+            alpha = smoothstep(EDGE_LO, EDGE_HI, alpha);
+
             outY.write(float4(mix(GREEN_Y, y, alpha)), px);
             alphaSum += alpha;
         }
 
         const float alphaMean = alphaSum * 0.25;
-        const float2 cbcr = srcCbCr.read(gid).rg;
         const float2 outC = mix(float2(GREEN_CB, GREEN_CR), cbcr, alphaMean);
         outCbCr.write(float4(outC, 0.0, 0.0), gid);
     }
