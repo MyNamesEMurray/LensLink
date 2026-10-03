@@ -752,11 +752,12 @@ struct StreamingView: View {
             if let rowHint {
                 Text(rowHint)
                     .font(.caption.weight(.semibold))
+                    .multilineTextAlignment(.center)
                     .foregroundColor(Theme.textPrimary)
                     .glassPill()
                     .transition(.opacity)
                     .task(id: rowHint) {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
                         guard !Task.isCancelled else { return }
                         withAnimation { self.rowHint = nil }
                     }
@@ -918,7 +919,7 @@ struct StreamingView: View {
             touched()
             guard depth else {
                 withAnimation {
-                    rowHint = on ? L("Hold to turn off green screen")
+                    rowHint = on ? L("Green screen is on, but without depth here, so there's no Subject dial. Hold to turn it off.")
                                  : L("Hold to turn on green screen")
                 }
                 return

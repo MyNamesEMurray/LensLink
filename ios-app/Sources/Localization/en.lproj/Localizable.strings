@@ -696,8 +696,8 @@
 /* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
 "Hold to turn on green screen" = "Hold to turn on green screen";
 
-/* Live screen: hint for a tap on the lit green screen button when there is no Subject dial */
-"Hold to turn off green screen" = "Hold to turn off green screen";
+/* Live screen: hint for a tap on the lit green screen button when depth assist isn't running (this camera or format has no depth), so there is no Subject dial */
+"Green screen is on, but without depth here, so there's no Subject dial. Hold to turn it off." = "Green screen is on, but without depth here, so there's no Subject dial. Hold to turn it off.";
 
 /* VoiceOver action on the green screen button */
 "Turn on green screen" = "Turn on green screen";
