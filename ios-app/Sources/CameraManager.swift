@@ -1249,19 +1249,33 @@ final class CameraManager: NSObject {
         }
     }
 
-    func devicePoint(fromPicture point: CGPoint,
-                     completion: @escaping (CGPoint) -> Void) {
-        sessionQueue.async { [weak self] in
-            guard let output = self?.videoOutput else {
-                return completion(CGPoint(x: 0.5, y: 0.5))
-            }
-            completion(output.metadataOutputRectConverted(
-                fromOutputRect: CGRect(origin: point, size: .zero)).origin)
-        }
+    func calibrateWhiteBalance(
+        at devicePoint: CGPoint,
+        completion: @escaping
+            (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void) {
+        calibrateWhiteBalance(patch: { output in
+            let size: CGFloat = 0.04
+            return output.outputRectConverted(fromMetadataOutputRect: CGRect(
+                x: devicePoint.x - size / 2, y: devicePoint.y - size / 2,
+                width: size, height: size))
+        }, completion: completion)
     }
 
+    /// `point` is normalized in the delivered buffer, which is the
+    /// streamed picture (same orientation and mirroring).
     func calibrateWhiteBalance(
-        at devicePoint: CGPoint, rounds: Int = 3,
+        atPicture point: CGPoint,
+        completion: @escaping
+            (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void) {
+        let size: CGFloat = 0.03
+        let patch = CGRect(x: max(0, min(point.x - size / 2, 1 - size)),
+                           y: max(0, min(point.y - size / 2, 1 - size)),
+                           width: size, height: size)
+        calibrateWhiteBalance(patch: { _ in patch }, completion: completion)
+    }
+
+    private func calibrateWhiteBalance(
+        patch: @escaping (AVCaptureVideoDataOutput) -> CGRect, rounds: Int = 3,
         completion: @escaping
             (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void) {
         guard let device = activeDevice,
@@ -1270,7 +1284,7 @@ final class CameraManager: NSObject {
         var gains = device.deviceWhiteBalanceGains
         var left = rounds
         func step() {
-            sampleColor(at: devicePoint) { rgb in
+            sampleColor(patch: patch) { rgb in
                 guard let rgb else { return completion(nil) }
                 gains.redGain *= rgb.g / rgb.r
                 gains.blueGain *= rgb.g / rgb.b
@@ -1292,16 +1306,13 @@ final class CameraManager: NSObject {
     }
 
     private func sampleColor(
-        at devicePoint: CGPoint,
+        patch makePatch: @escaping (AVCaptureVideoDataOutput) -> CGRect,
         completion: @escaping ((r: Float, g: Float, b: Float)?) -> Void) {
         sessionQueue.async { [weak self] in
             guard let self, let output = self.videoOutput else {
                 return completion(nil)
             }
-            let size: CGFloat = 0.04
-            let patch = output.outputRectConverted(fromMetadataOutputRect: CGRect(
-                x: devicePoint.x - size / 2, y: devicePoint.y - size / 2,
-                width: size, height: size))
+            let patch = makePatch(output)
             self.callbackLock.lock()
             self.whiteSampleID += 1
             let id = self.whiteSampleID
