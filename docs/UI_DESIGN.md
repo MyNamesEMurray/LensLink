@@ -432,8 +432,8 @@ switching mid-stream.
 so the main screen stays short, in the same icon-tile rows as Setup.
 First group, the things that matter during a stream: **Arm remote start
 on open** (default off; see §2), **Idle view** (Standard / Clean feed / Dim screen), **Focus on
-faces** (default on), **Natural motion blur** (default on; §5), and the pushed screen **Tally light** (row value: the statuses that light it,
-"On air, In preview"), and **Remember camera settings** (default on; see
+faces** (default on), **Natural motion blur** (default on; §5), and the pushed screen **Tally light** (no row value, except `Off` when no
+status lights it), and **Remember camera settings** (default on; see
 §6.2.1). Second group, the experiments and the diagnostics: **High frame rate**
 (adds 120 / 240 fps to the Format sheet where the camera has them; off
 by default), **Allow system video effects**, **Camera diagnostics**. Pure

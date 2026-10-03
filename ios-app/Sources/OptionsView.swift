@@ -53,9 +53,10 @@ struct OptionsView: View {
                                              systemImage: "lightbulb.fill",
                                              color: Theme.tallyLive)
                             Spacer()
-                            Text(tallySummary)
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
+                            if tallyOff {
+                                Text("Off")
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
                     Toggle(isOn: $streamer.rememberCameraSettings) {
@@ -99,11 +100,8 @@ struct OptionsView: View {
 extension OptionsView {
     /// "On air, In preview" — the statuses that light the border, in
     /// priority order; "Off" when none does.
-    fileprivate var tallySummary: String {
-        let lit = tallySettings.entries
-            .filter { $0.color != TallyColor.none }
-            .map { $0.status.displayName }
-        return lit.isEmpty ? L("Off") : lit.joined(separator: ", ")
+    fileprivate var tallyOff: Bool {
+        tallySettings.entries.allSatisfy { $0.color == TallyColor.none }
     }
 }
 
