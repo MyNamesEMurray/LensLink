@@ -108,7 +108,7 @@ static const char control_page[] =
 	".row:first-child{margin-top:0}"
 	".ro{font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace;"
 	"width:48px;text-align:right;font-size:13px;flex:none}"
-	"input[type=range]{flex:1;accent-color:var(--accent);height:4px}"
+	"input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:4px}"
 	".ic{width:18px;height:18px;flex:none;color:var(--txt2)}"
 	".seg{display:inline-flex;background:rgba(255,255,255,.1);border-radius:12px;"
 	"padding:2px;flex:none}.seg button{background:none;border:0;color:var(--txt);"
