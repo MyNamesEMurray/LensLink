@@ -478,7 +478,7 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
 **The adjust tray** (`glassPanel`, radius 16, replaces the lens buttons
 and chevron; 200 ms):
 
-- **Chip row:** Zoom · Exposure · Shutter · WB · Focus (· Subject while
+- **Chip row:** Zoom · Focus · WB · Exposure · Shutter (· Subject while
   green screen runs with depth assist). Shutter needs manual exposure and
   WB needs a lockable white balance; unsupported chips aren't drawn. The
   active chip is white with black text. A chip on auto wears a small

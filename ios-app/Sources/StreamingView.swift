@@ -866,10 +866,10 @@ struct StreamingView: View {
     }
 
     private var dialTargets: [DialTarget] {
-        var targets: [DialTarget] = [.zoom, .exposure]
-        if streamer.camera.supportsManualExposure { targets.append(.shutter) }
+        var targets: [DialTarget] = [.zoom, .focus]
         if streamer.camera.supportsWhiteBalanceLock { targets.append(.whiteBalance) }
-        targets.append(.focus)
+        targets.append(.exposure)
+        if streamer.camera.supportsManualExposure { targets.append(.shutter) }
         if streamer.greenScreenDepthActive { targets.append(.subject) }
         return targets
     }
