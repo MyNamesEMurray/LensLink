@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<script src="locales.js"></script>
+</head>
+<body>
+	<sdpi-item label="__MSG_Source__">
+		<sdpi-select setting="source" datasource="sources" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Key does__">
+		<sdpi-select setting="mode" default="up">
+			<option value="up">__MSG_Step up__</option>
+			<option value="down">__MSG_Step down__</option>
+			<option value="set">__MSG_Set__</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Step__">
+		<sdpi-select setting="step" default="0.333">
+			<option value="0.333">⅓ EV</option>
+			<option value="0.5">½ EV</option>
+			<option value="1">1 EV</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Set to__">
+		<sdpi-textfield setting="value" default="0"></sdpi-textfield>
+	</sdpi-item>
+	<sdpi-item label="__MSG_OBS port__">
+		<sdpi-textfield setting="port" global placeholder="9980"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

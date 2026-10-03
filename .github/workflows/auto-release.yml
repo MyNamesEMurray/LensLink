@@ -27,6 +27,7 @@ on:
       - "obs-plugin/**"
       - "ios-app/**"
       - "installer/**"
+      - "streamdeck/**"
 
 permissions:
   contents: read

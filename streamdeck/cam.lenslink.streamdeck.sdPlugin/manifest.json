@@ -1,0 +1,332 @@
+{
+	"Name": "LensLink",
+	"Version": "0.1.0.0",
+	"Author": "Exalted Pixels",
+	"Actions": [
+		{
+			"Name": "Camera",
+			"UUID": "cam.lenslink.streamdeck.camera",
+			"Icon": "imgs/actions/camera",
+			"Tooltip": "Start or stop the camera on the phone.",
+			"PropertyInspectorPath": "ui/camera.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/camera-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Pause",
+			"UUID": "cam.lenslink.streamdeck.pause",
+			"Icon": "imgs/actions/pause",
+			"Tooltip": "Hold the picture without ending the stream.",
+			"PropertyInspectorPath": "ui/pause.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/pause-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Flip camera",
+			"UUID": "cam.lenslink.streamdeck.flip",
+			"Icon": "imgs/actions/flip",
+			"Tooltip": "Switch between the front and back camera.",
+			"PropertyInspectorPath": "ui/flip.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/flip-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Lens",
+			"UUID": "cam.lenslink.streamdeck.lens",
+			"Icon": "imgs/actions/lens",
+			"Tooltip": "Jump to one lens, or cycle through them.",
+			"PropertyInspectorPath": "ui/lens.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/lens-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Zoom",
+			"UUID": "cam.lenslink.streamdeck.zoom",
+			"Icon": "imgs/actions/zoom",
+			"Tooltip": "Key: go to a set zoom. Dial: turn to zoom, press for 1×.",
+			"PropertyInspectorPath": "ui/zoom.html",
+			"Controllers": [
+				"Keypad",
+				"Encoder"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/zoom-key",
+					"ShowTitle": false
+				}
+			],
+			"Encoder": {
+				"layout": "$B1",
+				"Icon": "imgs/actions/zoom-key",
+				"TriggerDescription": {
+					"Rotate": "Zoom",
+					"Push": "Reset to 1×"
+				}
+			}
+		},
+		{
+			"Name": "Flashlight",
+			"UUID": "cam.lenslink.streamdeck.flashlight",
+			"Icon": "imgs/actions/flashlight",
+			"Tooltip": "Turn the phone's flashlight on or off.",
+			"PropertyInspectorPath": "ui/flashlight.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/flashlight-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Lock",
+			"UUID": "cam.lenslink.streamdeck.lock",
+			"Icon": "imgs/actions/lock",
+			"Tooltip": "Lock what auto is doing right now, or hand it back to auto.",
+			"PropertyInspectorPath": "ui/lock.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/lock-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "White balance",
+			"UUID": "cam.lenslink.streamdeck.white-balance",
+			"Icon": "imgs/actions/white-balance",
+			"Tooltip": "Key: lock at a temperature or go back to auto. Dial: turn for kelvin, press for auto.",
+			"PropertyInspectorPath": "ui/white-balance.html",
+			"Controllers": [
+				"Keypad",
+				"Encoder"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/white-balance-key",
+					"ShowTitle": false
+				}
+			],
+			"Encoder": {
+				"layout": "$B1",
+				"Icon": "imgs/actions/white-balance-key",
+				"TriggerDescription": {
+					"Rotate": "Temperature",
+					"Push": "Auto"
+				}
+			}
+		},
+		{
+			"Name": "Calibrate white balance",
+			"UUID": "cam.lenslink.streamdeck.calibrate",
+			"Icon": "imgs/actions/calibrate",
+			"Tooltip": "Hold white paper or a gray card in the middle of the picture, then press.",
+			"PropertyInspectorPath": "ui/calibrate.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/calibrate-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Exposure",
+			"UUID": "cam.lenslink.streamdeck.exposure",
+			"Icon": "imgs/actions/exposure",
+			"Tooltip": "Key: step EV up or down, or set it. Dial: turn for EV, press for 0.",
+			"PropertyInspectorPath": "ui/exposure.html",
+			"Controllers": [
+				"Keypad",
+				"Encoder"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/exposure-key",
+					"ShowTitle": false
+				}
+			],
+			"Encoder": {
+				"layout": "$B1",
+				"Icon": "imgs/actions/exposure-key",
+				"TriggerDescription": {
+					"Rotate": "Exposure",
+					"Push": "Reset to 0 EV"
+				}
+			}
+		},
+		{
+			"Name": "ISO and shutter",
+			"UUID": "cam.lenslink.streamdeck.iso",
+			"Icon": "imgs/actions/iso",
+			"Tooltip": "Dial: turn for ISO or shutter, press to switch between them, tap the screen for auto exposure.",
+			"PropertyInspectorPath": "ui/iso.html",
+			"Controllers": [
+				"Encoder"
+			],
+			"SupportedInMultiActions": false,
+			"States": [
+				{
+					"Image": "imgs/actions/iso-key",
+					"ShowTitle": false
+				}
+			],
+			"Encoder": {
+				"layout": "$B1",
+				"Icon": "imgs/actions/iso-key",
+				"TriggerDescription": {
+					"Rotate": "ISO or shutter",
+					"Push": "Switch ISO / shutter",
+					"Touch": "Auto exposure"
+				}
+			}
+		},
+		{
+			"Name": "Focus",
+			"UUID": "cam.lenslink.streamdeck.focus",
+			"Icon": "imgs/actions/focus",
+			"Tooltip": "Key: auto focus, face focus or a saved position. Dial: turn to focus, press for auto.",
+			"PropertyInspectorPath": "ui/focus.html",
+			"Controllers": [
+				"Keypad",
+				"Encoder"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/focus-key",
+					"ShowTitle": false
+				}
+			],
+			"Encoder": {
+				"layout": "$B1",
+				"Icon": "imgs/actions/focus-key",
+				"TriggerDescription": {
+					"Rotate": "Focus",
+					"Push": "Auto"
+				}
+			}
+		},
+		{
+			"Name": "Green screen",
+			"UUID": "cam.lenslink.streamdeck.green-screen",
+			"Icon": "imgs/actions/green-screen",
+			"Tooltip": "Cut out the background on the phone.",
+			"PropertyInspectorPath": "ui/green-screen.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/green-screen-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Format",
+			"UUID": "cam.lenslink.streamdeck.format",
+			"Icon": "imgs/actions/format",
+			"Tooltip": "Switch resolution, frame rate and codec in one press.",
+			"PropertyInspectorPath": "ui/format.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/format-key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Microphone",
+			"UUID": "cam.lenslink.streamdeck.mic",
+			"Icon": "imgs/actions/mic",
+			"Tooltip": "Pick which phone mic feeds the source.",
+			"PropertyInspectorPath": "ui/mic.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"States": [
+				{
+					"Image": "imgs/actions/mic-key",
+					"ShowTitle": false
+				}
+			]
+		}
+	],
+	"Category": "LensLink",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Description": "Control the LensLink iPhone camera in OBS: start and stop, lenses, zoom, focus, exposure, white balance and more, with keys that show the camera's live state.",
+	"Icon": "imgs/plugin/marketplace",
+	"SDKVersion": 3,
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "24",
+		"Debug": "disabled"
+	},
+	"URL": "https://lenslink.cam/docs/stream-deck/",
+	"UUID": "cam.lenslink.streamdeck"
+}

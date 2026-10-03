@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<script src="locales.js"></script>
+</head>
+<body>
+	<sdpi-item label="__MSG_Source__">
+		<sdpi-select setting="source" datasource="sources" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Resolution__">
+		<sdpi-select setting="resolution" datasource="resolutions" hot-reload default="1080p"></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Frame rate__">
+		<sdpi-select setting="fps" datasource="frameRates" hot-reload default="30"></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Codec__">
+		<sdpi-select setting="codec" datasource="codecs" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_OBS port__">
+		<sdpi-textfield setting="port" global placeholder="9980"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

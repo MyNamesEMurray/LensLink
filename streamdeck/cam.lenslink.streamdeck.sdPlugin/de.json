@@ -1,0 +1,149 @@
+{
+	"Name": "LensLink",
+	"Description": "Steuert die LensLink-iPhone-Kamera in OBS: Starten und Stoppen, Objektive, Zoom, Fokus, Belichtung, Weißabgleich und mehr, mit Tasten, die den aktuellen Zustand der Kamera zeigen.",
+	"cam.lenslink.streamdeck.camera": {
+		"Name": "Kamera",
+		"Tooltip": "Startet oder stoppt die Kamera auf dem iPhone."
+	},
+	"cam.lenslink.streamdeck.pause": {
+		"Name": "Pausieren",
+		"Tooltip": "Hält das Bild an, ohne den Stream zu beenden."
+	},
+	"cam.lenslink.streamdeck.flip": {
+		"Name": "Kamera wechseln",
+		"Tooltip": "Wechselt zwischen Front- und Rückkamera."
+	},
+	"cam.lenslink.streamdeck.lens": {
+		"Name": "Objektiv",
+		"Tooltip": "Wechselt zu einem Objektiv oder schaltet sie durch."
+	},
+	"cam.lenslink.streamdeck.zoom": {
+		"Name": "Zoom",
+		"Tooltip": "Taste: auf einen festen Zoom. Drehregler: drehen zum Zoomen, drücken für 1×.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Zoom",
+				"Push": "Auf 1× zurück"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.flashlight": {
+		"Name": "Taschenlampe",
+		"Tooltip": "Schaltet die Taschenlampe des iPhone ein oder aus."
+	},
+	"cam.lenslink.streamdeck.lock": {
+		"Name": "Sperren",
+		"Tooltip": "Sperrt, was die Automatik gerade tut, oder gibt es an die Automatik zurück."
+	},
+	"cam.lenslink.streamdeck.white-balance": {
+		"Name": "Weißabgleich",
+		"Tooltip": "Taste: auf eine Temperatur sperren oder zurück zu Auto. Drehregler: drehen für Kelvin, drücken für Auto.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Temperatur",
+				"Push": "Auto"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.calibrate": {
+		"Name": "Weißabgleich kalibrieren",
+		"Tooltip": "Weißes Papier oder eine Graukarte in die Bildmitte halten, dann drücken."
+	},
+	"cam.lenslink.streamdeck.exposure": {
+		"Name": "Belichtung",
+		"Tooltip": "Taste: EV schrittweise ändern oder festlegen. Drehregler: drehen für EV, drücken für 0.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Belichtung",
+				"Push": "Auf 0 EV zurück"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.iso": {
+		"Name": "ISO und Verschluss",
+		"Tooltip": "Drehregler: drehen für ISO oder Verschluss, drücken zum Umschalten, Bildschirm antippen für Auto-Belichtung.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "ISO oder Verschluss",
+				"Push": "ISO / Verschluss umschalten",
+				"Touch": "Auto-Belichtung"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.focus": {
+		"Name": "Fokus",
+		"Tooltip": "Taste: Autofokus, Gesichtsfokus oder eine gespeicherte Position. Drehregler: drehen zum Fokussieren, drücken für Auto.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Fokus",
+				"Push": "Auto"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.green-screen": {
+		"Name": "Greenscreen",
+		"Tooltip": "Stellt den Hintergrund auf dem iPhone frei."
+	},
+	"cam.lenslink.streamdeck.format": {
+		"Name": "Format",
+		"Tooltip": "Wechselt Auflösung, Bildrate und Codec mit einem Druck."
+	},
+	"cam.lenslink.streamdeck.mic": {
+		"Name": "Mikrofon",
+		"Tooltip": "Wählt, welches iPhone-Mikrofon die Quelle speist."
+	},
+	"Localization": {
+		"Not connected": "Nicht verbunden",
+		"Live": "Live",
+		"Paused": "Pausiert",
+		"Armed": "Scharf geschaltet",
+		"OBS connected": "OBS verbunden",
+		"Pause": "Pausieren",
+		"Front": "Frontkamera",
+		"Back": "Rückkamera",
+		"Lens": "Objektiv",
+		"Zoom": "Zoom",
+		"On": "Ein",
+		"Off": "Aus",
+		"Locked": "Gesperrt",
+		"Auto": "Auto",
+		"White balance": "Weißabgleich",
+		"Calibrate": "Kalibrieren",
+		"Exposure": "Belichtung",
+		"Shutter": "Verschluss",
+		"Faces": "Gesichter",
+		"Focus": "Fokus",
+		"Mic": "Mikro",
+		"Source": "Quelle",
+		"First camera": "Erste Kamera",
+		"OBS port": "OBS-Port",
+		"Press": "Drücken",
+		"Start and stop": "Starten und stoppen",
+		"Start only": "Nur starten",
+		"Stop only": "Nur stoppen",
+		"Cycle through all": "Alle durchschalten",
+		"Key goes to": "Taste setzt auf",
+		"Dial step": "Drehschritt",
+		"Fine": "Fein",
+		"Normal": "Normal",
+		"Coarse": "Grob",
+		"Locks": "Sperrt",
+		"Everything": "Alles",
+		"Key sets": "Taste setzt",
+		"Temperature": "Temperatur",
+		"Kelvin": "Kelvin",
+		"Key does": "Taste macht",
+		"Step up": "Schritt hoch",
+		"Step down": "Schritt runter",
+		"Set": "Festlegen",
+		"Step": "Schritt",
+		"Set to": "Wert",
+		"Position": "Position",
+		"Cutoff": "Grenze",
+		"All": "Alle",
+		"Resolution": "Auflösung",
+		"Frame rate": "Bildrate",
+		"Codec": "Codec",
+		"Keep current": "Beibehalten"
+	}
+}

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<script src="locales.js"></script>
+</head>
+<body>
+	<sdpi-item label="__MSG_Source__">
+		<sdpi-select setting="source" datasource="sources" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Locks__">
+		<sdpi-select setting="target" default="all">
+			<option value="all">__MSG_Everything__</option>
+			<option value="exposure">__MSG_Exposure__</option>
+			<option value="focus">__MSG_Focus__</option>
+			<option value="whiteBalance">__MSG_White balance__</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_OBS port__">
+		<sdpi-textfield setting="port" global placeholder="9980"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

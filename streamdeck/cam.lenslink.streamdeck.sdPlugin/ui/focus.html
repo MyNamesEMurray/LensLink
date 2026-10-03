@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<script src="locales.js"></script>
+</head>
+<body>
+	<sdpi-item label="__MSG_Source__">
+		<sdpi-select setting="source" datasource="sources" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Key sets__">
+		<sdpi-select setting="mode" default="faces">
+			<option value="faces">__MSG_Faces__</option>
+			<option value="auto">__MSG_Auto__</option>
+			<option value="position">__MSG_Position__</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Position__">
+		<sdpi-textfield setting="position" default="0.5"></sdpi-textfield>
+	</sdpi-item>
+	<sdpi-item label="__MSG_OBS port__">
+		<sdpi-textfield setting="port" global placeholder="9980"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

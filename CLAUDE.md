@@ -14,6 +14,13 @@ Two deliverables share this repo and talk over a custom TCP wire protocol:
   captures with AVFoundation, hardware-encodes with VideoToolbox, and
   *listens* on TCP port 9979 on the device.
 
+A **Stream Deck plugin** (`streamdeck/`, TypeScript on Elgato's
+`@elgato/streamdeck` SDK) is one more client of the web panel's HTTP API
+(`/api/sources`, `/api/state`, `POST /api/control`): no protocol of its
+own. `npm run build`, `npm test` (a smoke test against a fake Stream Deck
+and a fake OBS) and `npx streamdeck validate` run in CI and in the release,
+which attaches the packed `.streamDeckPlugin`.
+
 A third, non-shipping deliverable lives in `site/`: **lenslink.cam**, the
 marketing and documentation site — a standard-library-only static
 generator published on Cloudflare Pages. It restates what the app and the
@@ -50,6 +57,8 @@ Read the matching doc before touching an area:
 | Design tokens, status vocabulary | `docs/UI_DESIGN.md` + `ios-app/Sources/DesignSystem.swift` + the inline page in `obs-plugin/src/web-control.c` |
 | Any plugin-visible or web panel string | `obs-plugin/data/locale/en-US.ini` (web panel keys are `Web.*`, also listed in `web_text_keys[]` in `web-control.c`) + the same key in every other `.ini` there |
 | Any user-visible app string | the English key in `ios-app/Sources/Localization/en.lproj/Localizable.strings` (or `BroadcastExtension/en.lproj/` for the extension) + every other `.lproj`. SwiftUI literals localize themselves; everything else goes through `L()`; never interpolate into a localized string |
+| A Stream Deck plugin string | `streamdeck/cam.lenslink.streamdeck.sdPlugin/en.json` + every other `.json` beside it (Stream Deck has no Portuguese, so six languages) |
+| A CONTROL command or STATE field the Stream Deck actions use | `streamdeck/src/plugin.ts` too |
 | A website shell string | `site/i18n/en.json` + every other `site/i18n/*.json` (edited English pages just go stale in their translations, which is expected) |
 | User-visible behaviour, a setting, or a release asset's file name | the matching page under `site/pages/` (the site documents all three surfaces; `site/README.md` has the map) |
 | A control the user can set from more than one place | app UI, web panel, and source properties all read the same cached STATE — add the field to STATE, not to one surface |
@@ -144,8 +153,8 @@ to quote.
   build there, never in one workflow. Only runs on `main` save the
   libobs/FFmpeg caches; PRs restore them. Keep job names stable, since
   branch protection requires the checks by name.
-- **Merging to `main` auto-releases** when `obs-plugin/`, `ios-app/`, or
-  `installer/` changed: patch bump by default, or the bump named by a git
+- **Merging to `main` auto-releases** when `obs-plugin/`, `ios-app/`,
+  `installer/` or `streamdeck/` changed: patch bump by default, or the bump named by a git
   trailer on its own line in any commit of the PR — `Release-Bump: minor`,
   `Release-Bump: major`, or `Release-Skip: true` (no release). Mind this
   when writing commit messages. The TestFlight upload runs only when the

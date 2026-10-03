@@ -20,6 +20,7 @@
   "docs.page.audio": "Audio and lip sync",
   "docs.page.remote_start": "Remote start",
   "docs.page.web_panel": "Browser control panel",
+  "docs.page.stream_deck": "Stream Deck",
   "docs.page.settings": "Settings reference",
   "docs.page.performance": "Latency and performance",
   "docs.page.troubleshooting": "Troubleshooting",

@@ -98,9 +98,24 @@ jobs:
           name: release-ipa
           path: ios-app/LensLink-unsigned.ipa
 
+  streamdeck:
+    name: Stream Deck plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/streamdeck
+        with:
+          version: ${{ inputs.tag_name || github.ref_name }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-streamdeck
+          path: cam.lenslink.streamdeck.streamDeckPlugin
+
   publish:
     name: Publish release
-    needs: [plugin-linux, plugin-windows, plugin-macos, ios-app]
+    needs: [plugin-linux, plugin-windows, plugin-macos, ios-app, streamdeck]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || inputs.tag_name != ''
     permissions:
@@ -165,12 +180,14 @@ jobs:
             if [ "$start" -ge 0 ]; then
               plugin_since=$(changed_since "obs-plugin installer")
               app_since=$(changed_since "ios-app")
+              deck_since=$(changed_since "streamdeck")
               echo "## What's in this release"
               echo
               echo "| Component | This release |"
               echo "|-----------|--------------|"
               row "OBS plugin" "$plugin_since" "Updated — install it below." "nothing to reinstall."
               row "iPhone / iPad app" "$app_since" "Updated. TestFlight has it now; the App Store gets it once Apple approves the update." "the app you have is current."
+              row "Stream Deck plugin" "$deck_since" "Updated — install it below." "nothing to reinstall."
               echo
             fi
             echo "SUMMARY"
@@ -198,6 +215,7 @@ jobs:
             dist/lenslink-macos-universal.zip
             dist/lenslink-linux-x86_64.tar.gz
             dist/LensLink-unsigned.ipa
+            dist/cam.lenslink.streamdeck.streamDeckPlugin
           body: |
             ${{ steps.components.outputs.summary }}
             ## Install
@@ -207,6 +225,7 @@ jobs:
             | **Windows** | [Installer](${{ env.DL }}/LensLink-installer-windows-x64.exe) | Run it (finds your OBS folder automatically), restart OBS. |
             | **macOS** | [Installer](${{ env.DL }}/LensLink-installer-macos-universal.pkg) | Right-click → **Open** (not notarized), restart OBS. |
             | **Linux** | [Plugin tarball](${{ env.DL }}/lenslink-linux-x86_64.tar.gz) | Extract into `~/.config/obs-studio/plugins/`. |
+            | **Stream Deck** | [Plugin](${{ env.DL }}/cam.lenslink.streamdeck.streamDeckPlugin) | Double-click it; Stream Deck installs it. Needs the OBS plugin's browser control panel (on by default). |
             | **iPhone / iPad** | [App Store](https://apps.apple.com/app/lenslink-camera/id6790673163) | Free, updates automatically. Want builds before App Review? [TestFlight beta](https://testflight.apple.com/join/N7Rth6m3). |
 
             Plugin builds match OBS Studio 32.x; the macOS build is universal (macOS 13+).

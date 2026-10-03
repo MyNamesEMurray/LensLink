@@ -1,0 +1,74 @@
+title: Stream Deck
+description: Control the LensLink camera from an Elgato Stream Deck: start and stop, lenses, zoom, focus, exposure and white balance on keys and dials that show the camera's live state.
+---
+<h1>Stream Deck</h1>
+<p class="lede">
+  The LensLink Stream Deck plugin puts the camera controls on hardware keys
+  and dials. Each key shows what the camera is doing right now, wherever the
+  change came from: the app, the <a href="/docs/web-panel/">browser control
+  panel</a> or another key.
+</p>
+
+<h2>Installing it</h2>
+<ol>
+  <li>Install the <a href="/docs/install/">OBS plugin</a> and keep OBS running on
+  the same computer as the Stream Deck app (Stream Deck 7.1 or later, on
+  Windows or macOS).</li>
+  <li>Download <code>cam.lenslink.streamdeck.streamDeckPlugin</code> from the
+  <a href="{{REPO}}/releases/latest">latest release</a> and double-click it.
+  Stream Deck installs it and adds a <strong>LensLink</strong> category to its
+  action list.</li>
+  <li>Drag actions onto keys or dials.</li>
+</ol>
+<p>
+  The plugin talks to the OBS plugin's control panel on
+  <code>localhost:9980</code>, which is on by default. If you turned
+  <strong>Browser control panel</strong> off in <strong>Tools → LensLink
+  Settings</strong>, turn it back on. If you changed its port, enter the same
+  number in any LensLink action's <strong>OBS port</strong> field; it applies to
+  every action.
+</p>
+
+<h2>Actions</h2>
+<table>
+  <thead><tr><th>Action</th><th>Key</th><th>Dial (Stream Deck +)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Camera</strong></td><td>Starts or stops the camera. Green <strong>Live</strong> while streaming; amber <strong>Armed</strong> when a press will start it. Can be set to start only or stop only.</td><td></td></tr>
+    <tr><td><strong>Pause</strong></td><td>Holds the picture without ending the stream; press again to resume.</td><td></td></tr>
+    <tr><td><strong>Flip camera</strong></td><td>Switches between front and back; shows which one is in use.</td><td></td></tr>
+    <tr><td><strong>Lens</strong></td><td>Switches to one lens (yellow while it is the active one), or cycles through the lenses on that side. Pressing the active lens resets its zoom.</td><td></td></tr>
+    <tr><td><strong>Zoom</strong></td><td>Goes to a set zoom on the current lens.</td><td>Turn to zoom, press for 1×.</td></tr>
+    <tr><td><strong>Flashlight</strong></td><td>Turns the flashlight on or off.</td><td></td></tr>
+    <tr><td><strong>Lock</strong></td><td>Locks what auto is doing right now, for everything or for exposure, focus or white balance alone. Press again to hand it back to auto.</td><td></td></tr>
+    <tr><td><strong>White balance</strong></td><td>Locks to a set temperature, or goes back to auto.</td><td>Turn for kelvin (2500–8000 K), press for auto.</td></tr>
+    <tr><td><strong>Calibrate white balance</strong></td><td>Hold white paper or a gray card in the middle of the picture, then press.</td><td></td></tr>
+    <tr><td><strong>Exposure</strong></td><td>Steps EV up or down, or sets it. Off while exposure is manual.</td><td>Turn for EV in ⅓ steps, press for 0.</td></tr>
+    <tr><td><strong>ISO and shutter</strong></td><td></td><td>Turn for ISO or shutter (taking exposure manual), press to switch between them, tap the screen for auto exposure.</td></tr>
+    <tr><td><strong>Focus</strong></td><td>Auto focus, face focus on or off, or a saved focus position.</td><td>Turn to focus, press for auto.</td></tr>
+    <tr><td><strong>Green screen</strong></td><td>Turns the green screen on or off, with the subject cutoff you pick.</td><td></td></tr>
+    <tr><td><strong>Format</strong></td><td>Switches resolution, frame rate and, optionally, codec in one press.</td><td></td></tr>
+    <tr><td><strong>Microphone</strong></td><td>Picks which phone mic feeds the source, while the phone mic is the source's audio.</td><td></td></tr>
+  </tbody>
+</table>
+<p>
+  Camera controls work while the camera is live, as everywhere else; until
+  then their keys are dimmed and a press shows Stream Deck's warning
+  triangle. Keys read <strong>Not connected</strong> while OBS or the phone is
+  away.
+</p>
+
+<h2>More than one phone</h2>
+<p>
+  Every action has a <strong>Source</strong> menu listing your LensLink Camera
+  sources by name. <strong>First camera</strong> (the default) follows the
+  first one OBS lists. Pick a source by name to tie a key to one phone, so a
+  two-camera setup can have a row of keys per phone. Screen sources are left
+  out, since they have no camera controls.
+</p>
+
+<h2>Without the plugin</h2>
+<p>
+  Anything that can send an HTTP request can drive the camera too, such as
+  Bitfocus Companion or a script; the commands are listed under
+  <a href="/docs/web-panel/#the-http-api">the HTTP API</a>.
+</p>

@@ -1,0 +1,149 @@
+{
+	"Name": "LensLink",
+	"Description": "Contrôlez la caméra iPhone LensLink dans OBS : démarrage et arrêt, objectifs, zoom, mise au point, exposition, balance des blancs et plus, avec des touches qui affichent l’état de la caméra en direct.",
+	"cam.lenslink.streamdeck.camera": {
+		"Name": "Caméra",
+		"Tooltip": "Démarre ou arrête la caméra sur le téléphone."
+	},
+	"cam.lenslink.streamdeck.pause": {
+		"Name": "Pause",
+		"Tooltip": "Fige l’image sans arrêter le flux."
+	},
+	"cam.lenslink.streamdeck.flip": {
+		"Name": "Changer de caméra",
+		"Tooltip": "Bascule entre la caméra avant et arrière."
+	},
+	"cam.lenslink.streamdeck.lens": {
+		"Name": "Objectif",
+		"Tooltip": "Passe à un objectif, ou de l’un à l’autre."
+	},
+	"cam.lenslink.streamdeck.zoom": {
+		"Name": "Zoom",
+		"Tooltip": "Touche : aller à un zoom fixe. Bouton : tourner pour zoomer, appuyer pour 1×.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Zoom",
+				"Push": "Revenir à 1×"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.flashlight": {
+		"Name": "Lampe torche",
+		"Tooltip": "Allume ou éteint la lampe torche du téléphone."
+	},
+	"cam.lenslink.streamdeck.lock": {
+		"Name": "Verrouiller",
+		"Tooltip": "Verrouille ce que fait l’automatique en ce moment, ou le lui rend."
+	},
+	"cam.lenslink.streamdeck.white-balance": {
+		"Name": "Balance des blancs",
+		"Tooltip": "Touche : verrouiller à une température ou revenir en auto. Bouton : tourner pour les kelvins, appuyer pour auto.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Température",
+				"Push": "Auto"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.calibrate": {
+		"Name": "Calibrer la balance des blancs",
+		"Tooltip": "Tenez une feuille blanche ou une carte grise au centre de l’image, puis appuyez."
+	},
+	"cam.lenslink.streamdeck.exposure": {
+		"Name": "Exposition",
+		"Tooltip": "Touche : monter ou baisser l’EV, ou le régler. Bouton : tourner pour l’EV, appuyer pour 0.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Exposition",
+				"Push": "Revenir à 0 EV"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.iso": {
+		"Name": "ISO et obturateur",
+		"Tooltip": "Bouton : tourner pour l’ISO ou l’obturateur, appuyer pour passer de l’un à l’autre, toucher l’écran pour l’exposition auto.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "ISO ou obturateur",
+				"Push": "Basculer ISO / obturateur",
+				"Touch": "Exposition auto"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.focus": {
+		"Name": "Mise au point",
+		"Tooltip": "Touche : MAP auto, sur les visages ou à une position enregistrée. Bouton : tourner pour faire la MAP, appuyer pour auto.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Mise au point",
+				"Push": "Auto"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.green-screen": {
+		"Name": "Écran vert",
+		"Tooltip": "Détoure l’arrière-plan sur le téléphone."
+	},
+	"cam.lenslink.streamdeck.format": {
+		"Name": "Format",
+		"Tooltip": "Change la résolution, la fréquence d’images et le codec d’un seul appui."
+	},
+	"cam.lenslink.streamdeck.mic": {
+		"Name": "Microphone",
+		"Tooltip": "Choisit le micro du téléphone qui alimente la source."
+	},
+	"Localization": {
+		"Not connected": "Non connecté",
+		"Live": "En direct",
+		"Paused": "En pause",
+		"Armed": "Armé",
+		"OBS connected": "OBS connecté",
+		"Pause": "Pause",
+		"Front": "Avant",
+		"Back": "Arrière",
+		"Lens": "Objectif",
+		"Zoom": "Zoom",
+		"On": "Activé",
+		"Off": "Désactivé",
+		"Locked": "Verrouillé",
+		"Auto": "Auto",
+		"White balance": "Balance des blancs",
+		"Calibrate": "Calibrer",
+		"Exposure": "Exposition",
+		"Shutter": "Obturateur",
+		"Faces": "Visages",
+		"Focus": "MAP",
+		"Mic": "Micro",
+		"Source": "Source",
+		"First camera": "Première caméra",
+		"OBS port": "Port OBS",
+		"Press": "Appui",
+		"Start and stop": "Démarrer et arrêter",
+		"Start only": "Démarrer seulement",
+		"Stop only": "Arrêter seulement",
+		"Cycle through all": "Passer de l’un à l’autre",
+		"Key goes to": "La touche va à",
+		"Dial step": "Pas du bouton",
+		"Fine": "Fin",
+		"Normal": "Normal",
+		"Coarse": "Grossier",
+		"Locks": "Verrouille",
+		"Everything": "Tout",
+		"Key sets": "La touche règle",
+		"Temperature": "Température",
+		"Kelvin": "Kelvin",
+		"Key does": "La touche fait",
+		"Step up": "Augmenter d’un cran",
+		"Step down": "Baisser d’un cran",
+		"Set": "Régler",
+		"Step": "Pas",
+		"Set to": "Valeur",
+		"Position": "Position",
+		"Cutoff": "Limite",
+		"All": "Tout",
+		"Resolution": "Résolution",
+		"Frame rate": "Fréquence d’images",
+		"Codec": "Codec",
+		"Keep current": "Garder l’actuel"
+	}
+}

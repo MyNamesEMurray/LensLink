@@ -1,0 +1,149 @@
+{
+	"Name": "LensLink",
+	"Description": "在 OBS 中控制 LensLink iPhone 摄像头：启动和停止、镜头、变焦、对焦、曝光、白平衡等，按键实时显示摄像头状态。",
+	"cam.lenslink.streamdeck.camera": {
+		"Name": "摄像头",
+		"Tooltip": "启动或停止手机上的摄像头。"
+	},
+	"cam.lenslink.streamdeck.pause": {
+		"Name": "暂停",
+		"Tooltip": "定格画面，不结束串流。"
+	},
+	"cam.lenslink.streamdeck.flip": {
+		"Name": "切换摄像头",
+		"Tooltip": "在前置和后置摄像头之间切换。"
+	},
+	"cam.lenslink.streamdeck.lens": {
+		"Name": "镜头",
+		"Tooltip": "切换到指定镜头，或依次切换。"
+	},
+	"cam.lenslink.streamdeck.zoom": {
+		"Name": "变焦",
+		"Tooltip": "按键：变焦到设定值。旋钮：旋转变焦，按下回到 1×。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "变焦",
+				"Push": "回到 1×"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.flashlight": {
+		"Name": "手电筒",
+		"Tooltip": "打开或关闭手机的手电筒。"
+	},
+	"cam.lenslink.streamdeck.lock": {
+		"Name": "锁定",
+		"Tooltip": "锁定自动模式当前的数值，或交还给自动模式。"
+	},
+	"cam.lenslink.streamdeck.white-balance": {
+		"Name": "白平衡",
+		"Tooltip": "按键：锁定到某个色温或恢复自动。旋钮：旋转调整色温，按下恢复自动。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "色温",
+				"Push": "自动"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.calibrate": {
+		"Name": "校准白平衡",
+		"Tooltip": "将白纸或灰卡放在画面中央，然后按下。"
+	},
+	"cam.lenslink.streamdeck.exposure": {
+		"Name": "曝光",
+		"Tooltip": "按键：增减或设定 EV。旋钮：旋转调整 EV，按下归零。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "曝光",
+				"Push": "回到 0 EV"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.iso": {
+		"Name": "ISO 和快门",
+		"Tooltip": "旋钮：旋转调整 ISO 或快门，按下切换，轻点屏幕恢复自动曝光。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "ISO 或快门",
+				"Push": "切换 ISO / 快门",
+				"Touch": "自动曝光"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.focus": {
+		"Name": "对焦",
+		"Tooltip": "按键：自动对焦、人脸对焦或保存的位置。旋钮：旋转对焦，按下恢复自动。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "对焦",
+				"Push": "自动"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.green-screen": {
+		"Name": "绿幕",
+		"Tooltip": "在手机上抠除背景。"
+	},
+	"cam.lenslink.streamdeck.format": {
+		"Name": "格式",
+		"Tooltip": "一键切换分辨率、帧率和编码格式。"
+	},
+	"cam.lenslink.streamdeck.mic": {
+		"Name": "麦克风",
+		"Tooltip": "选择为来源提供音频的手机麦克风。"
+	},
+	"Localization": {
+		"Not connected": "未连接",
+		"Live": "直播中",
+		"Paused": "已暂停",
+		"Armed": "远程启动已开启",
+		"OBS connected": "OBS 已连接",
+		"Pause": "暂停",
+		"Front": "前置",
+		"Back": "后置",
+		"Lens": "镜头",
+		"Zoom": "变焦",
+		"On": "开启",
+		"Off": "关闭",
+		"Locked": "已锁定",
+		"Auto": "自动",
+		"White balance": "白平衡",
+		"Calibrate": "校准",
+		"Exposure": "曝光",
+		"Shutter": "快门",
+		"Faces": "人脸",
+		"Focus": "对焦",
+		"Mic": "麦克风",
+		"Source": "来源",
+		"First camera": "第一个摄像头",
+		"OBS port": "OBS 端口",
+		"Press": "按下时",
+		"Start and stop": "启动和停止",
+		"Start only": "仅启动",
+		"Stop only": "仅停止",
+		"Cycle through all": "依次切换",
+		"Key goes to": "按键设为",
+		"Dial step": "旋钮步长",
+		"Fine": "精细",
+		"Normal": "标准",
+		"Coarse": "粗略",
+		"Locks": "锁定对象",
+		"Everything": "全部",
+		"Key sets": "按键设置",
+		"Temperature": "色温",
+		"Kelvin": "开尔文",
+		"Key does": "按键操作",
+		"Step up": "增加一档",
+		"Step down": "减少一档",
+		"Set": "设为",
+		"Step": "步长",
+		"Set to": "设定值",
+		"Position": "位置",
+		"Cutoff": "截止距离",
+		"All": "全部",
+		"Resolution": "分辨率",
+		"Frame rate": "帧率",
+		"Codec": "编码格式",
+		"Keep current": "保持当前"
+	}
+}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<script src="locales.js"></script>
+</head>
+<body>
+	<sdpi-item label="__MSG_Source__">
+		<sdpi-select setting="source" datasource="sources" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Press__">
+		<sdpi-select setting="press" default="toggle">
+			<option value="toggle">__MSG_Start and stop__</option>
+			<option value="start">__MSG_Start only__</option>
+			<option value="stop">__MSG_Stop only__</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_OBS port__">
+		<sdpi-textfield setting="port" global placeholder="9980"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>
