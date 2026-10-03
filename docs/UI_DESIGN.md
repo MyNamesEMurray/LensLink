@@ -430,11 +430,13 @@ switching mid-stream.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short, in the same icon-tile rows as Setup.
-First group, the things that matter during a stream: **Arm remote start
-on open** (default off; see §2), **Idle view** (Standard / Clean feed / Dim screen), **Focus on
-faces** (default on), **Natural motion blur** (default on; §5), and the pushed screen **Tally light** (no row value, except `Off` when no
-status lights it), and **Remember camera settings** (default on; see
-§6.2.1). Second group, the experiments and the diagnostics: **High frame rate**
+Four headed groups, by what each row acts on. **Camera**: **Focus on
+faces** (default on), **Natural motion blur** (default on; §5),
+**Remember camera settings** (default on; see §6.2.1). **Live screen**:
+**Idle view** (Standard / Clean feed / Dim screen) and the pushed screen
+**Tally light** (no row value, except `Off` when no status lights it).
+**Remote start**: **Arm remote start on open** (default off; see §2).
+**Advanced**, the experiments and the diagnostics: **High frame rate**
 (adds 120 / 240 fps to the Format sheet where the camera has them; off
 by default), **Allow system video effects**, **Camera diagnostics**. Pure
 controls, no footers: every explanation lives in the Documentation screen (§3), which

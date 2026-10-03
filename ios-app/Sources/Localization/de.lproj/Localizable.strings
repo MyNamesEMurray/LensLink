@@ -716,4 +716,5 @@
 /* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
 "Depth at %@ fps" = "Tiefe bei %@ fps";
 
-
+/* Options sheet: header over the experiments and diagnostics */
+"Advanced" = "Erweitert";
