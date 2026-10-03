@@ -335,6 +335,10 @@ final class Streamer: ObservableObject {
         }
         greenScreenDistance.value = Float(greenScreenMaxDistance)
         greenScreenDepthActive = compositor != nil && camera.depthAssistActive
+        greenScreenAutoCutoff = 0
+        compositor?.onAutoCutoff = { [weak self] metres in
+            Task { @MainActor in self?.greenScreenAutoCutoff = Double(metres) }
+        }
         if let compositor {
             camera.onSampleBuffer = { [weak encoder, compositor,
                                        still = pausedStill,
@@ -448,7 +452,8 @@ final class Streamer: ObservableObject {
     }
     /// Depth-assisted max subject distance in metres: anything farther
     /// is background even where the person mask disagrees. 0 = no
-    /// cutoff ("All"); otherwise the slider's 0.5–5.0 range. A live
+    /// cutoff ("All"), `autoSubjectDistance` (-1) = Auto, which keeps
+    /// the cutoff just behind the person; otherwise 0.5–5.0. A live
     /// change only updates the compositor's shader parameter (via
     /// `greenScreenDistance`, on the capture queue) — no reconfigure.
     @Published var greenScreenMaxDistance: Double {
@@ -464,6 +469,10 @@ final class Streamer: ObservableObject {
     /// lens with a depth-capable format). The Live screen's Subject
     /// distance row keys off this; segmentation-only streams hide it.
     @Published private(set) var greenScreenDepthActive = false
+    static let autoSubjectDistance = -1.0
+    /// Where Auto has put the cutoff, in metres; 0 until it has measured
+    /// someone.
+    @Published private(set) var greenScreenAutoCutoff = 0.0
     /// The colour pipeline the next capture/encode will use — the single
     /// source of truth every configure/encoder/config-send site reads.
     var activeColor: StreamColor { color(for: resolution, fps: fps) }
@@ -982,7 +991,7 @@ final class Streamer: ObservableObject {
             if camera.depthAssistActive {
                 state["greenScreenDepth"] = true
             }
-            if greenScreenMaxDistance > 0 {
+            if greenScreenMaxDistance != 0 {
                 state["greenScreenMaxDistance"] = greenScreenMaxDistance
             }
         }
@@ -1353,12 +1362,15 @@ final class Streamer: ObservableObject {
         // one visible toggle away.
         greenScreenEnabled = resolvedColor == .sdr
             && defaults.bool(forKey: "greenScreen")
-        // Out-of-range persisted cutoffs (an edited plist) reset to
-        // "no cutoff" rather than clamping to an edge the user never
-        // chose.
-        let storedDistance = defaults.double(forKey: "greenScreenMaxDistance")
+        // Auto until the user picks otherwise. Out-of-range persisted
+        // cutoffs (an edited plist) reset to "no cutoff" rather than
+        // clamping to an edge the user never chose.
+        let storedDistance = defaults.object(forKey: "greenScreenMaxDistance")
+            as? Double ?? Streamer.autoSubjectDistance
         greenScreenMaxDistance =
-            (0.5...5.0).contains(storedDistance) ? storedDistance : 0
+            (0.5...5.0).contains(storedDistance)
+                || storedDistance == Streamer.autoSubjectDistance
+                ? storedDistance : 0
         idleAppearance = Streamer.storedIdleAppearance(defaults)
         allowVideoEffects = defaults.bool(forKey: "allowVideoEffects")
         sendAudioReference = defaults.bool(forKey: "sendAudioReference")
@@ -1730,16 +1742,16 @@ final class Streamer: ObservableObject {
         case "green_screen":
             // Either field may arrive alone (docs/PROTOCOL.md §7). The
             // toggle goes through the didSet chain (SDR forcing + live
-            // reconfigure); the cutoff clamps to 0 (no cutoff) or the
-            // slider's 0.5–5.0 m. Screen-mirror connections never reach
+            // reconfigure); the cutoff is Auto when negative, 0 for no
+            // cutoff, else clamped to 0.5–5.0 m. Screen-mirror connections never reach
             // here — the broadcast extension runs its own process
             // without a Streamer.
             if let on = command["on"] as? Bool, on != greenScreenEnabled {
                 greenScreenEnabled = on
             }
             if let distance = (command["maxDistance"] as? NSNumber)?.doubleValue {
-                greenScreenMaxDistance =
-                    distance <= 0 ? 0 : min(max(distance, 0.5), 5.0)
+                greenScreenMaxDistance = distance < 0 ? Self.autoSubjectDistance
+                    : distance == 0 ? 0 : min(max(distance, 0.5), 5.0)
             }
         default:
             break

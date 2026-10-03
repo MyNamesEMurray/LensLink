@@ -267,11 +267,14 @@
 /* Documentation → Camera & picture, Green screen section (Markdown: keep the ** markers) */
 "**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**グリーンバック**は、映像がスマートフォンから送り出される前に、あなた以外のすべてを緑一色で塗りつぶします。オンにするとカラーは標準になります。OBSの**LensLink Camera**ソースは、緑を抜く調整済みのフィルタを追加します。追加は一度だけなので、OBSで削除したり調整し直したりした結果はそのまま保たれます。";
 
+/* Documentation → Camera & picture, Green screen section: switching it while live (Markdown: keep the ** markers) */
+"Mid-stream, **hold** the green screen button beside the lens buttons to turn it on or off; it lights up yellow while it's on. Switching restarts the camera for a moment." = "配信中は、レンズボタンの横にあるグリーンバックボタンを**長押し**するとオン・オフを切り替えられます。オンの間は黄色に点灯します。切り替えるとカメラが一瞬再起動します。";
+
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects." = "**深度アシスト**は、実際の深度情報を使って切り抜きを鮮明にします。Face ID搭載機種では前面カメラ、Pro（LiDAR搭載）機種では背面のメインレンズが対象です。そのほかのレンズでは形状検出だけを使い、フレーム内の人物は全員残ります。センターフレームなどのシステムのビデオエフェクトもオフになります。";
 
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
-"**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "**被写体**は、深度アシストの動作中にライブ画面の調整トレイに表示されます。ダイヤルで設定した距離より奥にあるものはすべて背景になるので、背後を通り過ぎる人を消すことができます。被写体のチップをもう一度タップすると、**すべて**（制限なし）に戻ります。";
+"**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about half a metre behind you. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**被写体**は深度アシストの動作中に使えます。スマートフォンからカットオフより遠いものはすべて背景になるので、背後を通り過ぎる人を消すことができます。最初は**自動**で、カットオフを常にあなたの約50cm後ろに保ちます。レンズボタンの横にある点灯中のグリーンバックボタンをタップするとダイヤルが開きます。ドラッグして距離を設定するか、5mより先で**すべて**（制限なし）にし、もう一度ボタンをタップすると自動に戻ります。";
 
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "深度アシスト";
@@ -283,19 +286,19 @@
 "Live screen" = "ライブ画面";
 
 /* Documentation → Using the camera, Lenses & zoom section (Markdown: keep the ** markers) */
-"The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "レンズボタン（**.5**、**1×**、**2**）はカメラアプリと同じようにカメラを切り替えます。各レンズの範囲内ではピンチでズームします。アクティブなレンズボタンをもう一度タップすると、ズームがリセットされます。前面カメラが2つあるデバイスでは、前面カメラにも同じボタンが表示されます。";
+"The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens, or tap the active one for a zoom dial above the buttons and slide along it; the other lenses stay a tap away. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "レンズボタン（**.5**、**1×**、**2**）は、カメラアプリと同じようにカメラを切り替えます。レンズ内でズームするにはピンチするか、選択中のレンズをタップしてボタンの上に表示されるズームダイヤルをスライドします。ほかのレンズもタップひとつで選べます。選択中のレンズをもう一度タップするとズームがリセットされます。前面カメラが2つあるデバイスでは、前面カメラにも同じボタンが表示されます。";
 
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "レンズとズーム";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and set Exposure to ISO in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "映像を**タップ**すると、その位置にフォーカスと露出を合わせます。黄色の四角形が位置を示し、シーンが変わるまでその位置を保ってから自動に戻ります。映像を**長押し**すると、フォーカスと露出を画面内のその位置に固定します（AE/AFロック）。iPhoneをどこに向けても、その位置に映るものに合わせてフォーカスと露出を調整し続け、映像かピントのチップをタップするまで四角形が残ります。フォーカスと露出を固定値にしたいときは、トレイでピントをロックし、露出をISOにしてください。映像のどこでも上下に**ドラッグ**すると、明るさを調整できます（露出が自動のときの露出補正）。";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and take ISO manual in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "映像を**タップ**すると、その位置にフォーカスと露出を合わせます。黄色の四角形が位置を示し、シーンが変わるまでその位置を保ってから自動に戻ります。映像を**長押し**すると、フォーカスと露出を画面内のその位置に固定します（AE/AFロック）。iPhoneをどこに向けても、その位置に映るものに合わせてフォーカスと露出を調整し続け、映像かピントのチップをタップするまで四角形が残ります。フォーカスと露出を固定値にしたいときは、トレイでピントをロックし、ISOをマニュアルにしてください。映像のどこでも上下に**ドラッグ**すると、明るさを調整できます（露出が自動のときの露出補正）。";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "フォーカスと露出";
 
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
-"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**シェブロン**をタップすると調整トレイが開きます。ダイヤルが1つと、そのダイヤルで操作できる項目ごとのチップが並びます。ズーム、ピント、WB、露出、SS（シャッタースピード）、そして深度アシスト付きのグリーンバックの動作中は被写体です。チップに黄色の**A**が付いていれば、その設定は自動です。ダイヤルをドラッグするとマニュアルになり、選択中のチップをもう一度タップすると自動に戻ります。露出が自動のときは露出補正のダイヤルです。SSをドラッグすると露出がマニュアルになり、露出のチップはISOに変わります。フラッシュライトとカメラの切り替えもトレイにあります。";
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Focus, WB, EV, ISO and Shutter. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. EV is the brightness bias while exposure is on auto; drag ISO or Shutter to take exposure manual. EV, ISO and Shutter click between the usual stops. The buttons under the dial stay in the same place on every chip, Flashlight and Flip included." = "**シェブロン**をタップすると調整トレイが開きます。ダイヤルが1つと、そのダイヤルで操作できる項目ごとのチップが並びます。ピント、WB、EV、ISO、SS（シャッタースピード）です。チップに黄色の**A**が付いていれば、その設定は自動です。ダイヤルをドラッグするとマニュアルになり、選択中のチップをもう一度タップすると自動に戻ります。露出が自動のときEVは明るさの補正です。ISOかSSをドラッグすると露出がマニュアルになります。EV、ISO、SSは一般的な段階ごとに切り替わります。ダイヤルの下のボタンは、フラッシュライトとカメラの切り替えも含め、どのチップでも同じ位置にあります。";
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "トレイ下段の**ロック**をタップすると、選択中の設定を自動が今使っている値で固定します。もう一度タップすると自動に戻ります。長押しすると、すべての設定をまとめてロックまたは解除します。SSのチップでは、絞りのボタンで**自然なモーションブラー**をオン/オフできます。自動露出でシャッター速度をフレーム間隔の半分以上の速さ（30fpsで1/60）に保ち、暗い場所では代わりにISOを上げます。";
@@ -550,9 +553,6 @@
 /* Voice Control alias of the Natural motion blur button */
 "180 degree rule" = "180度ルール";
 
-/* Adjust tray mode line on the Shutter chip while auto exposure follows the 180° shutter rule */
-"Auto · 180° rule · drag to set by hand" = "自動 · 180°ルール · ドラッグで手動設定";
-
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "フラッシュライト";
 
@@ -583,8 +583,6 @@
 /* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
 "%@, manual" = "%@、マニュアル";
 
-/* Live screen chip: zoom */
-"Zoom" = "ズーム";
 
 /* Live screen chip: exposure */
 "Exposure" = "露出";
@@ -601,41 +599,14 @@
 /* Live screen chip: green screen subject distance */
 "Subject" = "被写体";
 
-/* Live screen adjust tray hint */
-"Pinch the picture to zoom" = "映像をピンチしてズーム";
-
-/* Live screen adjust tray hint: exposure on auto */
-"Auto · drag the picture up or down" = "自動 · 映像を上下にドラッグ";
-
-/* Live screen adjust tray hint: focus on auto with face tracking */
-"Auto · faces first · hold the picture to lock" = "自動 · 顔を優先 · 映像を長押しでロック";
-
-/* Live screen adjust tray hint: focus on auto */
-"Auto · tap the picture · hold to lock" = "自動 · 映像をタップ · 長押しでロック";
-
-/* Live screen adjust tray hint: a subject distance cutoff is set (Subject = the chip name) */
-"Cutoff · tap Subject for all" = "カットオフ · 被写体をタップで「すべて」";
-
-/* Live screen adjust tray hint: no subject distance cutoff */
-"All · drag to set a cutoff" = "すべて · ドラッグでカットオフを設定";
-
-/* Live screen adjust tray hint: setting on auto */
-"Auto · drag to set by hand" = "自動 · ドラッグでマニュアル設定";
-
 /* Live screen adjust tray button: lock white balance to what the camera sees (white paper) */
 "Calibrate white balance" = "ホワイトバランスをキャリブレーション";
 
 /* Voice Control name for the white balance calibration button */
 "Calibrate" = "キャリブレーション";
 
-/* Live screen adjust tray hint: white balance on auto */
-"Auto · tap the eyedropper, then white paper in the picture" = "自動 · スポイトをタップしてから画面内の白い紙をタップ";
-
 /* Live screen adjust tray hint: waiting for a tap on white paper to calibrate white balance */
 "Tap the white paper in the picture" = "画面内の白い紙をタップ";
-
-/* Live screen adjust tray hint: setting set by hand; %@ = chip name */
-"Manual · tap %@ for auto" = "マニュアル · %@をタップで自動";
 
 /* Live screen dial readout: the setting is automatic */
 "Auto" = "自動";
@@ -706,3 +677,15 @@
 
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "%1$@エンコーダを使用できません（%2$lld）";
+
+/* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
+"Hold to turn on green screen" = "長押しでグリーンバックをオン";
+
+/* Live screen: hint for a tap on the lit green screen button when there is no Subject dial */
+"Hold to turn off green screen" = "長押しでグリーンバックをオフ";
+
+/* VoiceOver action on the green screen button */
+"Turn on green screen" = "グリーンバックをオン";
+
+/* VoiceOver action on the lit green screen button */
+"Turn off green screen" = "グリーンバックをオフ";

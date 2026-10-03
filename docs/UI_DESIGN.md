@@ -293,13 +293,13 @@ surfaces.
 
 | Control     | Icon(s)                                   | Pattern |
 |-------------|-------------------------------------------|---------|
-| Zoom        | web: `minus.magnifyingglass` / `plus.magnifyingglass`; app: the **Zoom** chip and the lens buttons | Slider 1×…max, readout `N.N×`. On the phone, pinch is the primary control and the lens buttons (`.5` · `1×` · `2`, the Camera app's row) switch physical lenses |
-| Exposure    | web: `sun.min` / `sun.max`; app: the **Exposure** chip, or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
+| Zoom        | web: `minus.magnifyingglass` / `plus.magnifyingglass`; app: the lens row | Slider 1×…max, readout `N.N×`. On the phone, pinch or slide across the lens row (the Camera app's zoom dial); the lens buttons (`.5` · `1×` · `2`) switch physical lenses |
+| Exposure    | web: `sun.min` / `sun.max`; app: the **EV** chip, or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
 | Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
-| Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): auto exposure keeps the shutter at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the web panel's button beside AE / Manual (hidden in manual) |
+| Exposure mode | web: segmented **AE / Manual**; app: the **ISO** and **Shutter** chips | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging ISO or Shutter takes exposure manual and EV greys out; tapping either active chip returns to auto. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): auto exposure keeps the shutter at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the web panel's button beside AE / Manual (hidden in manual) |
 | White balance | web: segmented **AWB / Lock / Calibrate**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). **Calibrate** locks to white paper at the picture's centre (web) or a tapped spot (app), temperature and tint. Hidden if unsupported |
-| Lock (app) | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (ISO and Shutter are one lock; on Zoom or Subject, a tap does nothing). Long press = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
-| Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
+| Lock (app) | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (EV, ISO and Shutter are one lock). Long press = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
+| Flashlight  | `bolt.fill` (toggle; hidden on the web, dimmed in the app, if unavailable) | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
 | Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one resets its zoom |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
@@ -307,7 +307,7 @@ surfaces.
 | Idle (app)  | `moon.fill` (Dim screen) / `eye.slash` (Clean feed) | App-only, an item in the status pill's menu; engages the chosen idle view now instead of waiting out the 10 s fuse. Absent in Standard |
 | Pulse (app) | `waveform.path`                            | App-only, in Options → Tally light: one glyph, `accent` when that status pulses and secondary when steady — the active-chip language, not a swapped icon |
 | Stats (app) | `gauge`, checked while on                  | App-only, a toggle in the status pill's menu (the menu's own checkmark, so VoiceOver hears the state); shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
-| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen; while live **with depth assist**, a subject-distance control (0.5–5.0 m, readout `2.5 m` monospaced) appears: the **Subject** chip in the app's tray, a slider row on the web panel. Dragging always sets a real cutoff — full-left = tightest (0.5 m); **"All" (no cutoff)** is tapping the active Subject chip in the app and tapping the readout on the web, and while "All" the thumb parks at the far (5.0) end |
+| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen, or while live by a long press on the app's lens-row button or the web panel's chip. While live **with depth assist**, a subject-distance control appears: the app's **Subject dial** (a tap on the lit button) and a slider row on the web panel. Both run 0.5–5.0 m, then **All** (no cutoff) past the far end; **Auto** (the default) keeps the cutoff about half a metre behind the person, and is a second tap on the app's button or a click on the web readout. Readout `Auto · 1.8 m` (app) / `Auto`, `2.5 m`, `All`, monospaced |
 
 ### The app icon (three appearances)
 
@@ -447,15 +447,36 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
 - **Notice row:** one row under the status bar for whatever needs saying
   — today the lip-sync readout. Nothing is drawn when there is nothing
   to say; never two pills stacked.
-- **Lens buttons** (bottom centre, as in the Camera app): one round
-  button per lens on the selected side, labelled with its magnification
-  relative to Main (`.5`, `2`, `3`); front lenses are measured against
-  the regular front camera instead (an iPad Pro's front ultra wide reads
-  about `.7`). The active one is larger, in `cameraYellow`, carrying the
-  live zoom (`1×`, `2.4×`). Tapping another switches the physical lens;
-  tapping the active one returns it to its own zoom (`1×` of that lens).
-  Hidden when the selected side has only one camera.
-- **Chevron** (`chevron.up` in a glass capsule) under the lens buttons
+- **Lens row** (bottom centre, as in the Camera app, above the tray
+  whether it is open or closed): one round button per lens on the
+  selected side, labelled with its magnification relative to Main (`.5`,
+  `2`, `3`); front lenses are measured against the regular front camera
+  instead (an iPad Pro's front ultra wide reads about `.7`). The active
+  one is larger, in `cameraYellow`, carrying the live zoom (`1×`,
+  `2.4×`). Tapping another switches the physical lens; tapping the active
+  one brings up the zoom dial, and tapping it again returns the lens to
+  its own zoom (`1×` of that lens). A side with one camera still shows
+  its single button.
+  - **Zoom dial:** tapping the active lens button slides a ruler up
+    above the row (a second tap resets the zoom); sliding sideways across
+    it drives the zoom. The ruler sits under a fixed `cameraYellow` line, log-scaled with
+    the magnifications marked and a selection click on each whole one.
+    The buttons stay put, the active one carrying the live zoom with the
+    other lenses either side, still a tap away. It tucks away 2 s after
+    the last touch (VoiceOver adjusts the active lens button instead, and
+    its tap resets at once).
+  - **Green screen button** (`person.fill.viewfinder`, after the lens
+    buttons, a small gap apart): always there; solid `cameraYellow` with
+    a black glyph while green screen is on. Only a **long press** turns
+    green screen on or off (a switch restarts the camera, so a stray tap
+    must not); a tap says so in a passing pill. While depth assist runs,
+    a tap brings up the **Subject dial** instead: a readout pill over the
+    same ruler, in metres (0.5 to 5 m, then **All**, no cutoff), and a
+    second tap on the button hands the cutoff back to **Auto**, which keeps it about
+    half a metre behind the person. The button wears the **A** badge
+    while the cutoff is on Auto; the readout is `Auto · 1.8 m`, `2.5 m`
+    or `All`.
+- **Chevron** (`chevron.up` in a glass capsule) under the lens row
   opens the tray.
 - **Gestures:** pinch = zoom within the lens; **tap** = focus/expose at
   the point, marked by the Camera app's square — a 72 pt `cameraYellow`
@@ -475,30 +496,37 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   while the finger is down, inert in manual exposure). With those, the
   tray stays closed unless the operator means it.
 
-**The adjust tray** (`glassPanel`, radius 16, replaces the lens buttons
-and chevron; 200 ms):
+**The adjust tray** (`glassPanel`, radius 16, replaces the chevron
+under the lens row; 200 ms):
 
-- **Chip row:** Zoom · Focus · WB · Exposure · Shutter (· Subject while
-  green screen runs with depth assist). Shutter needs manual exposure and
-  WB needs a lockable white balance; unsupported chips aren't drawn. The
-  active chip is white with black text. A chip on auto wears a small
-  `cameraYellow` **A** badge at its top-right corner (Zoom has none — it
-  has no auto).
+- **Chip row:** Focus · WB · EV · ISO · Shutter. ISO and Shutter need
+  manual exposure and WB needs a lockable white balance; unsupported
+  chips aren't drawn. The active chip is white with black text. A chip on
+  auto wears a small `cameraYellow` **A** badge at its top-right corner
+  (EV has none: it is the auto-exposure bias).
 - **One dial:** a `cameraYellow` monospaced readout (`+0.7 EV`, `ISO 200`,
-  `1/125`, `5600 K`, `0.45`, `2.5 m` / `All`) over a native slider, driving
-  whatever the active chip names. Ranges and scales are the web panel's
-  (shutter log-scale, subject 0.5–5.0 m).
+  `1/125`, `5600 K`, `0.45`) over a native slider, driving whatever the
+  active chip names. EV (third stops), ISO (third stops) and Shutter (the
+  usual speeds, flicker-safe and 180° picks included) **click between
+  stops**, with a tick under the track for each stop and a selection
+  haptic on each; Focus and WB are smooth, and WB carries small light
+  sources under its track (bulb 2800 K, office light 4000 K, sun 5500 K,
+  cloud 6500 K, shade 7500 K). No caption: the readout and the A badge
+  say the mode.
 - **Auto ↔ manual rule:** a drag on the dial takes that parameter out of
-  auto on the first touch (Shutter → manual exposure, WB → lock, Focus →
-  lock). Tapping the *active* chip again hands it back to auto. Exposure on
-  auto is the bias dial — an auto-exposure control, so dragging it leaves
-  auto alone — and once Shutter has taken exposure manual the same chip
-  reads **ISO** and drives ISO, so chip and readout never disagree.
-- **Bottom row:** a caption naming the mode (`Auto · drag to set by hand`,
-  `Manual · tap WB for auto`, `Pinch the picture to zoom`) · `eyedropper`
-  (Calibrate white balance, only while WB is the active chip: on, the next
-  tap on the picture samples white paper instead of focusing) ·
-  Flashlight · Flip · `chevron.down` to close.
+  auto on the first touch (ISO or Shutter → manual exposure, WB → lock,
+  Focus → lock), starting from what auto was doing. Tapping the *active*
+  chip again hands it back to auto. EV is the bias dial, an
+  auto-exposure control, so dragging it leaves auto alone; it is greyed
+  out while exposure is manual.
+- **Bottom row, fixed slots** filled from the right so no shared button
+  moves between chips or cameras: the chip's own tool, else a gap
+  (`eyedropper` on WB: Calibrate white balance, the next tap on the
+  picture samples white paper instead of focusing; `camera.aperture` on
+  Shutter: Natural motion blur) · Lock · Flashlight (dimmed in place on a
+  camera without one) · Flip · `chevron.down` to close. While calibration
+  waits on a tap, "Tap the white paper in the picture" takes the space to
+  the left and wraps.
 
 Set-once choices are not on this screen at all: the microphone picker is
 on Setup (Microphone module), lens defaults come from Setup's Lens
@@ -558,7 +586,7 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    the header — only when more than one camera source is live. Every API
    request carries the selected source's `?src=` id; one page controls
    every phone.
-3. **Controls** in the *same order as the app's chip row*: Zoom row,
+3. **Controls**, one row each: Zoom row,
    Exposure row, Focus (AF/Lock + lens slider), then a chip row of
    Flashlight · Lens · Flip. One row per control rather than the phone's
    single dial: a page at a desk has the room, and a mouse is not a

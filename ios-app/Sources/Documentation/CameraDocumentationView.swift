@@ -16,13 +16,14 @@ struct CameraDocumentationView: View {
 
             Section {
                 Text("**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks.")
+                Text("Mid-stream, **hold** the green screen button beside the lens buttons to turn it on or off; it lights up yellow while it's on. Switching restarts the camera for a moment.")
             } header: {
                 Text("Green screen")
             }
 
             Section {
                 Text("**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects.")
-                Text("**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit).")
+                Text("**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about half a metre behind you. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto.")
             } header: {
                 Text("Depth assist")
             }

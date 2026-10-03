@@ -267,11 +267,14 @@
 /* Documentation → Camera & picture, Green screen section (Markdown: keep the ** markers) */
 "**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**绿幕**会在视频离开手机之前保留画面中的你，把其他一切涂成纯绿色；开启后色彩会设为“标准”。OBS 中的 **LensLink Camera** 来源会添加一个调好参数的滤镜来抠除绿色，而且只添加一次，因此你在 OBS 中删除或重新调整它后，更改都会保留。";
 
+/* Documentation → Camera & picture, Green screen section: switching it while live (Markdown: keep the ** markers) */
+"Mid-stream, **hold** the green screen button beside the lens buttons to turn it on or off; it lights up yellow while it's on. Switching restarts the camera for a moment." = "直播中，**按住**镜头按钮旁的绿幕按钮即可开启或关闭绿幕；开启时按钮亮起黄色。切换时摄像头会短暂重启。";
+
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects." = "**深度辅助**利用真实深度信息让抠像边缘更精细：支持面容 ID 的手机使用前置摄像头，Pro（LiDAR）机型使用后置主摄。其他镜头仅靠形状识别，会保留画面中的每一个人。它还会关闭人物居中和其他系统视频效果。";
 
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
-"**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "深度辅助运行时，直播界面的调节栏中会出现**主体**：比转盘上的距离更远的一切都会成为背景，这样就能去掉从你身后走过的人。再次轻点“主体”按钮即可恢复为**全部**（不限距离）。";
+"**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about half a metre behind you. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "深度辅助运行时可使用**主体**：离手机比截止距离更远的一切都会成为背景，这样就能去掉从你身后走过的人。默认为**自动**，会把截止距离保持在你身后约半米处。轻点镜头按钮旁亮起的绿幕按钮即可打开转盘：拖动设置距离，或拖过 5 米设为**全部**（不限距离），再次轻点按钮则恢复自动。";
 
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "深度辅助";
@@ -283,19 +286,19 @@
 "Live screen" = "直播界面";
 
 /* Documentation → Using the camera, Lenses & zoom section (Markdown: keep the ** markers) */
-"The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "镜头按钮 **.5**、**1×**、**2** 像在相机 App 中一样切换摄像头。双指捏合可在当前镜头内变焦。再次轻点当前镜头按钮可重置其变焦。在有两个前置摄像头的设备上，前置摄像头也会显示这些按钮。";
+"The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens, or tap the active one for a zoom dial above the buttons and slide along it; the other lenses stay a tap away. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "镜头按钮（**.5**、**1×**、**2**）像在相机应用中一样切换摄像头。双指捏合可在一个镜头内变焦，也可以轻点当前镜头，在按钮上方调出变焦转盘并沿转盘滑动；其他镜头依然一点即达。再次轻点当前镜头可重置其变焦。有两个前置摄像头的设备，前置摄像头也有同样的按钮。";
 
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "镜头与变焦";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and set Exposure to ISO in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光固定在画面的该区域（AE/AF 锁定）：无论手机指向哪里，摄像头都会持续对该区域里的内容对焦和测光，方框会一直显示，直到轻点画面或“对焦”按钮将其解除。如需冻结对焦和曝光，请在面板中锁定对焦并把曝光设为 ISO。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and take ISO manual in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光固定在画面的该区域（AE/AF 锁定）：无论手机指向哪里，摄像头都会持续对该区域里的内容对焦和测光，方框会一直显示，直到轻点画面或“对焦”按钮将其解除。如需冻结对焦和曝光，请在面板中锁定对焦并手动设置 ISO。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "对焦与曝光";
 
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
-"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**箭头**可打开调节栏：一个转盘，以及它能控制的每一项各有一个按钮，即变焦、对焦、白平衡、曝光、快门，绿幕配合深度辅助运行时还有主体。按钮上的黄色 **A** 表示该项处于自动。拖动转盘即切换为手动；再次轻点当前按钮则恢复自动。曝光处于自动时，转盘调节的是曝光补偿；拖动快门可切换为手动曝光，此时“曝光”按钮变为 ISO。手电筒和切换摄像头也在调节栏中。";
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Focus, WB, EV, ISO and Shutter. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. EV is the brightness bias while exposure is on auto; drag ISO or Shutter to take exposure manual. EV, ISO and Shutter click between the usual stops. The buttons under the dial stay in the same place on every chip, Flashlight and Flip included." = "**箭头**可打开调节栏：一个转盘，以及它能控制的每一项各有一个按钮，即对焦、白平衡、EV、ISO 和快门。按钮上的黄色 **A** 表示该项处于自动。拖动转盘即切换为手动；再次轻点当前按钮则恢复自动。曝光处于自动时，EV 用于调节亮度补偿；拖动 ISO 或快门可切换为手动曝光。EV、ISO 和快门按常用档位逐档调节。转盘下方的按钮在每个项目中位置都不变，手电筒和切换摄像头也一样。";
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "调节栏底行的**锁**会把所选设置固定在自动当前使用的值；再次轻点即恢复自动。按住可一次锁定或解锁全部设置。在“快门”按钮下，光圈按钮可开关**自然动态模糊**：自动曝光将快门保持在帧间隔的一半或更快（30 fps 时为 1/60），光线暗时改为提高 ISO。";
@@ -550,9 +553,6 @@
 /* Voice Control alias of the Natural motion blur button */
 "180 degree rule" = "180 度规则";
 
-/* Adjust tray mode line on the Shutter chip while auto exposure follows the 180° shutter rule */
-"Auto · 180° rule · drag to set by hand" = "自动 · 180° 规则 · 拖动可手动设置";
-
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "手电筒";
 
@@ -583,8 +583,6 @@
 /* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
 "%@, manual" = "%@，手动";
 
-/* Live screen chip: zoom */
-"Zoom" = "变焦";
 
 /* Live screen chip: exposure */
 "Exposure" = "曝光";
@@ -601,41 +599,14 @@
 /* Live screen chip: green screen subject distance */
 "Subject" = "主体";
 
-/* Live screen adjust tray hint */
-"Pinch the picture to zoom" = "双指捏合画面以变焦";
-
-/* Live screen adjust tray hint: exposure on auto */
-"Auto · drag the picture up or down" = "自动 · 上下拖动画面";
-
-/* Live screen adjust tray hint: focus on auto with face tracking */
-"Auto · faces first · hold the picture to lock" = "自动 · 人脸优先 · 按住画面锁定";
-
-/* Live screen adjust tray hint: focus on auto */
-"Auto · tap the picture · hold to lock" = "自动 · 轻点画面 · 按住锁定";
-
-/* Live screen adjust tray hint: a subject distance cutoff is set (Subject = the chip name) */
-"Cutoff · tap Subject for all" = "已设截止距离 · 轻点“主体”恢复全部";
-
-/* Live screen adjust tray hint: no subject distance cutoff */
-"All · drag to set a cutoff" = "全部 · 拖动以设置截止距离";
-
-/* Live screen adjust tray hint: setting on auto */
-"Auto · drag to set by hand" = "自动 · 拖动以手动设置";
-
 /* Live screen adjust tray button: lock white balance to what the camera sees (white paper) */
 "Calibrate white balance" = "校准白平衡";
 
 /* Voice Control name for the white balance calibration button */
 "Calibrate" = "校准";
 
-/* Live screen adjust tray hint: white balance on auto */
-"Auto · tap the eyedropper, then white paper in the picture" = "自动 · 轻点吸管，再轻点画面中的白纸";
-
 /* Live screen adjust tray hint: waiting for a tap on white paper to calibrate white balance */
 "Tap the white paper in the picture" = "轻点画面中的白纸";
-
-/* Live screen adjust tray hint: setting set by hand; %@ = chip name */
-"Manual · tap %@ for auto" = "手动 · 轻点“%@”恢复自动";
 
 /* Live screen dial readout: the setting is automatic */
 "Auto" = "自动";
@@ -706,3 +677,15 @@
 
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "%1$@ 编码器不可用（%2$lld）";
+
+/* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
+"Hold to turn on green screen" = "按住以开启绿幕";
+
+/* Live screen: hint for a tap on the lit green screen button when there is no Subject dial */
+"Hold to turn off green screen" = "按住以关闭绿幕";
+
+/* VoiceOver action on the green screen button */
+"Turn on green screen" = "开启绿幕";
+
+/* VoiceOver action on the lit green screen button */
+"Turn off green screen" = "关闭绿幕";

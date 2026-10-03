@@ -98,7 +98,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
     <tr><td><code>resolution</code>, <code>fps</code>, <code>codec</code>, <code>resolutions</code>, <code>frameRates</code>, <code>codecs</code></td><td>The current format, and the choices <code>set_format</code> accepts for the current lens.</td></tr>
     <tr><td><code>quality</code></td><td><code>"balanced"</code> or <code>"maximum"</code>, as set by <code>set_quality</code>.</td></tr>
     <tr><td><code>hdr</code>, <code>color</code></td><td><code>"hdr": true</code> for HLG, <code>"color": "log"</code> for Apple Log; both absent for standard color.</td></tr>
-    <tr><td><code>supportsGreenScreen</code>, <code>greenScreen</code>, <code>greenScreenDepth</code>, <code>greenScreenMaxDistance</code></td><td>Green screen support, whether it is on, whether depth assist is running, and the subject-distance cutoff in meters.</td></tr>
+    <tr><td><code>supportsGreenScreen</code>, <code>greenScreen</code>, <code>greenScreenDepth</code>, <code>greenScreenMaxDistance</code></td><td>Green screen support, whether it is on, whether depth assist is running, and the subject-distance cutoff in meters (<code>-1</code> while it is on Auto).</td></tr>
     <tr><td><code>micEnabled</code>, <code>mic</code>, <code>mics</code></td><td>Present only while the phone mic is the source's audio: the selected mic's id, and every choice as <code>[{"id": "...", "name": "..."}]</code>. Send an <code>id</code> back with the <code>mic</code> command; <code>name</code> is for display.</td></tr>
   </tbody>
 </table>
