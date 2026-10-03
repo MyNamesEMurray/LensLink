@@ -447,13 +447,13 @@
 "Not connected" = "未连接";
 
 /* Status word: remote start is armed, no OBS has connected yet */
-"Armed — waiting for OBS" = "远程启动已开启，正在等待 OBS";
+"Armed" = "远程启动已开启";
 
 /* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
-"OBS connected — not armed" = "OBS 已连接，未开启远程启动";
+"OBS connected" = "OBS 已连接";
 
 /* Status word: OBS is connected and can start the camera */
-"OBS connected — ready" = "OBS 已连接，就绪";
+"Ready" = "就绪";
 
 /* Status word: streaming, waiting for OBS to connect */
 "Waiting for OBS…" = "正在等待 OBS…";

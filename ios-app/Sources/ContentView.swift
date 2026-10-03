@@ -308,10 +308,17 @@ struct ContentView: View {
                         .fill(streamer.status.tint)
                         .frame(width: 8, height: 8)
                         .accessibilityHidden(true)
-                    Text(connectionSubtitle)
+                    Text(streamer.status.displayName)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                }
+                if let details = connectionDetails {
+                    Text(details)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                        .padding(.leading, 8 + Theme.Space.xs + 2)
                 }
             }
         }
@@ -349,22 +356,18 @@ struct ContentView: View {
         streamer.obsHost ?? "OBS Studio"
     }
 
-    /// Status word first (docs/UI_DESIGN.md §2), then what the plugin
-    /// said about itself: version and transport, only while it is here
-    /// to say it.
-    private var connectionSubtitle: String {
-        var parts = [streamer.status.displayName]
-        if streamer.status != .idle, !streamer.isStreaming {
-            if let version = streamer.obsVersion {
-                parts.append("OBS \(version)")
-            }
-            switch streamer.obsTransport {
-            case "usb": parts.append("USB")
-            case "lan": parts.append("Wi-Fi")
-            default: break
-            }
+    private var connectionDetails: String? {
+        guard streamer.status != .idle, !streamer.isStreaming else { return nil }
+        var parts: [String] = []
+        if let version = streamer.obsVersion {
+            parts.append("OBS \(version)")
         }
-        return parts.joined(separator: " · ")
+        switch streamer.obsTransport {
+        case "usb": parts.append("USB")
+        case "lan": parts.append("Wi-Fi")
+        default: break
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     // MARK: - Camera

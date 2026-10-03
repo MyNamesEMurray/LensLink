@@ -37,9 +37,9 @@ final class Streamer: ObservableObject {
         var displayName: String {
             switch self {
             case .idle: return L("Not connected")
-            case .armed: return L("Armed — waiting for OBS")
-            case .unarmedStandby: return L("OBS connected — not armed")
-            case .standby: return L("OBS connected — ready")
+            case .armed: return L("Armed")
+            case .unarmedStandby: return L("OBS connected")
+            case .standby: return L("Ready")
             case .connecting: return L("Waiting for OBS…")
             case .streaming: return L("Live")
             case .paused: return L("Paused")

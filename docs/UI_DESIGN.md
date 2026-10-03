@@ -56,9 +56,9 @@ colours so it also looks native on the phone.
 | State        | Token         | Hex       | Label            |
 |--------------|---------------|-----------|------------------|
 | Idle         | `idleGrey`    | `#8E8E93` | "Not connected"  |
-| Armed        | `connectAmber`| `#FF9F0A` | "Armed — waiting for OBS" |
-| Not armed    | `connectAmber`| `#FF9F0A` | "OBS connected — not armed" |
-| Standby      | `connectAmber`| `#FF9F0A` | "OBS connected — ready" |
+| Armed        | `connectAmber`| `#FF9F0A` | "Armed" |
+| Not armed    | `connectAmber`| `#FF9F0A` | "OBS connected" |
+| Standby      | `connectAmber`| `#FF9F0A` | "Ready" |
 | Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
 | Paused       | `connectAmber`| `#FF9F0A` | "Paused"         |
@@ -372,8 +372,9 @@ Symbol) and a title — top to bottom:
    (`laptopcomputer` over USB, `desktopcomputer` otherwise), the
    computer's **host name** once the plugin has introduced itself (the
    `identify` command; "OBS Studio" until then), and under it the status
-   dot + `status.displayName`, with the OBS version and transport
-   appended while connected ("OBS connected — ready · OBS 32.0 · USB").
+   dot + `status.displayName`, and below that, while connected and not
+   live, a smaller line with the OBS version and transport
+   ("OBS 32.0 · USB").
    On the right: in Standby or Not armed, an accent **Start** capsule; otherwise the
    phone's Wi-Fi IP (monospaced, tap-to-copy), because the address is how
    OBS finds this phone. The Start capsule shows whenever OBS is
