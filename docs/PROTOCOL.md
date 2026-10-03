@@ -137,6 +137,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "selectLens", "label": "Ultra Wide (0.5×)" }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
 { "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "white_balance", "mode": "calibrate" }
 { "cmd": "exposure", "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
 { "cmd": "exposure", "mode": "auto" }
 { "cmd": "start_stream" }
@@ -150,6 +151,13 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "green_screen", "on": true, "maxDistance": 2.5 }
 { "cmd": "identify", "host": "Studio-Mac", "obs": "32.0.1", "transport": "usb" }
 ```
+
+`white_balance` with `"mode": "calibrate"` locks white balance so the
+centre of the picture (white paper or a gray card held there) comes out
+neutral; the app measures that patch in live frames over a few rounds.
+The app's own eyedropper does the same at a tapped point. The result arrives in STATE as `"locked"` with the measured
+`whiteBalanceTemperature` and `whiteBalanceTint`. An app older than this
+command treats it as `"auto"`.
 
 `set_format` switches the capture format mid-stream; any subset of its
 fields may be present. The app validates the combination against the
@@ -298,7 +306,8 @@ remote UIs mirror the app (and vice versa) regardless of where a change
 was made.
 
 The snapshot also carries white-balance and manual-exposure state
-(`whiteBalanceMode`/`whiteBalanceTemperature`, `exposureMode`/`iso`/
+(`whiteBalanceMode`/`whiteBalanceTemperature`/`whiteBalanceTint`, the
+tint being 0 unless set by a calibration, `exposureMode`/`iso`/
 `shutterSeconds` with their ranges `minISO`/`maxISO` and
 `minShutterSeconds`/`maxShutterSeconds` (the longest shutter is capped
 at one frame interval, so it follows `fps`), plus

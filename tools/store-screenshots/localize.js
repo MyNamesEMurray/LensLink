@@ -37,6 +37,7 @@ function pageHtml(template, d, lang, text, devTop, original) {
     .replace('{{LANG}}', lang)
     .replace('{{HEADLINE}}', esc(text.headline)).replace('{{SUB}}', esc(text.sub))
     .replace('{{IMG}}', BLANK)
+    .replace('{{FIT}}', 'false')
     .replace('{{FULLBATTERY}}', 'false')
     .replace('{{BATTERY}}', '{}')
     .replace('</body>', overlay);

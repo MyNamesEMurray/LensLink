@@ -76,6 +76,8 @@ final class CameraManager: NSObject {
               _onDepthData = newValue }
     }
     private var _onDepthData: ((AVDepthData) -> Void)?
+    private var _onWhiteSample: ((CVPixelBuffer) -> Void)?
+    private var whiteSampleID = 0
 
     /// Capture was interrupted (phone call, Camera app, a second app on
     /// screen where the iPad won't share the camera) or resumed.
@@ -184,6 +186,9 @@ final class CameraManager: NSObject {
     /// Enumerates the cameras present on this device, back lenses first
     /// (Main, Ultra Wide, Telephoto), then front.
     static func availableLenses() -> [Lens] {
+#if DEBUG
+        if ScreenshotStage.isActive { return ScreenshotStage.lenses }
+#endif
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInWideAngleCamera, .builtInUltraWideCamera,
                           .builtInTelephotoCamera],
@@ -240,6 +245,9 @@ final class CameraManager: NSObject {
     /// measured against the regular front camera instead, to the nearest
     /// tenth. nil where a device is missing.
     static func zoomFactorRelativeToMain(_ lens: Lens) -> Double? {
+#if DEBUG
+        if ScreenshotStage.isActive { return ScreenshotStage.zoomFactor(lens) }
+#endif
         if lens.position == .front { return frontFactor(for: lens) }
         guard lens.position == .back else { return nil }
         if let exact = switchOverFactor(for: lens) { return exact }
@@ -262,6 +270,17 @@ final class CameraManager: NSObject {
         guard fov > 0, frontFov > 0 else { return nil }
         let ratio = tan(frontFov / 2 * .pi / 180) / tan(fov / 2 * .pi / 180)
         return max(0.1, (ratio * 10).rounded() / 10)
+    }
+
+    static func nativeCropZoomFactor(resolution: Resolution, fps: Int32,
+                                     color: StreamColor) -> CGFloat? {
+        guard #available(iOS 16.0, *),
+              let device = device(for: defaultLens),
+              let format = format(for: device, resolution: resolution,
+                                  fps: fps, color: color) else { return nil }
+        let limit = min(format.videoMaxZoomFactor, 10)
+        return format.secondaryNativeResolutionZoomFactors
+            .first { $0 > 1 && $0 <= limit }
     }
 
     private static func switchOverFactor(for lens: Lens) -> Double? {
@@ -421,13 +440,42 @@ final class CameraManager: NSObject {
     /// SL = Studio Light, R = Reactions) — the field diagnostic behind
     /// Options → Camera diagnostics, copyable straight from the phone.
     static func formatReport() -> String {
-        var out = ["\(UIDevice.current.model) — iOS "
+        var out = ["\(hardwareModel()) — iOS "
                    + UIDevice.current.systemVersion,
-                   "flags: binned / CS / P / SL / R / colour / depth", ""]
+                   "flags: binned / CS / P / SL / R / colour / depth"
+                   + " / ISO / max exposure / FOV / max zoom / native crops",
+                   ""]
         for lens in availableLenses() {
             guard let device = device(for: lens) else { continue }
             out.append("== \(lens.label) ==")
+            out.append(String(format: "f/%.2f  min focus %ldmm  WB gain<=%.2f"
+                              + "  exposure bias %.1f...%.1f",
+                              device.lensAperture,
+                              device.minimumFocusDistance,
+                              device.maxWhiteBalanceGain,
+                              device.minExposureTargetBias,
+                              device.maxExposureTargetBias))
             appendFormatRows(of: device, to: &out)
+            out.append("")
+        }
+        let virtualTypes: [(String, AVCaptureDevice.DeviceType)] = [
+            ("Triple", .builtInTripleCamera),
+            ("Dual Wide", .builtInDualWideCamera),
+            ("Dual", .builtInDualCamera),
+        ]
+        for (name, type) in virtualTypes {
+            guard let device = AVCaptureDevice.default(
+                    type, for: .video, position: .back) else { continue }
+            let members = device.constituentDevices.map {
+                $0.deviceType.rawValue.replacingOccurrences(
+                        of: "AVCaptureDeviceTypeBuiltIn", with: "")
+            }
+            let switchOvers = device.virtualDeviceSwitchOverVideoZoomFactors
+                .map { String(format: "%.2f", $0.doubleValue) }
+            out.append("== \(name) (virtual) ==")
+            out.append("lenses: " + members.joined(separator: ", "))
+            out.append("switch-over zoom: "
+                       + switchOvers.joined(separator: ", "))
             out.append("")
         }
         // The depth-sibling devices (green screen's depth assist) carry
@@ -455,6 +503,14 @@ final class CameraManager: NSObject {
         return out.joined(separator: "\n")
     }
 
+    private static func hardwareModel() -> String {
+        var info = utsname()
+        uname(&info)
+        return withUnsafeBytes(of: &info.machine) {
+            String(decoding: $0.prefix(while: { $0 != 0 }), as: UTF8.self)
+        }
+    }
+
     /// One diagnostics row per capture format of `device` — shared by
     /// the user-facing lens dumps and the depth-sibling dumps above.
     private static func appendFormatRows(of device: AVCaptureDevice,
@@ -479,6 +535,17 @@ final class CameraManager: NSObject {
             }
             flags.append(colourFlags(format))
             flags.append(depthFlags(format))
+            flags.append(String(format: "ISO%.0f-%.0f exp<=%.0fms fov%.1f z<=%.0f",
+                                format.minISO, format.maxISO,
+                                format.maxExposureDuration.seconds * 1000,
+                                format.videoFieldOfView,
+                                format.videoMaxZoomFactor))
+            if #available(iOS 16.0, *),
+               !format.secondaryNativeResolutionZoomFactors.isEmpty {
+                flags.append("crops " + format.secondaryNativeResolutionZoomFactors
+                    .map { String(format: "%.1fx", $0) }
+                    .joined(separator: ","))
+            }
             out.append(String(format: "%5dx%-5d fps<=%-3.0f  %@",
                               dims.width, dims.height, maxFps,
                               flags.joined(separator: " ")))
@@ -511,7 +578,12 @@ final class CameraManager: NSObject {
         let tenBit = subtype == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
             || subtype == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
             || subtype == kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange
-        var flags = [tenBit ? "10bit" : "8bit "]
+        let eightBit = subtype == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            || subtype == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+        let fourCC = String(bytes: (0..<4).reversed().map {
+            UInt8(truncatingIfNeeded: subtype >> ($0 * 8))
+        }, encoding: .ascii) ?? "????"
+        var flags = [tenBit ? "10bit" : eightBit ? "8bit " : fourCC]
         if format.supportedColorSpaces.contains(.HLG_BT2020) {
             flags.append("HLG")
         }
@@ -543,6 +615,9 @@ final class CameraManager: NSObject {
     /// unsupported combos are never offered.
     static func supports(resolution: Resolution, fps: Int32,
                          lens: Lens, color: StreamColor = .sdr) -> Bool {
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
         guard let device = device(for: lens) else { return false }
         return format(for: device, resolution: resolution, fps: fps,
                       color: color) != nil
@@ -561,6 +636,9 @@ final class CameraManager: NSObject {
     /// `VideoEncoder.hdrSupported`: it walks every lens's format table,
     /// far too expensive to run per SwiftUI render of the picker.
     static let appleLogCaptureAvailable: Bool = {
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
         guard #available(iOS 17.0, *) else { return false }
         return availableLenses().contains { lens in
             guard let device = device(for: lens) else { return false }
@@ -1116,7 +1194,10 @@ final class CameraManager: NSObject {
     /// Whether the active camera supports locking white balance to custom
     /// gains (the temperature slider). Front cameras on some devices don't.
     var supportsWhiteBalanceLock: Bool {
-        activeDevice?.isLockingWhiteBalanceWithCustomDeviceGainsSupported ?? false
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
+        return activeDevice?.isLockingWhiteBalanceWithCustomDeviceGainsSupported ?? false
     }
 
     func setAutoWhiteBalance() {
@@ -1127,26 +1208,160 @@ final class CameraManager: NSObject {
         }
     }
 
-    /// Locks white balance at a colour temperature (Kelvin, neutral tint).
-    func lockWhiteBalance(temperature: Float) {
+    /// Locks white balance at a colour temperature (Kelvin) and tint.
+    func lockWhiteBalance(temperature: Float, tint: Float) {
         withLockedDevice { device in
             guard device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
             else { return }
             let values = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(
-                temperature: temperature, tint: 0)
-            var gains = device.deviceWhiteBalanceGains(for: values)
-            // The conversion can produce gains outside the legal range at
-            // extreme temperatures; setting those throws an exception.
-            let maxGain = device.maxWhiteBalanceGain
-            gains.redGain = max(1, min(gains.redGain, maxGain))
-            gains.greenGain = max(1, min(gains.greenGain, maxGain))
-            gains.blueGain = max(1, min(gains.blueGain, maxGain))
-            device.setWhiteBalanceModeLocked(with: gains)
+                temperature: temperature, tint: tint)
+            device.setWhiteBalanceModeLocked(with: Self.legal(
+                device.deviceWhiteBalanceGains(for: values), device))
         }
     }
 
+    func calibrateWhiteBalance(
+        at devicePoint: CGPoint, rounds: Int = 3,
+        completion: @escaping
+            (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void) {
+        guard let device = activeDevice,
+              device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
+        else { return completion(nil) }
+        var gains = device.deviceWhiteBalanceGains
+        var left = rounds
+        func step() {
+            sampleColor(at: devicePoint) { rgb in
+                guard let rgb else { return completion(nil) }
+                gains.redGain *= rgb.g / rgb.r
+                gains.blueGain *= rgb.g / rgb.b
+                let least = min(gains.redGain, gains.greenGain, gains.blueGain)
+                gains.redGain /= least
+                gains.greenGain /= least
+                gains.blueGain /= least
+                gains = Self.legal(gains, device)
+                self.withLockedDevice { $0.setWhiteBalanceModeLocked(with: gains) }
+                left -= 1
+                if left > 0 {
+                    self.sessionQueue.asyncAfter(deadline: .now() + 0.3) { step() }
+                } else {
+                    completion(device.temperatureAndTintValues(for: gains))
+                }
+            }
+        }
+        step()
+    }
+
+    private func sampleColor(
+        at devicePoint: CGPoint,
+        completion: @escaping ((r: Float, g: Float, b: Float)?) -> Void) {
+        sessionQueue.async { [weak self] in
+            guard let self, let output = self.videoOutput else {
+                return completion(nil)
+            }
+            let size: CGFloat = 0.04
+            let patch = output.outputRectConverted(fromMetadataOutputRect: CGRect(
+                x: devicePoint.x - size / 2, y: devicePoint.y - size / 2,
+                width: size, height: size))
+            self.callbackLock.lock()
+            self.whiteSampleID += 1
+            let id = self.whiteSampleID
+            self._onWhiteSample = { pixels in
+                completion(Self.meanColor(pixels, in: patch))
+            }
+            self.callbackLock.unlock()
+            self.sessionQueue.asyncAfter(deadline: .now() + 1) {
+                self.callbackLock.lock()
+                let stale = id == self.whiteSampleID && self._onWhiteSample != nil
+                if stale { self._onWhiteSample = nil }
+                self.callbackLock.unlock()
+                if stale { completion(nil) }
+            }
+        }
+    }
+
+    private func deliverWhiteSample(_ sampleBuffer: CMSampleBuffer) {
+        callbackLock.lock()
+        let handler = _onWhiteSample
+        _onWhiteSample = nil
+        callbackLock.unlock()
+        if let handler, let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            handler(pixels)
+        }
+    }
+
+    private static func meanColor(_ pixels: CVPixelBuffer, in rect: CGRect)
+        -> (r: Float, g: Float, b: Float)? {
+        guard CVPixelBufferGetPlaneCount(pixels) == 2 else { return nil }
+        CVPixelBufferLockBaseAddress(pixels, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixels, .readOnly) }
+        let width = CGFloat(CVPixelBufferGetWidth(pixels))
+        let height = CGFloat(CVPixelBufferGetHeight(pixels))
+        let normalized = rect.maxX <= 1.01 && rect.maxY <= 1.01
+        let frame = normalized
+            ? CGRect(x: rect.minX * width, y: rect.minY * height,
+                     width: rect.width * width, height: rect.height * height)
+            : rect
+        let wide = CVPixelBufferGetPixelFormatType(pixels)
+            != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            && CVPixelBufferGetPixelFormatType(pixels)
+            != kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+        func mean(plane: Int, channels: Int) -> [Float]? {
+            guard let base = CVPixelBufferGetBaseAddressOfPlane(pixels, plane)
+            else { return nil }
+            let planeWidth = CVPixelBufferGetWidthOfPlane(pixels, plane)
+            let planeHeight = CVPixelBufferGetHeightOfPlane(pixels, plane)
+            let rowBytes = CVPixelBufferGetBytesPerRowOfPlane(pixels, plane)
+            let sx = CGFloat(planeWidth) / width
+            let sy = CGFloat(planeHeight) / height
+            let x0 = max(0, Int(frame.minX * sx))
+            let x1 = min(planeWidth, max(x0 + 1, Int(frame.maxX * sx)))
+            let y0 = max(0, Int(frame.minY * sy))
+            let y1 = min(planeHeight, max(y0 + 1, Int(frame.maxY * sy)))
+            guard x0 < x1, y0 < y1 else { return nil }
+            var sums = [Float](repeating: 0, count: channels)
+            for y in y0..<y1 {
+                let row = base + y * rowBytes
+                for x in x0..<x1 {
+                    for c in 0..<channels {
+                        let i = x * channels + c
+                        sums[c] += wide
+                            ? Float(row.load(fromByteOffset: i * 2, as: UInt16.self)) / 65535
+                            : Float(row.load(fromByteOffset: i, as: UInt8.self)) / 255
+                    }
+                }
+            }
+            let count = Float((x1 - x0) * (y1 - y0))
+            return sums.map { $0 / count }
+        }
+        guard let luma = mean(plane: 0, channels: 1),
+              let chroma = mean(plane: 1, channels: 2) else { return nil }
+        let y = (luma[0] - 16.0 / 255) * 255 / 219
+        let cb = (chroma[0] - 0.5) * 255 / 224
+        let cr = (chroma[1] - 0.5) * 255 / 224
+        func linear(_ v: Float) -> Float { pow(max(v, 0.001), 2.2) }
+        return (linear(y + 1.5748 * cr),
+                linear(y - 0.1873 * cb - 0.4681 * cr),
+                linear(y + 1.8556 * cb))
+    }
+
+    /// Gains outside 1...maxWhiteBalanceGain throw an exception when set
+    /// or converted; the temperature conversion produces them at extremes.
+    private static func legal(_ gains: AVCaptureDevice.WhiteBalanceGains,
+                              _ device: AVCaptureDevice)
+        -> AVCaptureDevice.WhiteBalanceGains {
+        var gains = gains
+        let maxGain = device.maxWhiteBalanceGain
+        gains.redGain = max(1, min(gains.redGain, maxGain))
+        gains.greenGain = max(1, min(gains.greenGain, maxGain))
+        gains.blueGain = max(1, min(gains.blueGain, maxGain))
+        return gains
+    }
+
     var supportsManualExposure: Bool {
-        activeDevice?.isExposureModeSupported(.custom) ?? false
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
+        return activeDevice?.isExposureModeSupported(.custom) ?? false
     }
 
     /// ISO limits of the active format (manual exposure).
@@ -1194,7 +1409,12 @@ final class CameraManager: NSObject {
         }
     }
 
-    var hasFlashlight: Bool { activeDevice?.hasTorch ?? false }
+    var hasFlashlight: Bool {
+#if DEBUG
+        if ScreenshotStage.isActive { return true }
+#endif
+        return activeDevice?.hasTorch ?? false
+    }
 
     func setFlashlight(_ on: Bool) {
         withLockedDevice { device in
@@ -1224,6 +1444,7 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
+        deliverWhiteSample(sampleBuffer)
         onSampleBuffer?(sampleBuffer)
     }
 }
@@ -1265,6 +1486,7 @@ extension CameraManager: AVCaptureDataOutputSynchronizerDelegate {
         guard let syncedVideo, !syncedVideo.sampleBufferWasDropped else {
             return
         }
+        deliverWhiteSample(syncedVideo.sampleBuffer)
         onSampleBuffer?(syncedVideo.sampleBuffer)
     }
 }

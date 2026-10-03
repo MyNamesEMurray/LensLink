@@ -628,6 +628,7 @@ final class Streamer: ObservableObject {
     }
     @Published var whiteBalanceSetting: WhiteBalanceSetting = .auto {
         didSet {
+            if whiteBalanceSetting == .auto { whiteBalanceTint = 0 }
             applyWhiteBalance()
             scheduleStateSend()
         }
@@ -637,6 +638,23 @@ final class Streamer: ObservableObject {
         didSet {
             if whiteBalanceSetting == .locked { applyWhiteBalance() }
             scheduleStateSend()
+        }
+    }
+    @Published var whiteBalanceTint: Float = 0 {
+        didSet {
+            if whiteBalanceSetting == .locked { applyWhiteBalance() }
+            scheduleStateSend()
+        }
+    }
+
+    func calibrateWhiteBalance(at devicePoint: CGPoint = CGPoint(x: 0.5, y: 0.5)) {
+        camera.calibrateWhiteBalance(at: devicePoint) { [weak self] values in
+            Task { @MainActor [weak self] in
+                guard let self, let values else { return }
+                self.whiteBalanceSetting = .locked
+                self.whiteBalanceTint = min(max(values.tint, -150), 150)
+                self.whiteBalanceTemperature = min(max(values.temperature, 2500), 8000)
+            }
         }
     }
     enum ExposureSetting: Equatable {
@@ -677,6 +695,7 @@ final class Streamer: ObservableObject {
         var shutterSeconds: Double
         var whiteBalanceLocked: Bool
         var whiteBalanceTemperature: Float
+        var whiteBalanceTint: Float?
         var zoom: Double
         var focusLocked: Bool
         var lensPosition: Float
@@ -719,6 +738,7 @@ final class Streamer: ObservableObject {
             shutterSeconds: shutterSeconds,
             whiteBalanceLocked: whiteBalanceSetting == .locked,
             whiteBalanceTemperature: whiteBalanceTemperature,
+            whiteBalanceTint: whiteBalanceTint,
             zoom: Double(zoom),
             focusLocked: focusSetting == .locked,
             lensPosition: lensPosition)
@@ -743,6 +763,7 @@ final class Streamer: ObservableObject {
         exposureSetting = saved.exposureManual ? .manual : .auto
         whiteBalanceTemperature = saved.whiteBalanceTemperature
         whiteBalanceSetting = saved.whiteBalanceLocked ? .locked : .auto
+        whiteBalanceTint = saved.whiteBalanceTint ?? 0
         zoom = min(max(CGFloat(saved.zoom), 1), camera.maxZoomFactor)
         lensPosition = saved.lensPosition
         focusSetting = saved.focusLocked ? .locked : .auto
@@ -754,7 +775,8 @@ final class Streamer: ObservableObject {
         case .auto:
             camera.setAutoWhiteBalance()
         case .locked:
-            camera.lockWhiteBalance(temperature: whiteBalanceTemperature)
+            camera.lockWhiteBalance(temperature: whiteBalanceTemperature,
+                                    tint: whiteBalanceTint)
         }
     }
 
@@ -838,6 +860,7 @@ final class Streamer: ObservableObject {
             // supports* flags let remote UIs hide what this camera lacks.
             "whiteBalanceMode": whiteBalanceSetting == .locked ? "locked" : "auto",
             "whiteBalanceTemperature": Double(whiteBalanceTemperature),
+            "whiteBalanceTint": Double(whiteBalanceTint),
             "supportsWhiteBalanceLock": camera.supportsWhiteBalanceLock,
             "exposureMode": exposureSetting == .manual ? "manual" : "auto",
             "iso": Double(iso),
@@ -1351,6 +1374,9 @@ final class Streamer: ObservableObject {
                 self.updateStandby()
             }
         }
+#if DEBUG
+        applyScreenshotStage()
+#endif
     }
 
     /// Why capture stopped, in the operator's terms. The multiple-apps
@@ -1427,6 +1453,9 @@ final class Streamer: ObservableObject {
 
     private func updateStandby() {
         guard !isStreaming else { return }
+#if DEBUG
+        guard !ScreenshotStage.isActive else { return }
+#endif
         let want = isForeground && !screenCaptured
         if want && !standbyActive {
             standbyActive = true
@@ -1579,6 +1608,8 @@ final class Streamer: ObservableObject {
             }
         case "flip":
             flipCamera()
+        case "white_balance" where command["mode"] as? String == "calibrate":
+            calibrateWhiteBalance()
         case "white_balance":
             if let value = (command["temperature"] as? NSNumber)?.floatValue {
                 whiteBalanceTemperature = min(max(value, 2500), 8000)
@@ -2119,6 +2150,29 @@ final class Streamer: ObservableObject {
         status = currentStatus
     }
 }
+
+#if DEBUG
+extension Streamer {
+    fileprivate func applyScreenshotStage() {
+        guard ScreenshotStage.isActive else { return }
+        obsHost = ScreenshotStage.obsHost
+        obsVersion = ScreenshotStage.obsVersion
+        obsTransport = "lan"
+        remoteStartArmed = true
+        if ScreenshotStage.isLive {
+            isStreaming = true
+            status = .streaming
+            tally = .live
+            syncState = .locked
+            exposureBias = 0.3
+        } else {
+            standbyActive = true
+            standbyOBSConnected = true
+            refreshStandbyStatus()
+        }
+    }
+}
+#endif
 
 /// A locked Float cell bridging the main-actor `greenScreenMaxDistance`
 /// onto the capture queue: the compositor's `maxDistance` is
