@@ -936,7 +936,7 @@ struct StreamingView: View {
 
     /// Tap locks or unlocks the selected value at what auto is doing
     /// now; hold does every value at once. On a chip with nothing to
-    /// lock (Zoom, Subject) a tap means all of them.
+    /// lock (Zoom, Subject) only the hold does anything.
     private var lockButton: some View {
         let target = lockTarget(activeTarget)
         let all = streamer.allLocked
@@ -954,8 +954,6 @@ struct StreamingView: View {
             touched()
             if let target {
                 streamer.setLocked(target, !streamer.isLocked(target))
-            } else {
-                streamer.setAllLocked(!all)
             }
         }
     }
