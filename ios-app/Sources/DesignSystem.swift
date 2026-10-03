@@ -93,34 +93,59 @@ struct ControlButton: View {
     var highlighted: Bool
     var destructive: Bool
     var inputLabels: [String]
+    /// A second action on a long press, also offered to VoiceOver by
+    /// its name.
+    var longPress: (name: String, action: () -> Void)?
     let action: () -> Void
 
     init(_ label: String, systemImage: String, isOn: Bool? = nil,
          highlighted: Bool = false, destructive: Bool = false,
-         inputLabels: [String] = [], action: @escaping () -> Void) {
+         inputLabels: [String] = [],
+         longPress: (name: String, action: () -> Void)? = nil,
+         action: @escaping () -> Void) {
         self.label = label
         self.systemImage = systemImage
         self.isOn = isOn
         self.highlighted = highlighted
         self.destructive = destructive
         self.inputLabels = inputLabels
+        self.longPress = longPress
         self.action = action
     }
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundColor(Theme.textPrimary)
-                .frame(width: Theme.controlButton, height: Theme.controlButton)
-                .glassBackground(Circle(), style: style)
+        if let longPress {
+            // Gestures rather than a Button: a Button would fire its tap
+            // too when the long press lifts.
+            icon
+                .contentShape(Circle())
+                .onTapGesture(perform: action)
+                .onLongPressGesture(minimumDuration: 0.5,
+                                    perform: longPress.action)
+                .accessibilityElement()
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction(.default, action)
+                .accessibilityAction(named: Text(longPress.name),
+                                     longPress.action)
+                .modifier(accessibility)
+        } else {
+            Button(action: action) { icon }
+                .modifier(accessibility)
         }
-        .accessibilityLabel(label)
-        .accessibilityValue(stateValue)
-        .accessibilityInputLabels([label] + inputLabels)
-        .accessibilityShowsLargeContentViewer {
-            Label(label, systemImage: systemImage)
-        }
+    }
+
+    private var icon: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 18, weight: .medium))
+            .foregroundColor(Theme.textPrimary)
+            .frame(width: Theme.controlButton, height: Theme.controlButton)
+            .glassBackground(Circle(), style: style)
+    }
+
+    private var accessibility: ControlAccessibility {
+        ControlAccessibility(label: label, value: stateValue,
+                             inputLabels: [label] + inputLabels,
+                             systemImage: systemImage)
     }
 
     private var style: GlassStyle {
@@ -131,6 +156,23 @@ struct ControlButton: View {
     private var stateValue: String {
         guard let isOn else { return "" }
         return isOn ? L("On") : L("Off")
+    }
+}
+
+private struct ControlAccessibility: ViewModifier {
+    let label: String
+    let value: String
+    let inputLabels: [String]
+    let systemImage: String
+
+    func body(content: Content) -> some View {
+        content
+            .accessibilityLabel(label)
+            .accessibilityValue(value)
+            .accessibilityInputLabels(inputLabels)
+            .accessibilityShowsLargeContentViewer {
+                Label(label, systemImage: systemImage)
+            }
     }
 }
 

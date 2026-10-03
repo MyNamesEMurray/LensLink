@@ -529,6 +529,18 @@
 /* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
 "Recalibrate" = "重新校准";
 
+/* VoiceOver label of the adjust tray's lock button: a tap locks or unlocks the selected value (ISO, shutter, WB, focus) */
+"Lock" = "锁定";
+
+/* Voice Control alias of the adjust tray's lock button */
+"Unlock" = "解锁";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): lock every value at once */
+"Lock all" = "全部锁定";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): hand every value back to auto */
+"Unlock all" = "全部解锁";
+
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "手电筒";
 

@@ -896,6 +896,7 @@ struct StreamingView: View {
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: Theme.Space.s)
+                lockButton
                 if activeTarget == .whiteBalance {
                     ControlButton(L("Calibrate white balance"),
                                   systemImage: "eyedropper",
@@ -931,6 +932,41 @@ struct StreamingView: View {
         .tint(Theme.cameraYellow)
         .glassPanel()
         .foregroundColor(Theme.textPrimary)
+    }
+
+    /// Tap locks or unlocks the selected value at what auto is doing
+    /// now; hold does every value at once. On a chip with nothing to
+    /// lock (Zoom, Subject) a tap means all of them.
+    private var lockButton: some View {
+        let target = lockTarget(activeTarget)
+        let all = streamer.allLocked
+        let locked = target.map(streamer.isLocked) ?? all
+        return ControlButton(L("Lock"),
+                             systemImage: all ? "lock.rectangle.stack.fill"
+                                : locked ? "lock.fill" : "lock.open",
+                             isOn: locked,
+                             inputLabels: [L("Unlock")],
+                             longPress: (name: all ? L("Unlock all") : L("Lock all"),
+                                         action: {
+                                             touched()
+                                             streamer.setAllLocked(!streamer.allLocked)
+                                         })) {
+            touched()
+            if let target {
+                streamer.setLocked(target, !streamer.isLocked(target))
+            } else {
+                streamer.setAllLocked(!all)
+            }
+        }
+    }
+
+    private func lockTarget(_ target: DialTarget) -> Streamer.LockTarget? {
+        switch target {
+        case .exposure, .shutter: return .exposure
+        case .whiteBalance: return .whiteBalance
+        case .focus: return .focus
+        case .zoom, .subject: return nil
+        }
     }
 
     private var chipRow: some View {

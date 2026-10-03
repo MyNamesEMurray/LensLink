@@ -807,6 +807,69 @@ final class Streamer: ObservableObject {
                               pinned: true)
     }
 
+    /// What the tray's lock button freezes. ISO and shutter are one lock:
+    /// the camera only holds them as a pair.
+    enum LockTarget: CaseIterable {
+        case exposure, whiteBalance, focus
+    }
+
+    var lockTargets: [LockTarget] {
+        LockTarget.allCases.filter {
+            switch $0 {
+            case .exposure: return camera.supportsManualExposure
+            case .whiteBalance: return camera.supportsWhiteBalanceLock
+            case .focus: return true
+            }
+        }
+    }
+
+    func isLocked(_ target: LockTarget) -> Bool {
+        switch target {
+        case .exposure: return exposureSetting == .manual
+        case .whiteBalance: return whiteBalanceSetting == .locked
+        case .focus: return focusSetting == .locked
+        }
+    }
+
+    var allLocked: Bool { lockTargets.allSatisfy(isLocked) }
+
+    /// Locking freezes what auto is doing right now, so the picture
+    /// doesn't jump; values go in before the mode, whose didSet applies
+    /// them in one go.
+    func setLocked(_ target: LockTarget, _ locked: Bool) {
+        guard locked != isLocked(target) else { return }
+        guard locked else {
+            switch target {
+            case .exposure: exposureSetting = .auto
+            case .whiteBalance: whiteBalanceSetting = .auto
+            case .focus: focusSetting = .auto
+            }
+            return
+        }
+        let live = camera.liveValues
+        switch target {
+        case .exposure:
+            if let live {
+                iso = live.iso
+                shutterSeconds = live.shutterSeconds
+            }
+            exposureSetting = .manual
+        case .whiteBalance:
+            if let live {
+                whiteBalanceTemperature = min(max(live.temperature, 2500), 8000)
+                whiteBalanceTint = min(max(live.tint, -150), 150)
+            }
+            whiteBalanceSetting = .locked
+        case .focus:
+            if let lens = live?.lensPosition { lensPosition = lens }
+            focusSetting = .locked
+        }
+    }
+
+    func setAllLocked(_ locked: Bool) {
+        lockTargets.forEach { setLocked($0, locked) }
+    }
+
     /// Debounced push of the control state to the plugin (for its web UI).
     private var stateSendPending = false
 

@@ -1200,6 +1200,29 @@ final class CameraManager: NSObject {
         return activeDevice?.isLockingWhiteBalanceWithCustomDeviceGainsSupported ?? false
     }
 
+    /// What auto has settled on right now, for the tray's lock button to
+    /// freeze. A fixed-focus camera reports a nil lens position.
+    struct LiveValues {
+        var iso: Float
+        var shutterSeconds: Double
+        var lensPosition: Float?
+        var temperature: Float
+        var tint: Float
+    }
+
+    var liveValues: LiveValues? {
+        guard let device = activeDevice else { return nil }
+        let wb = device.temperatureAndTintValues(
+            for: device.deviceWhiteBalanceGains)
+        return LiveValues(
+            iso: device.iso,
+            shutterSeconds: device.exposureDuration.seconds,
+            lensPosition: device.isLockingFocusWithCustomLensPositionSupported
+                ? device.lensPosition : nil,
+            temperature: wb.temperature,
+            tint: wb.tint)
+    }
+
     func setAutoWhiteBalance() {
         withLockedDevice { device in
             if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
