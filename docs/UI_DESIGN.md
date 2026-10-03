@@ -469,7 +469,10 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   its single button. On a Main camera with a 48 MP sensor, a `2` button
   after Main picks the sensor's full-detail crop (the format's secondary
   native zoom factor), turning yellow as `2×` while it is in use; pinch
-  and the zoom dial settle on it when they pass close by.
+  and the zoom dial settle on it when they pass close by. While green
+  screen depth assist runs the camera can't zoom, so the lens stays at
+  `1×`: no zoom dial, no `2` button, no pinch, and no zoom slider in the
+  web panel.
   - **Zoom dial:** tapping the active lens button brings up a ruler in
     the row's place, the buttons moving up above it (a second tap resets
     the zoom); sliding sideways across
