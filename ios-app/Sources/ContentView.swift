@@ -401,12 +401,11 @@ struct ContentView: View {
             Toggle(isOn: $streamer.greenScreenEnabled) {
                 SettingsRowLabel(L("Green screen"),
                                  systemImage: "person.fill.viewfinder",
-                                 color: Theme.liveGreen)
-            }
-            if streamer.greenScreenEnabled {
-                Text(depthAssistStatus(streamer, rates: availableFrameRates))
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+                                 color: Theme.liveGreen,
+                                 subtitle: CameraManager.supportsDepth(
+                                    resolution: streamer.resolution,
+                                    fps: Int32(streamer.fps),
+                                    lens: streamer.selectedLens) ? L("Depth") : nil)
             }
 
             if streamer.cameraPermissionDenied || streamer.micPermissionDenied {
@@ -828,30 +827,6 @@ private struct FormatSheet: View {
         }
         return .here
     }
-}
-
-/// Whether green screen's depth assist (the Subject dial) will run with
-/// the camera and format picked now, and if not, what it needs.
-@MainActor
-private func depthAssistStatus(_ streamer: Streamer, rates: [Int]) -> String {
-    let lens = streamer.selectedLens
-    guard CameraManager.hasDepth(lens: lens) else {
-        return L("The %@ camera has no depth, so green screen runs without the Subject dial.",
-                 lens.displayLabel)
-    }
-    if CameraManager.supportsDepth(resolution: streamer.resolution,
-                                   fps: Int32(streamer.fps), lens: lens) {
-        return L("Depth assist will run: the Subject dial can drop people behind you.")
-    }
-    let resolution = streamer.resolution
-    guard rates.contains(where: {
-        CameraManager.supportsDepth(resolution: resolution, fps: Int32($0), lens: lens)
-    }) else {
-        return L("No depth at %1$@ on the %2$@ camera at any frame rate. Formats marked Depth have it.",
-                 resolution.rawValue, lens.displayLabel)
-    }
-    return L("No depth at %1$@ %2$lld fps on the %3$@ camera. Formats marked Depth have it.",
-             resolution.rawValue, streamer.fps, lens.displayLabel)
 }
 
 /// One selectable row with a checkmark: a title, an optional short

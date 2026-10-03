@@ -384,9 +384,8 @@ Symbol) and a title — top to bottom:
 3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
    value reads `4K · 60 fps · HEVC` (`· HDR` or `· Log` appended when the
    colour isn't Standard) and opens the Format sheet — and the **Green
-   screen** toggle. While green screen is on, a footnote under the
-   toggle says whether depth assist will run at the chosen lens and
-   format. A contextual "Open Settings" button appears only if
+   screen** toggle, whose title gains a gray `Depth` subtitle when the
+   chosen lens and format run depth assist. A contextual "Open Settings" button appears only if
    a permission was denied.
 
    **The Format sheet**: Resolution and Frame rate pickers (each filtered

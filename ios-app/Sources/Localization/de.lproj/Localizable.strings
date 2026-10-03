@@ -708,20 +708,12 @@
 
 
 
-/* Setup, green screen on: %@ is the camera (lens) name */
-"The %@ camera has no depth, so green screen runs without the Subject dial." = "Die Kamera %@ hat keine Tiefe, daher läuft der Greenscreen ohne das Motiv-Rad.";
 
-/* Setup, green screen on: depth assist works at the chosen camera and format */
-"Depth assist will run: the Subject dial can drop people behind you." = "Tiefenunterstützung läuft: Mit dem Motiv-Rad lassen sich Personen hinter dir ausblenden.";
 
-/* Format sheet menu: tag under a resolution or frame rate where green screen depth assist runs */
+/* Format sheet menu and Setup: tag under a resolution, frame rate, or the Green screen row where green screen depth assist runs */
 "Depth" = "Tiefe";
 
 /* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
 "Depth at %@ fps" = "Tiefe bei %@ fps";
 
-/* Setup, green screen on: %1$@ is the resolution, %2$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
-"No depth at %1$@ on the %2$@ camera at any frame rate. Formats marked Depth have it." = "Bei %1$@ gibt es auf der Kamera %2$@ bei keiner Bildrate Tiefe. Mit Tiefe markierte Formate haben sie.";
 
-/* Setup, green screen on: %1$@ is the resolution, %2$lld the frame rate, %3$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
-"No depth at %1$@ %2$lld fps on the %3$@ camera. Formats marked Depth have it." = "Bei %1$@ %2$lld fps gibt es auf der Kamera %3$@ keine Tiefe. Mit Tiefe markierte Formate haben sie.";
