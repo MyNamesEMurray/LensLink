@@ -296,8 +296,9 @@ surfaces.
 | Zoom        | web: `minus.magnifyingglass` / `plus.magnifyingglass`; app: the **Zoom** chip and the lens buttons | Slider 1×…max, readout `N.N×`. On the phone, pinch is the primary control and the lens buttons (`.5` · `1×` · `2`, the Camera app's row) switch physical lenses |
 | Exposure    | web: `sun.min` / `sun.max`; app: the **Exposure** chip, or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
 | Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
-| Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported |
+| Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): auto exposure keeps the shutter at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the web panel's button beside AE / Manual (hidden in manual) |
 | White balance | web: segmented **AWB / Lock / Calibrate**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). **Calibrate** locks to white paper at the picture's centre (web) or a tapped spot (app), temperature and tint. Hidden if unsupported |
+| Lock (app) | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (ISO and Shutter are one lock; on Zoom or Subject, a tap does nothing). Long press = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
 | Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
 | Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one resets its zoom |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
@@ -462,11 +463,14 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   later. The point holds until the camera's own subject-area monitoring
   says the scene changed, then auto (faces, or centre-weighted) takes
   over again — never a timer of ours, and never for the rest of the
-  stream. **Long press** (0.5 s) = **AE/AF Lock** at the point: one scan,
-  then focus is held at the lens position it found and exposure at the
-  ISO and shutter it chose, as the same locked / manual states the chips
-  show ("AE/AF Lock" tag under the square, 1.8 s); releasing is tapping
-  Focus or ISO. A **one-finger vertical drag** = exposure bias (the Camera app's sun
+  stream. **Long press** (0.5 s) = **AE/AF Lock**, a pinned point: auto
+  focus and exposure keep metering that spot of the frame through scene
+  changes, wherever the phone points, and the square stays up with its
+  "AE/AF Lock" tag for as long as the pin holds. A tap on the picture or
+  any focus mode change (the Focus chip, a lens switch) lets it go.
+  Freezing focus and exposure outright is the chips' job: Focus locked,
+  Exposure on ISO. A tap on the picture also releases a locked Focus
+  (a manual exposure stays, like any manual ISO). A **one-finger vertical drag** = exposure bias (the Camera app's sun
   slider: six stops per screen height, a `cameraYellow` readout centred
   while the finger is down, inert in manual exposure). With those, the
   tray stays closed unless the operator means it.
@@ -474,7 +478,7 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
 **The adjust tray** (`glassPanel`, radius 16, replaces the lens buttons
 and chevron; 200 ms):
 
-- **Chip row:** Zoom · Exposure · Shutter · WB · Focus (· Subject while
+- **Chip row:** Zoom · Focus · WB · Exposure · Shutter (· Subject while
   green screen runs with depth assist). Shutter needs manual exposure and
   WB needs a lockable white balance; unsupported chips aren't drawn. The
   active chip is white with black text. A chip on auto wears a small

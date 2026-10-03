@@ -289,13 +289,13 @@
 "Lenses & zoom" = "Lentes e zoom";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Toque** na imagem para focar e expor naquele ponto: um quadrado amarelo marca o local, e a câmera mantém esse ponto até a cena mudar, depois volta ao automático. **Mantenha pressionada** a imagem para travar o foco e a exposição ali (Bloqueio AE/AF): o chip Foco fica travado e o chip EV vira ISO, e tocar em qualquer um dos dois libera. **Arraste** para cima ou para baixo em qualquer ponto dela para clarear ou escurecer o enquadramento: é a compensação de exposição, enquanto a exposição está no automático.";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and set Exposure to ISO in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Toque** na imagem para focar e expor naquele ponto: um quadrado amarelo marca o local, e a câmera mantém esse ponto até a cena mudar, depois volta ao automático. **Mantenha pressionada** a imagem para fixar o foco e a exposição naquela área do enquadramento (Bloqueio AE/AF): para onde quer que você aponte o telefone, a câmera continua focando e expondo para o que estiver ali, e o quadrado fica até um toque na imagem ou no chip Foco liberá-lo. Para congelar o foco e a exposição, trave o Foco e coloque a Exposição em ISO na bandeja. **Arraste** para cima ou para baixo em qualquer ponto dela para clarear ou escurecer o enquadramento: é a compensação de exposição, enquanto a exposição está no automático.";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "Foco e exposição";
 
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
-"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Exposure, Shutter, WB, Focus, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "A **seta** abre a bandeja de ajustes: um dial e um chip para cada coisa que ele controla (Zoom, EV para a exposição, Obtur. para o obturador, WB para o equilíbrio de branco, Foco e, enquanto a tela verde roda com assistência de profundidade, Assunto). Um **A** amarelo em um chip indica que aquele ajuste está no automático. Arraste o dial e ele passa para manual; toque de novo no chip ativo e ele volta ao automático. Com a exposição no automático, EV é o dial de compensação; arraste Obtur. para passar a exposição para manual, e o chip EV vira ISO. Lanterna e Alternar também ficam na bandeja.";
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "A **seta** abre a bandeja de ajustes: um dial e um chip para cada coisa que ele controla (Zoom, Foco, WB para o equilíbrio de branco, EV para a exposição, Obtur. para o obturador e, enquanto a tela verde roda com assistência de profundidade, Assunto). Um **A** amarelo em um chip indica que aquele ajuste está no automático. Arraste o dial e ele passa para manual; toque de novo no chip ativo e ele volta ao automático. Com a exposição no automático, EV é o dial de compensação; arraste Obtur. para passar a exposição para manual, e o chip EV vira ISO. Lanterna e Alternar também ficam na bandeja.";
 
 /* Documentation section header on the Using the camera page */
 "Adjust tray" = "Bandeja de ajustes";
@@ -528,6 +528,27 @@
 
 /* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
 "Recalibrate" = "Recalibrar";
+
+/* VoiceOver label of the adjust tray's lock button: a tap locks or unlocks the selected value (ISO, shutter, WB, focus) */
+"Lock" = "Travar";
+
+/* Voice Control alias of the adjust tray's lock button */
+"Unlock" = "Destravar";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): lock every value at once */
+"Lock all" = "Travar tudo";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): hand every value back to auto */
+"Unlock all" = "Destravar tudo";
+
+/* Options toggle and the Shutter chip's button: auto exposure keeps the shutter at half the frame interval or faster (the 180° shutter rule) */
+"Natural motion blur" = "Desfoque de movimento natural";
+
+/* Voice Control alias of the Natural motion blur button */
+"180 degree rule" = "Regra dos 180 graus";
+
+/* Adjust tray mode line on the Shutter chip while auto exposure follows the 180° shutter rule */
+"Auto · 180° rule · drag to set by hand" = "Auto · regra dos 180° · arraste para ajustar à mão";
 
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "Lanterna";

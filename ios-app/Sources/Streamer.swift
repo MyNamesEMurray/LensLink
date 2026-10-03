@@ -604,6 +604,16 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
+    /// Options → Natural motion blur, and the Shutter chip's button: the
+    /// 180° rule for auto exposure (`CameraManager.setNaturalBlur`).
+    @Published var naturalBlur: Bool =
+        UserDefaults.standard.object(forKey: "naturalBlur") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(naturalBlur, forKey: "naturalBlur")
+            camera.setNaturalBlur(naturalBlur)
+            scheduleStateSend()
+        }
+    }
     @Published var focusSetting: FocusSetting = .auto {
         didSet {
             applyFocus()
@@ -792,30 +802,82 @@ final class Streamer: ObservableObject {
     /// Tap-to-focus from the Live screen. Routed through here (not straight
     /// to the camera) so a focus tap keeps a manual ISO/shutter lock intact.
     func focusAndExpose(at devicePoint: CGPoint) {
+        if focusSetting == .locked { focusSetting = .auto }
         camera.focusAndExpose(at: devicePoint,
                               includeExposure: exposureSetting == .auto)
     }
 
-    /// Long press on the Live screen: the Camera app's AE/AF Lock. One
-    /// scan at the point, then focus is held at the lens position it
-    /// found and exposure at the ISO and shutter it chose — as the same
-    /// locked / manual states the tray's chips show, so the lock reads
-    /// and releases like any other (tap Focus, tap ISO).
+    /// Long press on the Live screen: pins the point, so auto focus and
+    /// exposure keep metering that spot of the frame until a tap or a
+    /// focus mode change lets it go.
     func lockFocusAndExposure(at devicePoint: CGPoint) {
-        camera.lockFocusAndExposure(at: devicePoint) { [weak self] lens, iso, shutter in
-            Task { @MainActor [weak self] in
-                guard let self, self.isStreaming else { return }
-                if let lens {
-                    self.lensPosition = lens
-                    self.focusSetting = .locked
-                }
-                if self.camera.supportsManualExposure {
-                    self.iso = iso
-                    self.shutterSeconds = shutter
-                    self.exposureSetting = .manual
-                }
+        if focusSetting == .locked { focusSetting = .auto }
+        camera.focusAndExpose(at: devicePoint,
+                              includeExposure: exposureSetting == .auto,
+                              pinned: true)
+    }
+
+    /// What the tray's lock button freezes. ISO and shutter are one lock:
+    /// the camera only holds them as a pair.
+    enum LockTarget: CaseIterable {
+        case exposure, whiteBalance, focus
+    }
+
+    var lockTargets: [LockTarget] {
+        LockTarget.allCases.filter {
+            switch $0 {
+            case .exposure: return camera.supportsManualExposure
+            case .whiteBalance: return camera.supportsWhiteBalanceLock
+            case .focus: return true
             }
         }
+    }
+
+    func isLocked(_ target: LockTarget) -> Bool {
+        switch target {
+        case .exposure: return exposureSetting == .manual
+        case .whiteBalance: return whiteBalanceSetting == .locked
+        case .focus: return focusSetting == .locked
+        }
+    }
+
+    var allLocked: Bool { lockTargets.allSatisfy(isLocked) }
+
+    /// Locking freezes what auto is doing right now, so the picture
+    /// doesn't jump; values go in before the mode, whose didSet applies
+    /// them in one go.
+    func setLocked(_ target: LockTarget, _ locked: Bool) {
+        guard locked != isLocked(target) else { return }
+        guard locked else {
+            switch target {
+            case .exposure: exposureSetting = .auto
+            case .whiteBalance: whiteBalanceSetting = .auto
+            case .focus: focusSetting = .auto
+            }
+            return
+        }
+        let live = camera.liveValues
+        switch target {
+        case .exposure:
+            if let live {
+                iso = live.iso
+                shutterSeconds = live.shutterSeconds
+            }
+            exposureSetting = .manual
+        case .whiteBalance:
+            if let live {
+                whiteBalanceTemperature = min(max(live.temperature, 2500), 8000)
+                whiteBalanceTint = min(max(live.tint, -150), 150)
+            }
+            whiteBalanceSetting = .locked
+        case .focus:
+            if let lens = live?.lensPosition { lensPosition = lens }
+            focusSetting = .locked
+        }
+    }
+
+    func setAllLocked(_ locked: Bool) {
+        lockTargets.forEach { setLocked($0, locked) }
     }
 
     /// Debounced push of the control state to the plugin (for its web UI).
@@ -861,6 +923,7 @@ final class Streamer: ObservableObject {
             "focusMode": focusSetting == .locked ? "locked" : "auto",
             "lensPosition": Double(lensPosition),
             "faceFocus": faceFocus,
+            "naturalBlur": naturalBlur,
             "supportsFaceFocus": camera.supportsFaceDrivenFocus,
             "flashlight": flashlightOn,
             "hasFlashlight": camera.hasFlashlight,
@@ -1306,6 +1369,7 @@ final class Streamer: ObservableObject {
         armOnOpen = defaults.bool(forKey: "armOnOpen")
 
         camera.setFaceDrivenFocus(faceFocus)
+        camera.setNaturalBlur(naturalBlur)
         updateSensorReadoutPreference()
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
@@ -1616,6 +1680,10 @@ final class Streamer: ObservableObject {
         case "flashlight":
             if let on = command["on"] as? Bool {
                 flashlightOn = on
+            }
+        case "natural_blur":
+            if let on = command["on"] as? Bool {
+                naturalBlur = on
             }
         case "flip":
             flipCamera()

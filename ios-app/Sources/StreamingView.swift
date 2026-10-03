@@ -31,9 +31,9 @@ struct StreamingView: View {
 #else
     @State private var trayOpen = false
 #endif
-    /// The yellow square where the last tap or long press landed. Gone
-    /// again after a moment, or the instant the camera lets the tap
-    /// point go; a value that lingered would read as a control.
+    /// The yellow square where the last tap or long press landed. A tap's
+    /// is gone again after a moment; a long press's stays while the point
+    /// is pinned. Either goes the instant the camera lets the point go.
     @State private var focusMark: FocusMark?
     @State private var pickingWhite = false
 
@@ -171,8 +171,8 @@ struct StreamingView: View {
                 .accessibilityHidden(true)
                 .id(mark.id)
                 .task(id: mark.id) {
-                    try? await Task.sleep(
-                        nanoseconds: mark.locked ? 1_800_000_000 : 1_000_000_000)
+                    guard !mark.locked else { return }
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                     guard !Task.isCancelled, focusMark?.id == mark.id else { return }
                     withAnimation(.easeOut(duration: 0.3)) { focusMark = nil }
                 }
@@ -866,10 +866,10 @@ struct StreamingView: View {
     }
 
     private var dialTargets: [DialTarget] {
-        var targets: [DialTarget] = [.zoom, .exposure]
-        if streamer.camera.supportsManualExposure { targets.append(.shutter) }
+        var targets: [DialTarget] = [.zoom, .focus]
         if streamer.camera.supportsWhiteBalanceLock { targets.append(.whiteBalance) }
-        targets.append(.focus)
+        targets.append(.exposure)
+        if streamer.camera.supportsManualExposure { targets.append(.shutter) }
         if streamer.greenScreenDepthActive { targets.append(.subject) }
         return targets
     }
@@ -896,6 +896,16 @@ struct StreamingView: View {
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: Theme.Space.s)
+                lockButton
+                if activeTarget == .shutter {
+                    ControlButton(L("Natural motion blur"),
+                                  systemImage: "camera.aperture",
+                                  isOn: streamer.naturalBlur,
+                                  inputLabels: [L("180 degree rule")]) {
+                        touched()
+                        streamer.naturalBlur.toggle()
+                    }
+                }
                 if activeTarget == .whiteBalance {
                     ControlButton(L("Calibrate white balance"),
                                   systemImage: "eyedropper",
@@ -931,6 +941,39 @@ struct StreamingView: View {
         .tint(Theme.cameraYellow)
         .glassPanel()
         .foregroundColor(Theme.textPrimary)
+    }
+
+    /// Tap locks or unlocks the selected value at what auto is doing
+    /// now; hold does every value at once. On a chip with nothing to
+    /// lock (Zoom, Subject) only the hold does anything.
+    private var lockButton: some View {
+        let target = lockTarget(activeTarget)
+        let all = streamer.allLocked
+        let locked = target.map(streamer.isLocked) ?? all
+        return ControlButton(L("Lock"),
+                             systemImage: all ? "lock.rectangle.stack.fill"
+                                : locked ? "lock.fill" : "lock.open",
+                             isOn: locked,
+                             inputLabels: [L("Unlock")],
+                             longPress: (name: all ? L("Unlock all") : L("Lock all"),
+                                         action: {
+                                             touched()
+                                             streamer.setAllLocked(!streamer.allLocked)
+                                         })) {
+            touched()
+            if let target {
+                streamer.setLocked(target, !streamer.isLocked(target))
+            }
+        }
+    }
+
+    private func lockTarget(_ target: DialTarget) -> Streamer.LockTarget? {
+        switch target {
+        case .exposure, .shutter: return .exposure
+        case .whiteBalance: return .whiteBalance
+        case .focus: return .focus
+        case .zoom, .subject: return nil
+        }
     }
 
     private var chipRow: some View {
@@ -1063,6 +1106,9 @@ struct StreamingView: View {
             return L("Tap the white paper in the picture")
         case .whiteBalance where streamer.whiteBalanceSetting == .auto:
             return L("Auto · tap the eyedropper, then white paper in the picture")
+        case .shutter where streamer.exposureSetting == .auto
+                && streamer.naturalBlur:
+            return L("Auto · 180° rule · drag to set by hand")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
                 ? L("Cutoff · tap Subject for all")
@@ -1226,7 +1272,7 @@ struct StreamingView: View {
 
 /// The Camera app's focus square: a thin yellow rounded rectangle that
 /// lands with a small scale-in, plus an "AE/AF Lock" tag under it for a
-/// long press. Drawn where the finger was; the parent decides when it
+/// pinned point. Drawn where the finger was; the parent decides when it
 /// goes.
 private struct FocusIndicator: View {
     let locked: Bool

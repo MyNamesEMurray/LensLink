@@ -289,13 +289,13 @@
 "Lenses & zoom" = "Objectifs et zoom";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Touchez** l’image pour faire la mise au point et l’exposition à cet endroit – un carré jaune marque le point, et la caméra le conserve jusqu’à ce que la scène change, puis revient en automatique. **Maintenez** le doigt sur l’image pour y verrouiller la mise au point et l’exposition (Verrouillage AE/AF) : la puce MAP passe en verrouillé et la puce Expo devient ISO ; toucher l’une ou l’autre les libère. **Faites glisser** vers le haut ou le bas n’importe où sur l’image pour éclaircir ou assombrir le plan – la correction d’exposition, tant que l’exposition est en automatique.";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and set Exposure to ISO in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Touchez** l’image pour faire la mise au point et l’exposition à cet endroit – un carré jaune marque le point, et la caméra le conserve jusqu’à ce que la scène change, puis revient en automatique. **Maintenez** le doigt sur l’image pour épingler la mise au point et l’exposition à cette zone du cadre (Verrouillage AE/AF) : où que vous pointiez le téléphone, la caméra continue de faire la mise au point et l’exposition sur ce qui s’y trouve, et le carré reste jusqu’à ce qu’un toucher sur l’image ou sur la puce MAP le libère. Pour figer plutôt la mise au point et l’exposition, verrouillez la MAP et passez l’exposition en ISO dans le tiroir. **Faites glisser** vers le haut ou le bas n’importe où sur l’image pour éclaircir ou assombrir le plan – la correction d’exposition, tant que l’exposition est en automatique.";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "Mise au point et exposition";
 
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
-"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Exposure, Shutter, WB, Focus, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "Le **chevron** ouvre le tiroir de réglages : une molette, et une puce pour chaque paramètre qu’elle peut piloter – Zoom, Expo (exposition), Vitesse (d’obturation), BB (balance des blancs), MAP (mise au point), et Sujet quand l’écran vert fonctionne avec l’assistance profondeur. Un **A** jaune sur une puce signifie que ce réglage est en automatique. Faites glisser la molette et il passe en manuel ; touchez de nouveau la puce active et il revient en automatique. En automatique, Expo est la molette de correction ; faites glisser Vitesse pour passer l’exposition en manuel, et la puce Expo devient ISO. La lampe torche et le changement de caméra se trouvent aussi dans le tiroir.";
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "Le **chevron** ouvre le tiroir de réglages : une molette, et une puce pour chaque paramètre qu’elle peut piloter – Zoom, MAP (mise au point), BB (balance des blancs), Expo (exposition), Vitesse (d’obturation), et Sujet quand l’écran vert fonctionne avec l’assistance profondeur. Un **A** jaune sur une puce signifie que ce réglage est en automatique. Faites glisser la molette et il passe en manuel ; touchez de nouveau la puce active et il revient en automatique. En automatique, Expo est la molette de correction ; faites glisser Vitesse pour passer l’exposition en manuel, et la puce Expo devient ISO. La lampe torche et le changement de caméra se trouvent aussi dans le tiroir.";
 
 /* Documentation section header on the Using the camera page */
 "Adjust tray" = "Tiroir de réglages";
@@ -528,6 +528,27 @@
 
 /* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
 "Recalibrate" = "Recalibrer";
+
+/* VoiceOver label of the adjust tray's lock button: a tap locks or unlocks the selected value (ISO, shutter, WB, focus) */
+"Lock" = "Verrouiller";
+
+/* Voice Control alias of the adjust tray's lock button */
+"Unlock" = "Déverrouiller";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): lock every value at once */
+"Lock all" = "Tout verrouiller";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): hand every value back to auto */
+"Unlock all" = "Tout déverrouiller";
+
+/* Options toggle and the Shutter chip's button: auto exposure keeps the shutter at half the frame interval or faster (the 180° shutter rule) */
+"Natural motion blur" = "Flou de mouvement naturel";
+
+/* Voice Control alias of the Natural motion blur button */
+"180 degree rule" = "Règle des 180 degrés";
+
+/* Adjust tray mode line on the Shutter chip while auto exposure follows the 180° shutter rule */
+"Auto · 180° rule · drag to set by hand" = "Auto · règle des 180° · glissez pour régler à la main";
 
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "Lampe torche";

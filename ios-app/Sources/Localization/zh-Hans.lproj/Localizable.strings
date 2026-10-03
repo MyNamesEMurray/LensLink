@@ -289,13 +289,13 @@
 "Lenses & zoom" = "镜头与变焦";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to lock focus and exposure there (AE/AF Lock): the Focus chip goes locked and the Exposure chip goes to ISO, and tapping either chip releases it. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光锁定在该处（AE/AF 锁定）：“对焦”按钮变为锁定，“曝光”按钮变为 ISO，轻点其中任一按钮即可解除。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and set Exposure to ISO in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**轻点**画面可在该处对焦和测光：黄色方框标出位置，摄像头会保持该点直到场景变化，然后恢复自动。**按住**画面可把对焦和曝光固定在画面的该区域（AE/AF 锁定）：无论手机指向哪里，摄像头都会持续对该区域里的内容对焦和测光，方框会一直显示，直到轻点画面或“对焦”按钮将其解除。如需冻结对焦和曝光，请在面板中锁定对焦并把曝光设为 ISO。在画面任意位置上下**拖动**可调亮或调暗画面，即曝光处于自动时的曝光补偿。";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "对焦与曝光";
 
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
-"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Exposure, Shutter, WB, Focus, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**箭头**可打开调节栏：一个转盘，以及它能控制的每一项各有一个按钮，即变焦、曝光、快门、白平衡、对焦，绿幕配合深度辅助运行时还有主体。按钮上的黄色 **A** 表示该项处于自动。拖动转盘即切换为手动；再次轻点当前按钮则恢复自动。曝光处于自动时，转盘调节的是曝光补偿；拖动快门可切换为手动曝光，此时“曝光”按钮变为 ISO。手电筒和切换摄像头也在调节栏中。";
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**箭头**可打开调节栏：一个转盘，以及它能控制的每一项各有一个按钮，即变焦、对焦、白平衡、曝光、快门，绿幕配合深度辅助运行时还有主体。按钮上的黄色 **A** 表示该项处于自动。拖动转盘即切换为手动；再次轻点当前按钮则恢复自动。曝光处于自动时，转盘调节的是曝光补偿；拖动快门可切换为手动曝光，此时“曝光”按钮变为 ISO。手电筒和切换摄像头也在调节栏中。";
 
 /* Documentation section header on the Using the camera page */
 "Adjust tray" = "调节栏";
@@ -528,6 +528,27 @@
 
 /* VoiceOver hint and Voice Control name: tapping the locked lip-sync pill recalibrates */
 "Recalibrate" = "重新校准";
+
+/* VoiceOver label of the adjust tray's lock button: a tap locks or unlocks the selected value (ISO, shutter, WB, focus) */
+"Lock" = "锁定";
+
+/* Voice Control alias of the adjust tray's lock button */
+"Unlock" = "解锁";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): lock every value at once */
+"Lock all" = "全部锁定";
+
+/* VoiceOver action on the adjust tray's lock button (also its long press): hand every value back to auto */
+"Unlock all" = "全部解锁";
+
+/* Options toggle and the Shutter chip's button: auto exposure keeps the shutter at half the frame interval or faster (the 180° shutter rule) */
+"Natural motion blur" = "自然动态模糊";
+
+/* Voice Control alias of the Natural motion blur button */
+"180 degree rule" = "180 度规则";
+
+/* Adjust tray mode line on the Shutter chip while auto exposure follows the 180° shutter rule */
+"Auto · 180° rule · drag to set by hand" = "自动 · 180° 规则 · 拖动可手动设置";
 
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "手电筒";
