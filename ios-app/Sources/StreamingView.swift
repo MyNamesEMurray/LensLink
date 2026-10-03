@@ -932,8 +932,8 @@ struct StreamingView: View {
             rowDial = .subject
             rowDialTouch = UUID()
         }
-        return Image(systemName: "person.fill.viewfinder")
-            .font(.system(size: 14, weight: .semibold))
+        return SubjectGlyph(dotted: depth)
+            .font(.system(size: 17, weight: .semibold))
             .onGlassText(on ? .black : Theme.textPrimary.opacity(0.85),
                          increased: on ? .black : Theme.textPrimary)
             .frame(width: 32, height: 32)
@@ -1682,5 +1682,37 @@ private struct TallyEdge: View {
                        value: dimmedPhase)
             .onAppear { dimmedPhase = pulsing }
             .onChange(of: pulsing) { on in dimmedPhase = on }
+    }
+}
+
+/// The green screen button's glyph: the person is drawn as a dot grid,
+/// like a depth map, while depth assist runs, and solid otherwise.
+private struct SubjectGlyph: View {
+    let dotted: Bool
+
+    var body: some View {
+        if dotted {
+            ZStack {
+                Image(systemName: "viewfinder")
+                Canvas { context, size in
+                    let step = size.width / 9.6
+                    let dot = step * 0.64
+                    var y = step / 2
+                    while y < size.height {
+                        var x = step / 2
+                        while x < size.width {
+                            context.fill(Path(ellipseIn: CGRect(x: x - dot / 2, y: y - dot / 2,
+                                                                width: dot, height: dot)),
+                                         with: .foreground)
+                            x += step
+                        }
+                        y += step
+                    }
+                }
+                .mask(Image(systemName: "person.fill.viewfinder"))
+            }
+        } else {
+            Image(systemName: "person.fill.viewfinder")
+        }
     }
 }

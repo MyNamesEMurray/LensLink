@@ -482,7 +482,9 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     stream start or has been turned on since (a hold that turns it off
     keeps it, so it can come back), so a user who never uses green
     screen doesn't see it; the web panel's row follows the same rule
-    through STATE `supportsGreenScreen`. Solid `cameraYellow` with
+    through STATE `supportsGreenScreen`. The glyph is 17 pt, and while
+    depth assist runs its person is drawn as a fine dot grid, like a
+    depth map (solid otherwise), so a depth format shows at a glance. Solid `cameraYellow` with
     a black glyph while green screen is on. Only a **long press** turns
     green screen on or off (a switch restarts the camera, so a stray tap
     must not); a tap says so in a passing pill. While depth assist runs,
