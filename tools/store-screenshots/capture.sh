@@ -121,13 +121,6 @@ shots_for() {
   echo "$shots"
 }
 
-status_bar() {
-  xcrun simctl status_bar "$1" override --time "$2" \
-    --dataNetwork wifi --wifiMode active --wifiBars 3 \
-    --cellularMode active --cellularBars 4 \
-    --batteryState discharging --batteryLevel 100
-}
-
 capture_family() {
   local name="$1" pattern="$2"
   local type
@@ -145,12 +138,11 @@ capture_family() {
   xcrun simctl boot "$udid"
   xcrun simctl bootstatus "$udid" -b >/dev/null
   xcrun simctl ui "$udid" appearance "$appearance"
-  local date
-  date="$(python3 -c 'import datetime as d; print(d.datetime(2007, 1, 9, 9, 41).astimezone(d.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))')"
-  if ! status_bar "$udid" "$date"; then
-    echo "$name: the simulator rejected $date, showing 9:41 with today's date"
-    status_bar "$udid" "9:41"
-  fi
+  xcrun simctl status_bar "$udid" override \
+    --time "9:41" \
+    --dataNetwork wifi --wifiMode active --wifiBars 3 \
+    --cellularMode active --cellularBars 4 \
+    --batteryState discharging --batteryLevel 100
   xcrun simctl install "$udid" "$app"
 
   local lang shot language
