@@ -524,8 +524,9 @@ under the lens row; 200 ms):
   auto on the first touch (ISO or Shutter → manual exposure, WB → lock,
   Focus → lock), starting from what auto was doing. Tapping the *active*
   chip again hands it back to auto. EV is the bias dial, an
-  auto-exposure control, so dragging it leaves auto alone; it is greyed
-  out while exposure is manual.
+  auto-exposure control, so dragging it leaves auto alone, and tapping
+  the active EV chip sets the bias back to 0; it is greyed out while
+  exposure is manual.
 - **Bottom row, fixed slots** filled from the right so no shared button
   moves between chips or cameras: the chip's own tool, else a gap
   (`eyedropper` on WB: Calibrate white balance, the next tap on the

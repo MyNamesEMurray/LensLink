@@ -1271,7 +1271,7 @@ struct StreamingView: View {
         let auto = isAuto(target)
         return Button {
             touched()
-            if selected, auto == false {
+            if selected, auto != true {
                 setAuto(target)
             } else {
                 dialTarget = target
@@ -1340,7 +1340,8 @@ struct StreamingView: View {
 
     private func setAuto(_ target: DialTarget) {
         switch target {
-        case .exposure: break
+        case .exposure:
+            if streamer.exposureSetting == .auto { streamer.exposureBias = 0 }
         case .iso, .shutter: streamer.exposureSetting = .auto
         case .whiteBalance: streamer.whiteBalanceSetting = .auto
         case .focus: streamer.focusSetting = .auto
