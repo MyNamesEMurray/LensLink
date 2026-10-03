@@ -725,8 +725,8 @@
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "Estabilização";
 
-/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal */
-"Cinematic" = "Cinemático";
+/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal; the parenthesis warns it delays the stream a lot */
+"Cinematic (high delay)" = "Cinemático (muito atraso)";
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
-"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream: Standard adds a little, Cinematic adds the most and crops the picture a little more. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "A **estabilização** suaviza uma cena com o celular na mão ou em movimento. Ela vem desativada porque o celular segura quadros para suavizá-los, o que atrasa a transmissão: Padrão adiciona um pouco de atraso e Cinemático o máximo, além de cortar um pouco mais a imagem. Ela fica desativada nos formatos que não oferecem o modo escolhido e enquanto a assistência de profundidade está ativa.";
+"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "A **estabilização** suaviza uma cena com o celular na mão ou em movimento. Ela vem desativada porque o celular segura quadros para suavizá-los, o que atrasa a transmissão. Padrão adiciona um pouco de atraso. Cinemático adiciona muito, muitas vezes mais de meio segundo, e corta um pouco mais a imagem, então use-o em cenas que não precisam ficar sincronizadas com um jogo ou outras fontes. Ela fica desativada nos formatos que não oferecem o modo escolhido e enquanto a assistência de profundidade está ativa.";

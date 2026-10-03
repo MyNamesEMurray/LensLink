@@ -725,8 +725,8 @@
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "Bildstabilisierung";
 
-/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal */
-"Cinematic" = "Kinematisch";
+/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal; the parenthesis warns it delays the stream a lot */
+"Cinematic (high delay)" = "Kinematisch (hohe Verzögerung)";
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
-"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream: Standard adds a little, Cinematic adds the most and crops the picture a little more. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**Bildstabilisierung** beruhigt Aufnahmen aus der Hand oder in Bewegung. Sie ist standardmäßig aus, weil das iPhone dafür Bilder zurückhält und der Stream so verzögert wird: Standard verzögert etwas, Kinematisch am meisten und beschneidet das Bild etwas stärker. Sie bleibt aus in Formaten, die den gewählten Modus nicht bieten, und während die Tiefenunterstützung läuft.";
+"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**Bildstabilisierung** beruhigt Aufnahmen aus der Hand oder in Bewegung. Sie ist standardmäßig aus, weil das iPhone dafür Bilder zurückhält und der Stream so verzögert wird. Standard verzögert etwas. Kinematisch verzögert stark, oft mehr als eine halbe Sekunde, und beschneidet das Bild etwas stärker; nutze es also für Aufnahmen, die nicht zu einem Spiel oder anderen Quellen synchron sein müssen. Sie bleibt aus in Formaten, die den gewählten Modus nicht bieten, und während die Tiefenunterstützung läuft.";
