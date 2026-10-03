@@ -103,9 +103,11 @@ Slide Over and Stage Manager.
   on the phone, keyed subject in OBS. On Face ID front cameras and
   LiDAR rear Main cameras, depth sharpens the matte and a
   **subject distance** cutoff (app Live screen or web panel) drops
-  people walking by behind you.
+  people walking by behind you. It starts on Auto, which keeps the
+  cutoff just behind you as you move.
 - **Pick any lens** — Main, Ultra Wide, Telephoto, or Front — switchable
-  live while you stream.
+  live while you stream. On a 48 MP Main camera, a 2× button uses the
+  sensor's full-detail crop.
 - **Hold it however.** The app's UI follows the phone's rotation (unless
   rotation lock is on), and the live view stays fullscreen and upright in
   any orientation — landscape either way round, portrait too. The video
@@ -115,14 +117,17 @@ Slide Over and Stage Manager.
   can pin a source to a specific device so the same phone always maps to
   the same source.
 - **Live camera controls**, both on the phone (a viewfinder with the
-  Camera app's lens buttons, pinch to zoom, tap to focus, drag for
-  exposure, and a one-dial adjust tray for exposure, shutter, white
-  balance, focus, flashlight and camera flip — manual ISO/shutter and
-  white-balance lock on cameras that support them)
+  Camera app's lens buttons and zoom dial, pinch to zoom, tap to focus
+  and expose, hold to pin focus and exposure to a spot, drag for
+  exposure, and a one-dial adjust tray for focus, white balance, EV, ISO
+  and shutter with a Lock button, flashlight and camera flip; manual
+  ISO/shutter, white-balance lock and calibration on white paper on
+  cameras that support them, and natural motion blur for auto exposure)
   and **from your computer** via a browser panel at
   `http://localhost:9980` (the same set: zoom / exposure / manual
-  ISO & shutter / focus / white balance / flashlight / flip, plus switching
-  lens, resolution, frame rate, codec, and microphone mid-stream). With
+  ISO & shutter / focus / white balance and calibration / flashlight /
+  flip, plus switching lens, resolution, frame rate, codec, and
+  microphone mid-stream). With
   more than one phone connected, the panel shows a tab per source — one
   page controls them all.
 - **Remote start.** Tap **Arm Remote Start** in the app and OBS can start

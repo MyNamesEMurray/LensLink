@@ -8,6 +8,7 @@ struct OptionsDocumentationView: View {
         Form {
             Section {
                 Text("**Focus on faces** keeps focus and exposure on the faces the camera sees while focus is on auto, the way the Camera app does — a tap on the picture outranks it until the scene changes, and a lock ignores it. Off, the camera weights the centre of the frame.")
+                Text("**Natural motion blur**, on by default, stops auto exposure from running the shutter slower than half the frame interval (the 180° rule: 1/60 at 30 fps), so movement doesn't smear in a dim room; ISO rises instead. The same switch is on the adjust tray's Shutter chip and in the web panel.")
             } header: {
                 Text("Camera behavior")
             }

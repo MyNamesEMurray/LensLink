@@ -254,7 +254,7 @@ green composite (the compositing happens **on the phone, before
 encoding** — the wire carries ordinary video whose background happens
 to be chroma green, so receivers need no new decode behaviour).
 `maxDistance` (metres; `0` = no cutoff, `-1` = Auto, which keeps the
-cutoff about half a metre behind the person the depth map finds,
+cutoff about 0.6 m behind the person the depth map finds,
 otherwise 0.5–5.0) drives the depth-assisted subject cutoff and is meaningful only while depth
 assist is active — the app clamps and ignores as needed. Green screen
 is SDR-only: arming it forces the Standard colour pipeline, and the
