@@ -125,7 +125,8 @@ const svgUrl = (svg: string) => `data:image/svg+xml;charset=utf8,${encodeURIComp
 function keyImage(f: Face) {
 	const color = f.dim ? DIM : f.color === ACCENT && !f.on ? WHITE : (f.color ?? WHITE);
 	const ink = f.on && color === ACCENT ? WHITE : color;
-	const size = Math.round(clamp(230 / Math.max(1, f.text.length), 15, 26));
+	const width = [...f.text].reduce((w, ch) => w + (ch.charCodeAt(0) >= 0x2e80 ? 1.65 : 1), 0);
+	const size = Math.round(clamp(205 / Math.max(1, width), 12, 26));
 	const icon = glyph(f.icon, ink).replace("<svg ", '<svg x="40" y="20" width="64" height="64" ');
 	return svgUrl(
 		`<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">` +
