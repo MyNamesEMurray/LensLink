@@ -593,6 +593,9 @@ usual reset. The Camera app remembers the same way. Rules:
 - Values are clamped again on apply by the same didSets the Live screen
   uses, so a lens position or ISO saved on one format never exceeds the
   next one's limits.
+- A live lens switch brings back everything but zoom: picking a lens
+  means its own 1×, as in the Camera app. Zoom comes back at stream
+  start only.
 - **Options → Remember camera settings** (default on) is the whole UI.
   Off forgets what is stored and every camera starts on auto.
 - Phone-local; the same properties the Live screen and `CONTROL` move,

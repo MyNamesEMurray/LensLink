@@ -221,12 +221,14 @@ final class Streamer: ObservableObject {
             if isStreaming {
                 reconfigureLiveCapture(
                     formatChanged: resolution != oldResolution
-                        || fps != oldFps)
+                        || fps != oldFps,
+                    lensSwitched: selectedLens != oldValue)
             }
         }
     }
 
-    private func reconfigureLiveCapture(formatChanged: Bool) {
+    private func reconfigureLiveCapture(formatChanged: Bool,
+                                        lensSwitched: Bool = false) {
         // The colour capture actually delivered — the output can refuse
         // 10-bit and degrade to SDR, so everything downstream (encoder,
         // VIDEO_CONFIG, STATE) keys off configure's return, not the ask.
@@ -268,7 +270,7 @@ final class Streamer: ObservableObject {
         // "launch the front camera and it comes up configured" case) and
         // for any live format/colour change, all of which have just reset
         // the controls above. What this lens was last set to comes back.
-        applyRememberedSettings()
+        applyRememberedSettings(restoringZoom: !lensSwitched)
 
         encoder?.requestKeyframe()
         scheduleStateSend()
@@ -775,7 +777,7 @@ final class Streamer: ObservableObject {
     /// `resetCameraControls` at stream start and after a live lens
     /// switch; silent when nothing is stored or the switch is off. The
     /// didSets clamp every value to the running format's real limits.
-    private func applyRememberedSettings() {
+    private func applyRememberedSettings(restoringZoom: Bool = true) {
         guard rememberCameraSettings,
               let saved = rememberedSettings()[selectedLens.id] else { return }
         // Values before the mode: the mode's didSet is what pushes them
@@ -788,7 +790,9 @@ final class Streamer: ObservableObject {
         whiteBalanceTemperature = saved.whiteBalanceTemperature
         whiteBalanceSetting = saved.whiteBalanceLocked ? .locked : .auto
         whiteBalanceTint = saved.whiteBalanceTint ?? 0
-        zoom = min(max(CGFloat(saved.zoom), 1), camera.maxZoomFactor)
+        if restoringZoom {
+            zoom = min(max(CGFloat(saved.zoom), 1), camera.maxZoomFactor)
+        }
         lensPosition = saved.lensPosition
         focusSetting = saved.focusLocked ? .locked : .auto
         scheduleStateSend()
