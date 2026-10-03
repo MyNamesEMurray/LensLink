@@ -276,6 +276,9 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**Motiv** wirkt, während die Tiefenunterstützung läuft: Alles, was weiter vom iPhone entfernt ist als die Grenze, wird zum Hintergrund – so blendest du jemanden aus, der hinter dir vorbeigeht. Es startet auf **Auto** und hält die Grenze etwa 0,6 m hinter dir; ein **A** auf der Taste zeigt das an. Tippe auf die leuchtende Greenscreen-Taste neben den Objektivtasten, um den Regler zu öffnen: Ziehe, um einen Abstand festzulegen, oder über 5 m hinaus für **Alle** (keine Grenze), und tippe erneut auf die Taste für Auto.";
 
+/* Documentation → Camera & picture, Depth assist section, third paragraph: the Depth tags in Setup and the Format menus, and zoom hidden while depth assist runs (Markdown: keep the ** markers) */
+"Where the camera and format you picked have depth assist, the Green screen row shows **Depth**, and the Format menus mark the resolutions and frame rates that have it. The camera can't zoom while depth assist runs, so the zoom dial and the **2** button step aside until it stops." = "Wenn Kamera und Format die Tiefenunterstützung haben, zeigt die Zeile Greenscreen **Tiefe**, und die Format-Menüs markieren die Auflösungen und Bildraten, die sie haben. Während die Tiefenunterstützung läuft, kann die Kamera nicht zoomen; der Zoomregler und die Taste **2** verschwinden, bis sie endet.";
+
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "Tiefenunterstützung";
 

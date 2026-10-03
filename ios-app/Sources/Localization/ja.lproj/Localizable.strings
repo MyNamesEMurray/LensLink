@@ -276,6 +276,9 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**被写体**は深度アシストの動作中に使えます。スマートフォンからカットオフより遠いものはすべて背景になるので、背後を通り過ぎる人を消すことができます。最初は**自動**で、カットオフを常にあなたの約0.6m後ろに保ちます。自動のときはボタンに**A**が表示されます。レンズボタンの横にある点灯中のグリーンバックボタンをタップするとダイヤルが開きます。ドラッグして距離を設定するか、5mより先で**すべて**（制限なし）にし、もう一度ボタンをタップすると自動に戻ります。";
 
+/* Documentation → Camera & picture, Depth assist section, third paragraph: the Depth tags in Setup and the Format menus, and zoom hidden while depth assist runs (Markdown: keep the ** markers) */
+"Where the camera and format you picked have depth assist, the Green screen row shows **Depth**, and the Format menus mark the resolutions and frame rates that have it. The camera can't zoom while depth assist runs, so the zoom dial and the **2** button step aside until it stops." = "選んだカメラとフォーマットで深度アシストが使えるときは、グリーンバックの行に**深度**と表示され、フォーマットのメニューでも対応する解像度とフレームレートに印が付きます。深度アシストの動作中はカメラがズームできないため、ズームダイヤルと**2**ボタンは終了するまで表示されません。";
+
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "深度アシスト";
 

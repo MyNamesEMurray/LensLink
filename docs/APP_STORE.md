@@ -172,6 +172,8 @@ Portuguese and Simplified Chinese have every field translated in
 > - Zoom moves to the lens row: tap the yellow lens button for a zoom dial, and tap it again to reset the zoom.
 > - Green screen has its own button next to the lens buttons. Hold it to turn green screen on or off; where depth assist runs, a tap opens the Subject dial.
 > - The Subject distance now starts on Auto, which keeps the cutoff just behind you.
+> - Green screen shows where depth assist works: the Green screen row and the Format menus mark it with Depth, and the Subject button turns to dots while it runs. Zoom steps aside then, since the camera can't zoom with depth.
+> - Options are grouped under Camera, Live screen, Remote start and Advanced, and the computer card now reads simply OBS connected, Ready or Armed.
 > - Update the OBS plugin to 1.17.0 too: its browser control panel gains white balance calibration, Natural motion blur and the Auto subject distance.
 
 **What's New** (1.16.2; covers 1.16.1 and 1.16.2):

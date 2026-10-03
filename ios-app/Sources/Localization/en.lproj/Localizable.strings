@@ -276,6 +276,9 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto.";
 
+/* Documentation → Camera & picture, Depth assist section, third paragraph: the Depth tags in Setup and the Format menus, and zoom hidden while depth assist runs (Markdown: keep the ** markers) */
+"Where the camera and format you picked have depth assist, the Green screen row shows **Depth**, and the Format menus mark the resolutions and frame rates that have it. The camera can't zoom while depth assist runs, so the zoom dial and the **2** button step aside until it stops." = "Where the camera and format you picked have depth assist, the Green screen row shows **Depth**, and the Format menus mark the resolutions and frame rates that have it. The camera can't zoom while depth assist runs, so the zoom dial and the **2** button step aside until it stops.";
+
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "Depth assist";
 
