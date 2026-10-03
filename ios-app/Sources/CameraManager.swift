@@ -559,7 +559,12 @@ final class CameraManager: NSObject {
         let tenBit = subtype == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
             || subtype == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
             || subtype == kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange
-        var flags = [tenBit ? "10bit" : "8bit "]
+        let eightBit = subtype == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            || subtype == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+        let fourCC = String(bytes: (0..<4).reversed().map {
+            UInt8(truncatingIfNeeded: subtype >> ($0 * 8))
+        }, encoding: .ascii) ?? "????"
+        var flags = [tenBit ? "10bit" : eightBit ? "8bit " : fourCC]
         if format.supportedColorSpaces.contains(.HLG_BT2020) {
             flags.append("HLG")
         }
