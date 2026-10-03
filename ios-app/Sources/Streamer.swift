@@ -604,6 +604,16 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
+    /// Options → Natural motion blur, and the Shutter chip's button: the
+    /// 180° rule for auto exposure (`CameraManager.setNaturalBlur`).
+    @Published var naturalBlur: Bool =
+        UserDefaults.standard.object(forKey: "naturalBlur") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(naturalBlur, forKey: "naturalBlur")
+            camera.setNaturalBlur(naturalBlur)
+            scheduleStateSend()
+        }
+    }
     @Published var focusSetting: FocusSetting = .auto {
         didSet {
             applyFocus()
@@ -913,6 +923,7 @@ final class Streamer: ObservableObject {
             "focusMode": focusSetting == .locked ? "locked" : "auto",
             "lensPosition": Double(lensPosition),
             "faceFocus": faceFocus,
+            "naturalBlur": naturalBlur,
             "supportsFaceFocus": camera.supportsFaceDrivenFocus,
             "flashlight": flashlightOn,
             "hasFlashlight": camera.hasFlashlight,
@@ -1358,6 +1369,7 @@ final class Streamer: ObservableObject {
         armOnOpen = defaults.bool(forKey: "armOnOpen")
 
         camera.setFaceDrivenFocus(faceFocus)
+        camera.setNaturalBlur(naturalBlur)
         updateSensorReadoutPreference()
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in
@@ -1668,6 +1680,10 @@ final class Streamer: ObservableObject {
         case "flashlight":
             if let on = command["on"] as? Bool {
                 flashlightOn = on
+            }
+        case "natural_blur":
+            if let on = command["on"] as? Bool {
+                naturalBlur = on
             }
         case "flip":
             flipCamera()

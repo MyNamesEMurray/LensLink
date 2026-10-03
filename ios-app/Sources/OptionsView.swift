@@ -42,6 +42,11 @@ struct OptionsView: View {
                                          systemImage: "face.smiling",
                                          color: Theme.cameraYellow)
                     }
+                    Toggle(isOn: $streamer.naturalBlur) {
+                        SettingsRowLabel(L("Natural motion blur"),
+                                         systemImage: "camera.aperture",
+                                         color: Theme.cameraYellow)
+                    }
                     NavigationLink(destination: TallyLightOptionsView()) {
                         HStack {
                             SettingsRowLabel(L("Tally light"),

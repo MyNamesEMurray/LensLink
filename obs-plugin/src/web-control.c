@@ -45,6 +45,8 @@ static const char *const web_text_keys[] = {
 	"Web.Manual",
 	"Web.Exposure",
 	"Web.Shutter",
+	"Web.NaturalBlur",
+	"Web.NaturalBlur.Tip",
 	"Web.Lock",
 	"Web.AutoWhiteBalance",
 	"Web.Calibrate",
@@ -194,6 +196,8 @@ static const char control_page[] =
 	"<div class='row' id='emoderow' style='display:none'>"
 	"<div class='seg'><button id='ae' class='on'>AE</button>"
 	"<button id='me' data-t='Manual'></button></div>"
+	"<div class='seg' id='nbseg' style='display:none'>"
+	"<button id='nb' data-t='NaturalBlur' data-t-title='NaturalBlur.Tip'></button></div>"
 	"<span class='hint' data-t='Exposure'></span></div>"
 	"<div class='row' id='biasrow'>"
 	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
@@ -312,6 +316,7 @@ static const char control_page[] =
 	"pausebtnEl=$('pausebtn'),"
 	"asbtn1El=$('asbtn1'),asbtn2El=$('asbtn2'),"
 	"emoderowEl=$('emoderow'),aeEl=$('ae'),meEl=$('me'),biasrowEl=$('biasrow'),"
+	"nbsegEl=$('nbseg'),nbEl=$('nb'),"
 	"isorowEl=$('isorow'),isoEl=$('iso'),isovEl=$('isov'),"
 	"shutrowEl=$('shutrow'),shutEl=$('shut'),shutvEl=$('shutv'),"
 	"wbrowEl=$('wbrow'),awbEl=$('awb'),wblEl=$('wbl'),wbcEl=$('wbc'),wbtempEl=$('wbtemp'),"
@@ -400,6 +405,9 @@ static const char control_page[] =
 	"aeEl.onclick=()=>{touch();emodeUI(false);send({cmd:'exposure',mode:'auto'})};"
 	"meEl.onclick=()=>{touch();emodeUI(true);send({cmd:'exposure',"
 	"mode:'manual',iso:+isoEl.value,shutterSeconds:shutSecs()})};"
+	"let nbon=false;"
+	"function nbUI(on){nbon=on;nbEl.className=on?'on':'';pressed(nbEl,on)}"
+	"nbEl.onclick=()=>{touch();nbUI(!nbon);send({cmd:'natural_blur',on:nbon})};"
 	"const dIso=deb(()=>send({cmd:'exposure',mode:'manual',iso:+isoEl.value}),60);"
 	"isoEl.oninput=()=>{touch();isovEl.textContent=isoEl.value;dIso()};"
 	"const dShut=deb(()=>send({cmd:'exposure',mode:'manual',"
@@ -521,6 +529,8 @@ static const char control_page[] =
 	"shutvEl.textContent=shutLabel(st.shutterSeconds);"
 	"vt(shutEl,shutvEl.textContent)}}"
 	"else emodeUI(false);"
+	"nbsegEl.style.display=typeof st.naturalBlur==='boolean'&&!eman?'':'none';"
+	"nbUI(!!st.naturalBlur);"
 	"wbrowEl.style.display=st.supportsWhiteBalanceLock?'':'none';"
 	"if(st.supportsWhiteBalanceLock){wbUI(st.whiteBalanceMode==='locked');"
 	"if(typeof st.whiteBalanceTemperature==='number'){"

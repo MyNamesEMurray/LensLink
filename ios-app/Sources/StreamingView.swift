@@ -897,6 +897,15 @@ struct StreamingView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: Theme.Space.s)
                 lockButton
+                if activeTarget == .shutter {
+                    ControlButton(L("Natural motion blur"),
+                                  systemImage: "camera.aperture",
+                                  isOn: streamer.naturalBlur,
+                                  inputLabels: [L("180 degree rule")]) {
+                        touched()
+                        streamer.naturalBlur.toggle()
+                    }
+                }
                 if activeTarget == .whiteBalance {
                     ControlButton(L("Calibrate white balance"),
                                   systemImage: "eyedropper",
@@ -1097,6 +1106,9 @@ struct StreamingView: View {
             return L("Tap the white paper in the picture")
         case .whiteBalance where streamer.whiteBalanceSetting == .auto:
             return L("Auto · tap the eyedropper, then white paper in the picture")
+        case .shutter where streamer.exposureSetting == .auto
+                && streamer.naturalBlur:
+            return L("Auto · 180° rule · drag to set by hand")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
                 ? L("Cutoff · tap Subject for all")

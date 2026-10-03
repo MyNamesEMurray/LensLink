@@ -541,6 +541,15 @@
 /* VoiceOver action on the adjust tray's lock button (also its long press): hand every value back to auto */
 "Unlock all" = "Alle entsperren";
 
+/* Options toggle and the Shutter chip's button: auto exposure keeps the shutter at half the frame interval or faster (the 180° shutter rule) */
+"Natural motion blur" = "Natürliche Bewegungsunschärfe";
+
+/* Voice Control alias of the Natural motion blur button */
+"180 degree rule" = "180-Grad-Regel";
+
+/* Adjust tray mode line on the Shutter chip while auto exposure follows the 180° shutter rule */
+"Auto · 180° rule · drag to set by hand" = "Auto · 180°-Regel · ziehen für manuell";
+
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "Taschenlampe";
 

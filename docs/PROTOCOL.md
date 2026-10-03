@@ -133,6 +133,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
 { "cmd": "focus", "faces": true }
 { "cmd": "flashlight", "on": true }
+{ "cmd": "natural_blur", "on": true }
 { "cmd": "flip" }
 { "cmd": "selectLens", "label": "Ultra Wide (0.5×)" }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
@@ -209,6 +210,12 @@ assumed to remember what it was last told. The app clears the light
 whenever the connection drops, so a stale "live" can't outlive the OBS
 that set it. Screen-mirror connections receive it too and ignore it: the
 broadcast extension has no UI.
+
+`natural_blur` turns the 180° shutter rule for auto exposure on or off:
+while on, auto exposure never runs the shutter slower than half the frame
+interval (1/60 at 30 fps) and raises ISO instead. The STATE snapshot
+reports it as `naturalBlur`; an app that predates it ignores the command
+and omits the field.
 
 `focus` takes any subset of its fields: `mode` (`"auto"` / `"locked"`)
 with an optional `lensPosition`, and `faces` — whether the camera should

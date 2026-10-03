@@ -1037,6 +1037,7 @@ final class CameraManager: NSObject {
     private func installFocusDefaults() {
         tapPointActive = false
         releasePin()
+        applyNaturalBlur()
         withLockedDevice { device in
             device.isSubjectAreaChangeMonitoringEnabled = true
         }
@@ -1421,6 +1422,32 @@ final class CameraManager: NSObject {
                 duration: CMTime(seconds: seconds,
                                  preferredTimescale: 1_000_000),
                 iso: clampedISO)
+        }
+    }
+
+    /// Natural motion blur: auto exposure never runs its shutter slower
+    /// than half the frame interval (the 180° rule, 1/60 at 30 fps), so
+    /// in a dim room it raises ISO instead. Bright light still gets a
+    /// faster shutter. The limit resets with the format, so configure
+    /// re-applies it.
+    private(set) var naturalBlur = false
+
+    func setNaturalBlur(_ on: Bool) {
+        naturalBlur = on
+        applyNaturalBlur()
+    }
+
+    private func applyNaturalBlur() {
+        withLockedDevice { device in
+            guard naturalBlur else {
+                device.activeMaxExposureDuration = .invalid
+                return
+            }
+            let format = device.activeFormat
+            device.activeMaxExposureDuration = CMTimeClampToRange(
+                CMTime(value: 1, timescale: configuredFps * 2),
+                range: CMTimeRange(start: format.minExposureDuration,
+                                   end: format.maxExposureDuration))
         }
     }
 
