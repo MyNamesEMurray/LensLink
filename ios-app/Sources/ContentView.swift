@@ -245,6 +245,7 @@ struct ContentView: View {
                 } else {
                     HStack(spacing: Theme.Space.m) {
                         connectionSummary
+                            .layoutPriority(1)
                         Spacer(minLength: Theme.Space.s)
                         connectionAction
                     }
@@ -332,6 +333,8 @@ struct ContentView: View {
         } else if let ip = wifiIP {
             Text(ip)
                 .font(.callout.monospacedDigit().bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .textSelection(.enabled)
         }
     }
@@ -386,8 +389,11 @@ struct ContentView: View {
                 HStack {
                     SettingsRowLabel(L("Format"), systemImage: "rectangle.stack",
                                      color: Theme.accent)
+                        .layoutPriority(1)
                     Spacer()
                     Text(formatSummary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                        .minimumScaleFactor(0.7)
                         .foregroundColor(.secondary)
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
