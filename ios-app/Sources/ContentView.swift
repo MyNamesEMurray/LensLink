@@ -793,6 +793,7 @@ private struct FormatSheet: View {
 
 /// Whether green screen's depth assist (the Subject dial) will run with
 /// the camera and format picked now, and if not, what it needs.
+@MainActor
 private func depthAssistStatus(_ streamer: Streamer) -> String {
     let lens = streamer.selectedLens
     guard CameraManager.hasDepth(lens: lens) else {
