@@ -708,7 +708,17 @@ final class Streamer: ObservableObject {
     }
 
     func calibrateWhiteBalance(at devicePoint: CGPoint = CGPoint(x: 0.5, y: 0.5)) {
-        camera.calibrateWhiteBalance(at: devicePoint) { [weak self] values in
+        camera.calibrateWhiteBalance(at: devicePoint, completion: calibrationDone)
+    }
+
+    /// The web panel's eyedropper: a point in the streamed picture.
+    func calibrateWhiteBalance(atPicture point: CGPoint) {
+        camera.calibrateWhiteBalance(atPicture: point, completion: calibrationDone)
+    }
+
+    private var calibrationDone:
+        (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void {
+        { [weak self] values in
             Task { @MainActor [weak self] in
                 guard let self, let values else { return }
                 self.whiteBalanceSetting = .locked
@@ -1668,9 +1678,11 @@ final class Streamer: ObservableObject {
             setPaused(cmd == "pause_stream", reason: .user)
             return
         case "stop_stream":
-            // Paired with the plugin's "Disconnect when hidden": hiding
-            // the source stops the camera; showing it starts it again.
-            if remoteStartArmed, isStreaming {
+            // Like pause, stop needs no remote-start permission: it can
+            // only turn the camera off. It's the web panel's Stop, the
+            // source's Stop button, and the plugin's "Disconnect when
+            // hidden".
+            if isStreaming {
                 endStream()
             }
             return
@@ -1757,13 +1769,8 @@ final class Streamer: ObservableObject {
         case "white_balance" where command["mode"] as? String == "calibrate":
             if let x = (command["x"] as? NSNumber)?.doubleValue,
                let y = (command["y"] as? NSNumber)?.doubleValue {
-                camera.devicePoint(fromPicture: CGPoint(x: min(max(x, 0), 1),
-                                                        y: min(max(y, 0), 1))) {
-                    [weak self] point in
-                    Task { @MainActor [weak self] in
-                        self?.calibrateWhiteBalance(at: point)
-                    }
-                }
+                calibrateWhiteBalance(atPicture: CGPoint(x: min(max(x, 0), 1),
+                                                         y: min(max(y, 0), 1)))
             } else {
                 calibrateWhiteBalance()
             }

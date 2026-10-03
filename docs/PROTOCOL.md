@@ -301,8 +301,10 @@ on. Unlike remote start these need no arming: they can only hold a
 stream the user already started, never turn a camera on.
 
 `start_stream` / `stop_stream` are the **remote start** commands: they
-start/stop the camera itself (not just the connection) and are honoured
-only while remote start is **armed** in the app (see HELLO): the user
+start/stop the camera itself (not just the connection). `start_stream`
+is honoured only while remote start is **armed** in the app (see HELLO);
+`stop_stream` is honoured always (apps before 1.17.1 also required
+arming), since it can only turn the camera off. Arming: the user
 taps **Arm Remote Start** (or turns on **Arm remote start on open**), and
 it stays armed until they disarm it, stop a stream on the phone, or leave
 the app. A `stop_stream` keeps it armed. A `start_stream` the app refuses
