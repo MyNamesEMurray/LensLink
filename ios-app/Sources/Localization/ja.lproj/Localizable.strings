@@ -297,6 +297,9 @@
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
 "The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**シェブロン**をタップすると調整トレイが開きます。ダイヤルが1つと、そのダイヤルで操作できる項目ごとのチップが並びます。ズーム、ピント、WB、露出、SS（シャッタースピード）、そして深度アシスト付きのグリーンバックの動作中は被写体です。チップに黄色の**A**が付いていれば、その設定は自動です。ダイヤルをドラッグするとマニュアルになり、選択中のチップをもう一度タップすると自動に戻ります。露出が自動のときは露出補正のダイヤルです。SSをドラッグすると露出がマニュアルになり、露出のチップはISOに変わります。フラッシュライトとカメラの切り替えもトレイにあります。";
 
+/* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
+"The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "トレイ下段の**ロック**をタップすると、選択中の設定を自動が今使っている値で固定します。もう一度タップすると自動に戻ります。長押しすると、すべての設定をまとめてロックまたは解除します。SSのチップでは、絞りのボタンで**自然なモーションブラー**をオン/オフできます。自動露出でシャッター速度をフレーム間隔の半分以上の速さ（30fpsで1/60）に保ち、暗い場所では代わりにISOを上げます。";
+
 /* Documentation section header on the Using the camera page */
 "Adjust tray" = "調整トレイ";
 

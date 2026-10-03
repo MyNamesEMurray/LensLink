@@ -297,6 +297,9 @@
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
 "The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "**箭头**可打开调节栏：一个转盘，以及它能控制的每一项各有一个按钮，即变焦、对焦、白平衡、曝光、快门，绿幕配合深度辅助运行时还有主体。按钮上的黄色 **A** 表示该项处于自动。拖动转盘即切换为手动；再次轻点当前按钮则恢复自动。曝光处于自动时，转盘调节的是曝光补偿；拖动快门可切换为手动曝光，此时“曝光”按钮变为 ISO。手电筒和切换摄像头也在调节栏中。";
 
+/* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
+"The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "调节栏底行的**锁**会把所选设置固定在自动当前使用的值；再次轻点即恢复自动。按住可一次锁定或解锁全部设置。在“快门”按钮下，光圈按钮可开关**自然动态模糊**：自动曝光将快门保持在帧间隔的一半或更快（30 fps 时为 1/60），光线暗时改为提高 ISO。";
+
 /* Documentation section header on the Using the camera page */
 "Adjust tray" = "调节栏";
 
