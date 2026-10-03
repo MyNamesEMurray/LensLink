@@ -1249,6 +1249,17 @@ final class CameraManager: NSObject {
         }
     }
 
+    func devicePoint(fromPicture point: CGPoint,
+                     completion: @escaping (CGPoint) -> Void) {
+        sessionQueue.async { [weak self] in
+            guard let output = self?.videoOutput else {
+                return completion(CGPoint(x: 0.5, y: 0.5))
+            }
+            completion(output.metadataOutputRectConverted(
+                fromOutputRect: CGRect(origin: point, size: .zero)).origin)
+        }
+    }
+
     func calibrateWhiteBalance(
         at devicePoint: CGPoint, rounds: Int = 3,
         completion: @escaping

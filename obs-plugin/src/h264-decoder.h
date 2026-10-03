@@ -57,6 +57,9 @@ void h264_decoder_destroy(struct h264_decoder *dec);
 bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			 const uint8_t *data, size_t size, uint64_t pts_ns);
 
+void h264_decoder_request_still(struct h264_decoder *dec);
+uint8_t *h264_decoder_take_still(struct h264_decoder *dec, size_t *len);
+
 /* Diagnostics: total frames pushed to OBS over this decoder's lifetime.
  * A keyframe going in but this staying at 0 means decode is silently
  * producing nothing (e.g. a GPU path that dislikes the stream). */

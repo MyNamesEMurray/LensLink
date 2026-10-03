@@ -211,7 +211,7 @@ from `/api/status`. Recalibration requests flow back as a REQUEST packet
 | `glassPanel`   | black @ 55% + blur (`.regularMaterial`) | Floating control panels |
 | `glassChip`    | white @ 12%                             | Circular control buttons (idle) |
 | `glassChipOn`  | `accent` @ 90%                          | Active/toggled control buttons |
-| `cameraYellow` | `#FFD60A`                               | App only: the selected lens button, the dial's readout and thumb, the auto badge — the Camera app's own colour for "the setting you're touching" |
+| `cameraYellow` | `#FFD60A`                               | The selected lens button, the dial's readout and thumb, the auto badge (the app, and the web panel's lens row and tray) — the Camera app's own colour for "the setting you're touching" |
 | `hairline`     | white @ 8%                              | Panel borders on the web |
 
 ### Text on glass
@@ -293,14 +293,14 @@ surfaces.
 
 | Control     | Icon(s)                                   | Pattern |
 |-------------|-------------------------------------------|---------|
-| Zoom        | web: `minus.magnifyingglass` / `plus.magnifyingglass`; app: the lens row | Slider 1×…max, readout `N.N×`. On the phone, pinch, or tap the active lens button for the lens row's zoom dial (the Camera app's); the lens buttons (`.5` · `1×` · `2`) switch physical lenses, and a 48 MP Main camera gets a `2` button for its full-detail sensor crop |
-| Exposure    | web: `sun.min` / `sun.max`; app: the **EV** chip, or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
-| Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
-| Exposure mode | web: segmented **AE / Manual**; app: the **ISO** and **Shutter** chips | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging ISO or Shutter takes exposure manual and EV greys out; tapping either active chip returns to auto. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): auto exposure keeps the shutter at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the web panel's button beside AE / Manual (hidden in manual) |
-| White balance | web: segmented **AWB / Lock / Calibrate**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). **Calibrate** locks to white paper at the picture's centre (web) or a tapped spot (app), temperature and tint. Hidden if unsupported |
-| Lock (app) | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (EV, ISO and Shutter are one lock). Long press = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
+| Zoom        | web: a slider under the lens buttons; app: the lens row | Slider 1×…max, readout in true magnification (`2.4×`, web: `cameraYellow`). On the phone, pinch, or tap the active lens button for the lens row's zoom dial (the Camera app's); the lens buttons (`.5` · `1×` · `2`) switch physical lenses, and a 48 MP Main camera gets a `2` button for its full-detail sensor crop |
+| Exposure    | the **EV** chip (web and app); app also: or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
+| Focus       | the **Focus** chip | Lens position 0=near … 1=far. The chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
+| Exposure mode | the **ISO** and **Shutter** chips | Readouts `ISO 200`, `1/125`. Dragging ISO or Shutter takes exposure manual and EV greys out; tapping either active chip returns to auto. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): auto exposure keeps the shutter at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the same button in the web panel's tray |
+| White balance | the **WB** chip | 2500–8000 K, readout `5600 K`. **Calibrate** (`eyedropper`) locks to white paper at a tapped spot: in the app on the picture, in the web panel on a still of the current shot the plugin grabs for it (keyboard: the centre). Temperature and tint. Hidden if unsupported |
+| Lock | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (EV, ISO and Shutter are one lock). Long press (web: Shift-click) = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
 | Flashlight  | `bolt.fill` (toggle; hidden on the web, dimmed in the app, if unavailable) | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
-| Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one brings up the zoom dial, and a second tap resets its zoom |
+| Lens        | the lens buttons (web: a menu for apps without `lensFactors`) | The buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one brings up the zoom dial, and a second tap resets its zoom |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
 | Pause       | `pause.fill` / `play.fill`                 | Amber `glassChipOn` while paused; between the status pill and Stop |
@@ -616,14 +616,19 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    the header — only when more than one camera source is live. Every API
    request carries the selected source's `?src=` id; one page controls
    every phone.
-3. **Controls**, one row each: Zoom row, exposure mode (AE / Manual,
-   with Natural motion blur), the Exposure row (ISO and Shutter rows in
-   manual), White balance (AWB / Lock / Calibrate), Green screen (with
-   the Subject slider while depth runs), the Mic picker while the phone
-   mic streams, Focus (AF/Lock + lens slider), then a chip row of
-   Flashlight · Lens · Flip, the Format row, and Pause · Stop. One row per control rather than the phone's
-   single dial: a page at a desk has the room, and a mouse is not a
-   thumb.
+3. **Controls**, laid out like the Live screen: the lens row (lens
+   buttons `.5 · 1× · 2 · 3` and the Green screen chip) with the zoom
+   slider under it (the Subject slider instead while depth runs), then
+   the adjust tray: chips **Focus · WB · EV · ISO · Shutter** with the
+   **A** badge, one dial with a `cameraYellow` readout (WB adds the
+   light-source icons), and the bottom row of the chip's own button
+   (Calibrate on WB, Natural motion blur on Shutter), Lock, Flashlight,
+   Flip. Below: the Mic picker while the phone mic streams, the Format
+   row, Stabilization, and Pause · Stop. Same stops and semantics as the
+   phone: moving the dial takes that setting manual, clicking the
+   selected chip hands it back to auto, Lock freezes what auto is doing
+   (Shift-click: everything). Apps without `lensFactors` in STATE get a
+   lens menu instead of the buttons.
 4. All controls send `CONTROL` packets; the panel polls `/api/state` and
    mirrors app-side changes (pausing while the operator is interacting), so
    the two stay in lock-step.

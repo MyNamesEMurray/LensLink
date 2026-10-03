@@ -139,6 +139,9 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
 { "cmd": "white_balance", "mode": "auto" }
 { "cmd": "white_balance", "mode": "calibrate" }
+{ "cmd": "white_balance", "mode": "calibrate", "x": 0.31, "y": 0.62 }
+{ "cmd": "lock", "target": "whiteBalance", "on": true }
+{ "cmd": "stabilization", "mode": "cinematic" }
 { "cmd": "exposure", "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
 { "cmd": "exposure", "mode": "auto" }
 { "cmd": "start_stream" }
@@ -156,9 +159,26 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 `white_balance` with `"mode": "calibrate"` locks white balance so the
 centre of the picture (white paper or a gray card held there) comes out
 neutral; the app measures that patch in live frames over a few rounds.
-The app's own eyedropper does the same at a tapped point. The result arrives in STATE as `"locked"` with the measured
+The app's own eyedropper does the same at a tapped point, and so does
+the command when it carries `x` and `y`: a point in the streamed
+picture, normalized 0–1 from the top-left, as OBS shows it (the web
+panel's eyedropper picks it on a still from `GET /api/still`). Apps
+older than the point fields ignore them and use the centre. The result arrives in STATE as `"locked"` with the measured
 `whiteBalanceTemperature` and `whiteBalanceTint`. An app older than this
 command treats it as `"auto"`.
+
+`lock` is the app's tray Lock button: `on: true` freezes what auto is
+doing right now for `target` — `"focus"`, `"whiteBalance"`,
+`"exposure"` (ISO and shutter together) or `"all"` — so the picture
+doesn't jump the way a `locked`/`manual` command carrying stale values
+would; `on: false` hands it back to auto. Apps that predate it ignore
+it; remote UIs tell them apart by the absence of `lensFactors` in STATE
+and fall back to the explicit-value commands.
+
+`stabilization` sets the video stabilization mode: `"off"`,
+`"standard"` or `"cinematic"` (the app's Options setting; the camera
+runs it off while depth assist does). STATE reports it as
+`stabilization`.
 
 `set_format` switches the capture format mid-stream; any subset of its
 fields may be present. The app validates the combination against the
@@ -321,7 +341,11 @@ tint being 0 unless set by a calibration, `exposureMode`/`iso`/
 at one frame interval, so it follows `fps`), plus
 `supportsWhiteBalanceLock` and `supportsManualExposure` so UIs hide what
 the camera lacks), the lens (`lens`, the current label, and `lenses`,
-every label the phone has, for `selectLens` pickers) and the capture
+every label the phone has, for `selectLens` pickers, with
+`lensFactors`, each lens's magnification relative to Main in the same
+order, so remote UIs can label lens buttons `.5 · 1× · 3` as the app
+does, and `cropZoom`, Main's full-detail sensor crop zoom when the
+format has one and the camera can zoom), `stabilization`, and the capture
 format (`resolution`/`fps`/`codec` with `resolutions`/`frameRates`/
 `codecs` capability lists for `set_format` pickers).
 

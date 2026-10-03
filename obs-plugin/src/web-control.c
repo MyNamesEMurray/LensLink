@@ -42,20 +42,21 @@ static const char *const web_text_keys[] = {
 	"Web.NotArmedHint",
 	"Web.Pause",
 	"Web.Resume",
-	"Web.Manual",
-	"Web.Exposure",
 	"Web.Shutter",
 	"Web.NaturalBlur",
 	"Web.NaturalBlur.Tip",
 	"Web.Lock",
-	"Web.AutoWhiteBalance",
+	"Web.Lock.Tip",
+	"Web.Focus",
+	"Web.WB",
 	"Web.Calibrate",
 	"Web.Calibrate.Tip",
+	"Web.Calibrate.Pick",
+	"Web.Calibrate.NoPicture",
 	"Web.GreenScreen",
 	"Web.All",
 	"Web.Mic",
 	"Web.PhoneMic",
-	"Web.FocusHint",
 	"Web.Flashlight",
 	"Web.Flip",
 	"Web.Resolution",
@@ -63,11 +64,13 @@ static const char *const web_text_keys[] = {
 	"Web.Codec",
 	"Web.Zoom",
 	"Web.Lens",
-	"Web.ColorTemperature",
-	"Web.FocusPosition",
-	"Web.SubjectDistance",
 	"Web.SubjectAuto.Tip",
 	"Web.Auto",
+	"Web.Subject",
+	"Web.Stabilization",
+	"Web.Stabilization.Off",
+	"Web.Stabilization.Standard",
+	"Web.Stabilization.Cinematic",
 	"Web.Lens.Front",
 	"Web.Lens.FrontUltraWide",
 	"Web.Lens.MainWide",
@@ -87,7 +90,8 @@ static const char control_page[] =
 	 * options directly instead. */
 	":root{color-scheme:dark;--accent:#3D7BFF;--live:#30D158;--amber:#FF9F0A;"
 	"--red:#FF453A;--grey:#8E8E93;--bg:#0E0F13;--glass:rgba(28,30,38,0.72);"
-	"--hair:rgba(255,255,255,0.08);--txt:#fff;--txt2:rgba(235,235,245,0.6)}"
+	"--hair:rgba(255,255,255,0.08);--txt:#fff;--txt2:rgba(235,235,245,0.6);"
+	"--yellow:#FFD60A}"
 	"option{background:#1c1e26;color:#fff}"
 	"*{box-sizing:border-box}"
 	"body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);"
@@ -115,13 +119,47 @@ static const char control_page[] =
 	"padding:6px 14px;border-radius:10px;font-size:13px;cursor:pointer}"
 	".seg button.on{background:var(--accent)}"
 	".hint{color:var(--txt2);font-size:13px;flex:1}"
-	".chips{display:flex;gap:10px;align-items:center;margin-top:14px}"
 	".chip{width:44px;height:44px;border:0;border-radius:50%;"
 	"background:rgba(255,255,255,.12);color:var(--txt);cursor:pointer;"
 	"display:inline-flex;align-items:center;justify-content:center}"
 	".chip.on{background:var(--accent)}.chip .ic{color:var(--txt);width:20px;height:20px}"
-	"select{flex:1;background:rgba(255,255,255,.12);color:var(--txt);border:0;"
+	".chip:disabled{opacity:.4;cursor:default}"
+	".chip.on .lk-open,.chip:not(.on) .lk-shut{display:none}"
+	"input.y{accent-color:var(--yellow)}.ro.y{color:var(--yellow)}"
+	".lenses{display:flex;justify-content:center;align-items:center;gap:8px}"
+	".lensbtns{display:flex;align-items:center;gap:8px}"
+	".lb{width:34px;height:34px;padding:0;border:0;border-radius:50%;"
+	"background:rgba(0,0,0,.45);color:var(--txt);font-size:11px;font-weight:700;"
+	"font-variant-numeric:tabular-nums;cursor:pointer}"
+	".lb.on{width:40px;height:40px;font-size:13px;color:var(--yellow);"
+	"background:rgba(0,0,0,.6)}"
+	".lenses select{flex:none;width:auto}"
+	".lenses .chip{margin-left:8px}"
+	".sep{height:1px;background:var(--hair);margin:14px -16px}"
+	".tchips{display:flex;gap:6px}"
+	".tc{flex:1;min-width:0;position:relative;height:30px;padding:0 4px;border:0;"
+	"border-radius:999px;background:rgba(255,255,255,.12);"
+	"color:rgba(255,255,255,.8);font-size:12px;font-weight:600;cursor:pointer;"
+	"white-space:nowrap}"
+	".tc.on{background:#fff;color:#000}"
+	".tc .a{position:absolute;top:-5px;right:-2px;width:14px;height:14px;"
+	"border-radius:50%;background:var(--yellow);color:#000;font-size:8px;"
+	"font-weight:800;line-height:14px;text-align:center}"
+	".tc.on .a{background:#000;color:var(--yellow)}"
+	".dial{display:flex;flex-direction:column;align-items:center;gap:6px;margin:12px 0}"
+	".readout{color:var(--yellow);font-size:15px;font-weight:700;min-height:20px;"
+	"font-variant-numeric:tabular-nums}"
+	".dial input{width:100%}.dial input:disabled{opacity:.4}"
+	".lights{position:relative;width:100%;height:16px;color:var(--txt2)}"
+	".lights svg{position:absolute;top:0;width:14px;height:14px;"
+	"transform:translateX(-50%)}"
+	".still img{display:block;width:100%;border-radius:12px;cursor:crosshair;"
+	"background:#000;margin-bottom:12px}"
+	".tools{display:flex;gap:10px;align-items:center;justify-content:flex-end}"
+	".gap{width:44px;height:44px;flex:none}"
+	"select{flex:1;min-width:0;background:rgba(255,255,255,.12);color:var(--txt);border:0;"
 	"border-radius:12px;padding:0 12px;height:44px;font-size:14px}"
+	"select:disabled{opacity:.4}"
 	".primary{width:100%;height:44px;border:0;border-radius:12px;"
 	"background:var(--accent);color:#fff;font-size:15px;font-weight:600;"
 	"cursor:pointer}"
@@ -182,95 +220,69 @@ static const char control_page[] =
 	 * a default-visible panel flashed dead sliders and a Stop button
 	 * before any state was known. */
 	"<div class='panel' id='panel' style='display:none'>"
-	"<div class='row'>"
-	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
-	"stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/>"
-	"<line x1='21' y1='21' x2='16.65' y2='16.65'/><line x1='8' y1='11' x2='14' y2='11'/></svg>"
-	"<input id='zoom' type='range' min='1' max='10' step='0.1' value='1' "
-	"data-t-title='Zoom'>"
-	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
-	"stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/>"
-	"<line x1='21' y1='21' x2='16.65' y2='16.65'/><line x1='8' y1='11' x2='14' y2='11'/>"
-	"<line x1='11' y1='8' x2='11' y2='14'/></svg>"
-	"<span class='ro' id='zv'>1.0&times;</span></div>"
-	/* AE/Manual toggle: shown when the app reports manual-exposure support. */
-	"<div class='row' id='emoderow' style='display:none'>"
-	"<div class='seg'><button id='ae' class='on'>AE</button>"
-	"<button id='me' data-t='Manual'></button></div>"
-	"<div class='seg' id='nbseg' style='display:none'>"
-	"<button id='nb' data-t='NaturalBlur' data-t-title='NaturalBlur.Tip'></button></div>"
-	"<span class='hint' data-t='Exposure'></span></div>"
-	"<div class='row' id='biasrow'>"
-	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
-	"stroke-width='2'><circle cx='12' cy='12' r='3'/></svg>"
-	"<input id='exposure' type='range' min='-2' max='2' step='0.1' value='0' "
-	"data-t-title='Exposure'>"
-	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
-	"stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='4'/>"
-	"<line x1='12' y1='1' x2='12' y2='4'/><line x1='12' y1='20' x2='12' y2='23'/>"
-	"<line x1='1' y1='12' x2='4' y2='12'/><line x1='20' y1='12' x2='23' y2='12'/>"
-	"<line x1='4.6' y1='4.6' x2='6.7' y2='6.7'/><line x1='17.3' y1='17.3' x2='19.4' y2='19.4'/>"
-	"<line x1='4.6' y1='19.4' x2='6.7' y2='17.3'/><line x1='17.3' y1='6.7' x2='19.4' y2='4.6'/></svg>"
-	"<span class='ro' id='ev'>0.0</span></div>"
-	/* Manual exposure (ISO + shutter) and white-balance rows; hidden until
-	 * the app's STATE says the camera supports them. */
-	"<div class='row' id='isorow' style='display:none'>"
-	"<span class='lbl' id='isol'>ISO</span>"
-	"<input id='iso' type='range' min='34' max='3072' step='1' "
-	"aria-labelledby='isol'>"
-	"<span class='ro' id='isov'>100</span></div>"
-	"<div class='row' id='shutrow' style='display:none'>"
-	"<span class='lbl' id='shutl' data-t='Shutter'></span>"
-	"<input id='shut' type='range' min='0' max='1' step='0.01' "
-	"aria-labelledby='shutl'>"
-	"<span class='ro' id='shutv'>1/60</span></div>"
-	"<div class='row' id='wbrow' style='display:none'>"
-	"<div class='seg'><button id='awb' class='on'>AWB</button>"
-	"<button id='wbl' data-t='Lock'></button>"
-	"<button id='wbc' data-t='Calibrate' data-t-title='Calibrate.Tip'></button></div>"
-	"<input id='wbtemp' type='range' min='2500' max='8000' step='100' "
-	"style='display:none' data-t-title='ColorTemperature'>"
-	"<span class='ro' id='wbv' style='display:none'>5000K</span>"
-	"<span class='hint' id='wbhint' data-t='AutoWhiteBalance'></span></div>"
+	"<div class='lenses'><div class='lensbtns' id='lensbtns'></div>"
+	"<select id='lenssel' data-t-title='Lens' style='display:none'></select>"
 	/* Green screen: hidden until the app's STATE advertises support
-	 * (supportsGreenScreen). The subject-distance slider appears only
-	 * while depth assist is actually running (greenScreenDepth). Same
-	 * stops as the app's Subject dial (UI_DESIGN §5): 0.5-5.0 m, then
-	 * "All" (sends 0) past the far end; clicking the readout hands the
-	 * cutoff back to Auto (sends -1). */
-	"<div class='row' id='gsrow' style='display:none'>"
-	"<button class='chip' id='gs' data-t-title='GreenScreen'>"
+	 * (supportsGreenScreen). */
+	"<button class='chip' id='gs' data-t-title='GreenScreen' style='display:none'>"
 	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round'><circle cx='12' cy='8' r='4'/>"
-	"<path d='M4 21 v-1 a8 8 0 0 1 16 0 v1'/></svg></button>"
-	"<input id='gsd' type='range' min='0.5' max='5.5' step='0.1' value='5.5' "
-	"style='display:none' data-t-title='SubjectDistance'>"
-	"<span class='ro' id='gsdv' style='display:none' role='button' "
-	"tabindex='0' data-t-title='SubjectAuto.Tip' data-t='Auto'></span>"
-	"<span class='hint' id='gshint' data-t='GreenScreen'></span></div>"
+	"<path d='M4 21 v-1 a8 8 0 0 1 16 0 v1'/></svg></button></div>"
+	"<div class='row' id='zoomrow'>"
+	"<input id='zoom' class='y' type='range' min='1' max='10' step='0.1' value='1' "
+	"data-t-title='Zoom'>"
+	"<span class='ro y' id='zv'>1&times;</span></div>"
+	/* The subject-distance slider appears only while depth assist is
+	 * actually running (greenScreenDepth). Same stops as the app's Subject dial
+	 * (UI_DESIGN §5): 0.5-5.0 m, then "All" (sends 0) past the far end;
+	 * clicking the readout hands the cutoff back to Auto (sends -1). */
+	"<div class='row' id='gsdrow' style='display:none'>"
+	"<span class='lbl' id='gsdl' data-t='Subject'></span>"
+	"<input id='gsd' class='y' type='range' min='0.5' max='5.5' step='0.1' value='5.5' "
+	"aria-labelledby='gsdl'>"
+	"<span class='ro y' id='gsdv' role='button' "
+	"tabindex='0' data-t-title='SubjectAuto.Tip' data-t='Auto'></span></div>"
+	"<div class='sep'></div>"
+	"<div class='tchips' id='tchips'></div>"
+	"<div class='dial'><div class='readout' id='readout' aria-hidden='true'></div>"
+	"<input id='dial' class='y' type='range'>"
+	"<div class='lights' id='lights' aria-hidden='true'>"
+	"<svg style='left:calc(7px + (100% - 14px)*.0545)' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M9 18h6M10 21h4M12 3a6 6 0 0 0-3 11v2h6v-2a6 6 0 0 0-3-11z'/></svg>"
+	"<svg style='left:calc(7px + (100% - 14px)*.2727)' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='6' width='18' height='8' rx='1'/><path d='M7 18h10'/></svg>"
+	"<svg style='left:calc(7px + (100% - 14px)*.5455)' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='4'/><path d='M12 2v3M12 19v3M2 12h3M19 12h3'/></svg>"
+	"<svg style='left:calc(7px + (100% - 14px)*.7273)' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 11a4 4 0 0 1-1 7z'/></svg>"
+	"<svg style='left:calc(7px + (100% - 14px)*.9091)' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M4 21V5l8-3v19M12 9h8v12'/></svg>"
+	"</div></div>"
+	"<div class='still' id='stillbox' style='display:none'>"
+	"<img id='still' alt='' role='button' tabindex='0'></div>"
+	"<div class='tools'><span class='hint' id='toolhint' aria-live='polite'></span>"
+	"<button class='chip' id='wbc' data-t-title='Calibrate.Tip' data-t-label='Calibrate'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 4l6 6-9 9H5v-6z'/><path d='M12 6l6 6'/></svg></button>"
+	"<button class='chip' id='nb' data-t-title='NaturalBlur.Tip' data-t-label='NaturalBlur'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"stroke-width='2'><circle cx='12' cy='12' r='9'/><path d='M12 3l3 7M21 12l-7 3M12 21l-3-7M3 12l7-3'/></svg></button>"
+	"<span class='gap' id='toolgap'></span>"
+	"<button class='chip' id='lock' data-t-title='Lock.Tip' data-t-label='Lock'>"
+	"<svg class='ic lk-open' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"stroke-width='2' stroke-linecap='round'><rect x='5' y='11' width='14' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 7.5-2'/></svg>"
+	"<svg class='ic lk-shut' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"stroke-width='2' stroke-linecap='round'><rect x='5' y='11' width='14' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg></button>"
+	"<button class='chip' id='flashlight' data-t-title='Flashlight'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='currentColor'>"
+	"<path d='M13 2 L4 14 h6 l-1 8 9-12 h-6 z'/></svg></button>"
+	"<button class='chip' id='flip' data-t-title='Flip'>"
+	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
+	"stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
+	"<path d='M15 4 h5 v5'/><path d='M20 9 A8 8 0 0 0 6 6'/>"
+	"<path d='M9 20 H4 v-5'/><path d='M4 15 A8 8 0 0 0 18 18'/></svg></button></div>"
+	"<div class='sep'></div>"
 	/* Mic picker: shown while the app streams its mic as the source's
 	 * audio (STATE micEnabled) — mirrors the app's mic row. */
 	"<div class='row' id='microw' style='display:none'>"
 	"<span class='lbl' data-t='Mic'></span>"
 	"<select id='micsel' data-t-title='PhoneMic'></select>"
 	"<span class='hint' data-t='PhoneMic'></span></div>"
-	"<div class='row'>"
-	"<div class='seg'><button id='af' class='on'>AF</button>"
-	"<button id='mf' data-t='Lock'></button></div>"
-	"<input id='lens' type='range' min='0' max='1' step='0.01' value='0.5' "
-	"style='display:none' data-t-title='FocusPosition'>"
-	"<span class='hint' id='fhint' data-t='FocusHint'></span></div>"
-	"<div class='chips'>"
-	"<button class='chip' id='flashlight' data-t-title='Flashlight'>"
-	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='currentColor'>"
-	"<path d='M13 2 L4 14 h6 l-1 8 9-12 h-6 z'/></svg></button>"
-	"<select id='lenssel' data-t-title='Lens'></select>"
-	"<button class='chip' id='flip' data-t-title='Flip'>"
-	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
-	"stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
-	"<path d='M15 4 h5 v5'/><path d='M20 9 A8 8 0 0 0 6 6'/>"
-	"<path d='M9 20 H4 v-5'/><path d='M4 15 A8 8 0 0 0 18 18'/></svg></button>"
-	"</div>"
 	/* Format row (resolution / fps / codec): shown once the app's STATE
 	 * advertises its capability lists; older apps just never show it. */
 	"<div class='row' id='fmtrow' style='display:none'>"
@@ -278,6 +290,9 @@ static const char control_page[] =
 	"<select id='fmtfps' data-t-title='FrameRate'></select>"
 	"<select id='fmtcodec' data-t-title='Codec'></select>"
 	"</div>"
+	"<div class='row' id='stabrow' style='display:none'>"
+	"<span class='lbl' id='stabl' data-t='Stabilization'></span>"
+	"<select id='stab' aria-labelledby='stabl'></select></div>"
 	/* Remote stop: mirrors the app's red Stop. The phone drops back to
 	 * standby, so this panel swaps to the Start button afterwards. */
 	"<div class='btnrow'>"
@@ -297,17 +312,19 @@ static const char control_page[] =
 	"document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));"
 	"document.querySelectorAll('[data-t-title]').forEach(e=>{"
 	"e.title=t(e.dataset.tTitle);"
-	"if(!e.dataset.t)e.setAttribute('aria-label',e.title)});"
+	"if(!e.dataset.t)e.setAttribute('aria-label',"
+	"e.dataset.tLabel?t(e.dataset.tLabel):e.title)});"
 	"const pressed=(el,on)=>el.setAttribute('aria-pressed',on?'true':'false');"
 	"const vt=(el,v)=>el.setAttribute('aria-valuetext',v);"
 	"const setText=(el,v)=>{if(el.textContent!==v)el.textContent=v};"
+	"const show=(el,on)=>{el.style.display=on?'':'none'};"
 	"let annKey=null;"
 	"const say=(k,v)=>{if(k!==annKey){annKey=k;$('statusann').textContent=v}};"
 	"const syncEl=$('sync'),syncdotEl=$('syncdot'),syncpillEl=$('syncpill'),"
 	"recalEl=$('recal'),"
 	"dotEl=$('dot'),statusEl=$('status'),zoomEl=$('zoom'),zvEl=$('zv'),"
-	"expEl=$('exposure'),evEl=$('ev'),afEl=$('af'),mfEl=$('mf'),lensEl=$('lens'),"
-	"fhintEl=$('fhint'),flashlightEl=$('flashlight'),flipEl=$('flip'),lensselEl=$('lenssel'),"
+	"zoomrowEl=$('zoomrow'),lensbtnsEl=$('lensbtns'),lensselEl=$('lenssel'),"
+	"flashlightEl=$('flashlight'),flipEl=$('flip'),"
 	"panelEl=$('panel'),screennoteEl=$('screennote'),"
 	"startpanelEl=$('startpanel'),startbtnEl=$('startbtn'),"
 	"starthintEl=$('starthint'),armhintEl=$('armhint'),"
@@ -315,14 +332,12 @@ static const char control_page[] =
 	"fmtcodecEl=$('fmtcodec'),stopbtnEl=$('stopbtn'),"
 	"pausebtnEl=$('pausebtn'),"
 	"asbtn1El=$('asbtn1'),asbtn2El=$('asbtn2'),"
-	"emoderowEl=$('emoderow'),aeEl=$('ae'),meEl=$('me'),biasrowEl=$('biasrow'),"
-	"nbsegEl=$('nbseg'),nbEl=$('nb'),"
-	"isorowEl=$('isorow'),isoEl=$('iso'),isovEl=$('isov'),"
-	"shutrowEl=$('shutrow'),shutEl=$('shut'),shutvEl=$('shutv'),"
-	"wbrowEl=$('wbrow'),awbEl=$('awb'),wblEl=$('wbl'),wbcEl=$('wbc'),wbtempEl=$('wbtemp'),"
-	"wbvEl=$('wbv'),wbhintEl=$('wbhint'),"
-	"gsrowEl=$('gsrow'),gsEl=$('gs'),gsdEl=$('gsd'),gsdvEl=$('gsdv'),"
-	"gshintEl=$('gshint'),"
+	"tchipsEl=$('tchips'),dialEl=$('dial'),readoutEl=$('readout'),"
+	"lightsEl=$('lights'),wbcEl=$('wbc'),nbEl=$('nb'),toolgapEl=$('toolgap'),"
+	"lockEl=$('lock'),toolhintEl=$('toolhint'),stillboxEl=$('stillbox'),"
+	"stillEl=$('still'),"
+	"gsEl=$('gs'),gsdrowEl=$('gsdrow'),gsdEl=$('gsd'),gsdvEl=$('gsdv'),"
+	"stabrowEl=$('stabrow'),stabEl=$('stab'),"
 	"microwEl=$('microw'),micselEl=$('micsel'),srctabsEl=$('srctabs');"
 	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93',"
 	"accent:'#3D7BFF'};"
@@ -330,7 +345,7 @@ static const char control_page[] =
 	"error:COL.red};"
 	"const LENS={'Front':t('Lens.Front'),"
 	"'Front (Ultra Wide)':t('Lens.FrontUltraWide'),'Main (Wide)':t('Lens.MainWide'),"
-	"'Ultra Wide (0.5\\u00d7)':t('Lens.UltraWide'),'Telephoto':t('Lens.Telephoto')};"
+	"'Ultra Wide (0.5×)':t('Lens.UltraWide'),'Telephoto':t('Lens.Telephoto')};"
 	/* Selected source id (from /api/sources); every request carries it.
 	 * A 404 means that source is gone: drop the id and the next poll
 	 * re-picks from the list. */
@@ -341,27 +356,178 @@ static const char control_page[] =
 	"fetch('/api/control'+q(),{method:'POST',body:JSON.stringify(o)}).then(gone)};"
 	"const deb=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);"
 	"t=setTimeout(()=>f(...a),ms)}};"
-	"const dz=deb(()=>send({cmd:'zoom',value:+zoomEl.value}),60);"
-	"zoomEl.oninput=()=>{touch();"
-	"zvEl.textContent=(+zoomEl.value).toFixed(1)+'\\u00d7';"
-	"vt(zoomEl,zvEl.textContent);dz()};"
-	"const de=deb(()=>send({cmd:'exposure_bias',value:+expEl.value}),60);"
-	"expEl.oninput=()=>{touch();evEl.textContent=(+expEl.value).toFixed(1);de()};"
-	"function focusUI(locked){afEl.className=locked?'':'on';"
-	"mfEl.className=locked?'on':'';pressed(afEl,!locked);pressed(mfEl,locked);"
-	"lensEl.style.display=locked?'':'none';"
-	"fhintEl.style.display=locked?'none':''}"
-	"afEl.onclick=()=>{focusUI(false);send({cmd:'focus',mode:'auto'})};"
-	"mfEl.onclick=()=>{focusUI(true);"
-	"send({cmd:'focus',mode:'locked',lensPosition:+lensEl.value})};"
-	"lensEl.oninput=deb(()=>send({cmd:'focus',mode:'locked',"
-	"lensPosition:+lensEl.value}),60);"
-	"let fon=false;"
-	"function flashlightUI(on){fon=on;flashlightEl.className=on?'chip on':'chip';"
-	"pressed(flashlightEl,on)}"
-	"flashlightEl.onclick=()=>{touch();flashlightUI(!fon);send({cmd:'flashlight',on:fon})};"
-	"flipEl.onclick=()=>send({cmd:'flip'});"
+	"let S={};"
+	"const newApp=()=>Array.isArray(S.lensFactors);"
+	"const cmp=v=>String(+(+v).toPrecision(2));"
+	"const front=l=>/^Front/.test(l||'');"
+	"function lensUI(){const L=Array.isArray(S.lenses)?S.lenses:[];"
+	"const F=S.lensFactors,z=+S.zoom||1;"
+	"const has=Array.isArray(F)&&F.length===L.length&&L.length>0;"
+	"show(lensselEl,!has&&L.length>1);"
+	"if(!has){fillSel(lensselEl,L,S.lens||null,l=>LENS[l]||l);"
+	"lensbtnsEl.replaceChildren();zvEl.textContent=z.toFixed(1)+'×';"
+	"vt(zoomEl,zvEl.textContent);return}"
+	"const side=front(S.lens);"
+	"const crop=!side&&S.maxZoom>1&&+S.cropZoom>1?+S.cropZoom:0;"
+	"const items=L.map((l,i)=>({l,f:+F[i]||1})).filter(x=>front(x.l)===side)"
+	".sort((a,b)=>a.f-b.f);"
+	"const btns=[];"
+	"items.forEach(x=>{const sel=x.l===S.lens;"
+	"const onCrop=sel&&crop&&x.l==='Main (Wide)'&&Math.abs(z-crop)<0.01;"
+	"const act=sel&&!onCrop;"
+	"btns.push([act?cmp(x.f*z)+'×':cmp(x.f).replace(/^0\\./,'.'),act,x.l,0]);"
+	"if(crop&&x.l==='Main (Wide)')"
+	"btns.push([onCrop?cmp(crop)+'×':cmp(crop),onCrop,x.l,crop])});"
+	"const k=JSON.stringify(btns);"
+	"if(lensbtnsEl.dataset.k!==k){lensbtnsEl.dataset.k=k;"
+	"const fi=[...lensbtnsEl.children].indexOf(document.activeElement);"
+	/* textContent, not innerHTML: lens labels come from the device. */
+	"lensbtnsEl.replaceChildren(...btns.map(([label,on,l,c])=>{"
+	"const b=document.createElement('button');b.className=on?'lb on':'lb';"
+	"b.textContent=label;b.dataset.l=l;if(c)b.dataset.crop=c;"
+	"b.setAttribute('aria-label',(LENS[l]||l)+(c?' '+cmp(c)+'×':''));"
+	"pressed(b,on);return b}));"
+	"if(fi>=0&&lensbtnsEl.children[fi])lensbtnsEl.children[fi].focus()}"
+	"const cur=items.find(x=>x.l===S.lens);"
+	"zvEl.textContent=cmp((cur?cur.f:1)*z)+'×';vt(zoomEl,zvEl.textContent)}"
+	"lensbtnsEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;"
+	"touch();const l=b.dataset.l,sel=l===S.lens;"
+	"if(!sel)send({cmd:'selectLens',label:l});"
+	"const z=b.dataset.crop?+b.dataset.crop:1;"
+	"if(sel||z!==1)send({cmd:'zoom',value:z});"
+	"S.lens=l;S.zoom=z;zoomEl.value=z;lensUI()};"
 	"lensselEl.onchange=()=>send({cmd:'selectLens',label:lensselEl.value});"
+	"const dz=deb(()=>send({cmd:'zoom',value:+zoomEl.value}),60);"
+	"zoomEl.oninput=()=>{touch();S.zoom=+zoomEl.value;lensUI();dz()};"
+	"const EVS=[];for(let i=-6;i<=6;i++)EVS.push(i/3);"
+	"const ISOS=[25,32,40,50,64,80,100,125,160,200,250,320,400,500,640,800,"
+	"1000,1250,1600,2000,2500,3200,4000,5000,6400,8000,10000,12800,16000,"
+	"20000,25600];"
+	"const SHD=[1,2,3,4,5,6,8,10,13,15,20,24,25,30,40,48,50,60,80,100,120,125,"
+	"160,200,250,320,400,500,640,800,1000,1250,1600,2000,2500,3200,4000,5000,"
+	"6400,8000];"
+	"function isoStops(){const lo=S.minISO||34,hi=S.maxISO||3072;"
+	"const s=ISOS.filter(v=>v>=lo&&v<=hi);return s.length>1?s:[lo,hi]}"
+	"function shStops(){"
+	"const lo=Math.max(S.minShutterSeconds||1/8000,1/8000)*0.999;"
+	"const hi=(S.maxShutterSeconds||1/30)*1.001;"
+	"const s=SHD.map(d=>1/d).filter(v=>v>=lo&&v<=hi);return s.length>1?s:[hi,lo]}"
+	"const nearest=(a,v)=>a.reduce((b,x,i)=>Math.abs(x-v)<Math.abs(a[b]-v)?i:b,0);"
+	"const shLabel=s=>s>=1?Math.round(s)+'s':'1/'+Math.round(1/s);"
+	"const NAME={focus:()=>t('Focus'),wb:()=>t('WB'),ev:()=>'EV',iso:()=>'ISO',"
+	"sh:()=>t('Shutter')};"
+	"const GRP={focus:'focus',wb:'whiteBalance',ev:'exposure',iso:'exposure',"
+	"sh:'exposure'};"
+	"const eman=()=>S.exposureMode==='manual';"
+	"const locked=g=>g==='focus'?S.focusMode==='locked'"
+	":g==='whiteBalance'?S.whiteBalanceMode==='locked':eman();"
+	"const isAuto=k=>k==='ev'?null:!locked(GRP[k]);"
+	"let tgt='ev';"
+	"function targets(){const a=['focus'];if(S.supportsWhiteBalanceLock)a.push('wb');"
+	"a.push('ev');if(S.supportsManualExposure)a.push('iso','sh');return a}"
+	"function readout(k){switch(k){"
+	"case 'ev':{const b=+S.exposureBias||0;return(b>=0?'+':'')+b.toFixed(1)+' EV'}"
+	"case 'iso':return eman()?'ISO '+Math.round(S.iso):t('Auto');"
+	"case 'sh':return eman()?shLabel(S.shutterSeconds):t('Auto');"
+	"case 'wb':return isAuto('wb')?t('Auto'):Math.round(S.whiteBalanceTemperature)+' K';"
+	"default:return isAuto('focus')?t('Auto'):(+S.lensPosition||0).toFixed(2)}}"
+	"function trayUI(){const ts=targets();if(!ts.includes(tgt))tgt='ev';"
+	"const k=ts.map(x=>x+(x===tgt?'*':'')+isAuto(x)).join();"
+	"if(tchipsEl.dataset.k!==k){tchipsEl.dataset.k=k;"
+	"const fk=tchipsEl.contains(document.activeElement)?document.activeElement.dataset.k:null;"
+	"tchipsEl.replaceChildren(...ts.map(x=>{const b=document.createElement('button');"
+	"const a=isAuto(x);b.className=x===tgt?'tc on':'tc';b.dataset.k=x;"
+	"b.textContent=NAME[x]();pressed(b,x===tgt);"
+	"b.setAttribute('aria-label',NAME[x]()+(a?', '+t('Auto'):''));"
+	"if(a){const s=document.createElement('span');s.className='a';"
+	"s.textContent='A';s.setAttribute('aria-hidden','true');b.appendChild(s)}"
+	"return b}));"
+	"if(fk)tchipsEl.querySelector('[data-k='+fk+']').focus()}"
+	"let stops=null,v=0;"
+	"if(tgt==='ev'){stops=EVS;v=+S.exposureBias||0}"
+	"else if(tgt==='iso'){stops=isoStops();v=+S.iso||100}"
+	"else if(tgt==='sh'){stops=shStops();v=+S.shutterSeconds||1/60}"
+	"if(stops){dialEl.min=0;dialEl.max=stops.length-1;dialEl.step=1;"
+	"dialEl.value=nearest(stops,v)}"
+	"else if(tgt==='wb'){dialEl.min=2500;dialEl.max=8000;dialEl.step=10;"
+	"dialEl.value=+S.whiteBalanceTemperature||5000}"
+	"else{dialEl.min=0;dialEl.max=1;dialEl.step=0.01;dialEl.value=+S.lensPosition||0.5}"
+	"dialEl.disabled=tgt==='ev'&&eman();"
+	"setText(readoutEl,readout(tgt));dialEl.setAttribute('aria-label',NAME[tgt]());"
+	"vt(dialEl,readoutEl.textContent);"
+	"show(lightsEl,tgt==='wb');show(wbcEl,tgt==='wb');"
+	"show(nbEl,tgt==='sh'&&typeof S.naturalBlur==='boolean');"
+	"show(toolgapEl,tgt!=='wb'&&nbEl.style.display==='none');"
+	"nbEl.className=S.naturalBlur?'chip on':'chip';pressed(nbEl,!!S.naturalBlur);"
+	"const lk=locked(GRP[tgt]);lockEl.className=lk?'chip on':'chip';pressed(lockEl,lk);"
+	"flashlightEl.className=S.flashlight?'chip on':'chip';"
+	"pressed(flashlightEl,!!S.flashlight);"
+	"flashlightEl.disabled=S.hasFlashlight===false}"
+	"tchipsEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;"
+	"touch();const k=b.dataset.k;"
+	"if(k!==tgt){tgt=k;stillClose()}"
+	"else if(k==='ev'){if(!eman()){S.exposureBias=0;send({cmd:'exposure_bias',value:0})}}"
+	"else if(isAuto(k)===false){setLocal(GRP[k],false);legacyLock(GRP[k],false)}"
+	"trayUI()};"
+	"const sendDial=deb(()=>{switch(tgt){"
+	"case 'ev':send({cmd:'exposure_bias',value:S.exposureBias});break;"
+	"case 'iso':send({cmd:'exposure',mode:'manual',iso:S.iso});break;"
+	"case 'sh':send({cmd:'exposure',mode:'manual',shutterSeconds:S.shutterSeconds});break;"
+	"case 'wb':send({cmd:'white_balance',mode:'locked',"
+	"temperature:S.whiteBalanceTemperature});break;"
+	"default:send({cmd:'focus',mode:'locked',lensPosition:S.lensPosition})}},60);"
+	"dialEl.oninput=()=>{touch();const v=+dialEl.value;"
+	"if(tgt!=='ev'&&isAuto(tgt)&&newApp())"
+	"send({cmd:'lock',target:GRP[tgt],on:true});"
+	"if(tgt==='ev')S.exposureBias=EVS[v];"
+	"else if(tgt==='iso')S.iso=isoStops()[v];"
+	"else if(tgt==='sh')S.shutterSeconds=shStops()[v];"
+	"else if(tgt==='wb')S.whiteBalanceTemperature=v;"
+	"else S.lensPosition=v;"
+	"if(tgt!=='ev')setLocal(GRP[tgt],true);"
+	"trayUI();sendDial()};"
+	"function setLocal(g,on){if(g==='focus')S.focusMode=on?'locked':'auto';"
+	"else if(g==='whiteBalance')S.whiteBalanceMode=on?'locked':'auto';"
+	"else S.exposureMode=on?'manual':'auto'}"
+	"function legacyLock(g,on){if(g==='focus')send(on?{cmd:'focus',mode:'locked',"
+	"lensPosition:+S.lensPosition}:{cmd:'focus',mode:'auto'});"
+	"else if(g==='whiteBalance')send(on?{cmd:'white_balance',mode:'locked',"
+	"temperature:+S.whiteBalanceTemperature}:{cmd:'white_balance',mode:'auto'});"
+	"else send(on?{cmd:'exposure',mode:'manual',iso:+S.iso,"
+	"shutterSeconds:+S.shutterSeconds}:{cmd:'exposure',mode:'auto'})}"
+	"lockEl.onclick=e=>{touch();"
+	"const gs=e.shiftKey?['focus'].concat(S.supportsWhiteBalanceLock?['whiteBalance']:[],"
+	"S.supportsManualExposure?['exposure']:[]):[GRP[tgt]];"
+	"const on=!gs.every(locked);gs.forEach(g=>setLocal(g,on));"
+	"if(newApp())send({cmd:'lock',target:e.shiftKey?'all':gs[0],on});"
+	"else gs.forEach(g=>legacyLock(g,on));"
+	"trayUI()};"
+	"nbEl.onclick=()=>{touch();S.naturalBlur=!S.naturalBlur;"
+	"send({cmd:'natural_blur',on:S.naturalBlur});trayUI()};"
+	"flashlightEl.onclick=()=>{touch();S.flashlight=!S.flashlight;"
+	"send({cmd:'flashlight',on:S.flashlight});trayUI()};"
+	"flipEl.onclick=()=>send({cmd:'flip'});"
+	"let picking=0;"
+	"function stillClose(){picking=0;show(stillboxEl,false);"
+	"wbcEl.classList.remove('on');pressed(wbcEl,false);setText(toolhintEl,'')}"
+	"wbcEl.onclick=async()=>{touch();if(picking){stillClose();return}"
+	"const me=picking=Date.now();wbcEl.classList.add('on');pressed(wbcEl,true);"
+	"setText(toolhintEl,t('Calibrate.Pick'));"
+	"try{if(gone(await fetch('/api/still'+q(),{method:'POST'})))return;"
+	"for(let i=0;i<20&&picking===me;i++){"
+	"await new Promise(r=>setTimeout(r,150));touch();"
+	"const r=await fetch('/api/still'+q());if(gone(r))return;"
+	"if(r.status===200){const b=await r.blob();if(picking!==me)return;"
+	"if(stillEl.src)URL.revokeObjectURL(stillEl.src);"
+	"stillEl.src=URL.createObjectURL(b);show(stillboxEl,true);return}}}catch(e){}"
+	"if(picking===me){stillClose();setText(toolhintEl,t('Calibrate.NoPicture'))}};"
+	"const pick=(x,y)=>{send({cmd:'white_balance',mode:'calibrate',x,y});stillClose()};"
+	"stillEl.onclick=e=>{const r=stillEl.getBoundingClientRect();"
+	"pick(Math.min(Math.max((e.clientX-r.left)/r.width,0),1),"
+	"Math.min(Math.max((e.clientY-r.top)/r.height,0),1))};"
+	"stillEl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();"
+	"pick(0.5,0.5)}};"
+	"document.addEventListener('keydown',e=>{if(e.key==='Escape'&&picking)stillClose()});"
 	"startbtnEl.onclick=()=>send({cmd:'start_stream'});"
 	"stopbtnEl.onclick=()=>send({cmd:'stop_stream'});"
 	"let paused=false;"
@@ -390,43 +556,9 @@ static const char control_page[] =
 	"fmtresEl.onchange=()=>send({cmd:'set_format',resolution:fmtresEl.value});"
 	"fmtfpsEl.onchange=()=>send({cmd:'set_format',fps:+fmtfpsEl.value});"
 	"fmtcodecEl.onchange=()=>send({cmd:'set_format',codec:fmtcodecEl.value});"
-	/* Manual exposure. The shutter slider is 0..1 on a log scale (left =
-	 * long/slow, right = short/fast), mapped with the app's formula. */
-	"let smin=1/8000,smax=1/30,eman=false,wblocked=false;"
-	"const shutSecs=()=>Math.exp(Math.log(smax)-(+shutEl.value)*"
-	"(Math.log(smax)-Math.log(smin)));"
-	"const shutPos=s=>{s=Math.min(Math.max(s,smin),smax);"
-	"return 1-(Math.log(s)-Math.log(smin))/(Math.log(smax)-Math.log(smin))};"
-	"const shutLabel=s=>s>=1?Math.round(s)+'s':'1/'+Math.round(1/s);"
-	"function emodeUI(m){eman=m;aeEl.className=m?'':'on';"
-	"meEl.className=m?'on':'';pressed(aeEl,!m);pressed(meEl,m);"
-	"biasrowEl.style.display=m?'none':'';"
-	"isorowEl.style.display=m?'':'none';shutrowEl.style.display=m?'':'none'}"
-	"aeEl.onclick=()=>{touch();emodeUI(false);send({cmd:'exposure',mode:'auto'})};"
-	"meEl.onclick=()=>{touch();emodeUI(true);send({cmd:'exposure',"
-	"mode:'manual',iso:+isoEl.value,shutterSeconds:shutSecs()})};"
-	"let nbon=false;"
-	"function nbUI(on){nbon=on;nbEl.className=on?'on':'';pressed(nbEl,on)}"
-	"nbEl.onclick=()=>{touch();nbUI(!nbon);send({cmd:'natural_blur',on:nbon})};"
-	"const dIso=deb(()=>send({cmd:'exposure',mode:'manual',iso:+isoEl.value}),60);"
-	"isoEl.oninput=()=>{touch();isovEl.textContent=isoEl.value;dIso()};"
-	"const dShut=deb(()=>send({cmd:'exposure',mode:'manual',"
-	"shutterSeconds:shutSecs()}),60);"
-	"shutEl.oninput=()=>{touch();shutvEl.textContent=shutLabel(shutSecs());"
-	"vt(shutEl,shutvEl.textContent);dShut()};"
-	/* White balance. */
-	"function wbUI(locked){wblocked=locked;awbEl.className=locked?'':'on';"
-	"wblEl.className=locked?'on':'';pressed(awbEl,!locked);pressed(wblEl,locked);"
-	"wbtempEl.style.display=locked?'':'none';"
-	"wbvEl.style.display=locked?'':'none';wbhintEl.style.display=locked?'none':''}"
-	"awbEl.onclick=()=>{touch();wbUI(false);send({cmd:'white_balance',mode:'auto'})};"
-	"wblEl.onclick=()=>{touch();wbUI(true);send({cmd:'white_balance',"
-	"mode:'locked',temperature:+wbtempEl.value})};"
-	"wbcEl.onclick=()=>{touch();send({cmd:'white_balance',mode:'calibrate'})};"
-	"const dWb=deb(()=>send({cmd:'white_balance',mode:'locked',"
-	"temperature:+wbtempEl.value}),60);"
-	"wbtempEl.oninput=()=>{touch();wbvEl.textContent=wbtempEl.value+'K';"
-	"vt(wbtempEl,wbvEl.textContent);dWb()};"
+	"const STAB={off:t('Stabilization.Off'),standard:t('Stabilization.Standard'),"
+	"cinematic:t('Stabilization.Cinematic')};"
+	"stabEl.onchange=()=>send({cmd:'stabilization',mode:stabEl.value});"
 	/* Green screen: optimistic chip toggle. The slider sets a cutoff
 	 * (0.5-5.0 m, All past 5); Auto (-1) is the readout's click, like
 	 * tapping the app's Subject button while its dial is open. */
@@ -498,75 +630,41 @@ static const char control_page[] =
 	"const st=await str.json();"
 	/* Don't fight the operator's hand: only mirror app state when the panel
 	 * hasn't been touched for a couple of seconds. */
-	"if(Date.now()-lastTouch>2000&&typeof st.paused==='boolean')"
-	"pauseUI(st.paused);"
-	"if(Date.now()-lastTouch>2000&&typeof st.zoom==='number'){"
-	"if(st.maxZoom){zoomEl.max=st.maxZoom;"
-	"zoomEl.parentNode.style.display=st.maxZoom>1?'':'none'}"
-	"zoomEl.value=st.zoom;zvEl.textContent=(+st.zoom).toFixed(1)+'\\u00d7';"
-	"vt(zoomEl,zvEl.textContent);"
-	"if(typeof st.exposureBias==='number'){expEl.value=st.exposureBias;"
-	"evEl.textContent=(+st.exposureBias).toFixed(1)}"
-	"const locked=st.focusMode==='locked';focusUI(locked);"
-	"if(locked&&typeof st.lensPosition==='number')lensEl.value=st.lensPosition;"
-	"flashlightUI(!!st.flashlight);flashlightEl.style.display=st.hasFlashlight===false?'none':'';"
-	/* textContent, not innerHTML: lens labels come from the device. */
-	"if(Array.isArray(st.lenses))"
-	"fillSel(lensselEl,st.lenses,st.lens||null,l=>LENS[l]||l);"
-	"lensselEl.style.display=(st.lenses&&st.lenses.length>1)?'':'none';"
-	/* Manual exposure + white balance, mirrored from the app. */
-	"emoderowEl.style.display=st.supportsManualExposure?'':'none';"
-	"if(st.supportsManualExposure){emodeUI(st.exposureMode==='manual');"
-	"if(typeof st.minISO==='number'){isoEl.min=Math.round(st.minISO);"
-	"isoEl.max=Math.round(st.maxISO)}"
-	"if(typeof st.iso==='number'){isoEl.value=Math.round(st.iso);"
-	"isovEl.textContent=Math.round(st.iso)}"
-	"if(typeof st.minShutterSeconds==='number')"
-	"smin=Math.max(st.minShutterSeconds,1/8000);"
-	"if(typeof st.maxShutterSeconds==='number')"
-	"smax=Math.max(st.maxShutterSeconds,smin*2);"
-	"if(typeof st.shutterSeconds==='number'){"
-	"shutEl.value=shutPos(st.shutterSeconds);"
-	"shutvEl.textContent=shutLabel(st.shutterSeconds);"
-	"vt(shutEl,shutvEl.textContent)}}"
-	"else emodeUI(false);"
-	"nbsegEl.style.display=typeof st.naturalBlur==='boolean'&&!eman?'':'none';"
-	"nbUI(!!st.naturalBlur);"
-	"wbrowEl.style.display=st.supportsWhiteBalanceLock?'':'none';"
-	"if(st.supportsWhiteBalanceLock){wbUI(st.whiteBalanceMode==='locked');"
-	"if(typeof st.whiteBalanceTemperature==='number'){"
-	"wbtempEl.value=Math.round(st.whiteBalanceTemperature);"
-	"wbvEl.textContent=Math.round(st.whiteBalanceTemperature)+'K';"
-	"vt(wbtempEl,wbvEl.textContent)}}"
+	"if(Date.now()-lastTouch>2000&&typeof st.zoom==='number'){S=st;"
+	"if(typeof S.paused==='boolean')pauseUI(S.paused);"
+	"if(S.maxZoom)zoomEl.max=S.maxZoom;"
+	"show(zoomrowEl,!(S.maxZoom<=1));zoomEl.value=S.zoom;lensUI();"
+	"trayUI();"
 	/* Green screen, mirrored from the app. */
-	"gsrowEl.style.display=st.supportsGreenScreen?'':'none';"
-	"if(st.supportsGreenScreen){gsUI(!!st.greenScreen);"
-	"const gd=!!st.greenScreenDepth;"
-	"gsdEl.style.display=gd?'':'none';gsdvEl.style.display=gd?'':'none';"
-	"gshintEl.style.display=gd?'none':'';"
-	"let md=typeof st.greenScreenMaxDistance==='number'"
-	"?st.greenScreenMaxDistance:0;"
+	"show(gsEl,!!S.supportsGreenScreen);"
+	"const gd=!!(S.supportsGreenScreen&&S.greenScreenDepth);show(gsdrowEl,gd);"
+	"if(S.supportsGreenScreen){gsUI(!!S.greenScreen);"
+	"let md=typeof S.greenScreenMaxDistance==='number'"
+	"?S.greenScreenMaxDistance:0;"
 	"md=md<0?-1:md<0.5?0:Math.min(md,5);"
 	"if(md>=0)gsdEl.value=md||5.5;gsdvEl.textContent=gsLabel(md);"
 	"vt(gsdEl,gsdvEl.textContent)}"
 	/* Mic picker, only while the phone mic is live as source audio.
 	 * Options are {id,name} pairs: ids round-trip, names display. */
-	"microwEl.style.display=st.micEnabled?'':'none';"
-	"if(st.micEnabled&&Array.isArray(st.mics)){const mn={};"
-	"st.mics.forEach(m=>mn[m.id]=m.name);"
-	"fillSel(micselEl,st.mics.map(m=>m.id),st.mic,i=>mn[i]||i)}"
+	"show(microwEl,!!S.micEnabled);"
+	"if(S.micEnabled&&Array.isArray(S.mics)){const mn={};"
+	"S.mics.forEach(m=>mn[m.id]=m.name);"
+	"fillSel(micselEl,S.mics.map(m=>m.id),S.mic,i=>mn[i]||i)}"
 	/* Format pickers, populated from the app's capability lists. */
-	"if(Array.isArray(st.resolutions)&&Array.isArray(st.frameRates)){"
-	"fmtrowEl.style.display='';"
-	"fillSel(fmtresEl,st.resolutions,st.resolution);"
-	"fillSel(fmtfpsEl,st.frameRates.map(String),String(st.fps),f=>f+' fps');"
-	"const codecs=Array.isArray(st.codecs)?st.codecs:[];"
-	"fmtcodecEl.style.display=codecs.length>1?'':'none';"
-	"fillSel(fmtcodecEl,codecs,st.codec,c=>CODEC_NAMES[c]||c)}}"
+	"if(Array.isArray(S.resolutions)&&Array.isArray(S.frameRates)){"
+	"show(fmtrowEl,true);"
+	"fillSel(fmtresEl,S.resolutions,S.resolution);"
+	"fillSel(fmtfpsEl,S.frameRates.map(String),String(S.fps),f=>f+' fps');"
+	"const codecs=Array.isArray(S.codecs)?S.codecs:[];"
+	"show(fmtcodecEl,codecs.length>1);"
+	"fillSel(fmtcodecEl,codecs,S.codec,c=>CODEC_NAMES[c]||c)}"
+	"show(stabrowEl,typeof S.stabilization==='string');"
+	"if(typeof S.stabilization==='string'){"
+	"fillSel(stabEl,Object.keys(STAB),S.stabilization,m=>STAB[m]);"
+	"stabEl.disabled=!!S.greenScreenDepth}}"
 	"}catch(e){setText(statusEl,t('Unreachable'));say('unreachable',t('Unreachable'));"
 	"dotEl.style.background=COL.grey}}"
-	"focusUI(false);flashlightUI(false);emodeUI(false);wbUI(false);gsUI(false);"
-	"asUI(false);"
+	"gsUI(false);asUI(false);trayUI();"
 	"setInterval(poll,1000);poll();"
 	"</script></body></html>";
 
@@ -676,10 +774,8 @@ static void set_timeouts(socket_t s, int seconds)
 #endif
 }
 
-static void send_str(socket_t s, const char *str)
+static void send_bytes(socket_t s, const char *p, size_t len)
 {
-	size_t len = strlen(str);
-	const char *p = str;
 	while (len > 0) {
 		int n = (int)send(s, p, (int)len, 0);
 		if (n <= 0)
@@ -689,8 +785,14 @@ static void send_str(socket_t s, const char *str)
 	}
 }
 
-static void respond(socket_t s, const char *status_line,
-		    const char *content_type, const char *body)
+static void send_str(socket_t s, const char *str)
+{
+	send_bytes(s, str, strlen(str));
+}
+
+static void respond_len(socket_t s, const char *status_line,
+			const char *content_type, const char *body,
+			size_t len)
 {
 	char header[256];
 	snprintf(header, sizeof(header),
@@ -699,10 +801,17 @@ static void respond(socket_t s, const char *status_line,
 		 "Content-Length: %zu\r\n"
 		 "Cache-Control: no-store\r\n"
 		 "Connection: close\r\n\r\n",
-		 status_line, content_type, body ? strlen(body) : 0);
+		 status_line, content_type, len);
 	send_str(s, header);
 	if (body)
-		send_str(s, body);
+		send_bytes(s, body, len);
+}
+
+static void respond(socket_t s, const char *status_line,
+		    const char *content_type, const char *body)
+{
+	respond_len(s, status_line, content_type, body,
+		    body ? strlen(body) : 0);
 }
 
 static void respond_pick_error(socket_t s, enum pick_result pick)
@@ -1078,6 +1187,30 @@ static void handle_client(socket_t client)
 			respond_pick_error(client, pick);
 		else
 			respond(client, "204 No Content", "text/plain", NULL);
+		return;
+	}
+
+	if (strncmp(request, "POST /api/still", 15) == 0 ||
+	    strncmp(request, "GET /api/still", 14) == 0) {
+		bool post = request[0] == 'P';
+		uint8_t *still = NULL;
+		size_t len = 0;
+		struct ios_camera_source *s = NULL;
+		pthread_mutex_lock(&g_reg.mutex);
+		enum pick_result pick = locked_pick_source(request, &s);
+		if (s && post)
+			ios_camera_request_still(s);
+		else if (s)
+			still = ios_camera_take_still(s, &len);
+		pthread_mutex_unlock(&g_reg.mutex);
+		if (!s)
+			respond_pick_error(client, pick);
+		else if (still)
+			respond_len(client, "200 OK", "image/bmp",
+				    (const char *)still, len);
+		else
+			respond(client, "204 No Content", "text/plain", NULL);
+		free(still);
 		return;
 	}
 
