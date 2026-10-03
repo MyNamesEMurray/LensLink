@@ -770,10 +770,16 @@ struct StreamingView: View {
                         .glassPill()
                         .accessibilityHidden(true)
                 }
+                // Each dial keeps only its own buttons: the lenses for
+                // zoom, green screen for Subject.
                 HStack(spacing: Theme.Space.s) {
-                    lensButtons
-                    greenScreenButton
-                        .padding(.leading, Theme.Space.s)
+                    if rowDial != .subject {
+                        lensButtons
+                    }
+                    if rowDial != .zoom {
+                        greenScreenButton
+                            .padding(.leading, rowDial == nil ? Theme.Space.s : 0)
+                    }
                 }
                 if let dial = rowDial {
                     DialRuler(ticks: dial == .zoom ? zoomTicks : subjectTicks)

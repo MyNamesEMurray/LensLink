@@ -462,8 +462,9 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     the zoom); sliding sideways across
     it drives the zoom. The ruler sits under a fixed `cameraYellow` line, log-scaled with
     the magnifications marked and a selection click on each whole one.
-    The buttons stay put, the active one carrying the live zoom with the
-    other lenses either side, still a tap away. It tucks away 2 s after
+    The lens buttons ride above it, the active one carrying the live zoom
+    with the other lenses either side, still a tap away; the green screen
+    button steps aside until the dial tucks away. It tucks away 2 s after
     the last touch (VoiceOver adjusts the active lens button instead, and
     its tap resets at once).
   - **Green screen button** (`person.fill.viewfinder`, after the lens
@@ -471,8 +472,9 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     a black glyph while green screen is on. Only a **long press** turns
     green screen on or off (a switch restarts the camera, so a stray tap
     must not); a tap says so in a passing pill. While depth assist runs,
-    a tap brings up the **Subject dial** instead: the same layout, with a
-    readout pill over the buttons and the ruler under them, in metres (0.5 to 5 m, then **All**, no cutoff), and a
+    a tap brings up the **Subject dial** instead: the same layout, the
+    lens buttons stepping aside, with a readout pill over the button and
+    the ruler under it, in metres (0.5 to 5 m, then **All**, no cutoff), and a
     second tap on the button hands the cutoff back to **Auto**, which keeps it about
     half a metre behind the person. The button wears the **A** badge
     while the cutoff is on Auto; the readout is `Auto · 1.8 m`, `2.5 m`
