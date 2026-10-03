@@ -274,7 +274,10 @@
 "**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects." = "**深度アシスト**は、実際の深度情報を使って切り抜きを鮮明にします。Face ID搭載機種では前面カメラ、Pro（LiDAR搭載）機種では背面のメインレンズが対象です。そのほかのレンズでは形状検出だけを使い、フレーム内の人物は全員残ります。センターフレームなどのシステムのビデオエフェクトもオフになります。";
 
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
-"**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about half a metre behind you. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**被写体**は深度アシストの動作中に使えます。スマートフォンからカットオフより遠いものはすべて背景になるので、背後を通り過ぎる人を消すことができます。最初は**自動**で、カットオフを常にあなたの約50cm後ろに保ちます。レンズボタンの横にある点灯中のグリーンバックボタンをタップするとダイヤルが開きます。ドラッグして距離を設定するか、5mより先で**すべて**（制限なし）にし、もう一度ボタンをタップすると自動に戻ります。";
+"**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**被写体**は深度アシストの動作中に使えます。スマートフォンからカットオフより遠いものはすべて背景になるので、背後を通り過ぎる人を消すことができます。最初は**自動**で、カットオフを常にあなたの約0.6m後ろに保ちます。自動のときはボタンに**A**が表示されます。レンズボタンの横にある点灯中のグリーンバックボタンをタップするとダイヤルが開きます。ドラッグして距離を設定するか、5mより先で**すべて**（制限なし）にし、もう一度ボタンをタップすると自動に戻ります。";
+
+/* Documentation → Camera & picture, Depth assist section: the stripes shown while the Subject dial is open */
+"While the Subject dial is open, stripes on the picture show what the green screen paints out, so you can see who the cutoff drops. The picture itself stays the plain camera; the green appears in OBS." = "被写体ダイヤルを開いている間は、グリーンバックで塗りつぶされる部分に縞模様が表示され、境界で誰が消えるかを確認できます。プレビュー自体は通常のカメラ映像のままで、緑はOBSに表示されます。";
 
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "深度アシスト";
@@ -288,11 +291,14 @@
 /* Documentation → Using the camera, Lenses & zoom section (Markdown: keep the ** markers) */
 "The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens, or tap the active one for a zoom dial and slide along it; the buttons move up above the dial, so the other lenses stay a tap away. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "レンズボタン（**.5**、**1×**、**2**）は、カメラアプリと同じようにカメラを切り替えます。レンズ内でズームするにはピンチするか、選択中のレンズをタップして表示されるズームダイヤルをスライドします。ボタンはダイヤルの上に移動するので、ほかのレンズもタップひとつで選べます。選択中のレンズをもう一度タップするとズームがリセットされます。前面カメラが2つあるデバイスでは、前面カメラにも同じボタンが表示されます。";
 
+/* Documentation → Using the camera, Lenses & zoom section, second paragraph: the 48 MP Main camera's 2× full-detail crop button (Markdown: keep the ** markers) */
+"When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it." = "メインカメラが48MPセンサーの場合、**1×**の横に**2**ボタンが追加されます。センサー中央部をフル解像度で使うので、ズームするよりシャープです。ピンチやズームダイヤルは通過するときにこの倍率で止まります。このクロップに対応するフォーマットでのみ表示されます。";
+
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "レンズとズーム";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and take ISO manual in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "映像を**タップ**すると、その位置にフォーカスと露出を合わせます。黄色の四角形が位置を示し、シーンが変わるまでその位置を保ってから自動に戻ります。映像を**長押し**すると、フォーカスと露出を画面内のその位置に固定します（AE/AFロック）。iPhoneをどこに向けても、その位置に映るものに合わせてフォーカスと露出を調整し続け、映像かピントのチップをタップするまで四角形が残ります。フォーカスと露出を固定値にしたいときは、トレイでピントをロックし、ISOをマニュアルにしてください。映像のどこでも上下に**ドラッグ**すると、明るさを調整できます（露出が自動のときの露出補正）。";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture lets it go. To freeze focus and exposure instead, lock Focus and take ISO manual in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "映像を**タップ**すると、その位置にフォーカスと露出を合わせます。黄色の四角形が位置を示し、シーンが変わるまでその位置を保ってから自動に戻ります。映像を**長押し**すると、フォーカスと露出を画面内のその位置に固定します（AE/AFロック）。iPhoneをどこに向けても、その位置に映るものに合わせてフォーカスと露出を調整し続け、映像をタップするまで四角形が残ります。フォーカスと露出を固定値にしたいときは、トレイでピントをロックし、ISOをマニュアルにしてください。映像のどこでも上下に**ドラッグ**すると、明るさを調整できます（露出が自動のときの露出補正）。";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "フォーカスと露出";
@@ -302,6 +308,9 @@
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "トレイ下段の**ロック**をタップすると、選択中の設定を自動が今使っている値で固定します。もう一度タップすると自動に戻ります。長押しすると、すべての設定をまとめてロックまたは解除します。SSのチップでは、絞りのボタンで**自然なモーションブラー**をオン/オフできます。自動露出でシャッター速度をフレーム間隔の半分以上の速さ（30fpsで1/60）に保ち、暗い場所では代わりにISOを上げます。";
+
+/* Documentation → Using the camera, Adjust tray section, third paragraph: white balance calibration with the WB chip's eyedropper and the web panel's Calibrate (Markdown: keep the ** markers) */
+"On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture." = "WBのチップでは、**スポイト**で白い紙からホワイトバランスを設定できます。スポイトをタップしてから、映像内の紙をタップします。ホワイトバランスが紙に合わせて固定され、一部のLEDや蛍光灯による緑やマゼンタの色かぶりも補正されます。WBを自動に戻すまでその状態が続きます。Webパネルでは、**キャリブレーション**で映像の中央にある紙に対して同じことができます。";
 
 /* Documentation section header on the Using the camera page */
 "Adjust tray" = "調整トレイ";
@@ -326,6 +335,9 @@
 
 /* Documentation → Options, Camera behavior section (Markdown: keep the ** markers) */
 "**Focus on faces** keeps focus and exposure on the faces the camera sees while focus is on auto, the way the Camera app does — a tap on the picture outranks it until the scene changes, and a lock ignores it. Off, the camera weights the centre of the frame." = "**顔にフォーカス**は、フォーカスが自動のとき、カメラアプリと同じように、カメラが捉えた顔にフォーカスと露出を合わせ続けます。映像をタップすると、シーンが変わるまではタップした位置が優先され、ロック中は顔を無視します。オフのときは、フレームの中央を重視します。";
+
+/* Documentation → Options, Camera behavior section, second paragraph: the Natural motion blur toggle (Markdown: keep the ** markers; 180° rule is the film shutter-angle rule) */
+"**Natural motion blur**, on by default, stops auto exposure from running the shutter slower than half the frame interval (the 180° rule: 1/60 at 30 fps), so movement doesn't smear in a dim room; ISO rises instead. The same switch is on the adjust tray's Shutter chip and in the web panel." = "**自然なモーションブラー**（初期設定はオン）は、自動露出のシャッター速度がフレーム間隔の半分より遅くならないようにします（180°ルール：30fpsで1/60）。暗い部屋でも動きがにじまず、代わりにISOが上がります。同じスイッチはトレイのSSのチップとWebパネルにもあります。";
 
 /* Documentation section header on the Options page */
 "Camera behavior" = "カメラの動作";
@@ -369,6 +381,9 @@
 /* Documentation → Accessibility & diagnostics, Accessibility section (Markdown: keep the ** markers; VoiceOver, Switch Control are the iOS feature names) */
 "**VoiceOver** and **Switch Control**: while either is on, the Live screen never dims or hides its controls by itself, and remote-start standby never dims. The status pill's menu still does it when you ask. VoiceOver also says when the stream goes live, pauses, goes on air, loses its connection to OBS, or locks lip-sync." = "**VoiceOver**と**スイッチコントロール**：どちらかがオンの間は、ライブ画面が自動的に暗くなったり操作項目を隠したりすることはなく、リモート開始のスタンバイ中も暗くなりません。ステータス表示のメニューからは、必要なときに引き続き実行できます。また、ストリームがライブになったとき、一時停止したとき、オンエアになったとき、OBSとの接続が切れたとき、リップシンクがロックされたときには、VoiceOverが読み上げます。";
 
+/* Documentation → Accessibility & diagnostics, Accessibility section, second paragraph: VoiceOver adjustable actions on the lens and green screen buttons (VoiceOver, Actions rotor: use the iOS feature names) */
+"With VoiceOver, swipe up or down on the active lens button to zoom; a double-tap resets the zoom. On the green screen button, swipe up or down to move the Subject cutoff while depth assist runs, and use the Actions rotor to turn green screen on or off." = "VoiceOverでは、選択中のレンズボタンを上下にスワイプするとズームし、ダブルタップでズームがリセットされます。グリーンバックボタンでは、深度アシストの動作中に上下にスワイプすると被写体のカットオフが動きます。グリーンバックのオン/オフはローターの「アクション」で切り替えます。";
+
 /* Documentation section header (the Accessibility & diagnostics page) [also used in Documentation/AccessibilityDocumentationView.swift] */
 "Accessibility" = "アクセシビリティ";
 
@@ -379,7 +394,7 @@
 "Differentiate Without Color" = "カラー以外で区別";
 
 /* Documentation → Accessibility & diagnostics, Camera diagnostics section (Markdown: keep the ** markers) */
-"**Camera diagnostics** lists the camera's formats — which resolutions support the Control Center video effects, and which are 10-bit HDR or Apple Log capable. Paste it into a bug report if something is missing." = "**カメラ診断**は、カメラのフォーマットを一覧表示します。コントロールセンターのビデオエフェクトに対応する解像度や、10ビットHDRやApple Logに対応するものがわかります。何かが足りない場合は、バグ報告に貼り付けてください。";
+"**Camera diagnostics** lists the phone's model, each camera's lens details and exposure ranges, the zoom levels where the phone switches lenses, and every format — which resolutions support the Control Center video effects, and which are 10-bit HDR or Apple Log capable. Paste it into a bug report if something is missing." = "**カメラ診断**は、スマートフォンの機種、各カメラのレンズ情報と露出範囲、レンズが切り替わるズーム倍率、すべてのフォーマットを一覧表示します。コントロールセンターのビデオエフェクトに対応する解像度や、10ビットHDRやApple Logに対応するものがわかります。何かが足りない場合は、バグ報告に貼り付けてください。";
 
 /* ===== OptionsView.swift ===== */
 

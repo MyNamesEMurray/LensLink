@@ -339,6 +339,13 @@ final class Streamer: ObservableObject {
         compositor?.onAutoCutoff = { [weak self] metres in
             Task { @MainActor in self?.greenScreenAutoCutoff = Double(metres) }
         }
+        let mirrored = selectedLens.position == .front
+        compositor?.onCutoutMask = { [weak self] image in
+            Task { @MainActor in
+                guard let self, self.cutoutPreview else { return }
+                self.cutoutMask = CutoutMask(image: image, mirrored: mirrored)
+            }
+        }
         if let compositor {
             camera.onSampleBuffer = { [weak encoder, compositor,
                                        still = pausedStill,
@@ -356,11 +363,13 @@ final class Streamer: ObservableObject {
                 }
             }
             camera.onDepthData = { [compositor,
-                                    distance = greenScreenDistance] depth in
+                                    distance = greenScreenDistance,
+                                    cutout = cutoutPreviewCell] depth in
                 // Capture queue: the compositor's properties are
                 // confined there, so the cutoff crosses over on this
                 // ~15 Hz depth path, not per video frame.
                 compositor.maxDistance = distance.value
+                compositor.wantsCutoutMask = cutout.value > 0
                 compositor.updateDepth(depth)
             }
         } else {
@@ -473,6 +482,22 @@ final class Streamer: ObservableObject {
     /// Where Auto has put the cutoff, in metres; 0 until it has measured
     /// someone.
     @Published private(set) var greenScreenAutoCutoff = 0.0
+
+    /// What the green screen paints over, coarse, for the Live screen's
+    /// stripes. `mirrored` says the frame is flipped (front camera).
+    struct CutoutMask {
+        let image: CGImage
+        let mirrored: Bool
+    }
+    @Published private(set) var cutoutMask: CutoutMask?
+    /// Set while the Subject dial is open; the compositor only builds
+    /// the mask then.
+    var cutoutPreview = false {
+        didSet {
+            cutoutPreviewCell.value = cutoutPreview ? 1 : 0
+            if !cutoutPreview { cutoutMask = nil }
+        }
+    }
     /// The colour pipeline the next capture/encode will use — the single
     /// source of truth every configure/encoder/config-send site reads.
     var activeColor: StreamColor { color(for: resolution, fps: fps) }
@@ -1314,7 +1339,8 @@ final class Streamer: ObservableObject {
     private var compositor: FrameCompositor?
     /// Bridges the main-actor `greenScreenMaxDistance` onto the capture
     /// queue, where the compositor's `maxDistance` is confined.
-    private let greenScreenDistance = GreenScreenDistanceCell()
+    private let greenScreenDistance = LockedFloatCell()
+    private let cutoutPreviewCell = LockedFloatCell()
 
     init() {
         let defaults = UserDefaults.standard
@@ -2265,14 +2291,15 @@ extension Streamer {
 }
 #endif
 
-/// A locked Float cell bridging the main-actor `greenScreenMaxDistance`
-/// onto the capture queue: the compositor's `maxDistance` is
+/// A locked Float cell bridging main-actor green screen settings
+/// (`greenScreenMaxDistance`, `cutoutPreview`) onto the capture queue:
+/// the compositor's properties are
 /// capture-queue-confined by contract, so the armed depth closure
 /// re-reads this cell there instead of touching main-actor state. File
 /// scope on purpose — nested inside Streamer it would inherit
 /// @MainActor and defeat the point. Same NSLock-per-callback pattern as
 /// CameraManager's closure properties.
-private final class GreenScreenDistanceCell {
+private final class LockedFloatCell {
     private let lock = NSLock()
     private var stored: Float = 0
 

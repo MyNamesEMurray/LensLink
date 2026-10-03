@@ -9,8 +9,7 @@ words of the name or subtitle, which search already matches.
 
 Keep this file in step with `APP_STORE.md`: when the English listing
 changes, the translations here change with it. Release notes are per
-version; the ones here are for 1.16.2, which also covers 1.16.1 (its
-App Store version was renamed to 1.16.2 before it was submitted).
+version; the ones here are for 1.17.0.
 
 **Name:** LensLink Camera in every localization (the brand is not
 translated).
@@ -19,7 +18,9 @@ translated).
 is Latin American. If Spanish (Spain) is added too, paste the same text
 with these changes: subtitle `Cámara del móvil para OBS`; "computadora"
 → "ordenador" (promotional text and description); "video" → "vídeo" and
-"mantén presionado" → "mantén pulsado" (description).
+"mantén presionado" → "mantén pulsado" (description; in What's New,
+"presionada" and "mantenlo presionado" become "pulsada" and "mantenlo
+pulsado").
 
 The French text carries no-break spaces before colons and inside « »,
 as French typography requires; keep them when pasting.
@@ -56,8 +57,8 @@ Qualität „Ausgewogen“ oder „Maximal“: „Maximal“ findet heraus, wie 
 Jedes Objektiv, mit den Objektivtasten der Kamera-App
 
 Bedienung, die nicht im Weg ist
-Tippen zum Fokussieren, halten, um Fokus und Belichtung zu sperren, ziehen für die Helligkeit, mit zwei Fingern zoomen
-Eine Einstellleiste für Belichtung, Verschluss, Weißabgleich und Fokus, mit Autofokus, der Gesichter bevorzugt
+Tippen zum Fokussieren, halten, um Fokus und Belichtung an eine Stelle zu heften, ziehen für die Helligkeit, mit zwei Fingern zoomen
+Eine Einstellleiste für Fokus, Weißabgleich, Belichtung, ISO und Verschluss, mit Autofokus, der Gesichter bevorzugt
 Dieselben Bedienelemente im Browser-Steuerfeld auf deinem Computer und direkt in OBS
 Kameraeinstellungen merken: Ein einmal eingestelltes Bild bleibt eingestellt
 
@@ -77,13 +78,21 @@ Auf dem Smartphone wird nichts aufgezeichnet, und nichts verlässt dein lokales 
 Erfordert OBS Studio und das kostenlose Open-Source-Plugin LensLink für Mac, Windows oder Linux: https://lenslink.cam
 ```
 
-**What's New (1.16.2):**
+**What's New (1.17.0):**
 
 ```text
-Feinschliff für den Hauptbildschirm und das Tally-Licht.
+Mehr Kontrolle über Fokus, Belichtung und Weißabgleich, und eine aufgeräumtere Bedienung.
 
-• Zwischen den Tasten „Kamera starten“, „Fernstart scharf schalten“ und „Bildschirm spiegeln“ sind keine dünnen Linien mehr zu sehen.
-• Der Rahmen des Tally-Lichts folgt jetzt immer den abgerundeten Ecken deines Bildschirms, auch nachdem du auf dem iPad die Größe des LensLink-Fensters geändert hast.
+• Weißabgleich auf weißem Papier kalibrieren: Tippe beim WA-Chip auf die Pipette und dann im Bild auf das Papier. Das korrigiert auch den Grün- oder Magentastich von LED- und Leuchtstofflampen.
+• Auf iPhones mit 48-MP-Hauptkamera nutzt eine 2×-Objektivtaste die volle Detailschärfe des Sensors.
+• Halte den Finger auf dem Bild, um Fokus und Belichtung an diese Stelle des Bildausschnitts zu heften: Wohin du das Smartphone auch richtest, sie passen sich weiter an das an, was dort ist, bis ein Tippen ins Bild sie löst.
+• Das Schloss in der Einstellleiste sperrt die gewählte Einstellung auf dem Wert, den die Automatik gerade nutzt. Halte es gedrückt, um alles zu sperren oder zu entsperren.
+• Natürliche Bewegungsunschärfe, standardmäßig an: Die Belichtungsautomatik hält den Verschluss bei der halben Bilddauer oder schneller (1/60 bei 30 fps) und erhöht bei wenig Licht lieber die ISO, als Bewegungen zu verwischen. Ausschalten kannst du sie in den Optionen oder mit der Taste beim Verschl.-Chip.
+• Die Einstellleiste hat die Chips Fokus, WA, EV, ISO und Verschl., und die Regler für EV, ISO und Verschluss rasten in Stufen ein.
+• Der Zoom wandert in die Objektivreihe: Tippe auf die gelbe Objektivtaste für einen Zoomregler und erneut, um den Zoom zurückzusetzen.
+• Der Greenscreen hat eine eigene Taste neben den Objektivtasten. Halte sie gedrückt, um den Greenscreen ein- oder auszuschalten; wo die Tiefenunterstützung läuft, öffnet ein Tippen den Motiv-Regler.
+• Der Motiv-Abstand startet jetzt auf Auto und hält die Grenze knapp hinter dir. Während du sie ziehst, zeigen Streifen im Bild, was weggeschnitten wird.
+• Aktualisiere auch das OBS-Plugin auf 1.17.0: Das Browser-Steuerfeld bekommt die Weißabgleich-Kalibrierung, die natürliche Bewegungsunschärfe und den automatischen Motiv-Abstand.
 ```
 
 ## Spanish, Mexico (Español)
@@ -118,8 +127,8 @@ Calidad Equilibrada o Máxima: Máxima encuentra lo máximo que tu conexión pue
 Todas las lentes, con los botones de lente de la app Cámara
 
 Controles que no estorban
-Toca para enfocar, mantén presionado para bloquear el enfoque y la exposición, arrastra para ajustar el brillo, pellizca para hacer zoom
-Una sola bandeja de ajustes para exposición, obturador, balance de blancos y enfoque, con autoenfoque que prioriza los rostros
+Toca para enfocar, mantén presionado para fijar el enfoque y la exposición en un punto, arrastra para ajustar el brillo, pellizca para hacer zoom
+Una sola bandeja de ajustes para enfoque, balance de blancos, exposición, ISO y obturador, con autoenfoque que prioriza los rostros
 Los mismos controles en un panel del navegador en tu computadora, y en el propio OBS
 Recordar ajustes de cámara: una toma ajustada una vez se queda así
 
@@ -139,13 +148,21 @@ No se graba nada en el teléfono y nada sale de tu red local. Sin cuenta, sin in
 Requiere OBS Studio y el plugin LensLink, gratuito y de código abierto, para Mac, Windows o Linux: https://lenslink.cam
 ```
 
-**What's New (1.16.2):**
+**What's New (1.17.0):**
 
 ```text
-Mejoras en la pantalla principal y en la luz tally.
+Más control sobre el enfoque, la exposición y el balance de blancos, y controles más ordenados.
 
-• Los botones “Iniciar cámara”, “Armar inicio remoto” y “Duplicar pantalla” ya no tienen líneas delgadas entre ellos.
-• El borde de la luz tally ahora sigue siempre las esquinas redondeadas de tu pantalla, incluso después de cambiar el tamaño de la ventana de LensLink en el iPad.
+• Calibra el balance de blancos con papel blanco: toca el cuentagotas en el chip WB y luego toca el papel en la imagen. También corrige el tono verde o magenta de las luces LED y fluorescentes.
+• En los iPhone con cámara principal de 48 MP, un botón de lente 2× aprovecha todo el detalle del sensor.
+• Mantén presionada la imagen para fijar el enfoque y la exposición en esa zona del encuadre: apuntes donde apuntes el teléfono, siguen ajustándose a lo que haya ahí, hasta que un toque en la imagen los libera.
+• El candado de la bandeja de ajustes bloquea el ajuste seleccionado en lo que el modo automático hace en ese momento. Mantenlo presionado para bloquear o desbloquear todo.
+• Desenfoque de movimiento natural, activado de forma predeterminada: la exposición automática mantiene el obturador a la mitad del intervalo entre fotogramas o más rápido (1/60 a 30 fps) y, con poca luz, sube el ISO en lugar de difuminar el movimiento. Desactívalo en Opciones o con el botón del chip Obtur.
+• La bandeja tiene los chips Enfoque, WB, EV, ISO y Obtur., y los diales de EV, ISO y obturador avanzan por pasos.
+• El zoom pasa a la fila de lentes: toca el botón de lente amarillo para abrir un dial de zoom, y vuelve a tocarlo para restablecer el zoom.
+• La pantalla verde tiene su propio botón junto a los botones de lente. Mantenlo presionado para activar o desactivar la pantalla verde; donde funciona la asistencia de profundidad, un toque abre el dial Sujeto.
+• La distancia del sujeto ahora empieza en Auto, que mantiene el límite justo detrás de ti. Mientras lo arrastras, unas rayas sobre la imagen muestran lo que se recorta.
+• Actualiza también el plugin de OBS a 1.17.0: su panel de control en el navegador incorpora la calibración del balance de blancos, el desenfoque de movimiento natural y la distancia del sujeto en Auto.
 ```
 
 ## French (Français)
@@ -180,8 +197,8 @@ Qualité Équilibrée ou Maximale : Maximale trouve le débit le plus élevé q
 Tous les objectifs, avec les boutons d’objectif de l’app Appareil photo
 
 Des commandes qui se font oublier
-Touchez pour faire la mise au point, maintenez pour verrouiller la mise au point et l’exposition, faites glisser pour la luminosité, pincez pour zoomer
-Un seul tiroir de réglages pour l’exposition, l’obturateur, la balance des blancs et la mise au point, avec un autofocus qui privilégie les visages
+Touchez pour faire la mise au point, maintenez pour épingler la mise au point et l’exposition à un endroit, faites glisser pour la luminosité, pincez pour zoomer
+Un seul tiroir de réglages pour la mise au point, la balance des blancs, l’exposition, l’ISO et l’obturateur, avec un autofocus qui privilégie les visages
 Les mêmes commandes dans un panneau web sur votre ordinateur, et dans OBS lui-même
 Mémoriser les réglages de la caméra : un plan réglé une fois le reste
 
@@ -201,13 +218,21 @@ Rien n’est enregistré sur le téléphone, et rien ne quitte votre réseau loc
 Nécessite OBS Studio et le plugin LensLink, gratuit et open source, pour Mac, Windows ou Linux : https://lenslink.cam
 ```
 
-**What's New (1.16.2):**
+**What's New (1.17.0):**
 
 ```text
-Finitions pour l’écran principal et le voyant tally.
+Plus de contrôle sur la mise au point, l’exposition et la balance des blancs, et des commandes plus claires.
 
-• Les boutons « Démarrer la caméra », « Armer le démarrage à distance » et « Recopier l’écran » ne sont plus séparés par de fines lignes.
-• Le contour du voyant tally suit désormais toujours les coins arrondis de votre écran, y compris après avoir redimensionné la fenêtre de LensLink sur iPad.
+• Calibrez la balance des blancs sur une feuille blanche : touchez la pipette de la puce BB, puis touchez le papier dans l’image. Cela corrige aussi la dominante verte ou magenta des éclairages LED et fluorescents.
+• Sur les iPhone dotés d’une caméra principale de 48 Mpx, un bouton d’objectif 2× exploite tout le détail du capteur.
+• Maintenez le doigt sur l’image pour épingler la mise au point et l’exposition à cette zone du cadre : où que vous pointiez le téléphone, elles continuent de s’ajuster à ce qui s’y trouve, jusqu’à ce qu’un toucher sur l’image les libère.
+• Le cadenas du tiroir de réglages verrouille le réglage sélectionné sur ce que fait l’automatique à cet instant. Maintenez-le pour tout verrouiller ou tout déverrouiller.
+• Flou de mouvement naturel, activé par défaut : l’exposition automatique garde une vitesse d’au moins la moitié de l’intervalle entre images (1/60 à 30 fps) et monte l’ISO en faible lumière plutôt que d’étaler le mouvement. Désactivez-le dans Options ou avec le bouton de la puce Vitesse.
+• Le tiroir propose les puces MAP, BB, EV, ISO et Vitesse, et les molettes EV, ISO et Vitesse avancent par crans.
+• Le zoom passe dans la rangée d’objectifs : touchez le bouton d’objectif jaune pour une molette de zoom, et touchez-le de nouveau pour réinitialiser le zoom.
+• L’écran vert a son propre bouton à côté des boutons d’objectif. Maintenez-le pour activer ou désactiver l’écran vert ; là où l’assistance profondeur fonctionne, un toucher ouvre la molette Sujet.
+• La distance du sujet démarre désormais en Auto, qui garde le seuil juste derrière vous. Pendant que vous le faites glisser, des rayures sur l’image montrent ce qui est découpé.
+• Mettez aussi à jour le plugin OBS en 1.17.0 : son panneau de contrôle web reçoit la calibration de la balance des blancs, le flou de mouvement naturel et la distance du sujet en Auto.
 ```
 
 ## Japanese (日本語)
@@ -242,8 +267,8 @@ LensLink Cameraは、iPhoneやiPadをOBS Studio用のカメラにします。ス
 すべてのレンズを、カメラAppと同じレンズボタンで
 
 じゃまにならない操作
-タップでフォーカス、長押しでフォーカスと露出をロック、ドラッグで明るさ調整、ピンチでズーム
-露出、シャッター、ホワイトバランス、フォーカスをまとめた調整トレイ。顔を優先するオートフォーカス付き
+タップでフォーカス、長押しでフォーカスと露出をその位置に固定、ドラッグで明るさ調整、ピンチでズーム
+フォーカス、ホワイトバランス、露出、ISO、シャッターをまとめた調整トレイ。顔を優先するオートフォーカス付き
 同じ操作項目を、コンピュータのブラウザパネルやOBS内でも
 カメラ設定を記憶：一度決めた設定はそのまま
 
@@ -263,13 +288,21 @@ Siriとショートカット
 OBS Studioと、Mac、Windows、Linux用の無料のオープンソースLensLinkプラグインが必要です：https://lenslink.cam
 ```
 
-**What's New (1.16.2):**
+**What's New (1.17.0):**
 
 ```text
-メイン画面とタリーランプの表示を改善しました。
+フォーカス、露出、ホワイトバランスをより細かく操作できるようになり、操作画面もすっきりしました。
 
-• 「カメラを開始」「リモート開始を有効にする」「画面をミラーリング」の各ボタンの間に細い線が表示されなくなりました。
-• タリーランプの枠が、iPadでLensLinkのウインドウサイズを変更した後も含め、常に画面の角の丸みに沿うようになりました。
+• 白い紙でホワイトバランスをキャリブレーション：WBのチップでスポイトをタップし、映像の中の紙をタップします。LEDや蛍光灯による緑やマゼンタの色かぶりも補正されます。
+• 48MPのメインカメラを搭載したiPhoneでは、2×のレンズボタンでセンサーの細部まで生かせます。
+• 映像を長押しすると、フォーカスと露出を画面内のその位置に固定します。スマートフォンをどこに向けても、その位置に映るものに合わせて調整し続け、映像をタップすると解除されます。
+• 調整トレイのロックボタンをタップすると、選択中の設定を自動が今使っている値で固定します。長押しすると、すべての設定をまとめてロックまたは解除します。
+• 自然なモーションブラー（初期設定でオン）：自動露出でシャッター速度をフレーム間隔の半分以上の速さ（30fpsで1/60）に保ち、暗い場所では動きをぶれさせずにISOを上げます。オプション、またはSSのチップのボタンでオフにできます。
+• 調整トレイのチップはピント、WB、EV、ISO、SSになり、EV、ISO、SSのダイヤルは段階ごとに止まるようになりました。
+• ズームはレンズボタンの列に移りました。黄色のレンズボタンをタップするとズームダイヤルが開き、もう一度タップするとズームがリセットされます。
+• グリーンバック専用のボタンがレンズボタンの横に加わりました。長押しでグリーンバックのオン/オフを切り替えます。深度アシストが動作しているときは、タップで被写体ダイヤルが開きます。
+• 被写体の距離は自動で始まるようになり、カットオフをあなたのすぐ後ろに保ちます。ドラッグ中は、切り抜かれる部分が縞模様で表示されます。
+• OBSプラグインも1.17.0にアップデートしてください。ブラウザコントロールパネルで、ホワイトバランスのキャリブレーション、自然なモーションブラー、被写体の距離の自動が使えるようになります。
 ```
 
 ## Portuguese, Brazil (Português do Brasil)
@@ -304,8 +337,8 @@ Qualidade Equilibrada ou Máxima: a Máxima descobre o máximo que a sua conexã
 Todas as lentes, com os botões de lente do app Câmera
 
 Controles que não atrapalham
-Toque para focar, mantenha pressionado para travar foco e exposição, arraste para o brilho, faça pinça para dar zoom
-Uma só bandeja de ajustes para exposição, obturador, equilíbrio de branco e foco, com foco automático que prioriza rostos
+Toque para focar, mantenha pressionado para fixar foco e exposição em um ponto, arraste para o brilho, faça pinça para dar zoom
+Uma só bandeja de ajustes para foco, equilíbrio de branco, exposição, ISO e obturador, com foco automático que prioriza rostos
 Os mesmos controles em um painel no navegador do seu computador, e no próprio OBS
 Memorizar ajustes da câmera: uma cena ajustada uma vez continua ajustada
 
@@ -325,13 +358,21 @@ Nada é gravado no celular, e nada sai da sua rede local. Sem conta, sem login, 
 Requer o OBS Studio e o plugin LensLink, gratuito e de código aberto, para Mac, Windows ou Linux: https://lenslink.cam
 ```
 
-**What's New (1.16.2):**
+**What's New (1.17.0):**
 
 ```text
-Ajustes na tela principal e na luz tally.
+Mais controle sobre foco, exposição e equilíbrio de branco, e controles mais organizados.
 
-• Os botões “Iniciar câmera”, “Armar início remoto” e “Espelhar tela” não têm mais linhas finas entre eles.
-• A borda da luz tally agora sempre acompanha os cantos arredondados da sua tela, inclusive depois de redimensionar a janela do LensLink no iPad.
+• Calibre o equilíbrio de branco com papel branco: toque no conta-gotas no chip WB e depois toque no papel na imagem. Isso também corrige o tom verde ou magenta de luzes LED e fluorescentes.
+• Nos iPhones com câmera principal de 48 MP, um botão de lente 2× aproveita todo o detalhe do sensor.
+• Mantenha pressionada a imagem para fixar o foco e a exposição naquela área do enquadramento: para onde quer que você aponte o celular, eles continuam se ajustando ao que estiver ali, até que um toque na imagem os libere.
+• O cadeado da bandeja de ajustes trava o ajuste selecionado no que o automático está fazendo agora. Mantenha pressionado para travar ou destravar tudo.
+• Desfoque de movimento natural, ligado por padrão: a exposição automática mantém o obturador em metade do intervalo entre quadros ou mais rápido (1/60 a 30 fps) e, com pouca luz, aumenta o ISO em vez de borrar o movimento. Desligue em Opções ou no botão do chip Obtur.
+• A bandeja tem os chips Foco, WB, EV, ISO e Obtur., e os dials de EV, ISO e obturador avançam em passos.
+• O zoom foi para a fileira de lentes: toque no botão de lente amarelo para abrir um dial de zoom, e toque de novo para redefinir o zoom.
+• A tela verde ganhou um botão próprio ao lado dos botões de lente. Mantenha pressionado para ligar ou desligar a tela verde; onde a assistência de profundidade funciona, um toque abre o dial Assunto.
+• A distância do assunto agora começa no Auto, que mantém o limite logo atrás de você. Enquanto você arrasta, listras na imagem mostram o que será cortado.
+• Atualize também o plugin do OBS para a 1.17.0: o painel de controle no navegador ganha a calibração do equilíbrio de branco, o desfoque de movimento natural e a distância do assunto no Auto.
 ```
 
 ## Chinese, Simplified (简体中文)
@@ -366,8 +407,8 @@ LensLink Camera 可以把你的 iPhone 或 iPad 变成 OBS Studio 的摄像头�
 每一颗镜头都能用，镜头按钮与相机 App 相同
 
 不碍事的控制
-轻点对焦，按住锁定对焦和曝光，拖动调节亮度，双指捏合变焦
-一个调节栏集中曝光、快门、白平衡和对焦，并提供人脸优先的自动对焦
+轻点对焦，按住把对焦和曝光固定在该位置，拖动调节亮度，双指捏合变焦
+一个调节栏集中对焦、白平衡、曝光、ISO 和快门，并提供人脸优先的自动对焦
 同样的控制项也出现在电脑上的浏览器面板中，以及 OBS 里
 记住摄像头设置：调好一次，就一直保持
 
@@ -387,11 +428,19 @@ Siri 与快捷指令
 需要 OBS Studio 以及适用于 Mac、Windows 或 Linux 的免费开源 LensLink 插件：https://lenslink.cam
 ```
 
-**What's New (1.16.2):**
+**What's New (1.17.0):**
 
 ```text
-主界面和 Tally 灯的细节改进。
+对焦、曝光和白平衡的控制更细致，操作界面也更简洁。
 
-• “启动摄像头”“开启远程启动”和“镜像屏幕”按钮之间不再出现细线。
-• Tally 灯的边框现在始终贴合屏幕的圆角，包括在 iPad 上调整 LensLink 窗口大小之后。
+• 用白纸校准白平衡：在“白平衡”按钮下轻点吸管，再轻点画面中的白纸。LED 灯和荧光灯带来的偏绿或偏洋红也能一并校正。
+• 在配备 4800 万像素主摄的 iPhone 上，新的 2× 镜头按钮可发挥传感器的全部细节。
+• 按住画面可把对焦和曝光固定在画面的该区域：无论手机指向哪里，都会持续针对该区域里的内容调整，直到轻点画面将其解除。
+• 调节栏新增锁按钮：轻点会把所选设置固定在自动当前使用的值；按住可一次锁定或解锁全部设置。
+• 自然动态模糊，默认开启：自动曝光将快门保持在帧间隔的一半或更快（30 fps 时为 1/60），光线暗时提高 ISO，而不是让动作拖影。可在“选项”中或用“快门”按钮下的按钮关闭。
+• 调节栏的按钮改为“对焦”“白平衡”“EV”“ISO”“快门”，EV、ISO 和快门转盘会按档位停顿。
+• 变焦移到了镜头按钮一行：轻点黄色的镜头按钮打开变焦转盘，再次轻点即可重置变焦。
+• 绿幕在镜头按钮旁有了专属按钮。按住可开启或关闭绿幕；深度辅助运行时，轻点可打开“主体”转盘。
+• “主体”距离现在默认为自动，会把截止距离保持在你身后不远处。拖动时，画面上的条纹会标出要去掉的部分。
+• 也请把 OBS 插件更新到 1.17.0：浏览器控制面板新增白平衡校准、自然动态模糊和自动主体距离。
 ```

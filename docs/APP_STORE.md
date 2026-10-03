@@ -41,9 +41,13 @@ each submission.
 >    Local Network when asked, and tap **Start Camera**. The picture
 >    appears in OBS within a second or two. The Home screen's card names
 >    the computer once OBS connects.
-> 5. Live controls: tap the picture to focus, hold to lock, pinch to
->    zoom, and open the tray with the chevron. The same controls appear
->    at http://localhost:9980 on the computer (the plugin's control panel).
+> 5. Live controls: tap the picture to focus and expose there, hold it
+>    to pin focus and exposure to that spot, and pinch to zoom. Tap the
+>    yellow lens button for a zoom dial; hold the green screen button
+>    beside the lens buttons to turn on the virtual green screen. The
+>    chevron opens the tray: Focus, WB, EV, ISO and Shutter, with a Lock
+>    button. The same controls appear at http://localhost:9980 on the
+>    computer (the plugin's control panel).
 >
 > A demo video showing the full flow: DEMO_VIDEO_URL
 >
@@ -118,9 +122,9 @@ Connect rejects them there): Phone camera for OBS Studio
 > - Every lens, with the Camera app's lens buttons
 >
 > **Controls that stay out of the way**
-> - Tap to focus, hold to lock focus and exposure, drag for brightness,
->   pinch to zoom
-> - One tray for exposure, shutter, white balance and focus, with
+> - Tap to focus, hold to pin focus and exposure to a spot, drag for
+>   brightness, pinch to zoom
+> - One tray for focus, white balance, exposure, ISO and shutter, with
 >   faces-first autofocus
 > - The same controls in a browser panel on your computer, and in OBS
 >   itself
@@ -154,6 +158,21 @@ is spent on other terms instead.
 Portuguese and Simplified Chinese have every field translated in
 [`APP_STORE_LOCALIZED.md`](APP_STORE_LOCALIZED.md). The name stays
 "LensLink Camera" in every language.
+
+**What's New** (1.17.0; everything since 1.16.2):
+
+> More control over focus, exposure and white balance, and tidier controls on the Live screen.
+>
+> - Calibrate white balance on white paper: tap the eyedropper on the WB chip, then tap the paper in the picture. It also corrects the green or magenta cast of LED and fluorescent lights.
+> - On iPhones with a 48 MP Main camera, a 2× lens button uses the sensor's full detail.
+> - Hold the picture to pin focus and exposure to that spot of the frame: wherever you point the phone, they keep adjusting for what is there, until a tap on the picture releases them.
+> - A Lock button in the tray locks the selected setting at what auto is doing right now. Hold it to lock or unlock everything.
+> - Natural motion blur, on by default: auto exposure keeps the shutter at half the frame time or faster (1/60 at 30 fps), raising ISO in dim light instead of smearing motion. Turn it off in Options or with the Shutter chip's button.
+> - The tray's chips are Focus, WB, EV, ISO and Shutter, and the EV, ISO and Shutter dials click between stops.
+> - Zoom moves to the lens row: tap the yellow lens button for a zoom dial, and tap it again to reset the zoom.
+> - Green screen has its own button next to the lens buttons. Hold it to turn green screen on or off; where depth assist runs, a tap opens the Subject dial.
+> - The Subject distance now starts on Auto, which keeps the cutoff just behind you. While you drag it, stripes on the picture show what gets cut.
+> - Update the OBS plugin to 1.17.0 too: its browser control panel gains white balance calibration, Natural motion blur and the Auto subject distance.
 
 **What's New** (1.16.2; covers 1.16.1 and 1.16.2):
 
@@ -191,7 +210,7 @@ carry its one change users see, the reorganized Documentation.
 > - Screen mirroring can now run at 30 fps to save battery and Wi-Fi bandwidth. Choose it in the LensLink Screen source's properties in OBS (needs the 1.15.1 plugin).
 > - A new app icon, with light and dark versions and full Liquid Glass support on iOS 26 and later.
 
-The App Store version must match the release tag the merge cut (1.16.2
+The App Store version must match the release tag the merge cut (1.17.0
 for the latest notes): the build carries that version, and
 App Store Connect only attaches a build whose version matches. App Store
 Connect also allows only one unreleased version at a time, so a version
@@ -227,7 +246,7 @@ when the raw captures are gone.
    Camera / Format / Green screen rows.
 2. `live-glance`: the picture, status pill, Pause, Stop, lens buttons,
    tally border on air. Point the camera at something worth looking at.
-3. `live-tray`: the adjust tray open on Exposure, same scene.
+3. `live-tray`: the adjust tray open on EV, same scene.
 4. `format`: the Format sheet with Quality and Color visible.
 5. `options`.
 6. `obs`: the phone's Live screen with the Mac visible behind it, or the
@@ -255,13 +274,13 @@ takes the label down with it. Run the matching checks below on a real
 device before declaring a label, and again after any release that
 touches the Live screen or the Setup screen. "Common tasks" for this app
 are: connect to OBS, start the camera, adjust it while live (zoom,
-exposure, focus, white balance, flashlight, flip, lens), pause, stop,
-and change Options.
+exposure, focus, white balance, flashlight, flip, lens, green screen),
+pause, stop, and change Options.
 
 | Label | Declare | Why |
 |---|---|---|
 | VoiceOver | Yes | Every control has a spoken name and state, stream changes are announced, and idle dimming waits while VoiceOver runs. |
-| Voice Control | Yes | Every control has a name Voice Control can say, with short aliases ("Stop", "Flip", "Wake"); the tray's dial reaches every setting the picture's gestures do. |
+| Voice Control | Yes | Every control has a name Voice Control can say, with short aliases ("Stop", "Flip", "Wake"); the tray's dial reaches focus and exposure without the picture's gestures, and the lens buttons reach each lens's zoom without a pinch. |
 | Larger Text | Yes, after the checks pass | Every form follows Dynamic Type to the largest size; the Live screen scales its text to twice the default and shows the large content viewer on its fixed-size controls. |
 | Dark Interface | Yes | The Live screen is always dark; the Setup screen and every sheet follow the system appearance. |
 | Differentiate Without Color Alone | Yes | Every status has a word beside its dot, and with the setting on the tally border gains a badge naming the lit status. |
@@ -280,11 +299,15 @@ and change Options.
       haptic on the way.
 - [ ] Live screen: swipe through the status pill (its word), Pause,
       Stop camera, lens buttons (name, current one selected with its
-      zoom), Adjust camera. Open the tray: every chip (name, auto or
-      manual, selected), the dial (chip name and readout as value,
-      adjustable with swipe up and down; on Shutter, WB and Focus that
-      takes the setting out of auto), Flashlight (value On / Off),
-      Flip camera, Close.
+      zoom, adjustable with swipe up and down to zoom), the green screen
+      button (On / Off, a "Turn on green screen" action; while depth
+      runs, the Subject distance as value, adjustable), Adjust camera.
+      Open the tray: every chip (name, auto or manual, selected), the
+      dial (chip name and readout as value, adjustable with swipe up and
+      down; on ISO, Shutter, WB and Focus that takes the setting out of
+      auto), Natural motion blur on Shutter and Calibrate white balance
+      on WB (value On / Off), Lock (with "Lock all" / "Unlock all"
+      actions), Flashlight (value On / Off), Flip camera, Close.
 - [ ] Pause and resume: "Paused", then "Live". Unplug or quit OBS:
       "Connection lost" plus a warning haptic; reconnect: "Live".
 - [ ] Put the source in OBS's Program: "On air". With lip-sync
@@ -302,8 +325,8 @@ and change Options.
 - [ ] "Show names" on the Live screen and the tray: every button has a
       name, none shows a bare number.
 - [ ] "Tap Flashlight", "Tap Torch", "Tap Flip", "Tap Switch camera",
-      "Tap Stop", "Tap Adjust", "Tap Close", "Tap Status", "Tap
-      Exposure", "Tap Mirror Screen" all work.
+      "Tap Stop", "Tap Adjust", "Tap Close", "Tap Status", "Tap EV",
+      "Tap Lock", "Tap Green screen", "Tap Mirror Screen" all work.
 - [ ] Let the Live screen dim, then "Tap Wake".
 
 **Larger Text** (Settings → Accessibility → Display & Text Size →
@@ -312,8 +335,8 @@ Larger Text, at the largest size):
 - [ ] Setup: the computer card stacks the name, status and Start or
       address without clipping; every row, the Format sheet, Options,
       Tally light and Documentation stay usable.
-- [ ] Live screen: the status and sync pills, the tray's mode line and
-      the dial readout are larger and nothing overlaps the top bar.
+- [ ] Live screen: the status and sync pills and the dial readout are
+      larger and nothing overlaps the top bar.
 - [ ] Long-press a glass button, a dial chip, a lens button and the
       status pill: the large content viewer shows its name.
 
@@ -334,13 +357,15 @@ Reduce Transparency on its own):
 
 - [ ] Point the camera at a bright white wall. The pills, the tray and
       the glass buttons are dark and solid, with a light edge under
-      Increase Contrast; the tray's mode line reads as near-white.
+      Increase Contrast; the unselected chips' labels read as
+      near-white.
 
 **Reduced Motion** (Accessibility → Motion → Reduce Motion):
 
 - [ ] Give a tally status Pulse: the border holds steady.
-- [ ] Open and close the tray, let the idle view engage and wake it,
-      tap to focus: nothing slides or scales.
+- [ ] Open and close the tray, open the lens row's zoom dial and let
+      it tuck away, let the idle view engage and wake it, tap to focus:
+      nothing slides or scales.
 
 ## The multitasking camera entitlement
 

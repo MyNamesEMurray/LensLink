@@ -41,6 +41,13 @@ final class FrameCompositor {
     /// the Live screen can show where it landed. Capture queue.
     var onAutoCutoff: ((Float) -> Void)?
 
+    /// While true, a coarse map of what gets painted green goes to
+    /// `onCutoutMask` about ten times a second, for the Live screen's
+    /// stripes while the Subject dial is open. Capture queue.
+    var wantsCutoutMask = false
+    var onCutoutMask: ((CGImage) -> Void)?
+    private var lastCutoutMask: CFAbsoluteTime = 0
+
     // MARK: - Members (all capture-queue confined after init)
 
     private let device: MTLDevice
@@ -263,6 +270,17 @@ final class FrameCompositor {
             return sampleBuffer
         }
 
+        if wantsCutoutMask {
+            let now = CFAbsoluteTimeGetCurrent()
+            if now - lastCutoutMask >= 0.1 {
+                lastCutoutMask = now
+                if let image = cutoutMask(mask: maskBuffer, width: width,
+                                          height: height) {
+                    onCutoutMask?(image)
+                }
+            }
+        }
+
         // 4. Wrap for the encoder. Attachments (colour primaries /
         // transfer / matrix — the BT.709 tags) must travel with the new
         // buffer or colours shift on the wire.
@@ -459,6 +477,76 @@ final class FrameCompositor {
             reportedAutoCutoff = rounded
             onAutoCutoff?(rounded)
         }
+    }
+
+    // MARK: - Cutout preview
+
+    /// The kernel's alpha on a coarse grid, inverted: white where the
+    /// frame is painted green, clear where it is kept. Premultiplied
+    /// RGBA so it can serve directly as a layer mask.
+    private func cutoutMask(mask: CVPixelBuffer, width: Int,
+                            height: Int) -> CGImage? {
+        let columns = 96
+        let rows = max(1, columns * height / max(width, 1))
+        let cutoff = maxDistance < 0 ? autoCutoff : maxDistance
+        let depth = cutoff > 0 ? latestDepthPixelBuffer : nil
+        let useDepth = depth.map {
+            CVPixelBufferGetPixelFormatType($0) == kCVPixelFormatType_DepthFloat16
+        } ?? false
+        CVPixelBufferLockBaseAddress(mask, .readOnly)
+        if useDepth, let depth { CVPixelBufferLockBaseAddress(depth, .readOnly) }
+        defer {
+            if useDepth, let depth { CVPixelBufferUnlockBaseAddress(depth, .readOnly) }
+            CVPixelBufferUnlockBaseAddress(mask, .readOnly)
+        }
+        guard let maskBase = CVPixelBufferGetBaseAddress(mask) else { return nil }
+        let maskW = CVPixelBufferGetWidth(mask)
+        let maskH = CVPixelBufferGetHeight(mask)
+        let maskRow = CVPixelBufferGetBytesPerRow(mask)
+        let depthBase = useDepth ? depth.flatMap(CVPixelBufferGetBaseAddress) : nil
+        let depthW = depth.map(CVPixelBufferGetWidth) ?? 0
+        let depthH = depth.map(CVPixelBufferGetHeight) ?? 0
+        let depthRow = depth.map(CVPixelBufferGetBytesPerRow) ?? 0
+        let lower = cutoff - 0.15
+
+        var pixels = [UInt8](repeating: 0, count: columns * rows * 4)
+        for gy in 0..<rows {
+            let v = (Float(gy) + 0.5) / Float(rows)
+            for gx in 0..<columns {
+                let u = (Float(gx) + 0.5) / Float(columns)
+                let mx = min(Int(u * Float(maskW)), maskW - 1)
+                let my = min(Int(v * Float(maskH)), maskH - 1)
+                var alpha = Float(maskBase.load(fromByteOffset: my * maskRow + mx,
+                                                as: UInt8.self)) / 255
+                if let depthBase, alpha > 0 {
+                    let dx = min(Int(u * Float(depthW)), depthW - 1)
+                    let dy = min(Int(v * Float(depthH)), depthH - 1)
+                    let bits = depthBase.load(fromByteOffset: dy * depthRow + dx * 2,
+                                              as: UInt16.self)
+                    let d = Float(Float16(bitPattern: bits))
+                    if !d.isNaN {
+                        let t = min(max((d - lower) / 0.15, 0), 1)
+                        alpha *= 1 - t * t * (3 - 2 * t)
+                    }
+                }
+                let cut = UInt8((1 - alpha) * 255)
+                let i = (gy * columns + gx) * 4
+                pixels[i] = cut
+                pixels[i + 1] = cut
+                pixels[i + 2] = cut
+                pixels[i + 3] = cut
+            }
+        }
+        guard let provider = CGDataProvider(data: Data(pixels) as CFData) else {
+            return nil
+        }
+        return CGImage(width: columns, height: rows, bitsPerComponent: 8,
+                       bitsPerPixel: 32, bytesPerRow: columns * 4,
+                       space: CGColorSpaceCreateDeviceRGB(),
+                       bitmapInfo: CGBitmapInfo(rawValue:
+                           CGImageAlphaInfo.premultipliedLast.rawValue),
+                       provider: provider, decode: nil,
+                       shouldInterpolate: true, intent: .defaultIntent)
     }
 
     // MARK: - Pool

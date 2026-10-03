@@ -98,6 +98,8 @@ struct StreamingView: View {
                 // untouched). The last frame freezes underneath, invisible
                 // behind the overlay.
                 previewEnabled: !dimmed,
+                cutoutMask: streamer.cutoutMask?.image,
+                cutoutMirrored: streamer.cutoutMask?.mirrored ?? false,
                 onTapAtDevicePoint: { point, viewPoint in
                     touched()
                     let calibrating = pickingWhite && trayOpen
@@ -263,6 +265,7 @@ struct StreamingView: View {
         .onChange(of: streamer.resolution) { _ in refreshNativeCrop() }
         .onChange(of: streamer.fps) { _ in refreshNativeCrop() }
         .onChange(of: streamer.activeColor) { _ in refreshNativeCrop() }
+        .onChange(of: rowDial) { streamer.cutoutPreview = $0 == .subject }
         // Battery monitoring is a device-wide flag, so it is held only
         // while this screen exists — the Setup screen has nothing to show.
         .onAppear {
@@ -280,6 +283,7 @@ struct StreamingView: View {
             battery.release()
             restoreBrightness()
             streamer.camera.onTapPointReset = nil
+            streamer.cutoutPreview = false
         }
     }
 
@@ -1432,19 +1436,19 @@ struct StreamingView: View {
                                target: DialTarget) -> some View {
         let distance: (Double, Double) -> Double = logScale
             ? { abs(log($0 / $1)) } : { abs($0 - $1) }
+        let nearest: () -> Int = {
+            let v = value.wrappedValue
+            return stops.indices.min {
+                distance(stops[$0], v) < distance(stops[$1], v)
+            } ?? 0
+        }
         let index = Binding<Double>(
-            get: {
-                let v = value.wrappedValue
-                return Double(stops.indices.min {
-                    distance(stops[$0], v) < distance(stops[$1], v)
-                } ?? 0)
-            },
+            get: { Double(nearest()) },
             set: { position in
-                let stop = stops[min(max(Int(position.rounded()), 0),
-                                     stops.count - 1)]
-                guard stop != value.wrappedValue else { return }
+                let i = min(max(Int(position.rounded()), 0), stops.count - 1)
+                guard i != nearest() else { return }
                 Self.notchFeedback.selectionChanged()
-                value.wrappedValue = stop
+                value.wrappedValue = stops[i]
             })
         return VStack(spacing: 2) {
             slider(index, in: 0...Double(max(stops.count - 1, 1)), step: 1,
