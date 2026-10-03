@@ -276,9 +276,6 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**Assunto** funciona enquanto a assistência de profundidade está ativa: tudo o que estiver mais longe do celular que o limite vira fundo, e é assim que você remove alguém que passa atrás de você. Ele começa no **Auto**, que mantém o limite cerca de 0,6 m atrás de você, e um **A** no botão indica isso. Toque no botão de tela verde aceso ao lado dos botões de lente para abrir o dial: arraste para definir uma distância, ou além de 5 m para **Tudo** (sem limite), e toque no botão de novo para o Auto.";
 
-/* Documentation → Camera & picture, Depth assist section: the stripes shown while the Subject dial is open */
-"While the Subject dial is open, stripes on the picture show what the green screen paints out, so you can see who the cutoff drops. The picture itself stays the plain camera; the green appears in OBS." = "Enquanto o seletor de Assunto está aberto, listras na imagem mostram o que a tela verde cobre, para você ver quem o limite deixa de fora. A imagem continua sendo a da câmera; o verde aparece no OBS.";
-
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "Assistência de profundidade";
 
@@ -304,7 +301,7 @@
 "Focus & exposure" = "Foco e exposição";
 
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
-"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Focus, WB, EV, ISO and Shutter. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. EV is the brightness bias while exposure is on auto; drag ISO or Shutter to take exposure manual. EV, ISO and Shutter click between the usual stops. The buttons under the dial stay in the same place on every chip, Flashlight and Flip included." = "A **seta** abre a bandeja de ajustes: um dial e um chip para cada coisa que ele controla (Foco, WB para o equilíbrio de branco, EV, ISO e Obtur. para o obturador). Um **A** amarelo em um chip indica que aquele ajuste está no automático. Arraste o dial e ele passa para manual; toque de novo no chip ativo e ele volta ao automático. EV é a compensação de brilho enquanto a exposição está no automático; arraste ISO ou Obtur. para passar a exposição para manual. EV, ISO e Obtur. avançam pelos passos de costume. Os botões abaixo do dial ficam no mesmo lugar em todos os chips, inclusive Lanterna e Alternar.";
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Focus, WB, EV, ISO and Shutter. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. EV is the brightness bias while exposure is on auto, and tapping it again sets it back to 0; drag ISO or Shutter to take exposure manual. EV, ISO and Shutter click between the usual stops. The buttons under the dial stay in the same place on every chip, Flashlight and Flip included." = "A **seta** abre a bandeja de ajustes: um dial e um chip para cada coisa que ele controla (Foco, WB para o equilíbrio de branco, EV, ISO e Obtur. para o obturador). Um **A** amarelo em um chip indica que aquele ajuste está no automático. Arraste o dial e ele passa para manual; toque de novo no chip ativo e ele volta ao automático. EV é a compensação de brilho enquanto a exposição está no automático, e tocar de novo volta para 0; arraste ISO ou Obtur. para passar a exposição para manual. EV, ISO e Obtur. avançam pelos passos de costume. Os botões abaixo do dial ficam no mesmo lugar em todos os chips, inclusive Lanterna e Alternar.";
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "O **cadeado** na fileira de baixo da bandeja congela o ajuste selecionado no que o automático está fazendo agora; toque de novo para voltar ao automático. Mantenha pressionado para travar ou destravar tudo de uma vez. No chip Obtur., o botão de abertura liga ou desliga o **Desfoque de movimento natural**: a exposição automática mantém o obturador em metade do intervalo entre quadros ou mais rápido (1/60 a 30 fps) e, com pouca luz, aumenta o ISO no lugar.";
@@ -693,14 +690,35 @@
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "Codificador %1$@ indisponível (%2$lld)";
 
+/* Live screen: a pill shown when the Subject dial opens, since the phone preview is the plain camera and the green only appears in OBS */
+"Green screen shows in OBS, not in this preview" = "A tela verde aparece no OBS, não nesta pré-visualização";
+
 /* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
 "Hold to turn on green screen" = "Toque e segure para ativar a tela verde";
 
-/* Live screen: hint for a tap on the lit green screen button when there is no Subject dial */
-"Hold to turn off green screen" = "Toque e segure para desativar a tela verde";
+/* Live screen: hint for a tap on the lit green screen button when depth assist isn't running (this camera or format has no depth), so there is no Subject dial */
+"Green screen is on, but without depth here, so there's no Subject dial. Hold to turn it off." = "A tela verde está ativada, mas aqui sem profundidade, então não há seletor de Assunto. Toque e segure para desativar.";
 
 /* VoiceOver action on the green screen button */
 "Turn on green screen" = "Ativar a tela verde";
 
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "Desativar a tela verde";
+
+/* Format sheet: a resolution with green screen depth assist at the chosen frame rate, e.g. "1080p · Depth". "Depth" means depth assist */
+"%@ · Depth" = "%@ · Profundidade";
+
+/* Format sheet: a resolution with depth assist only at other frame rates; %1$@ is the resolution, %2$@ a list of frame rates, e.g. "4K · Depth at 24 and 30 fps" */
+"%1$@ · Depth at %2$@ fps" = "%1$@ · Profundidade a %2$@ fps";
+
+/* Format sheet: a frame rate with green screen depth assist at the chosen resolution, e.g. "30 fps · Depth" */
+"%lld fps · Depth" = "%lld fps · Profundidade";
+
+/* Setup and Format sheet, green screen on: %@ is the camera (lens) name */
+"The %@ camera has no depth, so green screen runs without the Subject dial." = "A câmera %@ não tem profundidade, então a tela verde funciona sem o seletor de Assunto.";
+
+/* Setup and Format sheet, green screen on: depth assist works at the chosen camera and format */
+"Depth assist will run: the Subject dial can drop people behind you." = "A assistência de profundidade vai funcionar: o seletor de Assunto pode tirar pessoas atrás de você.";
+
+/* Setup and Format sheet, green screen on: %@ is the camera (lens) name; "Depth" is the tag on Format sheet options */
+"No depth at this format on the %@ camera. Formats marked Depth have it." = "Sem profundidade neste formato na câmera %@. Os formatos marcados com Profundidade têm.";

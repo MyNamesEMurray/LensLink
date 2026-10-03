@@ -91,7 +91,7 @@ Mehr Kontrolle über Fokus, Belichtung und Weißabgleich, und eine aufgeräumter
 • Die Einstellleiste hat die Chips Fokus, WA, EV, ISO und Verschl., und die Regler für EV, ISO und Verschluss rasten in Stufen ein.
 • Der Zoom wandert in die Objektivreihe: Tippe auf die gelbe Objektivtaste für einen Zoomregler und erneut, um den Zoom zurückzusetzen.
 • Der Greenscreen hat eine eigene Taste neben den Objektivtasten. Halte sie gedrückt, um den Greenscreen ein- oder auszuschalten; wo die Tiefenunterstützung läuft, öffnet ein Tippen den Motiv-Regler.
-• Der Motiv-Abstand startet jetzt auf Auto und hält die Grenze knapp hinter dir. Während du sie ziehst, zeigen Streifen im Bild, was weggeschnitten wird.
+• Der Motiv-Abstand startet jetzt auf Auto und hält die Grenze knapp hinter dir.
 • Aktualisiere auch das OBS-Plugin auf 1.17.0: Das Browser-Steuerfeld bekommt die Weißabgleich-Kalibrierung, die natürliche Bewegungsunschärfe und den automatischen Motiv-Abstand.
 ```
 
@@ -161,7 +161,7 @@ Más control sobre el enfoque, la exposición y el balance de blancos, y control
 • La bandeja tiene los chips Enfoque, WB, EV, ISO y Obtur., y los diales de EV, ISO y obturador avanzan por pasos.
 • El zoom pasa a la fila de lentes: toca el botón de lente amarillo para abrir un dial de zoom, y vuelve a tocarlo para restablecer el zoom.
 • La pantalla verde tiene su propio botón junto a los botones de lente. Mantenlo presionado para activar o desactivar la pantalla verde; donde funciona la asistencia de profundidad, un toque abre el dial Sujeto.
-• La distancia del sujeto ahora empieza en Auto, que mantiene el límite justo detrás de ti. Mientras lo arrastras, unas rayas sobre la imagen muestran lo que se recorta.
+• La distancia del sujeto ahora empieza en Auto, que mantiene el límite justo detrás de ti.
 • Actualiza también el plugin de OBS a 1.17.0: su panel de control en el navegador incorpora la calibración del balance de blancos, el desenfoque de movimiento natural y la distancia del sujeto en Auto.
 ```
 
@@ -231,7 +231,7 @@ Plus de contrôle sur la mise au point, l’exposition et la balance des blancs,
 • Le tiroir propose les puces MAP, BB, EV, ISO et Vitesse, et les molettes EV, ISO et Vitesse avancent par crans.
 • Le zoom passe dans la rangée d’objectifs : touchez le bouton d’objectif jaune pour une molette de zoom, et touchez-le de nouveau pour réinitialiser le zoom.
 • L’écran vert a son propre bouton à côté des boutons d’objectif. Maintenez-le pour activer ou désactiver l’écran vert ; là où l’assistance profondeur fonctionne, un toucher ouvre la molette Sujet.
-• La distance du sujet démarre désormais en Auto, qui garde le seuil juste derrière vous. Pendant que vous le faites glisser, des rayures sur l’image montrent ce qui est découpé.
+• La distance du sujet démarre désormais en Auto, qui garde le seuil juste derrière vous.
 • Mettez aussi à jour le plugin OBS en 1.17.0 : son panneau de contrôle web reçoit la calibration de la balance des blancs, le flou de mouvement naturel et la distance du sujet en Auto.
 ```
 
@@ -301,7 +301,7 @@ OBS Studioと、Mac、Windows、Linux用の無料のオープンソースLensLin
 • 調整トレイのチップはピント、WB、EV、ISO、SSになり、EV、ISO、SSのダイヤルは段階ごとに止まるようになりました。
 • ズームはレンズボタンの列に移りました。黄色のレンズボタンをタップするとズームダイヤルが開き、もう一度タップするとズームがリセットされます。
 • グリーンバック専用のボタンがレンズボタンの横に加わりました。長押しでグリーンバックのオン/オフを切り替えます。深度アシストが動作しているときは、タップで被写体ダイヤルが開きます。
-• 被写体の距離は自動で始まるようになり、カットオフをあなたのすぐ後ろに保ちます。ドラッグ中は、切り抜かれる部分が縞模様で表示されます。
+• 被写体の距離は自動で始まるようになり、カットオフをあなたのすぐ後ろに保ちます。
 • OBSプラグインも1.17.0にアップデートしてください。ブラウザコントロールパネルで、ホワイトバランスのキャリブレーション、自然なモーションブラー、被写体の距離の自動が使えるようになります。
 ```
 
@@ -371,7 +371,7 @@ Mais controle sobre foco, exposição e equilíbrio de branco, e controles mais 
 • A bandeja tem os chips Foco, WB, EV, ISO e Obtur., e os dials de EV, ISO e obturador avançam em passos.
 • O zoom foi para a fileira de lentes: toque no botão de lente amarelo para abrir um dial de zoom, e toque de novo para redefinir o zoom.
 • A tela verde ganhou um botão próprio ao lado dos botões de lente. Mantenha pressionado para ligar ou desligar a tela verde; onde a assistência de profundidade funciona, um toque abre o dial Assunto.
-• A distância do assunto agora começa no Auto, que mantém o limite logo atrás de você. Enquanto você arrasta, listras na imagem mostram o que será cortado.
+• A distância do assunto agora começa no Auto, que mantém o limite logo atrás de você.
 • Atualize também o plugin do OBS para a 1.17.0: o painel de controle no navegador ganha a calibração do equilíbrio de branco, o desfoque de movimento natural e a distância do assunto no Auto.
 ```
 
@@ -441,6 +441,6 @@ Siri 与快捷指令
 • 调节栏的按钮改为“对焦”“白平衡”“EV”“ISO”“快门”，EV、ISO 和快门转盘会按档位停顿。
 • 变焦移到了镜头按钮一行：轻点黄色的镜头按钮打开变焦转盘，再次轻点即可重置变焦。
 • 绿幕在镜头按钮旁有了专属按钮。按住可开启或关闭绿幕；深度辅助运行时，轻点可打开“主体”转盘。
-• “主体”距离现在默认为自动，会把截止距离保持在你身后不远处。拖动时，画面上的条纹会标出要去掉的部分。
+• “主体”距离现在默认为自动，会把截止距离保持在你身后不远处。
 • 也请把 OBS 插件更新到 1.17.0：浏览器控制面板新增白平衡校准、自然动态模糊和自动主体距离。
 ```

@@ -403,6 +403,11 @@ struct ContentView: View {
                                  systemImage: "person.fill.viewfinder",
                                  color: Theme.liveGreen)
             }
+            if streamer.greenScreenEnabled {
+                Text(depthAssistStatus(streamer))
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
 
             if streamer.cameraPermissionDenied || streamer.micPermissionDenied {
                 Button("Camera access denied — open Settings") {
@@ -679,13 +684,17 @@ private struct FormatSheet: View {
                 Section {
                     Picker("Resolution", selection: $streamer.resolution) {
                         ForEach(availableResolutions) { resolution in
-                            Text(resolution.rawValue).tag(resolution)
+                            Text(resolutionLabel(resolution)).tag(resolution)
                         }
                     }
                     Picker("Frame rate", selection: $streamer.fps) {
                         ForEach(availableFrameRates, id: \.self) { fps in
-                            Text(L("%lld fps", fps)).tag(fps)
+                            Text(frameRateLabel(fps)).tag(fps)
                         }
+                    }
+                } footer: {
+                    if streamer.greenScreenEnabled {
+                        Text(depthAssistStatus(streamer))
                     }
                 }
 
@@ -755,6 +764,48 @@ private struct FormatSheet: View {
         .tint(Theme.accent)
     }
 
+    /// With green screen on, each resolution says whether depth assist
+    /// runs at the current frame rate, or lists the rates where it does.
+    private func resolutionLabel(_ resolution: CameraManager.Resolution) -> String {
+        guard streamer.greenScreenEnabled else { return resolution.rawValue }
+        let rates = availableFrameRates.filter {
+            CameraManager.supportsDepth(resolution: resolution, fps: Int32($0),
+                                        lens: streamer.selectedLens)
+        }
+        if rates.contains(streamer.fps) {
+            return L("%@ · Depth", resolution.rawValue)
+        }
+        guard !rates.isEmpty else { return resolution.rawValue }
+        let list = ListFormatter.localizedString(byJoining: rates.map(String.init))
+        return L("%1$@ · Depth at %2$@ fps", resolution.rawValue, list)
+    }
+
+    private func frameRateLabel(_ fps: Int) -> String {
+        guard streamer.greenScreenEnabled,
+              CameraManager.supportsDepth(resolution: streamer.resolution,
+                                          fps: Int32(fps),
+                                          lens: streamer.selectedLens) else {
+            return L("%lld fps", fps)
+        }
+        return L("%lld fps · Depth", fps)
+    }
+}
+
+/// Whether green screen's depth assist (the Subject dial) will run with
+/// the camera and format picked now, and if not, what it needs.
+@MainActor
+private func depthAssistStatus(_ streamer: Streamer) -> String {
+    let lens = streamer.selectedLens
+    guard CameraManager.hasDepth(lens: lens) else {
+        return L("The %@ camera has no depth, so green screen runs without the Subject dial.",
+                 lens.displayLabel)
+    }
+    if CameraManager.supportsDepth(resolution: streamer.resolution,
+                                   fps: Int32(streamer.fps), lens: lens) {
+        return L("Depth assist will run: the Subject dial can drop people behind you.")
+    }
+    return L("No depth at this format on the %@ camera. Formats marked Depth have it.",
+             lens.displayLabel)
 }
 
 /// One selectable row with a checkmark: a title, an optional short

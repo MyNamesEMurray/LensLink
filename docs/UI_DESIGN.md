@@ -384,11 +384,18 @@ Symbol) and a title — top to bottom:
 3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
    value reads `4K · 60 fps · HEVC` (`· HDR` or `· Log` appended when the
    colour isn't Standard) and opens the Format sheet — and the **Green
-   screen** toggle. A contextual "Open Settings" button appears only if
+   screen** toggle. While green screen is on, a footnote under the
+   toggle says whether depth assist will run at the chosen lens and
+   format. A contextual "Open Settings" button appears only if
    a permission was denied.
 
    **The Format sheet**: Resolution and Frame rate pickers (each filtered
-   to what the selected lens supports), then **Quality** (**Balanced** or
+   to what the selected lens supports). While green screen is on, options
+   with depth assist carry a tag: a frame rate reads `30 fps · Depth` when
+   the chosen resolution has depth at it, and a resolution reads
+   `1080p · Depth` when it has depth at the chosen frame rate, or
+   `4K · Depth at 24 and 30 fps` when only other rates have it; the
+   section footer repeats the depth line from Setup. Then **Quality** (**Balanced** or
    **Maximum**, the latter with a small accent **Beta** tag and no
    caption; the Format row's value gains `· Max`), then **Codec** and
    **Color** as check-row lists rather than pickers, because the two constrain each
@@ -471,7 +478,13 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     the last touch (VoiceOver adjusts the active lens button instead, and
     its tap resets at once).
   - **Green screen button** (`person.fill.viewfinder`, after the lens
-    buttons, a small gap apart): always there; solid `cameraYellow` with
+    buttons, a small gap apart): there when green screen was on at
+    stream start or has been turned on since (a hold that turns it off
+    keeps it, so it can come back), so a user who never uses green
+    screen doesn't see it; the web panel's row follows the same rule
+    through STATE `supportsGreenScreen`. The glyph is 17 pt, and while
+    depth assist runs its person is drawn as a fine dot grid, like a
+    depth map (solid otherwise), so a depth format shows at a glance. Solid `cameraYellow` with
     a black glyph while green screen is on. Only a **long press** turns
     green screen on or off (a switch restarts the camera, so a stray tap
     must not); a tap says so in a passing pill. While depth assist runs,
@@ -481,10 +494,8 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     second tap on the button hands the cutoff back to **Auto**, which keeps it about
     0.6 m behind the person. The button wears the **A** badge
     while the cutoff is on Auto, so the readout is just the distance
-    (`1.8 m`, or `All`). While the dial is open, diagonal stripes over the
-    preview mark what the green screen paints out (a coarse mask from
-    the compositor, about ten times a second, only while the dial is
-    open); the preview itself stays the plain camera.
+    (`1.8 m`, or `All`). Opening the dial shows a hint pill, "Green screen shows in OBS,
+    not in this preview", since the phone's preview is the plain camera.
 - **Chevron** (`chevron.up` in a glass capsule) under the lens row
   opens the tray.
 - **Gestures:** pinch = zoom within the lens; **tap** = focus/expose at
@@ -526,8 +537,9 @@ under the lens row; 200 ms):
   auto on the first touch (ISO or Shutter → manual exposure, WB → lock,
   Focus → lock), starting from what auto was doing. Tapping the *active*
   chip again hands it back to auto. EV is the bias dial, an
-  auto-exposure control, so dragging it leaves auto alone; it is greyed
-  out while exposure is manual.
+  auto-exposure control, so dragging it leaves auto alone, and tapping
+  the active EV chip sets the bias back to 0; it is greyed out while
+  exposure is manual.
 - **Bottom row, fixed slots** filled from the right so no shared button
   moves between chips or cameras: the chip's own tool, else a gap
   (`eyedropper` on WB: Calibrate white balance, the next tap on the

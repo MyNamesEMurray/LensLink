@@ -623,6 +623,21 @@ final class CameraManager: NSObject {
                       color: color) != nil
     }
 
+    /// Whether green screen's depth assist can run at this combo: the
+    /// lens has a depth sibling with a depth-capable format at exactly
+    /// this resolution and frame rate, the same test configure applies.
+    static func supportsDepth(resolution: Resolution, fps: Int32,
+                              lens: Lens) -> Bool {
+        guard let sibling = depthSiblingDevice(for: lens) else { return false }
+        return format(for: sibling, resolution: resolution, fps: fps,
+                      color: .sdr, requireDepth: true) != nil
+    }
+
+    /// Whether the lens has depth assist at any format.
+    static func hasDepth(lens: Lens) -> Bool {
+        depthSiblingDevice(for: lens) != nil
+    }
+
     /// Whether this combo has a 10-bit HLG capture format — the UI's
     /// gate for what the HDR choice can actually deliver.
     static func hdrAvailable(lens: Lens, resolution: Resolution,

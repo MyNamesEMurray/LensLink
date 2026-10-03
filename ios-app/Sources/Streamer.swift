@@ -339,13 +339,6 @@ final class Streamer: ObservableObject {
         compositor?.onAutoCutoff = { [weak self] metres in
             Task { @MainActor in self?.greenScreenAutoCutoff = Double(metres) }
         }
-        let mirrored = selectedLens.position == .front
-        compositor?.onCutoutMask = { [weak self] image in
-            Task { @MainActor in
-                guard let self, self.cutoutPreview else { return }
-                self.cutoutMask = CutoutMask(image: image, mirrored: mirrored)
-            }
-        }
         if let compositor {
             camera.onSampleBuffer = { [weak encoder, compositor,
                                        still = pausedStill,
@@ -363,13 +356,11 @@ final class Streamer: ObservableObject {
                 }
             }
             camera.onDepthData = { [compositor,
-                                    distance = greenScreenDistance,
-                                    cutout = cutoutPreviewCell] depth in
+                                    distance = greenScreenDistance] depth in
                 // Capture queue: the compositor's properties are
                 // confined there, so the cutoff crosses over on this
                 // ~15 Hz depth path, not per video frame.
                 compositor.maxDistance = distance.value
-                compositor.wantsCutoutMask = cutout.value > 0
                 compositor.updateDepth(depth)
             }
         } else {
@@ -439,6 +430,7 @@ final class Streamer: ObservableObject {
         didSet {
             UserDefaults.standard.set(greenScreenEnabled,
                                       forKey: "greenScreen")
+            if greenScreenEnabled { greenScreenOffered = true }
             if greenScreenEnabled && colorSetting != .sdr {
                 // Forcing Standard runs colorSetting's didSet, which
                 // reconfigures a live stream itself (with green screen
@@ -459,6 +451,10 @@ final class Streamer: ObservableObject {
             }
         }
     }
+    /// Whether the live view and remote UIs offer the green screen
+    /// toggle this stream: on at start, or turned on since. A hold that
+    /// turns it off mid-stream keeps the toggle, so it can come back.
+    @Published private(set) var greenScreenOffered = false
     /// Depth-assisted max subject distance in metres: anything farther
     /// is background even where the person mask disagrees. 0 = no
     /// cutoff ("All"), `autoSubjectDistance` (-1) = Auto, which keeps
@@ -482,22 +478,6 @@ final class Streamer: ObservableObject {
     /// Where Auto has put the cutoff, in metres; 0 until it has measured
     /// someone.
     @Published private(set) var greenScreenAutoCutoff = 0.0
-
-    /// What the green screen paints over, coarse, for the Live screen's
-    /// stripes. `mirrored` says the frame is flipped (front camera).
-    struct CutoutMask {
-        let image: CGImage
-        let mirrored: Bool
-    }
-    @Published private(set) var cutoutMask: CutoutMask?
-    /// Set while the Subject dial is open; the compositor only builds
-    /// the mask then.
-    var cutoutPreview = false {
-        didSet {
-            cutoutPreviewCell.value = cutoutPreview ? 1 : 0
-            if !cutoutPreview { cutoutMask = nil }
-        }
-    }
     /// The colour pipeline the next capture/encode will use — the single
     /// source of truth every configure/encoder/config-send site reads.
     var activeColor: StreamColor { color(for: resolution, fps: fps) }
@@ -1002,11 +982,13 @@ final class Streamer: ObservableObject {
             state["color"] = StreamColor.log.rawValue
         }
         // Green screen (docs/PROTOCOL.md §8): the support flag is
-        // always advertised (remote UIs gate their row on it); the
+        // advertised while the stream offers green screen (remote UIs
+        // gate their row on it); the
         // live keys appear only while actually armed — the compositor,
         // not the setting, is the truth — so a snapshot with green
         // screen off matches today's apart from supportsGreenScreen.
         state["supportsGreenScreen"] = FrameCompositor.supportsSegmentation
+            && greenScreenOffered
         if compositor != nil {
             state["greenScreen"] = true
             // Only when true: absent reads as false to every truthiness
@@ -1339,8 +1321,7 @@ final class Streamer: ObservableObject {
     private var compositor: FrameCompositor?
     /// Bridges the main-actor `greenScreenMaxDistance` onto the capture
     /// queue, where the compositor's `maxDistance` is confined.
-    private let greenScreenDistance = LockedFloatCell()
-    private let cutoutPreviewCell = LockedFloatCell()
+    private let greenScreenDistance = GreenScreenDistanceCell()
 
     init() {
         let defaults = UserDefaults.standard
@@ -1856,6 +1837,7 @@ final class Streamer: ObservableObject {
         guard !isStreaming, !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
+        greenScreenOffered = greenScreenEnabled
 
         guard await CameraManager.requestPermission() else {
             cameraPermissionDenied = true
@@ -2291,15 +2273,14 @@ extension Streamer {
 }
 #endif
 
-/// A locked Float cell bridging main-actor green screen settings
-/// (`greenScreenMaxDistance`, `cutoutPreview`) onto the capture queue:
-/// the compositor's properties are
+/// A locked Float cell bridging the main-actor `greenScreenMaxDistance`
+/// onto the capture queue: the compositor's `maxDistance` is
 /// capture-queue-confined by contract, so the armed depth closure
 /// re-reads this cell there instead of touching main-actor state. File
 /// scope on purpose — nested inside Streamer it would inherit
 /// @MainActor and defeat the point. Same NSLock-per-callback pattern as
 /// CameraManager's closure properties.
-private final class LockedFloatCell {
+private final class GreenScreenDistanceCell {
     private let lock = NSLock()
     private var stored: Float = 0
 

@@ -98,8 +98,6 @@ struct StreamingView: View {
                 // untouched). The last frame freezes underneath, invisible
                 // behind the overlay.
                 previewEnabled: !dimmed,
-                cutoutMask: streamer.cutoutMask?.image,
-                cutoutMirrored: streamer.cutoutMask?.mirrored ?? false,
                 onTapAtDevicePoint: { point, viewPoint in
                     touched()
                     let calibrating = pickingWhite && trayOpen
@@ -265,7 +263,6 @@ struct StreamingView: View {
         .onChange(of: streamer.resolution) { _ in refreshNativeCrop() }
         .onChange(of: streamer.fps) { _ in refreshNativeCrop() }
         .onChange(of: streamer.activeColor) { _ in refreshNativeCrop() }
-        .onChange(of: rowDial) { streamer.cutoutPreview = $0 == .subject }
         // Battery monitoring is a device-wide flag, so it is held only
         // while this screen exists — the Setup screen has nothing to show.
         .onAppear {
@@ -283,7 +280,6 @@ struct StreamingView: View {
             battery.release()
             restoreBrightness()
             streamer.camera.onTapPointReset = nil
-            streamer.cutoutPreview = false
         }
     }
 
@@ -756,11 +752,12 @@ struct StreamingView: View {
             if let rowHint {
                 Text(rowHint)
                     .font(.caption.weight(.semibold))
+                    .multilineTextAlignment(.center)
                     .foregroundColor(Theme.textPrimary)
                     .glassPill()
                     .transition(.opacity)
                     .task(id: rowHint) {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
                         guard !Task.isCancelled else { return }
                         withAnimation { self.rowHint = nil }
                     }
@@ -780,7 +777,7 @@ struct StreamingView: View {
                     if rowDial != .subject {
                         lensButtons
                     }
-                    if rowDial != .zoom {
+                    if rowDial != .zoom, streamer.greenScreenOffered {
                         greenScreenButton
                             .padding(.leading, rowDial == nil ? Theme.Space.s : 0)
                     }
@@ -922,19 +919,21 @@ struct StreamingView: View {
             touched()
             guard depth else {
                 withAnimation {
-                    rowHint = on ? L("Hold to turn off green screen")
+                    rowHint = on ? L("Green screen is on, but without depth here, so there's no Subject dial. Hold to turn it off.")
                                  : L("Hold to turn on green screen")
                 }
                 return
             }
             if rowDial == .subject {
                 streamer.greenScreenMaxDistance = Streamer.autoSubjectDistance
+            } else {
+                withAnimation { rowHint = L("Green screen shows in OBS, not in this preview") }
             }
             rowDial = .subject
             rowDialTouch = UUID()
         }
-        return Image(systemName: "person.fill.viewfinder")
-            .font(.system(size: 14, weight: .semibold))
+        return SubjectGlyph(dotted: depth)
+            .font(.system(size: 17, weight: .semibold))
             .onGlassText(on ? .black : Theme.textPrimary.opacity(0.85),
                          increased: on ? .black : Theme.textPrimary)
             .frame(width: 32, height: 32)
@@ -1273,7 +1272,7 @@ struct StreamingView: View {
         let auto = isAuto(target)
         return Button {
             touched()
-            if selected, auto == false {
+            if selected, auto != true {
                 setAuto(target)
             } else {
                 dialTarget = target
@@ -1342,7 +1341,8 @@ struct StreamingView: View {
 
     private func setAuto(_ target: DialTarget) {
         switch target {
-        case .exposure: break
+        case .exposure:
+            if streamer.exposureSetting == .auto { streamer.exposureBias = 0 }
         case .iso, .shutter: streamer.exposureSetting = .auto
         case .whiteBalance: streamer.whiteBalanceSetting = .auto
         case .focus: streamer.focusSetting = .auto
@@ -1682,5 +1682,37 @@ private struct TallyEdge: View {
                        value: dimmedPhase)
             .onAppear { dimmedPhase = pulsing }
             .onChange(of: pulsing) { on in dimmedPhase = on }
+    }
+}
+
+/// The green screen button's glyph: the person is drawn as a dot grid,
+/// like a depth map, while depth assist runs, and solid otherwise.
+private struct SubjectGlyph: View {
+    let dotted: Bool
+
+    var body: some View {
+        if dotted {
+            ZStack {
+                Image(systemName: "viewfinder")
+                Canvas { context, size in
+                    let step = size.width / 12
+                    let dot = step * 0.75
+                    var y = step / 2
+                    while y < size.height {
+                        var x = step / 2
+                        while x < size.width {
+                            context.fill(Path(ellipseIn: CGRect(x: x - dot / 2, y: y - dot / 2,
+                                                                width: dot, height: dot)),
+                                         with: .foreground)
+                            x += step
+                        }
+                        y += step
+                    }
+                }
+                .mask(Image(systemName: "person.fill.viewfinder"))
+            }
+        } else {
+            Image(systemName: "person.fill.viewfinder")
+        }
     }
 }
