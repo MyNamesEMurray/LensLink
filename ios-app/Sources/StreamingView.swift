@@ -742,8 +742,8 @@ struct StreamingView: View {
 
     /// The lens buttons and the green screen button, above the tray
     /// whether it is open or not. Tapping the active lens brings up a
-    /// zoom dial above the row, with the buttons staying put so the other
-    /// lenses are a tap away; tapping the lit green screen button brings
+    /// zoom dial under the row, the buttons riding above it so the live
+    /// zoom shows and the other lenses are a tap away; tapping the lit green screen button brings
     /// up the Subject cutoff dial instead. Sliding sideways across the
     /// dial or the row then drives it, and it tucks away shortly after
     /// the last touch.
@@ -762,24 +762,21 @@ struct StreamingView: View {
                     }
             }
             VStack(spacing: Theme.Space.s) {
-                switch rowDial {
-                case .zoom?:
-                    DialRuler(ticks: zoomTicks)
-                case .subject?:
+                if rowDial == .subject {
                     Text(subjectReadout)
                         .font(.system(.subheadline, design: .rounded).weight(.bold)
                                 .monospacedDigit())
                         .foregroundColor(Theme.cameraYellow)
                         .glassPill()
                         .accessibilityHidden(true)
-                    DialRuler(ticks: subjectTicks)
-                case nil:
-                    EmptyView()
                 }
                 HStack(spacing: Theme.Space.s) {
                     lensButtons
                     greenScreenButton
                         .padding(.leading, Theme.Space.s)
+                }
+                if let dial = rowDial {
+                    DialRuler(ticks: dial == .zoom ? zoomTicks : subjectTicks)
                 }
             }
             .contentShape(Rectangle())

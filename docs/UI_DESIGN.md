@@ -457,8 +457,9 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   one brings up the zoom dial, and tapping it again returns the lens to
   its own zoom (`1×` of that lens). A side with one camera still shows
   its single button.
-  - **Zoom dial:** tapping the active lens button slides a ruler up
-    above the row (a second tap resets the zoom); sliding sideways across
+  - **Zoom dial:** tapping the active lens button brings up a ruler in
+    the row's place, the buttons moving up above it (a second tap resets
+    the zoom); sliding sideways across
     it drives the zoom. The ruler sits under a fixed `cameraYellow` line, log-scaled with
     the magnifications marked and a selection click on each whole one.
     The buttons stay put, the active one carrying the live zoom with the
@@ -470,8 +471,8 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     a black glyph while green screen is on. Only a **long press** turns
     green screen on or off (a switch restarts the camera, so a stray tap
     must not); a tap says so in a passing pill. While depth assist runs,
-    a tap brings up the **Subject dial** instead: a readout pill over the
-    same ruler, in metres (0.5 to 5 m, then **All**, no cutoff), and a
+    a tap brings up the **Subject dial** instead: the same layout, with a
+    readout pill over the buttons and the ruler under them, in metres (0.5 to 5 m, then **All**, no cutoff), and a
     second tap on the button hands the cutoff back to **Auto**, which keeps it about
     half a metre behind the person. The button wears the **A** badge
     while the cutoff is on Auto; the readout is `Auto · 1.8 m`, `2.5 m`

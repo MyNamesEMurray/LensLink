@@ -13,7 +13,7 @@ struct LiveCameraDocumentationView: View {
             }
 
             Section {
-                Text("The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens, or tap the active one for a zoom dial above the buttons and slide along it; the other lenses stay a tap away. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera.")
+                Text("The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens, or tap the active one for a zoom dial and slide along it; the buttons move up above the dial, so the other lenses stay a tap away. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera.")
             } header: {
                 Text("Lenses & zoom")
             }
