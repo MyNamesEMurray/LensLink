@@ -139,7 +139,7 @@ capture_family() {
   xcrun simctl bootstatus "$udid" -b >/dev/null
   xcrun simctl ui "$udid" appearance "$appearance"
   xcrun simctl status_bar "$udid" override \
-    --time "$(python3 -c 'import datetime; print(datetime.datetime(2007, 1, 9, 9, 41).astimezone().isoformat())')" \
+    --time "9:41" \
     --dataNetwork wifi --wifiMode active --wifiBars 3 \
     --cellularMode active --cellularBars 4 \
     --batteryState discharging --batteryLevel 100

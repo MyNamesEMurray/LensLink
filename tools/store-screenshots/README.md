@@ -41,7 +41,7 @@ only into Debug builds, so the App Store build has none of it.
 
 `capture.sh` (macOS with Xcode) creates a fresh 6.9-inch iPhone and a
 13-inch iPad simulator on the newest iOS runtime, sets the status bar
-to 9:41 on Tue Jan 9 (the iPad shows the date) with full signal and battery, and captures `home`, `format` and
+to 9:41 with full signal and battery, and captures `home`, `format` and
 `options`, plus `live-glance` and `live-tray` when given `--scene`: a
 portrait photo that stands in for the camera picture. Pick one worth
 looking at, as you would point the real camera. The app crops it from
