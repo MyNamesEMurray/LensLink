@@ -22,7 +22,7 @@ DEFINE_RE = re.compile(
 WEB_ARRAY_RE = re.compile(
     r"\b" + WEB_ARRAY + r"\s*\[\s*\]\s*=\s*\{(.*?)\};", re.S)
 STRING_RE = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
-PAGE_ATTR_RE = re.compile(r"\bdata-t(?:-title)?='([^']+)'")
+PAGE_ATTR_RE = re.compile(r"\bdata-t(?:-title|-label)?='([^']+)'")
 PAGE_CALL_RE = re.compile(r"(?<![A-Za-z0-9_$.])t\('([^']+)'\)")
 
 

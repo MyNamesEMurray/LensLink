@@ -16,6 +16,7 @@ endfunction()
 lenslink_test(protocol)
 lenslink_test(json-reader ${_src}/json-reader.c)
 lenslink_test(handshake ${_src}/handshake.c ${_src}/json-reader.c)
+lenslink_test(still ${_src}/still.c)
 
 # Fuzz harnesses for the parsers of untrusted input (tests/fuzz/). By
 # default each runs under a deterministic mutation driver as an ordinary

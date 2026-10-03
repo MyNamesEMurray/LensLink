@@ -10,6 +10,9 @@
 #include <util/platform.h>
 
 #include "pipeline-bench.h"
+#include "still.h"
+
+#include <stdlib.h>
 
 struct h264_decoder {
 	AVCodecContext *ctx;
@@ -29,6 +32,10 @@ struct h264_decoder {
 	void (*frame_sink)(void *ud, AVFrame *frame);
 	void *frame_sink_ud;
 	bool gpu_frames; /* set at create; affects macOS surface format */
+
+	bool want_still;
+	uint8_t *still;
+	size_t still_len;
 
 	/* Diagnostics. */
 	uint64_t frames_output;
@@ -255,6 +262,7 @@ void h264_decoder_destroy(struct h264_decoder *dec)
 	if (!dec)
 		return;
 
+	free(dec->still);
 	avcodec_free_context(&dec->ctx);
 	av_packet_free(&dec->pkt);
 	av_frame_free(&dec->frame);
@@ -363,6 +371,75 @@ static bool avframe_to_obs(const AVFrame *frame, struct obs_source_frame *out)
 	return true;
 }
 
+static void capture_still(struct h264_decoder *dec, const AVFrame *frame)
+{
+	dec->want_still = false;
+	AVFrame *sw = NULL;
+	if (dec->hw_device && frame->format == dec->hw_pix_fmt) {
+		sw = av_frame_alloc();
+		if (!sw || av_hwframe_transfer_data(sw, frame, 0) < 0) {
+			av_frame_free(&sw);
+			return;
+		}
+		frame = sw;
+	}
+
+	struct still_src src = {
+		.width = frame->width,
+		.height = frame->height,
+		.full_range = frame->color_range == AVCOL_RANGE_JPEG,
+	};
+	bool ok = true;
+	switch (frame->format) {
+	case AV_PIX_FMT_NV12:
+		src.layout = STILL_NV12;
+		break;
+	case AV_PIX_FMT_YUVJ420P:
+		src.full_range = true;
+		/* fall through */
+	case AV_PIX_FMT_YUV420P:
+		src.layout = STILL_I420;
+		break;
+	case AV_PIX_FMT_P010LE:
+		src.layout = STILL_P010;
+		break;
+	case AV_PIX_FMT_YUV420P10LE:
+		src.layout = STILL_I010;
+		break;
+	case AV_PIX_FMT_BGRA:
+		src.layout = STILL_BGRA;
+		break;
+	default:
+		ok = false;
+	}
+	for (int i = 0; i < 3; i++) {
+		src.data[i] = frame->data[i];
+		src.linesize[i] = frame->linesize[i];
+	}
+
+	if (ok) {
+		free(dec->still);
+		dec->still = still_bmp(&src, 640, &dec->still_len);
+	}
+	av_frame_free(&sw);
+}
+
+void h264_decoder_request_still(struct h264_decoder *dec)
+{
+	if (dec)
+		dec->want_still = true;
+}
+
+uint8_t *h264_decoder_take_still(struct h264_decoder *dec, size_t *len)
+{
+	if (!dec || !dec->still)
+		return NULL;
+	uint8_t *still = dec->still;
+	*len = dec->still_len;
+	dec->still = NULL;
+	return still;
+}
+
 bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			 const uint8_t *data, size_t size, uint64_t pts_ns)
 {
@@ -392,6 +469,9 @@ bool h264_decoder_decode(struct h264_decoder *dec, obs_source_t *source,
 			     h264_decoder_hw_name(dec), av_err2str(ret));
 			return false;
 		}
+
+		if (dec->want_still)
+			capture_still(dec, dec->frame);
 
 		/* GPU pipeline: hand the frame out as-is — hardware frames
 		 * stay on the GPU (the sink maps them to textures), software

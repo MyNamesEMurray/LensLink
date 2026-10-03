@@ -225,6 +225,7 @@ final class Streamer: ObservableObject {
     }
     /// The cameras this device actually has (Main / Ultra Wide / …).
     let availableLenses: [CameraManager.Lens]
+    let lensFactors: [Double]
 
     @Published var selectedLens: CameraManager.Lens {
         didSet {
@@ -660,6 +661,7 @@ final class Streamer: ObservableObject {
         didSet {
             UserDefaults.standard.set(stabilization.rawValue, forKey: "stabilization")
             camera.setStabilization(stabilization.mode)
+            scheduleStateSend()
         }
     }
     @Published var focusSetting: FocusSetting = .auto {
@@ -1003,7 +1005,14 @@ final class Streamer: ObservableObject {
             "frameRates": frameRates,
             "codecs": codecs,
             "quality": quality.rawValue,
+            "stabilization": stabilization.rawValue,
+            "lensFactors": lensFactors,
         ]
+        if camera.maxZoomFactor > 1,
+           let crop = CameraManager.nativeCropZoomFactor(
+               resolution: resolution, fps: Int32(fps), color: activeColor) {
+            state["cropZoom"] = Double(crop)
+        }
         // Absent = SDR — remote UIs key off the keys' absence, and an
         // SDR snapshot must look exactly as it did before HDR existed.
         // HLG keeps the original "hdr" flag byte-for-byte; Apple Log is
@@ -1372,7 +1381,9 @@ final class Streamer: ObservableObject {
         }
         fps = loadedFps
         let lenses = CameraManager.availableLenses()
-        availableLenses = lenses.isEmpty ? [CameraManager.defaultLens] : lenses
+        let present = lenses.isEmpty ? [CameraManager.defaultLens] : lenses
+        availableLenses = present
+        lensFactors = present.map { CameraManager.zoomFactorRelativeToMain($0) ?? 1 }
         let savedLensID = defaults.string(forKey: "selectedLens")
         selectedLens = availableLenses.first { $0.id == savedLensID }
             ?? availableLenses[0]
@@ -1744,7 +1755,32 @@ final class Streamer: ObservableObject {
         case "flip":
             flipCamera()
         case "white_balance" where command["mode"] as? String == "calibrate":
-            calibrateWhiteBalance()
+            if let x = (command["x"] as? NSNumber)?.doubleValue,
+               let y = (command["y"] as? NSNumber)?.doubleValue {
+                camera.devicePoint(fromPicture: CGPoint(x: min(max(x, 0), 1),
+                                                        y: min(max(y, 0), 1))) {
+                    [weak self] point in
+                    Task { @MainActor [weak self] in
+                        self?.calibrateWhiteBalance(at: point)
+                    }
+                }
+            } else {
+                calibrateWhiteBalance()
+            }
+        case "lock":
+            let on = command["on"] as? Bool ?? true
+            switch command["target"] as? String {
+            case "all": setAllLocked(on)
+            case "exposure": setLocked(.exposure, on)
+            case "whiteBalance": setLocked(.whiteBalance, on)
+            case "focus": setLocked(.focus, on)
+            default: break
+            }
+        case "stabilization":
+            if let raw = command["mode"] as? String,
+               let parsed = Stabilization(rawValue: raw) {
+                stabilization = parsed
+            }
         case "white_balance":
             if let value = (command["temperature"] as? NSNumber)?.floatValue {
                 whiteBalanceTemperature = min(max(value, 2500), 8000)

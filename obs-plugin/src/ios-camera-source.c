@@ -216,6 +216,10 @@ struct ios_camera_source {
 	 * history is dial-loop territory, so the dial loop consumes it. */
 	volatile bool cal_reset_requested;
 
+	volatile bool still_requested;
+	uint8_t *still;
+	size_t still_len;
+
 	/* Reference-audio gating (stage 2): while locked, the phone is told
 	 * to stop capturing/streaming the lip-sync reference; it's asked back
 	 * on briefly for each periodic verification. Dial-loop thread only. */
@@ -1456,6 +1460,25 @@ void ios_camera_recalibrate(struct ios_camera_source *s)
 	s->cal_reset_requested = true;
 }
 
+void ios_camera_request_still(struct ios_camera_source *s)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	free(s->still);
+	s->still = NULL;
+	pthread_mutex_unlock(&s->status_mutex);
+	s->still_requested = true;
+}
+
+uint8_t *ios_camera_take_still(struct ios_camera_source *s, size_t *len)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	uint8_t *still = s->still;
+	*len = s->still_len;
+	s->still = NULL;
+	pthread_mutex_unlock(&s->status_mutex);
+	return still;
+}
+
 /* Consumes a recalibrate request (dial-loop thread): drop the lock and
  * the correlation history so calibration starts from scratch, exactly as
  * if the audio source had just been selected. tally_tick runs right after
@@ -2124,8 +2147,23 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			c->next_decoder_attempt = 0;
 			c->packets_at_decoder = c->video_packets;
 		}
-		if (!h264_decoder_decode(c->decoder, s->source, payload,
-					 hdr->payload_size, hdr->pts_ns)) {
+		if (s->still_requested) {
+			s->still_requested = false;
+			h264_decoder_request_still(c->decoder);
+		}
+		bool decoded = h264_decoder_decode(c->decoder, s->source,
+						   payload, hdr->payload_size,
+						   hdr->pts_ns);
+		size_t still_len = 0;
+		uint8_t *still = h264_decoder_take_still(c->decoder, &still_len);
+		if (still) {
+			pthread_mutex_lock(&s->status_mutex);
+			free(s->still);
+			s->still = still;
+			s->still_len = still_len;
+			pthread_mutex_unlock(&s->status_mutex);
+		}
+		if (!decoded) {
 			c->decode_errors++;
 			if (h264_decoder_is_hw(c->decoder)) {
 				/* This GPU path misbehaved on this stream:
@@ -3086,6 +3124,7 @@ static void ios_camera_destroy(void *data)
 	dstr_free(&s->status);
 	pthread_mutex_destroy(&s->frame_mutex);
 	pthread_mutex_destroy(&s->lipsync_mutex);
+	free(s->still);
 	pthread_mutex_destroy(&s->status_mutex);
 	bfree(s);
 }
