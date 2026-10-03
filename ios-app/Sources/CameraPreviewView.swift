@@ -19,10 +19,6 @@ struct CameraPreviewView: UIViewRepresentable {
     /// cover for as long as the phone sits dimmed — pure wasted power.
     /// Capture (and the outgoing stream) is unaffected.
     var previewEnabled: Bool = true
-    /// Striped over what the green screen paints out, while the Subject
-    /// dial is open. The mask is in stream-buffer coordinates.
-    var cutoutMask: CGImage?
-    var cutoutMirrored = false
     /// Tap: focus/expose here. Reports the point in device coordinates
     /// (0…1, for the camera) and in this view's coordinates (for the
     /// marker drawn where the finger was).
@@ -54,68 +50,6 @@ struct CameraPreviewView: UIViewRepresentable {
         override func layoutSubviews() {
             super.layoutSubviews()
             syncPreviewOrientation()
-            placeCutout()
-        }
-
-        private let stripes = CALayer()
-        private let cutoutHolder = CALayer()
-        private let cutout = CALayer()
-        private var cutoutMirrored = false
-
-        private static let stripePattern = UIGraphicsImageRenderer(
-            size: CGSize(width: 12, height: 12)).image { context in
-            let c = context.cgContext
-            c.setFillColor(UIColor.black.withAlphaComponent(0.2).cgColor)
-            c.fill(CGRect(x: 0, y: 0, width: 12, height: 12))
-            c.setStrokeColor(UIColor.white.withAlphaComponent(0.6).cgColor)
-            c.setLineWidth(3)
-            for offset in stride(from: -12, through: 12, by: 12) {
-                c.move(to: CGPoint(x: offset, y: 12))
-                c.addLine(to: CGPoint(x: offset + 12, y: 0))
-            }
-            c.strokePath()
-        }
-
-        func showCutout(_ image: CGImage?, mirrored: Bool) {
-            if stripes.superlayer == nil {
-                stripes.backgroundColor = UIColor(patternImage: Self.stripePattern).cgColor
-                cutout.anchorPoint = .zero
-                cutout.magnificationFilter = .linear
-                cutoutHolder.addSublayer(cutout)
-                stripes.mask = cutoutHolder
-                layer.addSublayer(stripes)
-            }
-            cutoutMirrored = mirrored
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            cutout.contents = image
-            stripes.isHidden = image == nil
-            placeCutout()
-            CATransaction.commit()
-        }
-
-        /// Lays the stream-buffer mask over the picture: the buffer is
-        /// the capture device's own space (flipped for the front
-        /// camera), so its corners come from the preview layer's
-        /// device-point conversion, which knows gravity and rotation.
-        private func placeCutout() {
-            guard !stripes.isHidden, stripes.superlayer != nil else { return }
-            stripes.frame = bounds
-            cutoutHolder.frame = bounds
-            let x0: CGFloat = cutoutMirrored ? 1 : 0
-            let preview = previewLayer
-            let origin = preview.layerPointConverted(
-                fromCaptureDevicePoint: CGPoint(x: x0, y: 0))
-            let across = preview.layerPointConverted(
-                fromCaptureDevicePoint: CGPoint(x: 1 - x0, y: 0))
-            let down = preview.layerPointConverted(
-                fromCaptureDevicePoint: CGPoint(x: x0, y: 1))
-            cutout.bounds = CGRect(x: 0, y: 0, width: 1, height: 1)
-            cutout.position = .zero
-            cutout.setAffineTransform(CGAffineTransform(
-                a: across.x - origin.x, b: across.y - origin.y,
-                c: down.x - origin.x, d: down.y - origin.y,
-                tx: origin.x, ty: origin.y))
         }
 
         /// Keeps the preview upright in whatever orientation the UI is in.
@@ -257,7 +191,6 @@ struct CameraPreviewView: UIViewRepresentable {
     func updateUIView(_ uiView: PreviewView, context: Context) {
         context.coordinator.parent = self
         uiView.previewLayer.videoGravity = videoGravity
-        uiView.showCutout(cutoutMask, mirrored: cutoutMirrored)
 
         // Off-main like attach/detach: the connection exists only after the
         // queued attach above has run, and toggling it shouldn't contend

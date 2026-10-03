@@ -276,9 +276,6 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**被写体**は深度アシストの動作中に使えます。スマートフォンからカットオフより遠いものはすべて背景になるので、背後を通り過ぎる人を消すことができます。最初は**自動**で、カットオフを常にあなたの約0.6m後ろに保ちます。自動のときはボタンに**A**が表示されます。レンズボタンの横にある点灯中のグリーンバックボタンをタップするとダイヤルが開きます。ドラッグして距離を設定するか、5mより先で**すべて**（制限なし）にし、もう一度ボタンをタップすると自動に戻ります。";
 
-/* Documentation → Camera & picture, Depth assist section: the stripes shown while the Subject dial is open */
-"While the Subject dial is open, stripes on the picture show what the green screen paints out, so you can see who the cutoff drops. The picture itself stays the plain camera; the green appears in OBS." = "被写体ダイヤルを開いている間は、グリーンバックで塗りつぶされる部分に縞模様が表示され、境界で誰が消えるかを確認できます。プレビュー自体は通常のカメラ映像のままで、緑はOBSに表示されます。";
-
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "深度アシスト";
 
@@ -692,6 +689,9 @@
 
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "%1$@エンコーダを使用できません（%2$lld）";
+
+/* Live screen: a pill shown when the Subject dial opens, since the phone preview is the plain camera and the green only appears in OBS */
+"Green screen shows in OBS, not in this preview" = "グリーンバックはOBSに反映され、このプレビューには表示されません";
 
 /* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
 "Hold to turn on green screen" = "長押しでグリーンバックをオン";

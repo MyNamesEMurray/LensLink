@@ -276,9 +276,6 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "深度辅助运行时可使用**主体**：离手机比截止距离更远的一切都会成为背景，这样就能去掉从你身后走过的人。默认为**自动**，会把截止距离保持在你身后约 0.6 米处，按钮上的 **A** 表示处于自动。轻点镜头按钮旁亮起的绿幕按钮即可打开转盘：拖动设置距离，或拖过 5 米设为**全部**（不限距离），再次轻点按钮则恢复自动。";
 
-/* Documentation → Camera & picture, Depth assist section: the stripes shown while the Subject dial is open */
-"While the Subject dial is open, stripes on the picture show what the green screen paints out, so you can see who the cutoff drops. The picture itself stays the plain camera; the green appears in OBS." = "打开主体转盘时，画面上的条纹会标出绿幕要遮盖的部分，让你看清截止距离会去掉谁。画面本身仍是普通摄像头画面，绿色在 OBS 中显示。";
-
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "深度辅助";
 
@@ -692,6 +689,9 @@
 
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "%1$@ 编码器不可用（%2$lld）";
+
+/* Live screen: a pill shown when the Subject dial opens, since the phone preview is the plain camera and the green only appears in OBS */
+"Green screen shows in OBS, not in this preview" = "绿幕效果显示在 OBS 中，不在此预览中";
 
 /* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
 "Hold to turn on green screen" = "按住以开启绿幕";

@@ -98,8 +98,6 @@ struct StreamingView: View {
                 // untouched). The last frame freezes underneath, invisible
                 // behind the overlay.
                 previewEnabled: !dimmed,
-                cutoutMask: streamer.cutoutMask?.image,
-                cutoutMirrored: streamer.cutoutMask?.mirrored ?? false,
                 onTapAtDevicePoint: { point, viewPoint in
                     touched()
                     let calibrating = pickingWhite && trayOpen
@@ -265,7 +263,6 @@ struct StreamingView: View {
         .onChange(of: streamer.resolution) { _ in refreshNativeCrop() }
         .onChange(of: streamer.fps) { _ in refreshNativeCrop() }
         .onChange(of: streamer.activeColor) { _ in refreshNativeCrop() }
-        .onChange(of: rowDial) { streamer.cutoutPreview = $0 == .subject }
         // Battery monitoring is a device-wide flag, so it is held only
         // while this screen exists — the Setup screen has nothing to show.
         .onAppear {
@@ -283,7 +280,6 @@ struct StreamingView: View {
             battery.release()
             restoreBrightness()
             streamer.camera.onTapPointReset = nil
-            streamer.cutoutPreview = false
         }
     }
 
@@ -929,6 +925,8 @@ struct StreamingView: View {
             }
             if rowDial == .subject {
                 streamer.greenScreenMaxDistance = Streamer.autoSubjectDistance
+            } else {
+                withAnimation { rowHint = L("Green screen shows in OBS, not in this preview") }
             }
             rowDial = .subject
             rowDialTouch = UUID()

@@ -481,10 +481,8 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     second tap on the button hands the cutoff back to **Auto**, which keeps it about
     0.6 m behind the person. The button wears the **A** badge
     while the cutoff is on Auto, so the readout is just the distance
-    (`1.8 m`, or `All`). While the dial is open, diagonal stripes over the
-    preview mark what the green screen paints out (a coarse mask from
-    the compositor, about ten times a second, only while the dial is
-    open); the preview itself stays the plain camera.
+    (`1.8 m`, or `All`). Opening the dial shows a hint pill, "Green screen shows in OBS,
+    not in this preview", since the phone's preview is the plain camera.
 - **Chevron** (`chevron.up` in a glass capsule) under the lens row
   opens the tray.
 - **Gestures:** pinch = zoom within the lens; **tap** = focus/expose at
