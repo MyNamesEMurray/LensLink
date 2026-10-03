@@ -787,6 +787,9 @@ struct StreamingView: View {
                 }
             }
             .contentShape(Rectangle())
+            .onChange(of: streamer.greenScreenDepthActive) { depth in
+                if depth, rowDial == .zoom { rowDial = nil }
+            }
             .simultaneousGesture(DragGesture(minimumDistance: 12)
                 .onChanged { value in
                     guard let dial = rowDial else { return }
@@ -1003,6 +1006,10 @@ struct StreamingView: View {
         }
     }
 
+    private var zoomable: Bool {
+        streamer.camera.maxZoomFactor > 1
+    }
+
     private var onNativeCrop: Bool {
         guard let crop = nativeCrop else { return false }
         return streamer.selectedLens == mainLens && streamer.zoom == crop
@@ -1024,10 +1031,11 @@ struct StreamingView: View {
                          accessibilityLabel: lens.displayLabel,
                          accessibilityValue: lensAccessibilityValue(lens, active: active),
                          accessibilityHint: lensAccessibilityHint(active: selected),
-                         adjust: selected ? adjustZoom : nil) {
+                         adjust: selected && zoomable ? adjustZoom : nil) {
                     if selected, !active {
                         streamer.zoom = 1
                     } else if selected {
+                        guard zoomable else { return }
                         // First tap brings up the zoom dial, a second
                         // resets the zoom, like the green screen button.
                         // VoiceOver adjusts instead, so it resets at once.
@@ -1041,7 +1049,7 @@ struct StreamingView: View {
                         streamer.selectedLens = lens
                     }
                 }
-                if lens == mainLens, let crop = nativeCrop {
+                if lens == mainLens, let crop = nativeCrop, zoomable {
                     let label = Self.compactFactor(Double(crop))
                     lensChip(onNativeCrop ? label + "×" : label,
                              active: onNativeCrop,

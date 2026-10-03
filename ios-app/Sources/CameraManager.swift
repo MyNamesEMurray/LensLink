@@ -1111,18 +1111,12 @@ final class CameraManager: NSObject {
     }
 
     var maxZoomFactor: CGFloat {
-        guard let device = activeDevice else { return 1 }
+        guard let device = activeDevice, !depthAssistActive else { return 1 }
         // Beyond ~10x the digital zoom is mush; keep the slider useful.
         return min(device.activeFormat.videoMaxZoomFactor, 10)
     }
 
     func setZoom(_ factor: CGFloat) {
-        // TODO(green screen depth assist): whether the streamed depth map
-        // tracks videoZoomFactor crops is unconfirmed — under zoom the
-        // compositor's depth gate may misalign with the video. Zoom is
-        // deliberately left alone here (no clamping, no depth teardown);
-        // `depthAssistActive` reports the state and the gate simply may
-        // be off until this is verified on a real device.
         withLockedDevice { device in
             let clamped = max(device.minAvailableVideoZoomFactor,
                               min(factor, maxZoomFactor))

@@ -337,6 +337,7 @@ final class Streamer: ObservableObject {
         }
         greenScreenDistance.value = Float(greenScreenMaxDistance)
         greenScreenDepthActive = compositor != nil && camera.depthAssistActive
+        if zoom > camera.maxZoomFactor { zoom = camera.maxZoomFactor }
         greenScreenAutoCutoff = 0
         compositor?.onAutoCutoff = { [weak self] metres in
             Task { @MainActor in self?.greenScreenAutoCutoff = Double(metres) }
