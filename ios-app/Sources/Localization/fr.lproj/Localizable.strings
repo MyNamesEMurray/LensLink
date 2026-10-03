@@ -708,20 +708,20 @@
 
 
 
-/* Setup and Format sheet, green screen on: %@ is the camera (lens) name */
+/* Setup, green screen on: %@ is the camera (lens) name */
 "The %@ camera has no depth, so green screen runs without the Subject dial." = "La caméra %@ n’a pas de profondeur, l’écran vert fonctionne donc sans la molette Sujet.";
 
-/* Setup and Format sheet, green screen on: depth assist works at the chosen camera and format */
+/* Setup, green screen on: depth assist works at the chosen camera and format */
 "Depth assist will run: the Subject dial can drop people behind you." = "L’aide de profondeur sera active : la molette Sujet peut retirer les personnes derrière vous.";
 
 /* Format sheet menu: tag under a resolution or frame rate where green screen depth assist runs */
 "Depth" = "Profondeur";
 
-/* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30 and 60 fps" */
+/* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
 "Depth at %@ fps" = "Profondeur à %@ fps";
 
-/* Setup and Format sheet, green screen on: %1$@ is the resolution, %2$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
+/* Setup, green screen on: %1$@ is the resolution, %2$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
 "No depth at %1$@ on the %2$@ camera at any frame rate. Formats marked Depth have it." = "Pas de profondeur en %1$@ avec la caméra %2$@, quelle que soit la cadence. Les formats marqués Profondeur l’ont.";
 
-/* Setup and Format sheet, green screen on: %1$@ is the resolution, %2$lld the frame rate, %3$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
+/* Setup, green screen on: %1$@ is the resolution, %2$lld the frame rate, %3$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
 "No depth at %1$@ %2$lld fps on the %3$@ camera. Formats marked Depth have it." = "Pas de profondeur en %1$@ %2$lld fps avec la caméra %3$@. Les formats marqués Profondeur l’ont.";

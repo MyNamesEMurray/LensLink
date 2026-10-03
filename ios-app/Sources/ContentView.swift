@@ -700,10 +700,6 @@ private struct FormatSheet: View {
                             }
                         }
                     }
-                } footer: {
-                    if streamer.greenScreenEnabled {
-                        Text(depthAssistStatus(streamer, rates: availableFrameRates))
-                    }
                 }
 
                 Section {
@@ -804,8 +800,7 @@ private struct FormatSheet: View {
         case .at(let rates):
             Label {
                 Text(title)
-                Text(L("Depth at %@ fps",
-                       ListFormatter.localizedString(byJoining: rates.map(String.init))))
+                Text(L("Depth at %@ fps", rates.map(String.init).joined(separator: ", ")))
             } icon: {
                 EmptyView()
             }

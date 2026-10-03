@@ -395,9 +395,8 @@ Symbol) and a title — top to bottom:
    depth assist carry a tag: the layers icon (`square.3.layers.3d`) and a
    `Depth` subtitle on a frame rate the chosen resolution has depth at, or
    on a resolution with depth at the chosen frame rate; a resolution with
-   depth only at other rates gets the subtitle `Depth at 30 and 60 fps`
-   and no icon. The section footer repeats the depth line from Setup,
-   naming the format when it has no depth. Then **Quality** (**Balanced** or
+   depth only at other rates gets the subtitle `Depth at 30, 60 fps`
+   and no icon. Then **Quality** (**Balanced** or
    **Maximum**, the latter with a small accent **Beta** tag and no
    caption; the Format row's value gains `· Max`), then **Codec** and
    **Color** as check-row lists rather than pickers, because the two constrain each
