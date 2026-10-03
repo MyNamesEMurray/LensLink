@@ -307,7 +307,7 @@ surfaces.
 | Idle (app)  | `moon.fill` (Dim screen) / `eye.slash` (Clean feed) | App-only, an item in the status pill's menu; engages the chosen idle view now instead of waiting out the 10 s fuse. Absent in Standard |
 | Pulse (app) | `waveform.path`                            | App-only, in Options → Tally light: one glyph, `accent` when that status pulses and secondary when steady — the active-chip language, not a swapped icon |
 | Stats (app) | `gauge`, checked while on                  | App-only, a toggle in the status pill's menu (the menu's own checkmark, so VoiceOver hears the state); shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
-| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen, or while live by a long press on the app's lens-row button or the web panel's chip. While live **with depth assist**, a subject-distance control appears: the app's **Subject dial** (a tap on the lit button) and a slider row on the web panel. Both run 0.5–5.0 m, then **All** (no cutoff) past the far end; **Auto** (the default) keeps the cutoff about half a metre behind the person, and is a second tap on the app's button or a click on the web readout. Readout `Auto · 1.8 m` (app) / `Auto`, `2.5 m`, `All`, monospaced |
+| Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen, or while live by a long press on the app's lens-row button or the web panel's chip. While live **with depth assist**, a subject-distance control appears: the app's **Subject dial** (a tap on the lit button) and a slider row on the web panel. Both run 0.5–5.0 m, then **All** (no cutoff) past the far end; **Auto** (the default) keeps the cutoff about half a metre behind the person, and is a second tap on the app's button or a click on the web readout. Readout `1.8 m` (app, the button's A badge marks Auto) / `Auto`, `2.5 m`, `All` (web), monospaced |
 
 ### The app icon (three appearances)
 
@@ -477,8 +477,8 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     the ruler under it, in metres (0.5 to 5 m, then **All**, no cutoff), and a
     second tap on the button hands the cutoff back to **Auto**, which keeps it about
     half a metre behind the person. The button wears the **A** badge
-    while the cutoff is on Auto; the readout is `Auto · 1.8 m`, `2.5 m`
-    or `All`.
+    while the cutoff is on Auto, so the readout is just the distance
+    (`1.8 m`, or `All`).
 - **Chevron** (`chevron.up` in a glass capsule) under the lens row
   opens the tray.
 - **Gestures:** pinch = zoom within the lens; **tap** = focus/expose at

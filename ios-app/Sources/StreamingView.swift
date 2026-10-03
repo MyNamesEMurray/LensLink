@@ -763,7 +763,7 @@ struct StreamingView: View {
             }
             VStack(spacing: Theme.Space.s) {
                 if rowDial == .subject {
-                    Text(subjectReadout)
+                    Text(subjectDistanceText)
                         .font(.system(.subheadline, design: .rounded).weight(.bold)
                                 .monospacedDigit())
                         .foregroundColor(Theme.cameraYellow)
@@ -885,11 +885,18 @@ struct StreamingView: View {
     }
 
     private var subjectReadout: String {
+        guard streamer.greenScreenMaxDistance < 0,
+              streamer.greenScreenAutoCutoff > 0 else { return subjectDistanceText }
+        return L("Auto") + ", " + subjectDistanceText
+    }
+
+    /// The Subject dial's readout: the A badge on the button already says Auto.
+    private var subjectDistanceText: String {
         let distance = streamer.greenScreenMaxDistance
         if distance > 0 { return L("%.1f m", distance) }
         if distance == 0 { return L("All") }
         let cutoff = streamer.greenScreenAutoCutoff
-        return cutoff > 0 ? L("Auto") + " · " + L("%.1f m", cutoff) : L("Auto")
+        return cutoff > 0 ? L("%.1f m", cutoff) : L("Auto")
     }
 
     /// Green screen on the Live screen: lit while it is on, and only a
