@@ -849,8 +849,8 @@ struct StreamingView: View {
         let place = { (v: Double) in CGFloat(v - now) * Self.zoomDialPoints }
         var ticks: [(offset: CGFloat, label: String?)] = stride(
             from: low, through: high, by: 0.1).map { (offset: place($0), label: nil) }
-        for mark in [0.5, 1, 2, 3, 5, 10, 15, 20, 25] where log(mark) >= low - 0.01
-            && log(mark) <= high + 0.01 {
+        let marks: [Double] = [0.5, 1, 2, 3, 5, 10, 15, 20, 25]
+        for mark in marks where log(mark) >= low - 0.01 && log(mark) <= high + 0.01 {
             ticks.append((offset: place(log(mark)), label: Self.compactFactor(mark)))
         }
         return ticks
@@ -870,7 +870,8 @@ struct StreamingView: View {
         let place = { (v: Double) in CGFloat((v - now) * Self.subjectDialPoints) }
         var ticks: [(offset: CGFloat, label: String?)] = stride(
             from: 0.5, through: 5, by: 0.25).map { (offset: place($0), label: nil) }
-        for mark in [0.5, 1, 2, 3, 4, 5] {
+        let marks: [Double] = [0.5, 1, 2, 3, 4, 5]
+        for mark in marks {
             ticks.append((offset: place(mark), label: Self.compactFactor(mark)))
         }
         ticks.append((offset: place(Self.subjectAllStop), label: L("All")))
@@ -1486,11 +1487,12 @@ struct StreamingView: View {
     /// Third stops, within the camera's ISO range.
     private var isoStops: [Double] {
         let r = streamer.camera.isoRange
-        let stops = [25, 32, 40, 50, 64, 80, 100, 125, 160, 200, 250, 320, 400,
-                     500, 640, 800, 1000, 1250, 1600, 2000, 2500, 3200, 4000,
-                     5000, 6400, 8000, 10000, 12800, 16000, 20000, 25600]
-            .map(Double.init)
-            .filter { $0 >= Double(r.lowerBound) && $0 <= Double(r.upperBound) }
+        let all: [Double] = [25, 32, 40, 50, 64, 80, 100, 125, 160, 200, 250, 320,
+                             400, 500, 640, 800, 1000, 1250, 1600, 2000, 2500,
+                             3200, 4000, 5000, 6400, 8000, 10000, 12800, 16000,
+                             20000, 25600]
+        let low = Double(r.lowerBound), high = Double(r.upperBound)
+        let stops = all.filter { $0 >= low && $0 <= high }
         return stops.count > 1 ? stops : [Double(r.lowerBound), Double(r.upperBound)]
     }
 
@@ -1500,12 +1502,13 @@ struct StreamingView: View {
     private var shutterStops: [Double] {
         let minSeconds = max(streamer.camera.minShutterSeconds, 1.0 / 8000)
         let maxSeconds = streamer.camera.maxShutterSeconds(fps: Int32(streamer.fps))
-        let stops = [1, 2, 3, 4, 5, 6, 8, 10, 13, 15, 20, 24, 25, 30, 40, 48, 50,
-                     60, 80, 100, 120, 125, 160, 200, 250, 320, 400, 500, 640,
-                     800, 1000, 1250, 1600, 2000, 2500, 3200, 4000, 5000, 6400,
-                     8000]
-            .map { 1 / Double($0) }
-            .filter { $0 >= minSeconds * 0.999 && $0 <= maxSeconds * 1.001 }
+        let denominators: [Double] = [1, 2, 3, 4, 5, 6, 8, 10, 13, 15, 20, 24, 25,
+                                      30, 40, 48, 50, 60, 80, 100, 120, 125, 160,
+                                      200, 250, 320, 400, 500, 640, 800, 1000,
+                                      1250, 1600, 2000, 2500, 3200, 4000, 5000,
+                                      6400, 8000]
+        let low = minSeconds * 0.999, high = maxSeconds * 1.001
+        let stops = denominators.map { 1 / $0 }.filter { $0 >= low && $0 <= high }
         return stops.count > 1 ? stops : [maxSeconds, minSeconds]
     }
 
