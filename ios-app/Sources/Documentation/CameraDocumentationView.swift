@@ -24,6 +24,7 @@ struct CameraDocumentationView: View {
             Section {
                 Text("**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects.")
                 Text("**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto.")
+                Text("Where the camera and format you picked have depth assist, the Green screen row shows **Depth**, and the Format menus mark the resolutions and frame rates that have it. The camera can't zoom while depth assist runs, so the zoom dial and the **2** button step aside until it stops.")
             } header: {
                 Text("Depth assist")
             }

@@ -276,6 +276,9 @@
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about 0.6 m behind you, and an **A** on the button says so. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "深度辅助运行时可使用**主体**：离手机比截止距离更远的一切都会成为背景，这样就能去掉从你身后走过的人。默认为**自动**，会把截止距离保持在你身后约 0.6 米处，按钮上的 **A** 表示处于自动。轻点镜头按钮旁亮起的绿幕按钮即可打开转盘：拖动设置距离，或拖过 5 米设为**全部**（不限距离），再次轻点按钮则恢复自动。";
 
+/* Documentation → Camera & picture, Depth assist section, third paragraph: the Depth tags in Setup and the Format menus, and zoom hidden while depth assist runs (Markdown: keep the ** markers) */
+"Where the camera and format you picked have depth assist, the Green screen row shows **Depth**, and the Format menus mark the resolutions and frame rates that have it. The camera can't zoom while depth assist runs, so the zoom dial and the **2** button step aside until it stops." = "所选摄像头和格式支持深度辅助时，绿幕一行会显示**深度**，格式菜单也会标出支持它的分辨率和帧率。深度辅助运行时摄像头无法变焦，因此变焦转盘和 **2** 按钮会隐藏，直到它停止。";
+
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "深度辅助";
 

@@ -92,6 +92,8 @@ Mehr Kontrolle über Fokus, Belichtung und Weißabgleich, und eine aufgeräumter
 • Der Zoom wandert in die Objektivreihe: Tippe auf die gelbe Objektivtaste für einen Zoomregler und erneut, um den Zoom zurückzusetzen.
 • Der Greenscreen hat eine eigene Taste neben den Objektivtasten. Halte sie gedrückt, um den Greenscreen ein- oder auszuschalten; wo die Tiefenunterstützung läuft, öffnet ein Tippen den Motiv-Regler.
 • Der Motiv-Abstand startet jetzt auf Auto und hält die Grenze knapp hinter dir.
+• Der Greenscreen zeigt, wo die Tiefenunterstützung wirkt: Die Zeile Greenscreen und die Format-Menüs markieren sie mit Tiefe, und die Motiv-Taste wird gepunktet, solange sie läuft. Der Zoom tritt dann zurück, weil die Kamera mit Tiefe nicht zoomen kann.
+• Die Optionen sind in Kamera, Live-Bildschirm, Fernstart und Erweitert gegliedert, und die Computer-Karte zeigt jetzt einfach OBS verbunden, Bereit oder Scharf geschaltet.
 • Aktualisiere auch das OBS-Plugin auf 1.17.0: Das Browser-Steuerfeld bekommt die Weißabgleich-Kalibrierung, die natürliche Bewegungsunschärfe und den automatischen Motiv-Abstand.
 ```
 
@@ -162,6 +164,8 @@ Más control sobre el enfoque, la exposición y el balance de blancos, y control
 • El zoom pasa a la fila de lentes: toca el botón de lente amarillo para abrir un dial de zoom, y vuelve a tocarlo para restablecer el zoom.
 • La pantalla verde tiene su propio botón junto a los botones de lente. Mantenlo presionado para activar o desactivar la pantalla verde; donde funciona la asistencia de profundidad, un toque abre el dial Sujeto.
 • La distancia del sujeto ahora empieza en Auto, que mantiene el límite justo detrás de ti.
+• La pantalla verde indica dónde funciona la asistencia de profundidad: la fila Pantalla verde y los menús de Formato la marcan con Profundidad, y el botón Sujeto se vuelve de puntos mientras está activa. El zoom se oculta entonces, porque la cámara no puede hacer zoom con profundidad.
+• Las opciones se agrupan en Cámara, Pantalla En vivo, Inicio remoto y Avanzado, y la tarjeta del ordenador ahora dice simplemente OBS conectado, Listo o Armado.
 • Actualiza también el plugin de OBS a 1.17.0: su panel de control en el navegador incorpora la calibración del balance de blancos, el desenfoque de movimiento natural y la distancia del sujeto en Auto.
 ```
 
@@ -232,6 +236,8 @@ Plus de contrôle sur la mise au point, l’exposition et la balance des blancs,
 • Le zoom passe dans la rangée d’objectifs : touchez le bouton d’objectif jaune pour une molette de zoom, et touchez-le de nouveau pour réinitialiser le zoom.
 • L’écran vert a son propre bouton à côté des boutons d’objectif. Maintenez-le pour activer ou désactiver l’écran vert ; là où l’assistance profondeur fonctionne, un toucher ouvre la molette Sujet.
 • La distance du sujet démarre désormais en Auto, qui garde le seuil juste derrière vous.
+• L’écran vert indique où l’assistance profondeur fonctionne : la ligne Écran vert et les menus Format la signalent par Profondeur, et le bouton Sujet passe en pointillés pendant qu’elle tourne. Le zoom s’efface alors, car la caméra ne peut pas zoomer avec la profondeur.
+• Les options sont regroupées en Caméra, Écran de direct, Démarrage à distance et Avancé, et la carte de l’ordinateur affiche désormais simplement OBS connecté, Prêt ou Armé.
 • Mettez aussi à jour le plugin OBS en 1.17.0 : son panneau de contrôle web reçoit la calibration de la balance des blancs, le flou de mouvement naturel et la distance du sujet en Auto.
 ```
 
@@ -302,6 +308,8 @@ OBS Studioと、Mac、Windows、Linux用の無料のオープンソースLensLin
 • ズームはレンズボタンの列に移りました。黄色のレンズボタンをタップするとズームダイヤルが開き、もう一度タップするとズームがリセットされます。
 • グリーンバック専用のボタンがレンズボタンの横に加わりました。長押しでグリーンバックのオン/オフを切り替えます。深度アシストが動作しているときは、タップで被写体ダイヤルが開きます。
 • 被写体の距離は自動で始まるようになり、カットオフをあなたのすぐ後ろに保ちます。
+• 深度アシストが使える場所がわかるようになりました。グリーンバックの行とフォーマットのメニューに「深度」と表示され、動作中は被写体ボタンがドット表示になります。深度の使用中はカメラがズームできないため、ズームは表示されません。
+• オプションがカメラ、ライブ画面、リモート開始、詳細にまとまり、コンピュータのカードは「OBS接続済み」「準備完了」「リモート開始有効」とシンプルに表示されます。
 • OBSプラグインも1.17.0にアップデートしてください。ブラウザコントロールパネルで、ホワイトバランスのキャリブレーション、自然なモーションブラー、被写体の距離の自動が使えるようになります。
 ```
 
@@ -372,6 +380,8 @@ Mais controle sobre foco, exposição e equilíbrio de branco, e controles mais 
 • O zoom foi para a fileira de lentes: toque no botão de lente amarelo para abrir um dial de zoom, e toque de novo para redefinir o zoom.
 • A tela verde ganhou um botão próprio ao lado dos botões de lente. Mantenha pressionado para ligar ou desligar a tela verde; onde a assistência de profundidade funciona, um toque abre o dial Assunto.
 • A distância do assunto agora começa no Auto, que mantém o limite logo atrás de você.
+• A tela verde mostra onde a assistência de profundidade funciona: a linha Tela verde e os menus de Formato a marcam com Profundidade, e o botão Assunto fica pontilhado enquanto ela está ativa. O zoom some nessa hora, porque a câmera não consegue dar zoom com profundidade.
+• As opções estão agrupadas em Câmera, Tela Ao vivo, Início remoto e Avançado, e o cartão do computador agora diz apenas OBS conectado, Pronto ou Armado.
 • Atualize também o plugin do OBS para a 1.17.0: o painel de controle no navegador ganha a calibração do equilíbrio de branco, o desfoque de movimento natural e a distância do assunto no Auto.
 ```
 
@@ -442,5 +452,7 @@ Siri 与快捷指令
 • 变焦移到了镜头按钮一行：轻点黄色的镜头按钮打开变焦转盘，再次轻点即可重置变焦。
 • 绿幕在镜头按钮旁有了专属按钮。按住可开启或关闭绿幕；深度辅助运行时，轻点可打开“主体”转盘。
 • “主体”距离现在默认为自动，会把截止距离保持在你身后不远处。
+• 绿幕会标出深度辅助可用的地方：绿幕一行和格式菜单会标注“深度”，深度辅助运行时“主体”按钮变为点阵。此时摄像头无法变焦，因此变焦会隐藏。
+• 选项分为摄像头、直播界面、远程启动和高级几组，电脑卡片现在只显示“OBS 已连接”“就绪”或“远程启动已开启”。
 • 也请把 OBS 插件更新到 1.17.0：浏览器控制面板新增白平衡校准、自然动态模糊和自动主体距离。
 ```
