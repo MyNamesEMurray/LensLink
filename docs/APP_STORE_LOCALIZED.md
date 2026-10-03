@@ -165,7 +165,7 @@ Más control sobre el enfoque, la exposición y el balance de blancos, y control
 • La pantalla verde tiene su propio botón junto a los botones de lente. Mantenlo presionado para activar o desactivar la pantalla verde; donde funciona la asistencia de profundidad, un toque abre el dial Sujeto.
 • La distancia del sujeto ahora empieza en Auto, que mantiene el límite justo detrás de ti.
 • La pantalla verde indica dónde funciona la asistencia de profundidad: la fila Pantalla verde y los menús de Formato la marcan con Profundidad, y el botón Sujeto se vuelve de puntos mientras está activa. El zoom se oculta entonces, porque la cámara no puede hacer zoom con profundidad.
-• Las opciones se agrupan en Cámara, Pantalla En vivo, Inicio remoto y Avanzado, y la tarjeta del ordenador ahora dice simplemente OBS conectado, Listo o Armado.
+• Las opciones se agrupan en Cámara, Pantalla En vivo, Inicio remoto y Avanzado, y la tarjeta de la computadora ahora dice simplemente OBS conectado, Listo o Armado.
 • Actualiza también el plugin de OBS a 1.17.0: su panel de control en el navegador incorpora la calibración del balance de blancos, el desenfoque de movimiento natural y la distancia del sujeto en Auto.
 ```
 
