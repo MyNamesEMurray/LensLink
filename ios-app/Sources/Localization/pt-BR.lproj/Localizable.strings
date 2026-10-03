@@ -690,6 +690,9 @@
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "Codificador %1$@ indisponível (%2$lld)";
 
+/* Live screen: a pill shown when the Subject dial opens, since the phone preview is the plain camera and the green only appears in OBS */
+"Green screen shows in OBS, not in this preview" = "A tela verde aparece no OBS, não nesta pré-visualização";
+
 /* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
 "Hold to turn on green screen" = "Toque e segure para ativar a tela verde";
 

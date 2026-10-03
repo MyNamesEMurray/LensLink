@@ -925,6 +925,8 @@ struct StreamingView: View {
             }
             if rowDial == .subject {
                 streamer.greenScreenMaxDistance = Streamer.autoSubjectDistance
+            } else {
+                withAnimation { rowHint = L("Green screen shows in OBS, not in this preview") }
             }
             rowDial = .subject
             rowDialTouch = UUID()
