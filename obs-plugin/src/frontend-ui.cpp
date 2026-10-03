@@ -93,25 +93,33 @@ struct PrevSample {
 	uint64_t frames;
 	uint64_t bytes;
 	uint64_t time_ns;
+	double fps;
+	QString text;
 };
 std::unordered_map<std::string, PrevSample> previous;
 
-QString rates_text(const lenslink_health &h, const PrevSample *prev,
-		   uint64_t now_ns)
+PrevSample next_sample(const lenslink_health &h, const PrevSample *prev)
 {
-	if (!prev || now_ns <= prev->time_ns || h.frames < prev->frames)
-		return QStringLiteral("…");
+	if (prev && h.sample_ns == prev->time_ns)
+		return *prev;
 
-	double seconds = double(now_ns - prev->time_ns) / 1e9;
+	PrevSample s = {h.frames, h.bytes, h.sample_ns, 0.0,
+			QStringLiteral("…")};
+	if (!prev || !prev->time_ns || h.sample_ns < prev->time_ns ||
+	    h.frames < prev->frames)
+		return s;
+
+	double seconds = double(h.sample_ns - prev->time_ns) / 1e9;
 	double fps = double(h.frames - prev->frames) / seconds;
 	double mbps = double(h.bytes - prev->bytes) * 8.0 / seconds / 1e6;
+	s.fps = prev->fps > 0.0 ? (prev->fps + fps) / 2.0 : fps;
 
-	QString text = QStringLiteral("%1 fps · %2 Mb/s")
-			       .arg(qRound(fps))
-			       .arg(mbps, 0, 'f', 1);
+	s.text = QStringLiteral("%1 fps · %2 Mb/s")
+			 .arg(qRound(s.fps))
+			 .arg(mbps, 0, 'f', 1);
 	if (h.latency_ms > 0)
-		text += QStringLiteral(" · %1 ms").arg(h.latency_ms);
-	return text;
+		s.text += QStringLiteral(" · %1 ms").arg(h.latency_ms);
+	return s;
 }
 
 void refresh()
@@ -121,7 +129,6 @@ void refresh()
 
 	lenslink_health list[MAX_SOURCES];
 	size_t count = lenslink_health_enum(list, MAX_SOURCES);
-	uint64_t now = os_gettime_ns();
 
 	QStringList bar_parts;
 	QStringList dock_rows;
@@ -136,13 +143,14 @@ void refresh()
 		auto it = previous.find(key);
 		if (it != previous.end())
 			prev = &it->second;
-		next[key] = {h.frames, h.bytes, now};
+		next[key] = next_sample(h, prev);
+		QString rates = next[key].text;
 
 		QString who = QString::fromUtf8(
 			h.device[0] ? h.device : h.source_name);
 		if (h.connected && !h.standby) {
 			bar_parts << QStringLiteral("%1 %2").arg(
-				who, rates_text(h, prev, now));
+				who, rates);
 		} else if (h.connected && h.unarmed) {
 			unarmed_count++;
 		} else if (h.connected && h.standby) {
@@ -152,7 +160,7 @@ void refresh()
 		/* Dock: every source gets a row, live or not. */
 		QString detail;
 		if (h.connected && !h.standby)
-			detail = rates_text(h, prev, now);
+			detail = rates;
 		else
 			detail = QString::fromUtf8(h.status).toHtmlEscaped();
 		dock_rows << QStringLiteral("<b>%1</b>%2<br/>%3")

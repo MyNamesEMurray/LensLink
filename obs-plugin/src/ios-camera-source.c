@@ -248,6 +248,7 @@ struct ios_camera_source {
 	bool stat_connected;
 	uint64_t stat_frames;
 	uint64_t stat_bytes;
+	uint64_t stat_time_ns;
 	char stat_device[64];
 	/* Mirrored once a second for the diagnostics report; see health.h
 	 * for why the counters travel together. */
@@ -432,6 +433,7 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		h->unarmed = s->unarmed;
 		h->frames = s->stat_frames;
 		h->bytes = s->stat_bytes;
+		h->sample_ns = s->stat_time_ns;
 		h->video_packets = s->stat_packets;
 		h->keyframes = s->stat_keyframes;
 		h->decode_errors = s->stat_decode_errors;
@@ -1753,6 +1755,7 @@ static void stats_tick(struct ios_camera_source *s, struct client_state *c)
 	s->stat_connected = true;
 	s->stat_frames = c->frames_output;
 	s->stat_bytes = c->video_bytes;
+	s->stat_time_ns = now;
 	s->stat_packets = c->video_packets;
 	s->stat_keyframes = c->keyframes_seen;
 	s->stat_decode_errors = c->decode_errors;
