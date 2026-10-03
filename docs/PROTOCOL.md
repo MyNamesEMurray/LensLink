@@ -342,7 +342,9 @@ and explaining that the phone is waiting on iOS.
 
 Green screen state rides the snapshot the same way:
 `"supportsGreenScreen": true` advertises the feature (remote UIs gate
-their row on it), `"greenScreen": true` appears while it is armed,
+their row on it; the app sends it only when green screen was on at
+stream start or has been turned on since, so a user who never uses it
+doesn't see the row), `"greenScreen": true` appears while it is armed,
 `"greenScreenDepth": true` while depth assist is actually running
 (TrueDepth front / LiDAR rear Main lens, and a depth-capable format
 matched — absent means segmentation-only; remote UIs key the distance

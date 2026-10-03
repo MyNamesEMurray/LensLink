@@ -777,7 +777,7 @@ struct StreamingView: View {
                     if rowDial != .subject {
                         lensButtons
                     }
-                    if rowDial != .zoom {
+                    if rowDial != .zoom, streamer.greenScreenOffered {
                         greenScreenButton
                             .padding(.leading, rowDial == nil ? Theme.Space.s : 0)
                     }

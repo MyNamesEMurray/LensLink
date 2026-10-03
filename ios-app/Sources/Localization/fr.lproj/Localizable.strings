@@ -704,3 +704,21 @@
 
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "Désactiver l’écran vert";
+
+/* Format sheet: a resolution with green screen depth assist at the chosen frame rate, e.g. "1080p · Depth". "Depth" means depth assist */
+"%@ · Depth" = "%@ · Profondeur";
+
+/* Format sheet: a resolution with depth assist only at other frame rates; %1$@ is the resolution, %2$@ a list of frame rates, e.g. "4K · Depth at 24 and 30 fps" */
+"%1$@ · Depth at %2$@ fps" = "%1$@ · Profondeur à %2$@ fps";
+
+/* Format sheet: a frame rate with green screen depth assist at the chosen resolution, e.g. "30 fps · Depth" */
+"%lld fps · Depth" = "%lld fps · Profondeur";
+
+/* Setup and Format sheet, green screen on: %@ is the camera (lens) name */
+"The %@ camera has no depth, so green screen runs without the Subject dial." = "La caméra %@ n’a pas de profondeur, l’écran vert fonctionne donc sans la molette Sujet.";
+
+/* Setup and Format sheet, green screen on: depth assist works at the chosen camera and format */
+"Depth assist will run: the Subject dial can drop people behind you." = "L’aide de profondeur sera active : la molette Sujet peut retirer les personnes derrière vous.";
+
+/* Setup and Format sheet, green screen on: %@ is the camera (lens) name; "Depth" is the tag on Format sheet options */
+"No depth at this format on the %@ camera. Formats marked Depth have it." = "Pas de profondeur dans ce format avec la caméra %@. Les formats marqués Profondeur l’ont.";

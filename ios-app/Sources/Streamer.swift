@@ -430,6 +430,7 @@ final class Streamer: ObservableObject {
         didSet {
             UserDefaults.standard.set(greenScreenEnabled,
                                       forKey: "greenScreen")
+            if greenScreenEnabled { greenScreenOffered = true }
             if greenScreenEnabled && colorSetting != .sdr {
                 // Forcing Standard runs colorSetting's didSet, which
                 // reconfigures a live stream itself (with green screen
@@ -450,6 +451,10 @@ final class Streamer: ObservableObject {
             }
         }
     }
+    /// Whether the live view and remote UIs offer the green screen
+    /// toggle this stream: on at start, or turned on since. A hold that
+    /// turns it off mid-stream keeps the toggle, so it can come back.
+    @Published private(set) var greenScreenOffered = false
     /// Depth-assisted max subject distance in metres: anything farther
     /// is background even where the person mask disagrees. 0 = no
     /// cutoff ("All"), `autoSubjectDistance` (-1) = Auto, which keeps
@@ -977,11 +982,13 @@ final class Streamer: ObservableObject {
             state["color"] = StreamColor.log.rawValue
         }
         // Green screen (docs/PROTOCOL.md §8): the support flag is
-        // always advertised (remote UIs gate their row on it); the
+        // advertised while the stream offers green screen (remote UIs
+        // gate their row on it); the
         // live keys appear only while actually armed — the compositor,
         // not the setting, is the truth — so a snapshot with green
         // screen off matches today's apart from supportsGreenScreen.
         state["supportsGreenScreen"] = FrameCompositor.supportsSegmentation
+            && greenScreenOffered
         if compositor != nil {
             state["greenScreen"] = true
             // Only when true: absent reads as false to every truthiness
@@ -1830,6 +1837,7 @@ final class Streamer: ObservableObject {
         guard !isStreaming, !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
+        greenScreenOffered = greenScreenEnabled
 
         guard await CameraManager.requestPermission() else {
             cameraPermissionDenied = true
