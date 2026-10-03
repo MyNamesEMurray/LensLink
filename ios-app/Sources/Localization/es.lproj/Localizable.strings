@@ -721,3 +721,12 @@
 
 /* Options sheet: header over the experiments and diagnostics */
 "Advanced" = "Avanzado";
+
+/* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
+"Stabilization" = "Estabilización";
+
+/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal */
+"Cinematic" = "Cinemático";
+
+/* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
+"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream: Standard adds a little, Cinematic adds the most and crops the picture a little more. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "La **estabilización** suaviza una toma a mano o en movimiento. Viene desactivada porque el teléfono retiene fotogramas para suavizarlos, lo que retrasa la transmisión: Estándar añade un poco de retraso y Cinemático el máximo, además de recortar algo más la imagen. Se queda desactivada en los formatos que no ofrecen el modo elegido y mientras funciona la asistencia de profundidad.";

@@ -309,9 +309,10 @@ Deliberate divergences (don't "fix" these without reading this):
   the Control Center effects appear to require that downward
   flexibility, and the toggle exists to prove or disprove exactly that.
   The thermal path keeps max unlocked too while the toggle is on.
-- **Video stabilization stays off** (the AVCaptureVideoDataOutput
+- **Video stabilization is off by default** (the AVCaptureVideoDataOutput
   default). Every stabilization mode adds frames of latency; this is a
-  latency-first product. Revisit only as an opt-in.
+  latency-first product, so it exists only as the opt-in Options →
+  Stabilization (Standard or Cinematic), never switched on by the app.
 - **The wire defaults to 8-bit 4:2:0 video-range** (`420v`). The
   opt-in colour modes switch the camera path to 10-bit end-to-end —
   HLG captures `x420`, Apple Log captures `x422` (its formats are the

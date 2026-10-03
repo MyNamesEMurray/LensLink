@@ -9,6 +9,7 @@ struct OptionsDocumentationView: View {
             Section {
                 Text("**Focus on faces** keeps focus and exposure on the faces the camera sees while focus is on auto, the way the Camera app does — a tap on the picture outranks it until the scene changes, and a lock ignores it. Off, the camera weights the centre of the frame.")
                 Text("**Natural motion blur**, on by default, stops auto exposure from running the shutter slower than half the frame interval (the 180° rule: 1/60 at 30 fps), so movement doesn't smear in a dim room; ISO rises instead. The same switch is on the adjust tray's Shutter chip and in the web panel.")
+                Text("**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream: Standard adds a little, Cinematic adds the most and crops the picture a little more. It stays off in formats that don't offer the mode you pick, and while depth assist runs.")
             } header: {
                 Text("Camera behavior")
             }

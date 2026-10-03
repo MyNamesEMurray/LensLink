@@ -91,6 +91,30 @@ final class Streamer: ObservableObject {
         }
     }
 
+    enum Stabilization: String, CaseIterable, Identifiable {
+        case off
+        case standard
+        case cinematic
+
+        var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .off: return L("Off")
+            case .standard: return L("Standard")
+            case .cinematic: return L("Cinematic")
+            }
+        }
+
+        var mode: AVCaptureVideoStabilizationMode {
+            switch self {
+            case .off: return .off
+            case .standard: return .standard
+            case .cinematic: return .cinematic
+            }
+        }
+    }
+
     /// Shared instance: the SwiftUI scene, the Siri App Intents, and the
     /// lenslink:// URL handler must all drive the same streamer.
     static let shared = Streamer()
@@ -629,6 +653,13 @@ final class Streamer: ObservableObject {
             UserDefaults.standard.set(naturalBlur, forKey: "naturalBlur")
             camera.setNaturalBlur(naturalBlur)
             scheduleStateSend()
+        }
+    }
+    @Published var stabilization: Stabilization =
+        Stabilization(rawValue: UserDefaults.standard.string(forKey: "stabilization") ?? "") ?? .off {
+        didSet {
+            UserDefaults.standard.set(stabilization.rawValue, forKey: "stabilization")
+            camera.setStabilization(stabilization.mode)
         }
     }
     @Published var focusSetting: FocusSetting = .auto {
@@ -1394,6 +1425,7 @@ final class Streamer: ObservableObject {
 
         camera.setFaceDrivenFocus(faceFocus)
         camera.setNaturalBlur(naturalBlur)
+        camera.setStabilization(stabilization.mode)
         updateSensorReadoutPreference()
         client.onStateChange = { [weak self] state in
             Task { @MainActor [weak self] in

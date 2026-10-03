@@ -956,11 +956,7 @@ final class CameraManager: NSObject {
                 // on-screen preview (CameraPreviewView), never the stream.
                 connection.videoOrientation = .landscapeRight
             }
-            // Stabilization buffers multiple frames inside the capture
-            // pipeline — a large hidden latency cost for a live feed.
-            if connection.isVideoStabilizationSupported {
-                connection.preferredVideoStabilizationMode = .off
-            }
+            applyStabilization(to: connection, format: device.activeFormat)
             if position == .front, connection.isVideoMirroringSupported {
                 connection.isVideoMirrored = true
             }
@@ -1458,6 +1454,26 @@ final class CameraManager: NSObject {
                 range: CMTimeRange(start: format.minExposureDuration,
                                    end: format.maxExposureDuration))
         }
+    }
+
+    private var stabilization: AVCaptureVideoStabilizationMode = .off
+
+    func setStabilization(_ mode: AVCaptureVideoStabilizationMode) {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.stabilization = mode
+            guard let connection = self.videoOutput?.connection(with: .video),
+                  let format = self.activeDevice?.activeFormat else { return }
+            self.applyStabilization(to: connection, format: format)
+        }
+    }
+
+    private func applyStabilization(to connection: AVCaptureConnection,
+                                    format: AVCaptureDevice.Format) {
+        guard connection.isVideoStabilizationSupported else { return }
+        let usable = depthOutput == nil
+            && format.isVideoStabilizationModeSupported(stabilization)
+        connection.preferredVideoStabilizationMode = usable ? stabilization : .off
     }
 
     func setAutoExposure() {
