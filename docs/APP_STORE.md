@@ -242,7 +242,7 @@ both Spanish ones). Device captures are English only; `render.js` falls
 back to them, and `localize.js` recaptions finished English screenshots
 when the raw captures are gone.
 
-1. `home`: the computer card naming the Mac, "OBS connected — ready",
+1. `home`: the computer card naming the Mac, "Ready",
    Camera / Format / Green screen rows.
 2. `live-glance`: the picture, status pill, Pause, Stop, lens buttons,
    tally border on air. Point the camera at something worth looking at.

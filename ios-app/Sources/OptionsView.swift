@@ -8,23 +8,32 @@ import SwiftUI
 struct OptionsView: View {
     @EnvironmentObject private var streamer: Streamer
     @Environment(\.dismiss) private var dismiss
-    // For the tally row's value: which statuses light it. Read-only
-    // here; its screen edits it.
     @ObservedObject private var tallySettings = TallySettings.shared
 
     var body: some View {
         NavigationView {
             Form {
-                // The behaviours, in the order they matter during a
-                // stream; each row wears the Settings app's icon tile
-                // (SettingsRowLabel) so this sheet and the Setup screen
-                // read as one list style.
                 Section {
-                    Toggle(isOn: $streamer.armOnOpen) {
-                        SettingsRowLabel(L("Arm remote start on open"),
-                                         systemImage: "play.fill",
-                                         color: Theme.liveGreen)
+                    Toggle(isOn: $streamer.faceFocus) {
+                        SettingsRowLabel(L("Focus on faces"),
+                                         systemImage: "face.smiling",
+                                         color: Theme.cameraYellow)
                     }
+                    Toggle(isOn: $streamer.naturalBlur) {
+                        SettingsRowLabel(L("Natural motion blur"),
+                                         systemImage: "camera.aperture",
+                                         color: Theme.cameraYellow)
+                    }
+                    Toggle(isOn: $streamer.rememberCameraSettings) {
+                        SettingsRowLabel(L("Remember camera settings"),
+                                         systemImage: "clock.arrow.circlepath",
+                                         color: Theme.connectAmber)
+                    }
+                } header: {
+                    Text("Camera")
+                }
+
+                Section {
                     // What the Live screen becomes 10 seconds after you
                     // stop touching it. Inline picker: three short labels
                     // that fit one row and read as one choice, where a
@@ -37,32 +46,30 @@ struct OptionsView: View {
                         SettingsRowLabel(L("Idle view"), systemImage: "moon.fill",
                                          color: Color(hex: 0x5E5CE6))
                     }
-                    Toggle(isOn: $streamer.faceFocus) {
-                        SettingsRowLabel(L("Focus on faces"),
-                                         systemImage: "face.smiling",
-                                         color: Theme.cameraYellow)
-                    }
-                    Toggle(isOn: $streamer.naturalBlur) {
-                        SettingsRowLabel(L("Natural motion blur"),
-                                         systemImage: "camera.aperture",
-                                         color: Theme.cameraYellow)
-                    }
                     NavigationLink(destination: TallyLightOptionsView()) {
                         HStack {
                             SettingsRowLabel(L("Tally light"),
                                              systemImage: "lightbulb.fill",
                                              color: Theme.tallyLive)
                             Spacer()
-                            Text(tallySummary)
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
+                            if tallyOff {
+                                Text("Off")
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
-                    Toggle(isOn: $streamer.rememberCameraSettings) {
-                        SettingsRowLabel(L("Remember camera settings"),
-                                         systemImage: "clock.arrow.circlepath",
-                                         color: Theme.connectAmber)
+                } header: {
+                    Text("Live screen")
+                }
+
+                Section {
+                    Toggle(isOn: $streamer.armOnOpen) {
+                        SettingsRowLabel(L("Arm remote start on open"),
+                                         systemImage: "play.fill",
+                                         color: Theme.liveGreen)
                     }
+                } header: {
+                    Text("Remote start")
                 }
 
                 Section {
@@ -81,6 +88,8 @@ struct OptionsView: View {
                                          systemImage: "list.bullet.rectangle",
                                          color: Theme.idleGrey)
                     }
+                } header: {
+                    Text("Advanced")
                 }
             }
             .navigationTitle("Options")
@@ -97,13 +106,8 @@ struct OptionsView: View {
 }
 
 extension OptionsView {
-    /// "On air, In preview" — the statuses that light the border, in
-    /// priority order; "Off" when none does.
-    fileprivate var tallySummary: String {
-        let lit = tallySettings.entries
-            .filter { $0.color != TallyColor.none }
-            .map { $0.status.displayName }
-        return lit.isEmpty ? L("Off") : lit.joined(separator: ", ")
+    fileprivate var tallyOff: Bool {
+        tallySettings.entries.allSatisfy { $0.color == TallyColor.none }
     }
 }
 

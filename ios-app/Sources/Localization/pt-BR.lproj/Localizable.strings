@@ -447,13 +447,13 @@
 "Not connected" = "Não conectado";
 
 /* Status word: remote start is armed, no OBS has connected yet */
-"Armed — waiting for OBS" = "Armado: aguardando o OBS";
+"Armed" = "Armado";
 
 /* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
-"OBS connected — not armed" = "OBS conectado: não armado";
+"OBS connected" = "OBS conectado";
 
 /* Status word: OBS is connected and can start the camera */
-"OBS connected — ready" = "OBS conectado: pronto";
+"Ready" = "Pronto";
 
 /* Status word: streaming, waiting for OBS to connect */
 "Waiting for OBS…" = "Aguardando o OBS…";
@@ -705,20 +705,16 @@
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "Desativar a tela verde";
 
-/* Format sheet: a resolution with green screen depth assist at the chosen frame rate, e.g. "1080p · Depth". "Depth" means depth assist */
-"%@ · Depth" = "%@ · Profundidade";
 
-/* Format sheet: a resolution with depth assist only at other frame rates; %1$@ is the resolution, %2$@ a list of frame rates, e.g. "4K · Depth at 24 and 30 fps" */
-"%1$@ · Depth at %2$@ fps" = "%1$@ · Profundidade a %2$@ fps";
 
-/* Format sheet: a frame rate with green screen depth assist at the chosen resolution, e.g. "30 fps · Depth" */
-"%lld fps · Depth" = "%lld fps · Profundidade";
 
-/* Setup and Format sheet, green screen on: %@ is the camera (lens) name */
-"The %@ camera has no depth, so green screen runs without the Subject dial." = "A câmera %@ não tem profundidade, então a tela verde funciona sem o seletor de Assunto.";
 
-/* Setup and Format sheet, green screen on: depth assist works at the chosen camera and format */
-"Depth assist will run: the Subject dial can drop people behind you." = "A assistência de profundidade vai funcionar: o seletor de Assunto pode tirar pessoas atrás de você.";
 
-/* Setup and Format sheet, green screen on: %@ is the camera (lens) name; "Depth" is the tag on Format sheet options */
-"No depth at this format on the %@ camera. Formats marked Depth have it." = "Sem profundidade neste formato na câmera %@. Os formatos marcados com Profundidade têm.";
+/* Format sheet menu and Setup: tag under a resolution, frame rate, or the Green screen row where green screen depth assist runs */
+"Depth" = "Profundidade";
+
+/* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
+"Depth at %@ fps" = "Profundidade a %@ fps";
+
+/* Options sheet: header over the experiments and diagnostics */
+"Advanced" = "Avançado";

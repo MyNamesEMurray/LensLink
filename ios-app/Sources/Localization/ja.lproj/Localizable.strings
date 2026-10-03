@@ -447,13 +447,13 @@
 "Not connected" = "未接続";
 
 /* Status word: remote start is armed, no OBS has connected yet */
-"Armed — waiting for OBS" = "リモート開始有効・OBSを待機中";
+"Armed" = "リモート開始有効";
 
 /* Status word: OBS is connected but remote start isn't armed, so only the phone can start the camera */
-"OBS connected — not armed" = "OBS接続済み・リモート開始は無効";
+"OBS connected" = "OBS接続済み";
 
 /* Status word: OBS is connected and can start the camera */
-"OBS connected — ready" = "OBS接続済み・準備完了";
+"Ready" = "準備完了";
 
 /* Status word: streaming, waiting for OBS to connect */
 "Waiting for OBS…" = "OBSを待機中…";
@@ -705,20 +705,16 @@
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "グリーンバックをオフ";
 
-/* Format sheet: a resolution with green screen depth assist at the chosen frame rate, e.g. "1080p · Depth". "Depth" means depth assist */
-"%@ · Depth" = "%@ · 深度";
 
-/* Format sheet: a resolution with depth assist only at other frame rates; %1$@ is the resolution, %2$@ a list of frame rates, e.g. "4K · Depth at 24 and 30 fps" */
-"%1$@ · Depth at %2$@ fps" = "%1$@ · 深度は%2$@ fps";
 
-/* Format sheet: a frame rate with green screen depth assist at the chosen resolution, e.g. "30 fps · Depth" */
-"%lld fps · Depth" = "%lld fps · 深度";
 
-/* Setup and Format sheet, green screen on: %@ is the camera (lens) name */
-"The %@ camera has no depth, so green screen runs without the Subject dial." = "%@カメラには深度がないため、グリーンバックは被写体ダイヤルなしで動作します。";
 
-/* Setup and Format sheet, green screen on: depth assist works at the chosen camera and format */
-"Depth assist will run: the Subject dial can drop people behind you." = "深度アシストが動作します：被写体ダイヤルで背後の人を消せます。";
 
-/* Setup and Format sheet, green screen on: %@ is the camera (lens) name; "Depth" is the tag on Format sheet options */
-"No depth at this format on the %@ camera. Formats marked Depth have it." = "%@カメラのこのフォーマットでは深度を使えません。「深度」と表示されたフォーマットで使えます。";
+/* Format sheet menu and Setup: tag under a resolution, frame rate, or the Green screen row where green screen depth assist runs */
+"Depth" = "深度";
+
+/* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
+"Depth at %@ fps" = "深度は%@ fps";
+
+/* Options sheet: header over the experiments and diagnostics */
+"Advanced" = "詳細";

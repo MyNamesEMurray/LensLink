@@ -245,6 +245,7 @@ struct ContentView: View {
                 } else {
                     HStack(spacing: Theme.Space.m) {
                         connectionSummary
+                            .layoutPriority(1)
                         Spacer(minLength: Theme.Space.s)
                         connectionAction
                     }
@@ -307,10 +308,17 @@ struct ContentView: View {
                         .fill(streamer.status.tint)
                         .frame(width: 8, height: 8)
                         .accessibilityHidden(true)
-                    Text(connectionSubtitle)
+                    Text(streamer.status.displayName)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                }
+                if let details = connectionDetails {
+                    Text(details)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                        .padding(.leading, 8 + Theme.Space.xs + 2)
                 }
             }
         }
@@ -332,6 +340,8 @@ struct ContentView: View {
         } else if let ip = wifiIP {
             Text(ip)
                 .font(.callout.monospacedDigit().bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .textSelection(.enabled)
         }
     }
@@ -346,22 +356,18 @@ struct ContentView: View {
         streamer.obsHost ?? "OBS Studio"
     }
 
-    /// Status word first (docs/UI_DESIGN.md §2), then what the plugin
-    /// said about itself: version and transport, only while it is here
-    /// to say it.
-    private var connectionSubtitle: String {
-        var parts = [streamer.status.displayName]
-        if streamer.status != .idle, !streamer.isStreaming {
-            if let version = streamer.obsVersion {
-                parts.append("OBS \(version)")
-            }
-            switch streamer.obsTransport {
-            case "usb": parts.append("USB")
-            case "lan": parts.append("Wi-Fi")
-            default: break
-            }
+    private var connectionDetails: String? {
+        guard streamer.status != .idle, !streamer.isStreaming else { return nil }
+        var parts: [String] = []
+        if let version = streamer.obsVersion {
+            parts.append("OBS \(version)")
         }
-        return parts.joined(separator: " · ")
+        switch streamer.obsTransport {
+        case "usb": parts.append("USB")
+        case "lan": parts.append("Wi-Fi")
+        default: break
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     // MARK: - Camera
@@ -386,8 +392,11 @@ struct ContentView: View {
                 HStack {
                     SettingsRowLabel(L("Format"), systemImage: "rectangle.stack",
                                      color: Theme.accent)
+                        .layoutPriority(1)
                     Spacer()
                     Text(formatSummary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                        .minimumScaleFactor(0.7)
                         .foregroundColor(.secondary)
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
@@ -401,12 +410,11 @@ struct ContentView: View {
             Toggle(isOn: $streamer.greenScreenEnabled) {
                 SettingsRowLabel(L("Green screen"),
                                  systemImage: "person.fill.viewfinder",
-                                 color: Theme.liveGreen)
-            }
-            if streamer.greenScreenEnabled {
-                Text(depthAssistStatus(streamer))
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+                                 color: Theme.liveGreen,
+                                 subtitle: CameraManager.supportsDepth(
+                                    resolution: streamer.resolution,
+                                    fps: Int32(streamer.fps),
+                                    lens: streamer.selectedLens) ? L("Depth") : nil)
             }
 
             if streamer.cameraPermissionDenied || streamer.micPermissionDenied {
@@ -682,19 +690,23 @@ private struct FormatSheet: View {
         NavigationView {
             Form {
                 Section {
-                    Picker("Resolution", selection: $streamer.resolution) {
-                        ForEach(availableResolutions) { resolution in
-                            Text(resolutionLabel(resolution)).tag(resolution)
+                    formatMenu("Resolution", value: streamer.resolution.rawValue) {
+                        Picker("Resolution", selection: $streamer.resolution) {
+                            ForEach(availableResolutions) { resolution in
+                                depthItem(resolution.rawValue,
+                                          depth: resolutionDepth(resolution))
+                                    .tag(resolution)
+                            }
                         }
                     }
-                    Picker("Frame rate", selection: $streamer.fps) {
-                        ForEach(availableFrameRates, id: \.self) { fps in
-                            Text(frameRateLabel(fps)).tag(fps)
+                    formatMenu("Frame rate", value: L("%lld fps", streamer.fps)) {
+                        Picker("Frame rate", selection: $streamer.fps) {
+                            ForEach(availableFrameRates, id: \.self) { fps in
+                                depthItem(L("%lld fps", fps),
+                                          depth: frameRateDepth(fps))
+                                    .tag(fps)
+                            }
                         }
-                    }
-                } footer: {
-                    if streamer.greenScreenEnabled {
-                        Text(depthAssistStatus(streamer))
                     }
                 }
 
@@ -764,48 +776,66 @@ private struct FormatSheet: View {
         .tint(Theme.accent)
     }
 
-    /// With green screen on, each resolution says whether depth assist
-    /// runs at the current frame rate, or lists the rates where it does.
-    private func resolutionLabel(_ resolution: CameraManager.Resolution) -> String {
-        guard streamer.greenScreenEnabled else { return resolution.rawValue }
+    /// A picker row whose collapsed value is just the format, while its
+    /// menu items carry the depth tags.
+    private func formatMenu<Content: View>(_ title: LocalizedStringKey, value: String,
+                                           @ViewBuilder content: () -> Content) -> some View {
+        Menu(content: content) {
+            HStack {
+                Text(title).foregroundColor(.primary)
+                Spacer()
+                Text(value)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.footnote.weight(.semibold))
+            }
+        }
+    }
+
+    /// A menu item with its depth tag: the layers icon and "Depth" when
+    /// depth assist runs at it, or the frame rates that would have it.
+    @ViewBuilder
+    private func depthItem(_ title: String, depth: DepthTag) -> some View {
+        switch depth {
+        case .none:
+            Text(title)
+        case .here:
+            Label {
+                Text(title)
+                Text(L("Depth"))
+            } icon: {
+                Image(systemName: "square.3.layers.3d")
+            }
+        case .at(let rates):
+            Label {
+                Text(title)
+                Text(L("Depth at %@ fps", rates.map(String.init).joined(separator: ", ")))
+            } icon: {
+                EmptyView()
+            }
+        }
+    }
+
+    private enum DepthTag { case none, here, at([Int]) }
+
+    private func resolutionDepth(_ resolution: CameraManager.Resolution) -> DepthTag {
+        guard streamer.greenScreenEnabled else { return .none }
         let rates = availableFrameRates.filter {
             CameraManager.supportsDepth(resolution: resolution, fps: Int32($0),
                                         lens: streamer.selectedLens)
         }
-        if rates.contains(streamer.fps) {
-            return L("%@ · Depth", resolution.rawValue)
-        }
-        guard !rates.isEmpty else { return resolution.rawValue }
-        let list = ListFormatter.localizedString(byJoining: rates.map(String.init))
-        return L("%1$@ · Depth at %2$@ fps", resolution.rawValue, list)
+        if rates.contains(streamer.fps) { return .here }
+        return rates.isEmpty ? .none : .at(rates)
     }
 
-    private func frameRateLabel(_ fps: Int) -> String {
+    private func frameRateDepth(_ fps: Int) -> DepthTag {
         guard streamer.greenScreenEnabled,
               CameraManager.supportsDepth(resolution: streamer.resolution,
                                           fps: Int32(fps),
                                           lens: streamer.selectedLens) else {
-            return L("%lld fps", fps)
+            return .none
         }
-        return L("%lld fps · Depth", fps)
+        return .here
     }
-}
-
-/// Whether green screen's depth assist (the Subject dial) will run with
-/// the camera and format picked now, and if not, what it needs.
-@MainActor
-private func depthAssistStatus(_ streamer: Streamer) -> String {
-    let lens = streamer.selectedLens
-    guard CameraManager.hasDepth(lens: lens) else {
-        return L("The %@ camera has no depth, so green screen runs without the Subject dial.",
-                 lens.displayLabel)
-    }
-    if CameraManager.supportsDepth(resolution: streamer.resolution,
-                                   fps: Int32(streamer.fps), lens: lens) {
-        return L("Depth assist will run: the Subject dial can drop people behind you.")
-    }
-    return L("No depth at this format on the %@ camera. Formats marked Depth have it.",
-             lens.displayLabel)
 }
 
 /// One selectable row with a checkmark: a title, an optional short

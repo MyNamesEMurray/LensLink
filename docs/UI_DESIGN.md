@@ -56,9 +56,9 @@ colours so it also looks native on the phone.
 | State        | Token         | Hex       | Label            |
 |--------------|---------------|-----------|------------------|
 | Idle         | `idleGrey`    | `#8E8E93` | "Not connected"  |
-| Armed        | `connectAmber`| `#FF9F0A` | "Armed — waiting for OBS" |
-| Not armed    | `connectAmber`| `#FF9F0A` | "OBS connected — not armed" |
-| Standby      | `connectAmber`| `#FF9F0A` | "OBS connected — ready" |
+| Armed        | `connectAmber`| `#FF9F0A` | "Armed" |
+| Not armed    | `connectAmber`| `#FF9F0A` | "OBS connected" |
+| Standby      | `connectAmber`| `#FF9F0A` | "Ready" |
 | Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
 | Paused       | `connectAmber`| `#FF9F0A` | "Paused"         |
@@ -372,8 +372,9 @@ Symbol) and a title — top to bottom:
    (`laptopcomputer` over USB, `desktopcomputer` otherwise), the
    computer's **host name** once the plugin has introduced itself (the
    `identify` command; "OBS Studio" until then), and under it the status
-   dot + `status.displayName`, with the OBS version and transport
-   appended while connected ("OBS connected — ready · OBS 32.0 · USB").
+   dot + `status.displayName`, and below that, while connected and not
+   live, a smaller line with the OBS version and transport
+   ("OBS 32.0 · USB").
    On the right: in Standby or Not armed, an accent **Start** capsule; otherwise the
    phone's Wi-Fi IP (monospaced, tap-to-copy), because the address is how
    OBS finds this phone. The Start capsule shows whenever OBS is
@@ -384,18 +385,18 @@ Symbol) and a title — top to bottom:
 3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
    value reads `4K · 60 fps · HEVC` (`· HDR` or `· Log` appended when the
    colour isn't Standard) and opens the Format sheet — and the **Green
-   screen** toggle. While green screen is on, a footnote under the
-   toggle says whether depth assist will run at the chosen lens and
-   format. A contextual "Open Settings" button appears only if
+   screen** toggle, whose title gains a gray `Depth` subtitle when the
+   chosen lens and format run depth assist. A contextual "Open Settings" button appears only if
    a permission was denied.
 
    **The Format sheet**: Resolution and Frame rate pickers (each filtered
-   to what the selected lens supports). While green screen is on, options
-   with depth assist carry a tag: a frame rate reads `30 fps · Depth` when
-   the chosen resolution has depth at it, and a resolution reads
-   `1080p · Depth` when it has depth at the chosen frame rate, or
-   `4K · Depth at 24 and 30 fps` when only other rates have it; the
-   section footer repeats the depth line from Setup. Then **Quality** (**Balanced** or
+   to what the selected lens supports). The rows show only the value
+   (`1080p`, `60 fps`). While green screen is on, the menu items with
+   depth assist carry a tag: the layers icon (`square.3.layers.3d`) and a
+   `Depth` subtitle on a frame rate the chosen resolution has depth at, or
+   on a resolution with depth at the chosen frame rate; a resolution with
+   depth only at other rates gets the subtitle `Depth at 30, 60 fps`
+   and no icon. Then **Quality** (**Balanced** or
    **Maximum**, the latter with a small accent **Beta** tag and no
    caption; the Format row's value gains `· Max`), then **Codec** and
    **Color** as check-row lists rather than pickers, because the two constrain each
@@ -430,11 +431,13 @@ switching mid-stream.
 
 **Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
 so the main screen stays short, in the same icon-tile rows as Setup.
-First group, the things that matter during a stream: **Arm remote start
-on open** (default off; see §2), **Idle view** (Standard / Clean feed / Dim screen), **Focus on
-faces** (default on), **Natural motion blur** (default on; §5), and the pushed screen **Tally light** (row value: the statuses that light it,
-"On air, In preview"), and **Remember camera settings** (default on; see
-§6.2.1). Second group, the experiments and the diagnostics: **High frame rate**
+Four headed groups, by what each row acts on. **Camera**: **Focus on
+faces** (default on), **Natural motion blur** (default on; §5),
+**Remember camera settings** (default on; see §6.2.1). **Live screen**:
+**Idle view** (Standard / Clean feed / Dim screen) and the pushed screen
+**Tally light** (no row value, except `Off` when no status lights it).
+**Remote start**: **Arm remote start on open** (default off; see §2).
+**Advanced**, the experiments and the diagnostics: **High frame rate**
 (adds 120 / 240 fps to the Format sheet where the camera has them; off
 by default), **Allow system video effects**, **Camera diagnostics**. Pure
 controls, no footers: every explanation lives in the Documentation screen (§3), which
@@ -593,6 +596,9 @@ usual reset. The Camera app remembers the same way. Rules:
 - Values are clamped again on apply by the same didSets the Live screen
   uses, so a lens position or ISO saved on one format never exceeds the
   next one's limits.
+- A live lens switch brings back everything but zoom: picking a lens
+  means its own 1×, as in the Camera app. Zoom comes back at stream
+  start only.
 - **Options → Remember camera settings** (default on) is the whole UI.
   Off forgets what is stored and every camera starts on auto.
 - Phone-local; the same properties the Live screen and `CONTROL` move,

@@ -1025,7 +1025,9 @@ struct StreamingView: View {
                          accessibilityValue: lensAccessibilityValue(lens, active: active),
                          accessibilityHint: lensAccessibilityHint(active: selected),
                          adjust: selected ? adjustZoom : nil) {
-                    if selected {
+                    if selected, !active {
+                        streamer.zoom = 1
+                    } else if selected {
                         // First tap brings up the zoom dial, a second
                         // resets the zoom, like the green screen button.
                         // VoiceOver adjusts instead, so it resets at once.
