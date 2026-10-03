@@ -35,6 +35,7 @@ struct StreamingView: View {
     /// again after a moment, or the instant the camera lets the tap
     /// point go; a value that lingered would read as a control.
     @State private var focusMark: FocusMark?
+    @State private var pickingWhite = false
 
     private struct FocusMark: Equatable {
         let point: CGPoint
@@ -84,6 +85,13 @@ struct StreamingView: View {
                 previewEnabled: !dimmed,
                 onTapAtDevicePoint: { point, viewPoint in
                     touched()
+                    let calibrating = pickingWhite && trayOpen
+                        && activeTarget == .whiteBalance
+                    pickingWhite = false
+                    if calibrating {
+                        streamer.calibrateWhiteBalance(at: point)
+                        return
+                    }
                     // Via the streamer so a tap keeps manual exposure locked.
                     streamer.focusAndExpose(at: point)
                     focusMark = FocusMark(point: viewPoint, locked: false)
@@ -834,6 +842,15 @@ struct StreamingView: View {
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: Theme.Space.s)
+                if activeTarget == .whiteBalance {
+                    ControlButton(L("Calibrate white balance"),
+                                  systemImage: "eyedropper",
+                                  isOn: pickingWhite,
+                                  inputLabels: [L("Calibrate")]) {
+                        touched()
+                        pickingWhite.toggle()
+                    }
+                }
                 if streamer.camera.hasFlashlight {
                     ControlButton(L("Flashlight"),
                                   systemImage: streamer.flashlightOn
@@ -988,6 +1005,10 @@ struct StreamingView: View {
             return streamer.faceFocus && streamer.camera.supportsFaceDrivenFocus
                 ? L("Auto · faces first · hold the picture to lock")
                 : L("Auto · tap the picture · hold to lock")
+        case .whiteBalance where pickingWhite:
+            return L("Tap the white paper in the picture")
+        case .whiteBalance where streamer.whiteBalanceSetting == .auto:
+            return L("Auto · tap the eyedropper, then white paper in the picture")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
                 ? L("Cutoff · tap Subject for all")

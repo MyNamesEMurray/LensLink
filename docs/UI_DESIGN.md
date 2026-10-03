@@ -297,7 +297,7 @@ surfaces.
 | Exposure    | web: `sun.min` / `sun.max`; app: the **Exposure** chip, or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
 | Focus       | web: segmented **AF / Lock**; app: the **Focus** chip | When Lock: a lens-position slider (0=near, 1=far). On the phone the chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
 | Exposure mode | web: segmented **AE / Manual**; app: the **Shutter** chip | When Manual: the bias slider is replaced by ISO (`dial.min`/`dial.max`) and Shutter (`tortoise`/`hare`, log-scale, readout `1/125`) rows. On the phone, dragging Shutter takes exposure manual and the Exposure chip becomes **ISO**; tapping either active chip returns to auto. Hidden if unsupported |
-| White balance | web: segmented **AWB / Lock**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). Hidden if unsupported |
+| White balance | web: segmented **AWB / Lock / Calibrate**; app: the **WB** chip | When Lock: a colour-temperature slider (2500–8000 K, readout `5600 K`). **Calibrate** locks to white paper at the picture's centre (web) or a tapped spot (app), temperature and tint. Hidden if unsupported |
 | Flashlight  | `bolt.fill` (toggle; hidden if unavailable)  | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
 | Lens        | web: `camera.aperture` menu; app: the lens buttons | Menu of the device's real lenses; check on the active one. The app's buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one resets its zoom |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
@@ -491,8 +491,10 @@ and chevron; 200 ms):
   auto alone — and once Shutter has taken exposure manual the same chip
   reads **ISO** and drives ISO, so chip and readout never disagree.
 - **Bottom row:** a caption naming the mode (`Auto · drag to set by hand`,
-  `Manual · tap WB for auto`, `Pinch the picture to zoom`) · Flashlight ·
-  Flip · `chevron.down` to close.
+  `Manual · tap WB for auto`, `Pinch the picture to zoom`) · `eyedropper`
+  (Calibrate white balance, only while WB is the active chip: on, the next
+  tap on the picture samples white paper instead of focusing) ·
+  Flashlight · Flip · `chevron.down` to close.
 
 Set-once choices are not on this screen at all: the microphone picker is
 on Setup (Microphone module), lens defaults come from Setup's Lens
