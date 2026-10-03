@@ -390,12 +390,14 @@ Symbol) and a title — top to bottom:
    a permission was denied.
 
    **The Format sheet**: Resolution and Frame rate pickers (each filtered
-   to what the selected lens supports). While green screen is on, options
-   with depth assist carry a tag: a frame rate reads `30 fps · Depth` when
-   the chosen resolution has depth at it, and a resolution reads
-   `1080p · Depth` when it has depth at the chosen frame rate, or
-   `4K · Depth at 24 and 30 fps` when only other rates have it; the
-   section footer repeats the depth line from Setup. Then **Quality** (**Balanced** or
+   to what the selected lens supports). The rows show only the value
+   (`1080p`, `60 fps`). While green screen is on, the menu items with
+   depth assist carry a tag: the layers icon (`square.3.layers.3d`) and a
+   `Depth` subtitle on a frame rate the chosen resolution has depth at, or
+   on a resolution with depth at the chosen frame rate; a resolution with
+   depth only at other rates gets the subtitle `Depth at 30 and 60 fps`
+   and no icon. The section footer repeats the depth line from Setup,
+   naming the format when it has no depth. Then **Quality** (**Balanced** or
    **Maximum**, the latter with a small accent **Beta** tag and no
    caption; the Format row's value gains `· Max`), then **Codec** and
    **Color** as check-row lists rather than pickers, because the two constrain each

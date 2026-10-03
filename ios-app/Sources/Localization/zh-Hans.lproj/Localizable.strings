@@ -705,14 +705,8 @@
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "关闭绿幕";
 
-/* Format sheet: a resolution with green screen depth assist at the chosen frame rate, e.g. "1080p · Depth". "Depth" means depth assist */
-"%@ · Depth" = "%@ · 深度";
 
-/* Format sheet: a resolution with depth assist only at other frame rates; %1$@ is the resolution, %2$@ a list of frame rates, e.g. "4K · Depth at 24 and 30 fps" */
-"%1$@ · Depth at %2$@ fps" = "%1$@ · 深度：%2$@ fps";
 
-/* Format sheet: a frame rate with green screen depth assist at the chosen resolution, e.g. "30 fps · Depth" */
-"%lld fps · Depth" = "%lld fps · 深度";
 
 /* Setup and Format sheet, green screen on: %@ is the camera (lens) name */
 "The %@ camera has no depth, so green screen runs without the Subject dial." = "%@ 相机没有深度信息，因此绿幕运行时没有主体转盘。";
@@ -720,5 +714,14 @@
 /* Setup and Format sheet, green screen on: depth assist works at the chosen camera and format */
 "Depth assist will run: the Subject dial can drop people behind you." = "深度辅助将运行：主体转盘可以去掉你身后的人。";
 
-/* Setup and Format sheet, green screen on: %@ is the camera (lens) name; "Depth" is the tag on Format sheet options */
-"No depth at this format on the %@ camera. Formats marked Depth have it." = "%@ 相机在此格式下没有深度信息。标有“深度”的格式支持。";
+/* Format sheet menu: tag under a resolution or frame rate where green screen depth assist runs */
+"Depth" = "深度";
+
+/* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30 and 60 fps" */
+"Depth at %@ fps" = "深度：%@ fps";
+
+/* Setup and Format sheet, green screen on: %1$@ is the resolution, %2$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
+"No depth at %1$@ on the %2$@ camera at any frame rate. Formats marked Depth have it." = "%2$@ 相机在 %1$@ 下任何帧率都没有深度信息。标有“深度”的格式支持。";
+
+/* Setup and Format sheet, green screen on: %1$@ is the resolution, %2$lld the frame rate, %3$@ the camera (lens) name; "Depth" is the tag on Format sheet options */
+"No depth at %1$@ %2$lld fps on the %3$@ camera. Formats marked Depth have it." = "%3$@ 相机在 %1$@ %2$lld fps 下没有深度信息。标有“深度”的格式支持。";
