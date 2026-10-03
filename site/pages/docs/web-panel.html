@@ -92,7 +92,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
     <tr><td><code>exposureBias</code></td><td>AE bias in EV.</td></tr>
     <tr><td><code>exposureMode</code>, <code>iso</code>, <code>minISO</code>, <code>maxISO</code>, <code>shutterSeconds</code>, <code>minShutterSeconds</code>, <code>maxShutterSeconds</code>, <code>supportsManualExposure</code></td><td><code>"auto"</code> or <code>"manual"</code>, the current ISO and shutter, and the ranges the camera accepts. The longest shutter is capped at one frame, so <code>maxShutterSeconds</code> follows the frame rate.</td></tr>
     <tr><td><code>focusMode</code>, <code>lensPosition</code>, <code>faceFocus</code>, <code>supportsFaceFocus</code></td><td><code>"auto"</code> or <code>"locked"</code>, the focus position (0 to 1), and face-driven focus.</td></tr>
-    <tr><td><code>whiteBalanceMode</code>, <code>whiteBalanceTemperature</code>, <code>supportsWhiteBalanceLock</code></td><td><code>"auto"</code> or <code>"locked"</code>, and the locked temperature in kelvin.</td></tr>
+    <tr><td><code>whiteBalanceMode</code>, <code>whiteBalanceTemperature</code>, <code>whiteBalanceTint</code>, <code>supportsWhiteBalanceLock</code></td><td><code>"auto"</code> or <code>"locked"</code>, the locked temperature in kelvin, and the tint a calibration measured (0 otherwise).</td></tr>
     <tr><td><code>flashlight</code>, <code>hasFlashlight</code></td><td>Flashlight state, and whether this camera has one.</td></tr>
     <tr><td><code>camera</code>, <code>lens</code>, <code>lenses</code></td><td><code>"front"</code> or <code>"back"</code>, the current lens's label, and the labels of every lens on the phone, such as <code>"Main (Wide)"</code> or <code>"Ultra Wide (0.5×)"</code>. Labels stay English; they are the values <code>selectLens</code> takes.</td></tr>
     <tr><td><code>resolution</code>, <code>fps</code>, <code>codec</code>, <code>resolutions</code>, <code>frameRates</code>, <code>codecs</code></td><td>The current format, and the choices <code>set_format</code> accepts for the current lens.</td></tr>
@@ -119,6 +119,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 { "cmd": "focus",         "faces": true }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
 { "cmd": "white_balance", "mode": "auto" }
+{ "cmd": "white_balance", "mode": "calibrate" }
 { "cmd": "flashlight",    "on": true }
 { "cmd": "flip" }
 { "cmd": "selectLens",    "label": "Ultra Wide (0.5×)" }

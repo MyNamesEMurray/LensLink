@@ -1179,22 +1179,38 @@ final class CameraManager: NSObject {
         }
     }
 
-    /// Locks white balance at a colour temperature (Kelvin, neutral tint).
-    func lockWhiteBalance(temperature: Float) {
+    /// Locks white balance at a colour temperature (Kelvin) and tint.
+    func lockWhiteBalance(temperature: Float, tint: Float) {
         withLockedDevice { device in
             guard device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
             else { return }
             let values = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(
-                temperature: temperature, tint: 0)
-            var gains = device.deviceWhiteBalanceGains(for: values)
-            // The conversion can produce gains outside the legal range at
-            // extreme temperatures; setting those throws an exception.
-            let maxGain = device.maxWhiteBalanceGain
-            gains.redGain = max(1, min(gains.redGain, maxGain))
-            gains.greenGain = max(1, min(gains.greenGain, maxGain))
-            gains.blueGain = max(1, min(gains.blueGain, maxGain))
-            device.setWhiteBalanceModeLocked(with: gains)
+                temperature: temperature, tint: tint)
+            device.setWhiteBalanceModeLocked(with: Self.legal(
+                device.deviceWhiteBalanceGains(for: values), device))
         }
+    }
+
+    func grayWorldWhiteBalance()
+        -> AVCaptureDevice.WhiteBalanceTemperatureAndTintValues? {
+        guard let device = activeDevice,
+              device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
+        else { return nil }
+        return device.temperatureAndTintValues(
+            for: Self.legal(device.grayWorldDeviceWhiteBalanceGains, device))
+    }
+
+    /// Gains outside 1...maxWhiteBalanceGain throw an exception when set
+    /// or converted; the temperature conversion produces them at extremes.
+    private static func legal(_ gains: AVCaptureDevice.WhiteBalanceGains,
+                              _ device: AVCaptureDevice)
+        -> AVCaptureDevice.WhiteBalanceGains {
+        var gains = gains
+        let maxGain = device.maxWhiteBalanceGain
+        gains.redGain = max(1, min(gains.redGain, maxGain))
+        gains.greenGain = max(1, min(gains.greenGain, maxGain))
+        gains.blueGain = max(1, min(gains.blueGain, maxGain))
+        return gains
     }
 
     var supportsManualExposure: Bool {

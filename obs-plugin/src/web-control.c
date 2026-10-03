@@ -47,6 +47,8 @@ static const char *const web_text_keys[] = {
 	"Web.Shutter",
 	"Web.Lock",
 	"Web.AutoWhiteBalance",
+	"Web.Calibrate",
+	"Web.Calibrate.Tip",
 	"Web.GreenScreen",
 	"Web.All",
 	"Web.Mic",
@@ -219,7 +221,8 @@ static const char control_page[] =
 	"<span class='ro' id='shutv'>1/60</span></div>"
 	"<div class='row' id='wbrow' style='display:none'>"
 	"<div class='seg'><button id='awb' class='on'>AWB</button>"
-	"<button id='wbl' data-t='Lock'></button></div>"
+	"<button id='wbl' data-t='Lock'></button>"
+	"<button id='wbc' data-t='Calibrate' data-t-title='Calibrate.Tip'></button></div>"
 	"<input id='wbtemp' type='range' min='2500' max='8000' step='100' "
 	"style='display:none' data-t-title='ColorTemperature'>"
 	"<span class='ro' id='wbv' style='display:none'>5000K</span>"
@@ -311,7 +314,7 @@ static const char control_page[] =
 	"emoderowEl=$('emoderow'),aeEl=$('ae'),meEl=$('me'),biasrowEl=$('biasrow'),"
 	"isorowEl=$('isorow'),isoEl=$('iso'),isovEl=$('isov'),"
 	"shutrowEl=$('shutrow'),shutEl=$('shut'),shutvEl=$('shutv'),"
-	"wbrowEl=$('wbrow'),awbEl=$('awb'),wblEl=$('wbl'),wbtempEl=$('wbtemp'),"
+	"wbrowEl=$('wbrow'),awbEl=$('awb'),wblEl=$('wbl'),wbcEl=$('wbc'),wbtempEl=$('wbtemp'),"
 	"wbvEl=$('wbv'),wbhintEl=$('wbhint'),"
 	"gsrowEl=$('gsrow'),gsEl=$('gs'),gsdEl=$('gsd'),gsdvEl=$('gsdv'),"
 	"gshintEl=$('gshint'),"
@@ -411,6 +414,7 @@ static const char control_page[] =
 	"awbEl.onclick=()=>{touch();wbUI(false);send({cmd:'white_balance',mode:'auto'})};"
 	"wblEl.onclick=()=>{touch();wbUI(true);send({cmd:'white_balance',"
 	"mode:'locked',temperature:+wbtempEl.value})};"
+	"wbcEl.onclick=()=>{touch();send({cmd:'white_balance',mode:'calibrate'})};"
 	"const dWb=deb(()=>send({cmd:'white_balance',mode:'locked',"
 	"temperature:+wbtempEl.value}),60);"
 	"wbtempEl.oninput=()=>{touch();wbvEl.textContent=wbtempEl.value+'K';"

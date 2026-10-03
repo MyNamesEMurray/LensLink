@@ -834,6 +834,14 @@ struct StreamingView: View {
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: Theme.Space.s)
+                if activeTarget == .whiteBalance {
+                    ControlButton(L("Calibrate white balance"),
+                                  systemImage: "eyedropper",
+                                  inputLabels: [L("Calibrate")]) {
+                        touched()
+                        streamer.calibrateWhiteBalance()
+                    }
+                }
                 if streamer.camera.hasFlashlight {
                     ControlButton(L("Flashlight"),
                                   systemImage: streamer.flashlightOn
@@ -988,6 +996,8 @@ struct StreamingView: View {
             return streamer.faceFocus && streamer.camera.supportsFaceDrivenFocus
                 ? L("Auto · faces first · hold the picture to lock")
                 : L("Auto · tap the picture · hold to lock")
+        case .whiteBalance where streamer.whiteBalanceSetting == .auto:
+            return L("Auto · fill the frame with white paper and tap the eyedropper")
         case .subject:
             return streamer.greenScreenMaxDistance > 0
                 ? L("Cutoff · tap Subject for all")

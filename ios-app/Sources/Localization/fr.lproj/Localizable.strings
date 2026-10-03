@@ -598,6 +598,15 @@
 /* Live screen adjust tray hint: setting on auto */
 "Auto · drag to set by hand" = "Auto · faites glisser pour régler à la main";
 
+/* Live screen adjust tray button: lock white balance to what the camera sees (white paper) */
+"Calibrate white balance" = "Calibrer la balance des blancs";
+
+/* Voice Control name for the white balance calibration button */
+"Calibrate" = "Calibrer";
+
+/* Live screen adjust tray hint: white balance on auto */
+"Auto · fill the frame with white paper and tap the eyedropper" = "Auto · remplissez le cadre de papier blanc et touchez la pipette";
+
 /* Live screen adjust tray hint: setting set by hand; %@ = chip name */
 "Manual · tap %@ for auto" = "Manuel · touchez %@ pour l’auto";
 
