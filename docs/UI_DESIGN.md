@@ -466,7 +466,8 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
   then focus is held at the lens position it found and exposure at the
   ISO and shutter it chose, as the same locked / manual states the chips
   show ("AE/AF Lock" tag under the square, 1.8 s); releasing is tapping
-  Focus or ISO. A **one-finger vertical drag** = exposure bias (the Camera app's sun
+  Focus or ISO, and a tap on the picture releases the focus lock (the
+  manual exposure stays, like any manual ISO). A **one-finger vertical drag** = exposure bias (the Camera app's sun
   slider: six stops per screen height, a `cameraYellow` readout centred
   while the finger is down, inert in manual exposure). With those, the
   tray stays closed unless the operator means it.

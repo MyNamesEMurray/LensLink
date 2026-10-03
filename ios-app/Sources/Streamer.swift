@@ -770,6 +770,7 @@ final class Streamer: ObservableObject {
     /// Tap-to-focus from the Live screen. Routed through here (not straight
     /// to the camera) so a focus tap keeps a manual ISO/shutter lock intact.
     func focusAndExpose(at devicePoint: CGPoint) {
+        if focusSetting == .locked { focusSetting = .auto }
         camera.focusAndExpose(at: devicePoint,
                               includeExposure: exposureSetting == .auto)
     }
