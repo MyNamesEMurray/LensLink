@@ -102,7 +102,7 @@ final class Streamer: ObservableObject {
             switch self {
             case .off: return L("Off")
             case .standard: return L("Standard")
-            case .cinematic: return L("Cinematic")
+            case .cinematic: return L("Cinematic (high delay)")
             }
         }
 

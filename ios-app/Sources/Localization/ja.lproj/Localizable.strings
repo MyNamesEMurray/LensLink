@@ -725,8 +725,8 @@
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "手ぶれ補正";
 
-/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal */
-"Cinematic" = "シネマティック";
+/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal; the parenthesis warns it delays the stream a lot */
+"Cinematic (high delay)" = "シネマティック（遅延大）";
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
-"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream: Standard adds a little, Cinematic adds the most and crops the picture a little more. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**手ぶれ補正**は、手持ちや移動しながらの映像を安定させます。補正のために iPhone がフレームを溜めるので配信が遅れるため、デフォルトではオフです。標準は少し遅れ、シネマティックは最も遅れて画角も少し狭くなります。選んだモードに対応していないフォーマットと、深度アシストの動作中はオフのままです。";
+"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**手ぶれ補正**は、手持ちや移動しながらの映像を安定させます。補正のために iPhone がフレームを溜めるので配信が遅れるため、デフォルトではオフです。標準は少し遅れます。シネマティックは大きく遅れ（0.5秒以上になることも多い）、画角も少し狭くなるので、ゲームや他のソースと合わせる必要のない映像で使ってください。選んだモードに対応していないフォーマットと、深度アシストの動作中はオフのままです。";

@@ -725,8 +725,8 @@
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "防抖";
 
-/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal */
-"Cinematic" = "电影级";
+/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal; the parenthesis warns it delays the stream a lot */
+"Cinematic (high delay)" = "电影级（延迟高）";
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
-"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream: Standard adds a little, Cinematic adds the most and crops the picture a little more. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**防抖**让手持或移动拍摄的画面更平稳。它默认关闭，因为手机需要缓存若干帧来平滑画面，会让推流产生延迟：标准只增加一点延迟，电影级延迟最大，并且画面会再裁切一些。在不支持所选模式的格式下，以及深度辅助运行时，它保持关闭。";
+"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**防抖**让手持或移动拍摄的画面更平稳。它默认关闭，因为手机需要缓存若干帧来平滑画面，会让推流产生延迟。标准只增加一点延迟。电影级延迟很大，常常超过半秒，并且画面会再裁切一些，所以请把它留给不需要与游戏或其他来源同步的画面。在不支持所选模式的格式下，以及深度辅助运行时，它保持关闭。";

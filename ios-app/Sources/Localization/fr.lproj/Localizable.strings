@@ -725,8 +725,8 @@
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "Stabilisation";
 
-/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal */
-"Cinematic" = "Cinématique";
+/* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal; the parenthesis warns it delays the stream a lot */
+"Cinematic (high delay)" = "Cinématique (fort retard)";
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
-"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream: Standard adds a little, Cinematic adds the most and crops the picture a little more. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "La **stabilisation** adoucit une prise de vue à main levée ou en mouvement. Elle est désactivée par défaut, car le téléphone retient des images pour lisser le mouvement, ce qui retarde le flux : Standard ajoute un peu de retard, Cinématique le plus et recadre un peu plus l’image. Elle reste désactivée dans les formats qui ne proposent pas le mode choisi, et pendant que l’assistance de profondeur fonctionne.";
+"**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "La **stabilisation** adoucit une prise de vue à main levée ou en mouvement. Elle est désactivée par défaut, car le téléphone retient des images pour lisser le mouvement, ce qui retarde le flux. Standard ajoute un peu de retard. Cinématique en ajoute beaucoup, souvent plus d’une demi-seconde, et recadre un peu plus l’image : réservez-le aux plans qui n’ont pas à rester synchronisés avec un jeu ou d’autres sources. Elle reste désactivée dans les formats qui ne proposent pas le mode choisi, et pendant que l’assistance de profondeur fonctionne.";
