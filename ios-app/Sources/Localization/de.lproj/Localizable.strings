@@ -267,11 +267,14 @@
 /* Documentation → Camera & picture, Green screen section (Markdown: keep the ** markers) */
 "**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**Greenscreen** behält dich im Bild und malt alles andere einfarbig grün, bevor das Video das Smartphone verlässt – beim Einschalten wird Farbe auf Standard gesetzt. Die Quelle **LensLink Camera** in OBS fügt einen fertig abgestimmten Filter hinzu, der das Grün ausstanzt; er wird nur einmal hinzugefügt, löschst du ihn oder stimmst du ihn in OBS nach, bleibt das so.";
 
+/* Documentation → Camera & picture, Green screen section: switching it while live (Markdown: keep the ** markers) */
+"Mid-stream, **hold** the green screen button beside the lens buttons to turn it on or off; it lights up yellow while it's on. Switching restarts the camera for a moment." = "Während des Streams schaltest du ihn mit **Halten** der Greenscreen-Taste neben den Objektivtasten ein oder aus; sie leuchtet gelb, solange er an ist. Das Umschalten startet die Kamera kurz neu.";
+
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
 "**Depth assist** sharpens the cutout with real depth — the front camera on Face ID phones, or the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system video effects." = "**Tiefenunterstützung** schärft die Freistellung mit echten Tiefendaten – die Frontkamera auf Smartphones mit Face ID oder das hintere Hauptobjektiv auf Pro-Smartphones (LiDAR). Andere Objektive nutzen nur die Formerkennung, die jede Person im Bild behält. Sie schaltet außerdem den Folgemodus und die übrigen Systemvideoeffekte aus.";
 
 /* Documentation → Camera & picture, Depth assist section (Markdown: keep the ** markers) */
-"**Subject** appears in the Live screen's adjust tray while depth assist runs: anything farther than the distance on the dial becomes background — the way to drop a passer-by behind you. Tap the Subject chip again to go back to **All** (no limit)." = "**Motiv** erscheint in der Einstellleiste des Live-Bildschirms, während die Tiefenunterstützung läuft: Alles, was weiter entfernt ist als der Abstand auf dem Regler, wird zum Hintergrund – so blendest du jemanden aus, der hinter dir vorbeigeht. Tippe erneut auf den Chip Motiv, um zu **Alle** (keine Grenze) zurückzukehren.";
+"**Subject** works while depth assist runs: anything farther from the phone than the cutoff becomes background — the way to drop a passer-by behind you. It starts on **Auto**, which keeps the cutoff about half a metre behind you. Tap the lit green screen button beside the lens buttons for the dial: drag to set a distance, or past 5 m for **All** (no limit), and tap the button again for Auto." = "**Motiv** wirkt, während die Tiefenunterstützung läuft: Alles, was weiter vom iPhone entfernt ist als die Grenze, wird zum Hintergrund – so blendest du jemanden aus, der hinter dir vorbeigeht. Es startet auf **Auto** und hält die Grenze etwa einen halben Meter hinter dir. Tippe auf die leuchtende Greenscreen-Taste neben den Objektivtasten, um den Regler zu öffnen: Ziehe, um einen Abstand festzulegen, oder über 5 m hinaus für **Alle** (keine Grenze), und tippe erneut auf die Taste für Auto.";
 
 /* Documentation section header on the Camera & picture page */
 "Depth assist" = "Tiefenunterstützung";
@@ -283,19 +286,19 @@
 "Live screen" = "Live-Bildschirm";
 
 /* Documentation → Using the camera, Lenses & zoom section (Markdown: keep the ** markers) */
-"The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "Die Objektivtasten – **.5**, **1×**, **2** – wechseln wie in der Kamera-App zwischen den Kameras. Mit zwei Fingern zoomst du innerhalb eines Objektivs. Tippe erneut auf das aktive Objektiv, um seinen Zoom zurückzusetzen. Hat ein Gerät zwei Frontkameras, bekommt die Frontkamera dieselben Tasten.";
+"The lens buttons — **.5**, **1×**, **2** — switch cameras the way they do in the Camera app. Pinch to zoom within a lens, or tap the active one for a zoom dial and slide along it; the buttons move up above the dial, so the other lenses stay a tap away. Tap the active one again to reset its zoom. A device with two front cameras gets the same buttons for the front camera." = "Die Objektivtasten – **.5**, **1×**, **2** – wechseln die Kamera wie in der Kamera-App. Zum Zoomen innerhalb eines Objektivs die Finger auseinanderziehen oder auf das aktive Objektiv tippen und am erscheinenden Zoomregler entlangwischen; die Tasten rücken darüber, sodass die anderen Objektive einen Tipp entfernt bleiben. Tippe erneut auf das aktive Objektiv, um seinen Zoom zurückzusetzen. Ein Gerät mit zwei Frontkameras bekommt dieselben Tasten für die Frontkamera.";
 
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "Objektive & Zoom";
 
 /* Documentation → Using the camera, Focus & exposure section (Markdown: keep the ** markers) */
-"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and set Exposure to ISO in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Tippe** ins Bild, um dort zu fokussieren und zu belichten – ein gelbes Quadrat markiert die Stelle, und die Kamera hält diesen Punkt, bis sich die Szene ändert, und kehrt dann zur Automatik zurück. **Halte** den Finger auf dem Bild, um Fokus und Belichtung an diese Stelle des Bildausschnitts zu heften (AE/AF-Sperre): Wohin du das Telefon auch richtest, die Kamera fokussiert und belichtet weiter auf das, was sich dort befindet, und das Quadrat bleibt, bis ein Tippen ins Bild oder auf den Fokus-Chip es löst. Um Fokus und Belichtung stattdessen einzufrieren, sperre den Fokus und stelle die Belichtung in der Leiste auf ISO. **Ziehe** irgendwo darauf nach oben oder unten, um die Aufnahme heller oder dunkler zu machen – die Belichtungskorrektur, solange die Belichtung automatisch ist.";
+"**Tap** the picture to focus and expose there — a yellow square marks the spot, and the camera holds that point until the scene changes, then goes back to auto. **Hold** the picture to pin focus and exposure to that spot of the frame (AE/AF Lock): wherever you point the phone, the camera keeps focusing and exposing for whatever is there, and the square stays until a tap on the picture or the Focus chip lets it go. To freeze focus and exposure instead, lock Focus and take ISO manual in the tray. **Drag** up or down anywhere on it to brighten or darken the shot — the exposure bias, while exposure is on auto." = "**Tippe** ins Bild, um dort zu fokussieren und zu belichten – ein gelbes Quadrat markiert die Stelle, und die Kamera hält diesen Punkt, bis sich die Szene ändert, und kehrt dann zur Automatik zurück. **Halte** den Finger auf dem Bild, um Fokus und Belichtung an diese Stelle des Bildausschnitts zu heften (AE/AF-Sperre): Wohin du das Telefon auch richtest, die Kamera fokussiert und belichtet weiter auf das, was sich dort befindet, und das Quadrat bleibt, bis ein Tippen ins Bild oder auf den Fokus-Chip es löst. Um Fokus und Belichtung stattdessen einzufrieren, sperre den Fokus und stelle ISO in der Leiste manuell ein. **Ziehe** irgendwo darauf nach oben oder unten, um die Aufnahme heller oder dunkler zu machen – die Belichtungskorrektur, solange die Belichtung automatisch ist.";
 
 /* Documentation section header on the Using the camera page */
 "Focus & exposure" = "Fokus & Belichtung";
 
 /* Documentation → Using the camera, Adjust tray section (Markdown: keep the ** markers) */
-"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Zoom, Focus, WB, Exposure, Shutter, and Subject while green screen runs with depth assist. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. Exposure on auto is the bias dial; drag Shutter to take exposure manual, and the Exposure chip becomes ISO. Flashlight and Flip sit in the tray too." = "Der **Pfeil** öffnet die Einstellleiste: ein Regler und ein Chip für alles, was er steuern kann – Zoom, Fokus, Weißabgleich (WA), Belichtung (Belicht.), Verschluss (Verschl.) und Motiv, während der Greenscreen mit Tiefenunterstützung läuft. Ein gelbes **A** auf einem Chip bedeutet, dass diese Einstellung automatisch ist. Bewegst du den Regler, wird sie manuell; tippst du erneut auf den aktiven Chip, wird sie wieder automatisch. Belichtung auf Automatik ist der Regler für die Belichtungskorrektur; bewege Verschluss, um die Belichtung manuell zu steuern, dann wird der Belichtungs-Chip zu ISO. Taschenlampe und Kamera wechseln liegen ebenfalls in der Leiste.";
+"The **chevron** opens the adjust tray: one dial, and a chip for each thing it can drive — Focus, WB, EV, ISO and Shutter. A yellow **A** on a chip means that setting is on auto. Drag the dial and it goes manual; tap the active chip again and it goes back to auto. EV is the brightness bias while exposure is on auto; drag ISO or Shutter to take exposure manual. EV, ISO and Shutter click between the usual stops. The buttons under the dial stay in the same place on every chip, Flashlight and Flip included." = "Der **Pfeil** öffnet die Einstellleiste: ein Regler und ein Chip für alles, was er steuern kann – Fokus, Weißabgleich (WA), EV, ISO und Verschluss (Verschl.). Ein gelbes **A** auf einem Chip bedeutet, dass diese Einstellung automatisch ist. Bewegst du den Regler, wird sie manuell; tippst du erneut auf den aktiven Chip, wird sie wieder automatisch. EV ist die Belichtungskorrektur, solange die Belichtung automatisch ist; bewege ISO oder Verschluss, um die Belichtung manuell zu steuern. EV, ISO und Verschluss rasten auf den üblichen Stufen ein. Die Tasten unter dem Regler bleiben auf jedem Chip an derselben Stelle, auch Taschenlampe und Kamera wechseln.";
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "Das **Schloss** in der unteren Reihe der Leiste friert die gewählte Einstellung auf dem ein, was die Automatik gerade macht; ein erneutes Tippen schaltet zurück auf Automatik. Halte es gedrückt, um alles auf einmal zu sperren oder zu entsperren. Beim Verschluss-Chip schaltet die Blendentaste **Natürliche Bewegungsunschärfe** ein oder aus: Die Belichtungsautomatik hält den Verschluss bei der halben Bilddauer oder schneller (1/60 bei 30 fps) und erhöht bei wenig Licht stattdessen die ISO.";
@@ -550,9 +553,6 @@
 /* Voice Control alias of the Natural motion blur button */
 "180 degree rule" = "180-Grad-Regel";
 
-/* Adjust tray mode line on the Shutter chip while auto exposure follows the 180° shutter rule */
-"Auto · 180° rule · drag to set by hand" = "Auto · 180°-Regel · ziehen für manuell";
-
 /* VoiceOver label of the Live screen Flashlight button (never "Torch" on screen) */
 "Flashlight" = "Taschenlampe";
 
@@ -583,8 +583,6 @@
 /* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
 "%@, manual" = "%@, manuell";
 
-/* Live screen chip: zoom */
-"Zoom" = "Zoom";
 
 /* Live screen chip: exposure */
 "Exposure" = "Belicht.";
@@ -601,41 +599,14 @@
 /* Live screen chip: green screen subject distance */
 "Subject" = "Motiv";
 
-/* Live screen adjust tray hint */
-"Pinch the picture to zoom" = "Mit zwei Fingern im Bild zoomen";
-
-/* Live screen adjust tray hint: exposure on auto */
-"Auto · drag the picture up or down" = "Auto · Bild nach oben oder unten ziehen";
-
-/* Live screen adjust tray hint: focus on auto with face tracking */
-"Auto · faces first · hold the picture to lock" = "Auto · Gesichter zuerst · zum Sperren Bild halten";
-
-/* Live screen adjust tray hint: focus on auto */
-"Auto · tap the picture · hold to lock" = "Auto · ins Bild tippen · zum Sperren halten";
-
-/* Live screen adjust tray hint: a subject distance cutoff is set (Subject = the chip name) */
-"Cutoff · tap Subject for all" = "Grenze · für Alle auf Motiv tippen";
-
-/* Live screen adjust tray hint: no subject distance cutoff */
-"All · drag to set a cutoff" = "Alle · ziehen, um eine Grenze zu setzen";
-
-/* Live screen adjust tray hint: setting on auto */
-"Auto · drag to set by hand" = "Auto · ziehen, um manuell einzustellen";
-
 /* Live screen adjust tray button: lock white balance to what the camera sees (white paper) */
 "Calibrate white balance" = "Weißabgleich kalibrieren";
 
 /* Voice Control name for the white balance calibration button */
 "Calibrate" = "Kalibrieren";
 
-/* Live screen adjust tray hint: white balance on auto */
-"Auto · tap the eyedropper, then white paper in the picture" = "Auto · auf die Pipette tippen, dann im Bild auf weißes Papier";
-
 /* Live screen adjust tray hint: waiting for a tap on white paper to calibrate white balance */
 "Tap the white paper in the picture" = "Tippe im Bild auf das weiße Papier";
-
-/* Live screen adjust tray hint: setting set by hand; %@ = chip name */
-"Manual · tap %@ for auto" = "Manuell · für Auto auf %@ tippen";
 
 /* Live screen dial readout: the setting is automatic */
 "Auto" = "Auto";
@@ -706,3 +677,15 @@
 
 /* Status line error: %1$@ = codec name (HEVC or H.264), %2$lld = system error code */
 "%1$@ encoder unavailable (%2$lld)" = "%1$@-Encoder nicht verfügbar (%2$lld)";
+
+/* Live screen: the green screen button by the lens buttons switches only on a hold; a tap says so */
+"Hold to turn on green screen" = "Halten, um den Greenscreen einzuschalten";
+
+/* Live screen: hint for a tap on the lit green screen button when there is no Subject dial */
+"Hold to turn off green screen" = "Halten, um den Greenscreen auszuschalten";
+
+/* VoiceOver action on the green screen button */
+"Turn on green screen" = "Greenscreen einschalten";
+
+/* VoiceOver action on the lit green screen button */
+"Turn off green screen" = "Greenscreen ausschalten";

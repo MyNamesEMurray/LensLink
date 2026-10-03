@@ -33,8 +33,13 @@ final class FrameCompositor {
     /// background even where the person mask disagrees (iOS 15's
     /// segmentation is ONE mask covering all people, so this is the only
     /// tool against a passer-by behind the subject). 0 disables the
-    /// cutoff. Capture queue only.
+    /// cutoff; a negative value is Auto, which sets the cutoff behind
+    /// the person from the depth map itself. Capture queue only.
     var maxDistance: Float = 0
+
+    /// Auto's cutoff, reported whenever it moves by a tenth of a metre so
+    /// the Live screen can show where it landed. Capture queue.
+    var onAutoCutoff: ((Float) -> Void)?
 
     // MARK: - Members (all capture-queue confined after init)
 
@@ -68,6 +73,12 @@ final class FrameCompositor {
     /// Depth runs slower than video (~15 Hz vs 30/60), so the newest map
     /// is kept and reused until the next one lands.
     private var latestDepthPixelBuffer: CVPixelBuffer?
+    /// Auto's working cutoff (0 until a person has been measured), and
+    /// the depth map it was last measured against: one measurement per
+    /// depth frame, not per video frame.
+    private var autoCutoff: Float = 0
+    private var autoMeasuredDepth: CVPixelBuffer?
+    private var reportedAutoCutoff: Float = 0
 
     private var loggedStages = Set<String>()
     private var loggedMaskDims = false
@@ -219,6 +230,12 @@ final class FrameCompositor {
                   + " for \(width)x\(height) input")
         }
 
+        if maxDistance < 0, let depth = latestDepthPixelBuffer,
+           depth !== autoMeasuredDepth {
+            autoMeasuredDepth = depth
+            measureAutoCutoff(mask: maskBuffer, depth: depth)
+        }
+
         // 2. Output buffer from our pool (rebuilt on dimension change).
         if pool == nil || width != poolWidth || height != poolHeight {
             rebuildPool(width: width, height: height)
@@ -311,7 +328,8 @@ final class FrameCompositor {
         // or a failed wrap all degrade to segmentation-only (gate = 1).
         var depthTexture = dummyDepthTexture
         var hasDepth: Float = 0
-        if maxDistance > 0, let depthBuffer = latestDepthPixelBuffer {
+        let cutoff = maxDistance < 0 ? autoCutoff : maxDistance
+        if cutoff > 0, let depthBuffer = latestDepthPixelBuffer {
             if let wrappedDepth = makeTexture(from: depthBuffer,
                                               pixelFormat: .r16Float,
                                               planeIndex: 0,
@@ -335,7 +353,7 @@ final class FrameCompositor {
         encoder.setTexture(depthTexture, index: 3)
         encoder.setTexture(outY, index: 4)
         encoder.setTexture(outCbCr, index: 5)
-        var params = SIMD2<Float>(maxDistance, hasDepth)
+        var params = SIMD2<Float>(cutoff, hasDepth)
         encoder.setBytes(&params, length: MemoryLayout<SIMD2<Float>>.size,
                          index: 0)
 
@@ -383,6 +401,64 @@ final class FrameCompositor {
         }
         retained.append(cvTexture)
         return texture
+    }
+
+    // MARK: - Auto cutoff
+
+    /// Metres kept behind the person: their own depth plus a margin.
+    private static let autoMargin: Float = 0.6
+
+    /// Samples the person's distance on a coarse grid (where the mask
+    /// says person and the depth map has a reading), takes the median,
+    /// and eases the cutoff toward that plus the margin, so a hand
+    /// thrown forward or a missed frame doesn't jerk the matte. With no
+    /// one in frame the last cutoff holds.
+    private func measureAutoCutoff(mask: CVPixelBuffer, depth: CVPixelBuffer) {
+        guard CVPixelBufferGetPixelFormatType(depth)
+                == kCVPixelFormatType_DepthFloat16 else { return }
+        CVPixelBufferLockBaseAddress(mask, .readOnly)
+        CVPixelBufferLockBaseAddress(depth, .readOnly)
+        defer {
+            CVPixelBufferUnlockBaseAddress(depth, .readOnly)
+            CVPixelBufferUnlockBaseAddress(mask, .readOnly)
+        }
+        guard let maskBase = CVPixelBufferGetBaseAddress(mask),
+              let depthBase = CVPixelBufferGetBaseAddress(depth) else { return }
+        let maskW = CVPixelBufferGetWidth(mask)
+        let maskH = CVPixelBufferGetHeight(mask)
+        let maskRow = CVPixelBufferGetBytesPerRow(mask)
+        let depthW = CVPixelBufferGetWidth(depth)
+        let depthH = CVPixelBufferGetHeight(depth)
+        let depthRow = CVPixelBufferGetBytesPerRow(depth)
+
+        let columns = 32, rows = 18
+        var samples: [Float] = []
+        samples.reserveCapacity(columns * rows)
+        for gy in 0..<rows {
+            let v = (Float(gy) + 0.5) / Float(rows)
+            for gx in 0..<columns {
+                let u = (Float(gx) + 0.5) / Float(columns)
+                let mx = min(Int(u * Float(maskW)), maskW - 1)
+                let my = min(Int(v * Float(maskH)), maskH - 1)
+                guard maskBase.load(fromByteOffset: my * maskRow + mx,
+                                    as: UInt8.self) > 127 else { continue }
+                let dx = min(Int(u * Float(depthW)), depthW - 1)
+                let dy = min(Int(v * Float(depthH)), depthH - 1)
+                let bits = depthBase.load(fromByteOffset: dy * depthRow + dx * 2,
+                                          as: UInt16.self)
+                let d = Float(Float16(bitPattern: bits))
+                if d.isFinite, d > 0.1 { samples.append(d) }
+            }
+        }
+        guard samples.count >= 8 else { return }
+        samples.sort()
+        let target = min(samples[samples.count / 2] + Self.autoMargin, 5)
+        autoCutoff = autoCutoff == 0 ? target : autoCutoff + (target - autoCutoff) * 0.25
+        let rounded = (autoCutoff * 10).rounded() / 10
+        if rounded != reportedAutoCutoff {
+            reportedAutoCutoff = rounded
+            onAutoCutoff?(rounded)
+        }
     }
 
     // MARK: - Pool

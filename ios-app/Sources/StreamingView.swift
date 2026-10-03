@@ -25,7 +25,7 @@ struct StreamingView: View {
     /// Tracked rather than derived from the current mode: the mode can
     /// change while the screen is dimmed, and the restore must survive it.
     @State private var loweredBrightness: LoweredBrightness?
-    /// The adjust tray is up in place of the lens buttons.
+    /// The adjust tray is up in place of the chevron.
 #if DEBUG
     @State private var trayOpen = ScreenshotStage.shot == .liveTray
 #else
@@ -44,6 +44,20 @@ struct StreamingView: View {
     }
     /// Which parameter the tray's dial drives.
     @State private var dialTarget: DialTarget = .exposure
+    /// The lens row is showing a dial in place of its buttons.
+    @State private var rowDial: RowDial?
+    /// The dialled value when the finger went down; nil between drags.
+    @State private var rowDialBase: Double?
+    /// Restarts the row dial's fold-back timer on every touch.
+    @State private var rowDialTouch = UUID()
+    /// When the last drag across the lens row ended, so the lift that
+    /// ends a zoom over a lens button isn't also a tap on it.
+    @State private var rowDragEnded = Date.distantPast
+    /// A passing line over the lens row (what a tap on green screen
+    /// would have to be a hold to do).
+    @State private var rowHint: String?
+
+    private enum RowDial { case zoom, subject }
     /// Each back lens's magnification relative to Main, for the lens
     /// buttons' labels. Read once per stream: it walks the device list.
 #if DEBUG
@@ -144,10 +158,13 @@ struct StreamingView: View {
                 }
                 Spacer()
                 if showsControls {
-                    if trayOpen {
-                        adjustTray
-                    } else {
-                        glanceControls
+                    VStack(spacing: Theme.Space.l) {
+                        lensRow
+                        if trayOpen {
+                            adjustTray
+                        } else {
+                            trayOpener
+                        }
                     }
                 }
             }
@@ -695,30 +712,256 @@ struct StreamingView: View {
 
     // MARK: - Glance layer
 
-    /// What sits at the bottom of the screen while the tray is closed:
-    /// the lens buttons (for whichever side has more than one camera) and
-    /// the chevron that opens the tray.
-    private var glanceControls: some View {
-        VStack(spacing: Theme.Space.l) {
-            if sideLenses.count > 1 {
-                lensButtons
-            }
-            Button {
-                touched()
-                trayOpen = true
-            } label: {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 15, weight: .semibold))
+    /// The chevron that opens the tray, under the lens row.
+    private var trayOpener: some View {
+        Button {
+            touched()
+            trayOpen = true
+        } label: {
+            Image(systemName: "chevron.up")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(Theme.textPrimary)
+                .frame(width: 56, height: 30)
+                .glassBackground(Capsule(), style: .chip)
+        }
+        .accessibilityLabel("Adjust camera")
+        .accessibilityInputLabels([L("Adjust camera"), L("Adjust")])
+        .accessibilityShowsLargeContentViewer {
+            Label(L("Adjust camera"), systemImage: "chevron.up")
+        }
+    }
+
+    // MARK: - Lens row
+
+    /// Points of finger travel per e-fold of zoom, and per metre of
+    /// subject cutoff.
+    private static let zoomDialPoints: CGFloat = 120
+    private static let subjectDialPoints: Double = 60
+    /// The Subject dial's stop past 5 m, which means no cutoff.
+    private static let subjectAllStop = 5.5
+
+    /// The lens buttons and the green screen button, above the tray
+    /// whether it is open or not. Tapping the active lens brings up a
+    /// zoom dial under the row, the buttons riding above it so the live
+    /// zoom shows and the other lenses are a tap away; tapping the lit green screen button brings
+    /// up the Subject cutoff dial instead. Sliding sideways across the
+    /// dial or the row then drives it, and it tucks away shortly after
+    /// the last touch.
+    private var lensRow: some View {
+        VStack(spacing: Theme.Space.s) {
+            if let rowHint {
+                Text(rowHint)
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(Theme.textPrimary)
-                    .frame(width: 56, height: 30)
-                    .glassBackground(Capsule(), style: .chip)
+                    .glassPill()
+                    .transition(.opacity)
+                    .task(id: rowHint) {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        guard !Task.isCancelled else { return }
+                        withAnimation { self.rowHint = nil }
+                    }
             }
-            .accessibilityLabel("Adjust camera")
-            .accessibilityInputLabels([L("Adjust camera"), L("Adjust")])
-            .accessibilityShowsLargeContentViewer {
-                Label(L("Adjust camera"), systemImage: "chevron.up")
+            VStack(spacing: Theme.Space.s) {
+                if rowDial == .subject {
+                    Text(subjectDistanceText)
+                        .font(.system(.subheadline, design: .rounded).weight(.bold)
+                                .monospacedDigit())
+                        .foregroundColor(Theme.cameraYellow)
+                        .glassPill()
+                        .accessibilityHidden(true)
+                }
+                // Each dial keeps only its own buttons: the lenses for
+                // zoom, green screen for Subject.
+                HStack(spacing: Theme.Space.s) {
+                    if rowDial != .subject {
+                        lensButtons
+                    }
+                    if rowDial != .zoom {
+                        greenScreenButton
+                            .padding(.leading, rowDial == nil ? Theme.Space.s : 0)
+                    }
+                }
+                if let dial = rowDial {
+                    DialRuler(ticks: dial == .zoom ? zoomTicks : subjectTicks)
+                }
+            }
+            .contentShape(Rectangle())
+            .simultaneousGesture(DragGesture(minimumDistance: 12)
+                .onChanged { value in
+                    guard let dial = rowDial else { return }
+                    touched()
+                    if rowDialBase == nil {
+                        rowDialBase = dial == .zoom
+                            ? Double(streamer.zoom) : subjectDialValue
+                    }
+                    dragRowDial(by: value.translation.width)
+                }
+                .onEnded { _ in
+                    guard rowDialBase != nil else { return }
+                    rowDialBase = nil
+                    rowDragEnded = Date()
+                    rowDialTouch = UUID()
+                })
+            .task(id: rowDialTouch) {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard !Task.isCancelled, rowDialBase == nil else { return }
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                    rowDial = nil
+                }
             }
         }
+    }
+
+    private func dragRowDial(by travel: CGFloat) {
+        guard let base = rowDialBase else { return }
+        switch rowDial {
+        case .zoom?:
+            let zoom = min(max(CGFloat(base) * exp(-travel / Self.zoomDialPoints), 1),
+                           streamer.camera.maxZoomFactor)
+            let before = displayZoom
+            streamer.zoom = snappedZoom(zoom)
+            if floor(before) != floor(displayZoom) {
+                Self.notchFeedback.selectionChanged()
+            }
+        case .subject?:
+            let value = min(max(base - Double(travel) / Self.subjectDialPoints, 0.5),
+                            Self.subjectAllStop)
+            setSubjectDial((value * 10).rounded() / 10)
+        case nil:
+            break
+        }
+    }
+
+    /// Sets the cutoff from a dial position, where anything past 5 m is
+    /// All, with a click on each whole metre and on All.
+    private func setSubjectDial(_ value: Double) {
+        let next = value > 5 ? 0 : value
+        guard next != streamer.greenScreenMaxDistance else { return }
+        if floor(subjectDialValue) != floor(value) || next == 0 {
+            Self.notchFeedback.selectionChanged()
+        }
+        streamer.greenScreenMaxDistance = next
+    }
+
+    /// The selected lens's magnification as the lens buttons show it.
+    private var displayZoom: Double {
+        (lensFactors[streamer.selectedLens.id] ?? 1) * Double(streamer.zoom)
+    }
+
+    private var zoomTicks: [(offset: CGFloat, label: String?)] {
+        let factor = lensFactors[streamer.selectedLens.id] ?? 1
+        let low = log(factor), high = log(factor * Double(streamer.camera.maxZoomFactor))
+        let now = log(displayZoom)
+        let place = { (v: Double) in CGFloat(v - now) * Self.zoomDialPoints }
+        var ticks: [(offset: CGFloat, label: String?)] = stride(
+            from: low, through: high, by: 0.1).map { (offset: place($0), label: nil) }
+        let marks: [Double] = [0.5, 1, 2, 3, 5, 10, 15, 20, 25]
+        for mark in marks where log(mark) >= low - 0.01 && log(mark) <= high + 0.01 {
+            ticks.append((offset: place(log(mark)), label: Self.compactFactor(mark)))
+        }
+        return ticks
+    }
+
+    /// Where the Subject dial sits: the cutoff, the All stop, or (on
+    /// Auto) where Auto has put it.
+    private var subjectDialValue: Double {
+        let distance = streamer.greenScreenMaxDistance
+        if distance > 0 { return distance }
+        if distance == 0 { return Self.subjectAllStop }
+        return streamer.greenScreenAutoCutoff > 0 ? streamer.greenScreenAutoCutoff : 2
+    }
+
+    private var subjectTicks: [(offset: CGFloat, label: String?)] {
+        let now = subjectDialValue
+        let place = { (v: Double) in CGFloat((v - now) * Self.subjectDialPoints) }
+        var ticks: [(offset: CGFloat, label: String?)] = stride(
+            from: 0.5, through: 5, by: 0.25).map { (offset: place($0), label: nil) }
+        let marks: [Double] = [0.5, 1, 2, 3, 4, 5]
+        for mark in marks {
+            ticks.append((offset: place(mark), label: Self.compactFactor(mark)))
+        }
+        ticks.append((offset: place(Self.subjectAllStop), label: L("All")))
+        return ticks
+    }
+
+    private var subjectReadout: String {
+        guard streamer.greenScreenMaxDistance < 0,
+              streamer.greenScreenAutoCutoff > 0 else { return subjectDistanceText }
+        return L("Auto") + ", " + subjectDistanceText
+    }
+
+    /// The Subject dial's readout: the A badge on the button already says Auto.
+    private var subjectDistanceText: String {
+        let distance = streamer.greenScreenMaxDistance
+        if distance > 0 { return L("%.1f m", distance) }
+        if distance == 0 { return L("All") }
+        let cutoff = streamer.greenScreenAutoCutoff
+        return cutoff > 0 ? L("%.1f m", cutoff) : L("Auto")
+    }
+
+    /// Green screen on the Live screen: lit while it is on, and only a
+    /// hold switches it, since a switch restarts the camera and a stray
+    /// tap mid-stream must not. A tap opens the Subject dial when depth
+    /// is running (and, while it is open, hands the cutoff back to Auto,
+    /// as tapping a selected chip does); otherwise it says to hold. The
+    /// A badge says the cutoff is on Auto.
+    private var greenScreenButton: some View {
+        let on = streamer.greenScreenEnabled
+        let depth = streamer.greenScreenDepthActive
+        let auto = depth && streamer.greenScreenMaxDistance < 0
+        let toggle = {
+            touched()
+            rowDial = nil
+            streamer.greenScreenEnabled.toggle()
+        }
+        let tap = {
+            touched()
+            guard depth else {
+                withAnimation {
+                    rowHint = on ? L("Hold to turn off green screen")
+                                 : L("Hold to turn on green screen")
+                }
+                return
+            }
+            if rowDial == .subject {
+                streamer.greenScreenMaxDistance = Streamer.autoSubjectDistance
+            }
+            rowDial = .subject
+            rowDialTouch = UUID()
+        }
+        return Image(systemName: "person.fill.viewfinder")
+            .font(.system(size: 14, weight: .semibold))
+            .onGlassText(on ? .black : Theme.textPrimary.opacity(0.85),
+                         increased: on ? .black : Theme.textPrimary)
+            .frame(width: 32, height: 32)
+            .glassBackground(Circle(), style: on ? .solid(Theme.cameraYellow)
+                                                 : .scrim(0.45))
+            .overlay(alignment: .topTrailing) {
+                if auto { autoBadge(selected: true) }
+            }
+            .contentShape(Circle())
+            .onTapGesture(perform: tap)
+            .onLongPressGesture(minimumDuration: 0.5, perform: toggle)
+            .accessibilityElement()
+            .accessibilityLabel(L("Green screen"))
+            .accessibilityValue(on ? (depth ? L("Subject") + ", " + subjectReadout : L("On")) : L("Off"))
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(named: Text(on ? L("Turn off green screen")
+                                                : L("Turn on green screen")),
+                                 toggle)
+            .adjustable(depth ? adjustSubject : nil)
+            .accessibilityShowsLargeContentViewer {
+                Label(L("Green screen"), systemImage: "person.fill.viewfinder")
+            }
+    }
+
+    /// VoiceOver's stand-in for the Subject dial: half a metre a step,
+    /// All past 5 m.
+    private func adjustSubject(_ direction: AccessibilityAdjustmentDirection) {
+        touched()
+        let value = subjectDialValue
+        setSubjectDial(direction == .increment
+            ? min(value + 0.5, Self.subjectAllStop) : max(value - 0.5, 0.5))
     }
 
     /// The selected side's lenses in magnification order (.5 · 1× · 2),
@@ -765,8 +1008,9 @@ struct StreamingView: View {
     /// The Camera app's lens row: one round button per back lens, the
     /// active one larger and yellow with the live zoom on it, so ".5 · 1× ·
     /// 2" reads exactly as it does in the app everyone already knows.
-    /// Tapping switches the physical lens; pinching still zooms within it,
-    /// and tapping the active lens returns it to its own zoom.
+    /// Tapping switches the physical lens; pinching still zooms within it.
+    /// Tapping the active lens brings up the zoom dial, and tapping it
+    /// again returns the lens to its own zoom.
     private var lensButtons: some View {
         HStack(spacing: Theme.Space.s) {
             ForEach(sideLenses) { lens in
@@ -776,9 +1020,18 @@ struct StreamingView: View {
                          active: active,
                          accessibilityLabel: lens.displayLabel,
                          accessibilityValue: lensAccessibilityValue(lens, active: active),
-                         accessibilityHint: lensAccessibilityHint(active: selected)) {
+                         accessibilityHint: lensAccessibilityHint(active: selected),
+                         adjust: selected ? adjustZoom : nil) {
                     if selected {
-                        if streamer.zoom != 1 { streamer.zoom = 1 }
+                        // First tap brings up the zoom dial, a second
+                        // resets the zoom, like the green screen button.
+                        // VoiceOver adjusts instead, so it resets at once.
+                        if rowDial == .zoom || UIAccessibility.isVoiceOverRunning {
+                            if streamer.zoom != 1 { streamer.zoom = 1 }
+                        } else {
+                            rowDial = .zoom
+                        }
+                        rowDialTouch = UUID()
                     } else {
                         streamer.selectedLens = lens
                     }
@@ -798,12 +1051,23 @@ struct StreamingView: View {
         }
     }
 
+    /// VoiceOver's stand-in for sliding across the lens row.
+    private func adjustZoom(_ direction: AccessibilityAdjustmentDirection) {
+        touched()
+        let step: CGFloat = direction == .increment ? 1.25 : 0.8
+        streamer.zoom = snappedZoom(min(max(streamer.zoom * step, 1),
+                                        streamer.camera.maxZoomFactor))
+    }
+
     private func lensChip(_ label: String, active: Bool,
                           accessibilityLabel: String,
                           accessibilityValue: String,
                           accessibilityHint: String,
+                          adjust: ((AccessibilityAdjustmentDirection) -> Void)? = nil,
                           action: @escaping () -> Void) -> some View {
         Button {
+            guard rowDialBase == nil,
+                  Date().timeIntervalSince(rowDragEnded) > 0.3 else { return }
             touched()
             action()
         } label: {
@@ -823,6 +1087,7 @@ struct StreamingView: View {
         .accessibilityValue(accessibilityValue)
         .accessibilityHint(accessibilityHint)
         .accessibilityAddTraits(active ? .isSelected : [])
+        .adjustable(adjust)
         .accessibilityShowsLargeContentViewer {
             Text(label)
         }
@@ -859,23 +1124,25 @@ struct StreamingView: View {
     // MARK: - Adjust tray
 
     /// What the dial can drive. The chip row shows the ones this camera
-    /// has: Shutter needs manual exposure, WB needs a lockable white
-    /// balance, Subject exists only while green screen runs with depth.
+    /// has: ISO and Shutter need manual exposure, WB needs a lockable
+    /// white balance. `exposure` is the EV chip, the auto-exposure bias.
+    /// Zoom and Subject live on the lens row instead.
     private enum DialTarget: Hashable {
-        case zoom, exposure, shutter, whiteBalance, focus, subject
+        case exposure, iso, shutter, whiteBalance, focus
     }
 
     private var dialTargets: [DialTarget] {
-        var targets: [DialTarget] = [.zoom, .focus]
+        var targets: [DialTarget] = [.focus]
         if streamer.camera.supportsWhiteBalanceLock { targets.append(.whiteBalance) }
         targets.append(.exposure)
-        if streamer.camera.supportsManualExposure { targets.append(.shutter) }
-        if streamer.greenScreenDepthActive { targets.append(.subject) }
+        if streamer.camera.supportsManualExposure {
+            targets.append(contentsOf: [.iso, .shutter])
+        }
         return targets
     }
 
     /// The chosen target, or Exposure if what was chosen has since gone
-    /// away (Subject vanishes when depth assist stops).
+    /// away (a camera without manual exposure or a WB lock).
     private var activeTarget: DialTarget {
         dialTargets.contains(dialTarget) ? dialTarget : .exposure
     }
@@ -883,48 +1150,39 @@ struct StreamingView: View {
     /// One dial, several parameters. The chips say which; a yellow A on a
     /// chip means that parameter is on auto, dragging the dial takes it
     /// manual, and tapping the active chip again hands it back to auto.
-    /// Zoom has no auto, and Exposure on auto is the bias dial — an
-    /// auto-exposure control, so dragging it leaves auto alone.
+    /// EV is the auto-exposure bias, so it has no auto of its own; in
+    /// manual exposure it sits idle. The buttons hold fixed places so
+    /// none moves between chips: the chip's own tool (or a gap), Lock,
+    /// Flashlight, Flip, Close.
     private var adjustTray: some View {
         VStack(spacing: Theme.Space.m) {
             chipRow
             dial
             HStack(spacing: Theme.Space.s) {
-                Text(modeLine(activeTarget))
-                    .font(.caption)
-                    .secondaryOnGlass()
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                // The one hint worth its space: the calibration is waiting
+                // on a tap in the picture, which nothing else says.
+                if pickingWhite && activeTarget == .whiteBalance {
+                    Text(L("Tap the white paper in the picture"))
+                        .font(.caption)
+                        .secondaryOnGlass()
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Spacer(minLength: Theme.Space.s)
+                chipTool
                 lockButton
-                if activeTarget == .shutter {
-                    ControlButton(L("Natural motion blur"),
-                                  systemImage: "camera.aperture",
-                                  isOn: streamer.naturalBlur,
-                                  inputLabels: [L("180 degree rule")]) {
-                        touched()
-                        streamer.naturalBlur.toggle()
-                    }
+                // Dimmed rather than removed on a camera without one, so
+                // Flip and Close stay put when the camera flips.
+                ControlButton(L("Flashlight"),
+                              systemImage: streamer.flashlightOn
+                                ? "bolt.fill" : "bolt.slash",
+                              isOn: streamer.flashlightOn,
+                              inputLabels: [L("Torch"), L("Light")]) {
+                    touched()
+                    streamer.flashlightOn.toggle()
                 }
-                if activeTarget == .whiteBalance {
-                    ControlButton(L("Calibrate white balance"),
-                                  systemImage: "eyedropper",
-                                  isOn: pickingWhite,
-                                  inputLabels: [L("Calibrate")]) {
-                        touched()
-                        pickingWhite.toggle()
-                    }
-                }
-                if streamer.camera.hasFlashlight {
-                    ControlButton(L("Flashlight"),
-                                  systemImage: streamer.flashlightOn
-                                    ? "bolt.fill" : "bolt.slash",
-                                  isOn: streamer.flashlightOn,
-                                  inputLabels: [L("Torch"), L("Light")]) {
-                        touched()
-                        streamer.flashlightOn.toggle()
-                    }
-                }
+                .disabled(!streamer.camera.hasFlashlight)
+                .opacity(streamer.camera.hasFlashlight ? 1 : 0.4)
                 ControlButton(L("Flip camera"),
                               systemImage: "arrow.triangle.2.circlepath.camera",
                               inputLabels: [L("Switch camera"), L("Flip")]) {
@@ -943,13 +1201,38 @@ struct StreamingView: View {
         .foregroundColor(Theme.textPrimary)
     }
 
+    /// The selected chip's own button, or a gap the same size.
+    @ViewBuilder private var chipTool: some View {
+        switch activeTarget {
+        case .shutter:
+            ControlButton(L("Natural motion blur"),
+                          systemImage: "camera.aperture",
+                          isOn: streamer.naturalBlur,
+                          inputLabels: [L("180 degree rule")]) {
+                touched()
+                streamer.naturalBlur.toggle()
+            }
+        case .whiteBalance:
+            ControlButton(L("Calibrate white balance"),
+                          systemImage: "eyedropper",
+                          isOn: pickingWhite,
+                          inputLabels: [L("Calibrate")]) {
+                touched()
+                pickingWhite.toggle()
+            }
+        default:
+            Color.clear
+                .frame(width: Theme.controlButton, height: Theme.controlButton)
+                .accessibilityHidden(true)
+        }
+    }
+
     /// Tap locks or unlocks the selected value at what auto is doing
-    /// now; hold does every value at once. On a chip with nothing to
-    /// lock (Zoom, Subject) only the hold does anything.
+    /// now; hold does every value at once.
     private var lockButton: some View {
         let target = lockTarget(activeTarget)
         let all = streamer.allLocked
-        let locked = target.map(streamer.isLocked) ?? all
+        let locked = streamer.isLocked(target)
         return ControlButton(L("Lock"),
                              systemImage: all ? "lock.rectangle.stack.fill"
                                 : locked ? "lock.fill" : "lock.open",
@@ -961,18 +1244,15 @@ struct StreamingView: View {
                                              streamer.setAllLocked(!streamer.allLocked)
                                          })) {
             touched()
-            if let target {
-                streamer.setLocked(target, !streamer.isLocked(target))
-            }
+            streamer.setLocked(target, !streamer.isLocked(target))
         }
     }
 
-    private func lockTarget(_ target: DialTarget) -> Streamer.LockTarget? {
+    private func lockTarget(_ target: DialTarget) -> Streamer.LockTarget {
         switch target {
-        case .exposure, .shutter: return .exposure
+        case .exposure, .iso, .shutter: return .exposure
         case .whiteBalance: return .whiteBalance
         case .focus: return .focus
-        case .zoom, .subject: return nil
         }
     }
 
@@ -1006,15 +1286,7 @@ struct StreamingView: View {
                 .glassBackground(Capsule(),
                                  style: selected ? .solid(.white) : .chip)
                 .overlay(alignment: .topTrailing) {
-                    if auto == true {
-                        Text("A")
-                            .font(.system(size: 8, weight: .heavy))
-                            .foregroundColor(selected ? Theme.cameraYellow : .black)
-                            .frame(width: 13, height: 13)
-                            .background(selected ? Color.black : Theme.cameraYellow,
-                                        in: Circle())
-                            .offset(x: 2, y: -5)
-                    }
+                    if auto == true { autoBadge(selected: selected) }
                 }
         }
         .accessibilityLabel(chipAccessibilityLabel(target, auto: auto))
@@ -1025,8 +1297,18 @@ struct StreamingView: View {
         }
     }
 
+    /// The yellow A on anything that is on auto.
+    private func autoBadge(selected: Bool) -> some View {
+        Text("A")
+            .font(.system(size: 8, weight: .heavy))
+            .foregroundColor(selected ? Theme.cameraYellow : .black)
+            .frame(width: 13, height: 13)
+            .background(selected ? Color.black : Theme.cameraYellow, in: Circle())
+            .offset(x: 2, y: -5)
+    }
+
     private func chipAccessibilityLabel(_ target: DialTarget, auto: Bool?) -> String {
-        let name = chipLabel(target)
+        let name = target == .exposure ? L("Exposure") : chipLabel(target)
         switch auto {
         case nil: return name
         case true?: return L("%@, auto", name)
@@ -1036,87 +1318,39 @@ struct StreamingView: View {
 
     private func chipLabel(_ target: DialTarget) -> String {
         switch target {
-        case .zoom: return L("Zoom")
-        // The same chip drives bias on auto and ISO in manual; its name
-        // follows, so the dial's readout and the chip never disagree.
-        case .exposure:
-            return streamer.exposureSetting == .manual ? "ISO" : L("Exposure")
+        case .exposure: return "EV"
+        case .iso: return "ISO"
         case .shutter: return L("Shutter")
         case .whiteBalance: return L("WB")
         case .focus: return L("Focus")
-        case .subject: return L("Subject")
         }
     }
 
-    /// nil where the parameter has no auto (zoom); for Subject, "auto" is
-    /// no cutoff — the "All" the old readout tapped back to.
+    /// nil where the parameter has no auto (EV).
     private func isAuto(_ target: DialTarget) -> Bool? {
         switch target {
-        case .zoom: return nil
-        case .exposure, .shutter: return streamer.exposureSetting == .auto
+        case .exposure: return nil
+        case .iso, .shutter: return streamer.exposureSetting == .auto
         case .whiteBalance: return streamer.whiteBalanceSetting == .auto
         case .focus: return streamer.focusSetting == .auto
-        case .subject: return streamer.greenScreenMaxDistance == 0
         }
     }
 
     private func setAuto(_ target: DialTarget) {
         switch target {
-        case .zoom: break
-        case .exposure, .shutter: streamer.exposureSetting = .auto
+        case .exposure: break
+        case .iso, .shutter: streamer.exposureSetting = .auto
         case .whiteBalance: streamer.whiteBalanceSetting = .auto
         case .focus: streamer.focusSetting = .auto
-        case .subject: streamer.greenScreenMaxDistance = 0
         }
     }
 
     /// A drag on the dial means "I want this by hand": the first touch
-    /// takes the parameter out of auto, so the value the finger sets is
-    /// the value the camera keeps. Bias and zoom have no manual to enter;
-    /// Subject's binding sets a cutoff by itself.
+    /// locks the parameter at what auto was doing, so the picture doesn't
+    /// jump before the finger moves. The bias has no manual to enter.
     private func engageManual(_ target: DialTarget) {
-        switch target {
-        case .zoom, .exposure, .subject: break
-        case .shutter:
-            if streamer.exposureSetting == .auto {
-                streamer.exposureSetting = .manual
-            }
-        case .whiteBalance:
-            if streamer.whiteBalanceSetting == .auto {
-                streamer.whiteBalanceSetting = .locked
-            }
-        case .focus:
-            if streamer.focusSetting == .auto {
-                streamer.focusSetting = .locked
-            }
-        }
-    }
-
-    private func modeLine(_ target: DialTarget) -> String {
-        switch target {
-        case .zoom:
-            return L("Pinch the picture to zoom")
-        case .exposure where streamer.exposureSetting == .auto:
-            return L("Auto · drag the picture up or down")
-        case .focus where streamer.focusSetting == .auto:
-            return streamer.faceFocus && streamer.camera.supportsFaceDrivenFocus
-                ? L("Auto · faces first · hold the picture to lock")
-                : L("Auto · tap the picture · hold to lock")
-        case .whiteBalance where pickingWhite:
-            return L("Tap the white paper in the picture")
-        case .whiteBalance where streamer.whiteBalanceSetting == .auto:
-            return L("Auto · tap the eyedropper, then white paper in the picture")
-        case .shutter where streamer.exposureSetting == .auto
-                && streamer.naturalBlur:
-            return L("Auto · 180° rule · drag to set by hand")
-        case .subject:
-            return streamer.greenScreenMaxDistance > 0
-                ? L("Cutoff · tap Subject for all")
-                : L("All · drag to set a cutoff")
-        default:
-            return isAuto(target) == true
-                ? L("Auto · drag to set by hand")
-                : L("Manual · tap %@ for auto", chipLabel(target))
+        if target != .exposure {
+            streamer.setLocked(lockTarget(target), true)
         }
     }
 
@@ -1138,60 +1372,166 @@ struct StreamingView: View {
 
     @ViewBuilder private func dialSlider(_ target: DialTarget) -> some View {
         switch target {
-        case .zoom:
-            slider(Binding(get: { streamer.zoom },
-                           set: { streamer.zoom = snappedZoom($0) }),
-                   in: 1...max(streamer.camera.maxZoomFactor, 1.1),
-                   target: target)
         case .exposure:
-            if streamer.exposureSetting == .manual {
-                slider(floatBinding($streamer.iso), in: isoRange, target: target)
-            } else {
-                slider(floatBinding($streamer.exposureBias), in: exposureRange,
-                       target: target)
-            }
+            notchedSlider(exposureStops, value: doubleBinding($streamer.exposureBias),
+                          target: target)
+                .disabled(streamer.exposureSetting == .manual)
+        case .iso:
+            notchedSlider(isoStops, value: doubleBinding($streamer.iso),
+                          logScale: true, target: target)
         case .shutter:
-            // Log scale: shutter steps are multiplicative (1/60 → 1/125
-            // → 1/250…); a linear slider crams everything usable into
-            // its first pixels.
-            slider(shutterBinding, in: 0...1, target: target)
+            notchedSlider(shutterStops, value: $streamer.shutterSeconds,
+                          logScale: true, target: target)
         case .whiteBalance:
-            slider(floatBinding($streamer.whiteBalanceTemperature),
-                   in: 2500...8000, target: target)
+            VStack(spacing: 0) {
+                slider(floatBinding($streamer.whiteBalanceTemperature),
+                       in: 2500...8000, target: target)
+                lightSources
+            }
         case .focus:
             slider(floatBinding($streamer.lensPosition), in: 0...1,
                    target: target)
-        case .subject:
-            slider(subjectDistanceBinding, in: 0.5...5.0, target: target)
         }
     }
 
+    @ViewBuilder
     private func slider<V>(_ value: Binding<V>, in range: ClosedRange<V>,
+                           step: V.Stride? = nil,
                            target: DialTarget) -> some View
         where V: BinaryFloatingPoint, V.Stride: BinaryFloatingPoint {
-        Slider(value: Binding(get: { value.wrappedValue },
-                              set: { newValue in
-                                  if assistive.suspendsIdle {
-                                      engageManual(target)
-                                  }
-                                  value.wrappedValue = newValue
-                              }),
-               in: range) { editing in
+        let bound = Binding(get: { value.wrappedValue },
+                            set: { newValue in
+                                if assistive.suspendsIdle {
+                                    engageManual(target)
+                                }
+                                value.wrappedValue = newValue
+                            })
+        let editingChanged: (Bool) -> Void = { editing in
             if editing {
                 touched()
                 engageManual(target)
             }
         }
+        if let step {
+            Slider(value: bound, in: range, step: step,
+                   onEditingChanged: editingChanged)
+        } else {
+            Slider(value: bound, in: range, onEditingChanged: editingChanged)
+        }
+    }
+
+    private static let notchFeedback = UISelectionFeedbackGenerator()
+
+    /// A dial that clicks between fixed stops (camera-style thirds for
+    /// EV and ISO, the usual shutter speeds), with a tick
+    /// under the track for each and a haptic click as the thumb crosses
+    /// one. The slider runs over stop indices, so log-spaced stops sit
+    /// evenly.
+    private func notchedSlider(_ stops: [Double], value: Binding<Double>,
+                               logScale: Bool = false,
+                               target: DialTarget) -> some View {
+        let distance: (Double, Double) -> Double = logScale
+            ? { abs(log($0 / $1)) } : { abs($0 - $1) }
+        let index = Binding<Double>(
+            get: {
+                let v = value.wrappedValue
+                return Double(stops.indices.min {
+                    distance(stops[$0], v) < distance(stops[$1], v)
+                } ?? 0)
+            },
+            set: { position in
+                let stop = stops[min(max(Int(position.rounded()), 0),
+                                     stops.count - 1)]
+                guard stop != value.wrappedValue else { return }
+                Self.notchFeedback.selectionChanged()
+                value.wrappedValue = stop
+            })
+        return VStack(spacing: 2) {
+            slider(index, in: 0...Double(max(stops.count - 1, 1)), step: 1,
+                   target: target)
+            GeometryReader { geo in
+                // The thumb's centre travels 14 pt in from each end.
+                let span = geo.size.width - 28
+                ForEach(stops.indices, id: \.self) { i in
+                    Capsule()
+                        .fill(Theme.textPrimary.opacity(0.4))
+                        .frame(width: 1.5, height: 6)
+                        .position(x: 14 + span * CGFloat(i)
+                                    / CGFloat(max(stops.count - 1, 1)),
+                                  y: 3)
+                }
+            }
+            .frame(height: 6)
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// Where common light sources sit on the WB dial (2500–8000 K), so
+    /// the number means something at a glance.
+    private var lightSources: some View {
+        let sources: [(kelvin: CGFloat, symbol: String)] = [
+            // light.panel is iOS 16+; iOS 15 shows the filled bulb.
+            (2800, "lightbulb"),
+            (4000, UIImage(systemName: "light.panel") != nil
+                ? "light.panel" : "lightbulb.fill"),
+            (5500, "sun.max"), (6500, "cloud"), (7500, "building.2"),
+        ]
+        return GeometryReader { geo in
+            let span = geo.size.width - 28
+            ForEach(sources, id: \.kelvin) { source in
+                Image(systemName: source.symbol)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Theme.textPrimary.opacity(0.6))
+                    .position(x: 14 + span * (source.kelvin - 2500) / 5500, y: 8)
+            }
+        }
+        .frame(height: 16)
+        .accessibilityHidden(true)
+    }
+
+    /// Third stops, within what the bias range allows.
+    private var exposureStops: [Double] {
+        let r = streamer.camera.exposureBiasRange
+        let lo = (Double(r.lowerBound) * 3).rounded(.up)
+        let hi = (Double(r.upperBound) * 3).rounded(.down)
+        return lo < hi ? Array(stride(from: lo, through: hi, by: 1)).map { $0 / 3 } : [0]
+    }
+
+    /// Third stops, within the camera's ISO range.
+    private var isoStops: [Double] {
+        let r = streamer.camera.isoRange
+        let all: [Double] = [25, 32, 40, 50, 64, 80, 100, 125, 160, 200, 250, 320,
+                             400, 500, 640, 800, 1000, 1250, 1600, 2000, 2500,
+                             3200, 4000, 5000, 6400, 8000, 10000, 12800, 16000,
+                             20000, 25600]
+        let low = Double(r.lowerBound), high = Double(r.upperBound)
+        let stops = all.filter { $0 >= low && $0 <= high }
+        return stops.count > 1 ? stops : [Double(r.lowerBound), Double(r.upperBound)]
+    }
+
+    /// The usual shutter speeds, slow on the left, plus the flicker-safe
+    /// 1/50, 1/100 and 1/120 and the 180° picks 1/48 and 1/120; within
+    /// what the format and the frame interval allow.
+    private var shutterStops: [Double] {
+        let minSeconds = max(streamer.camera.minShutterSeconds, 1.0 / 8000)
+        let maxSeconds = streamer.camera.maxShutterSeconds(fps: Int32(streamer.fps))
+        let denominators: [Double] = [1, 2, 3, 4, 5, 6, 8, 10, 13, 15, 20, 24, 25,
+                                      30, 40, 48, 50, 60, 80, 100, 120, 125, 160,
+                                      200, 250, 320, 400, 500, 640, 800, 1000,
+                                      1250, 1600, 2000, 2500, 3200, 4000, 5000,
+                                      6400, 8000]
+        let low = minSeconds * 0.999, high = maxSeconds * 1.001
+        let stops = denominators.map { 1 / $0 }.filter { $0 >= low && $0 <= high }
+        return stops.count > 1 ? stops : [maxSeconds, minSeconds]
     }
 
     private func readout(_ target: DialTarget) -> String {
         switch target {
-        case .zoom:
-            return String(format: "%.1f×", streamer.zoom)
         case .exposure:
+            return String(format: "%+.1f EV", streamer.exposureBias)
+        case .iso:
             return streamer.exposureSetting == .manual
-                ? "ISO \(Int(streamer.iso))"
-                : String(format: "%+.1f EV", streamer.exposureBias)
+                ? "ISO \(Int(streamer.iso.rounded()))" : L("Auto")
         case .shutter:
             return streamer.exposureSetting == .manual ? shutterReadout : L("Auto")
         case .whiteBalance:
@@ -1200,56 +1540,7 @@ struct StreamingView: View {
         case .focus:
             return streamer.focusSetting == .locked
                 ? String(format: "%.2f", streamer.lensPosition) : L("Auto")
-        case .subject:
-            return streamer.greenScreenMaxDistance > 0
-                ? L("%.1f m", streamer.greenScreenMaxDistance)
-                : L("All")
         }
-    }
-
-    /// The slider's projection of the 0-means-All model value: while
-    /// "All", the thumb parks at the far end (everything in reach is
-    /// subject); any drag sets a real cutoff.
-    private var subjectDistanceBinding: Binding<Double> {
-        Binding(
-            get: {
-                streamer.greenScreenMaxDistance > 0
-                    ? streamer.greenScreenMaxDistance : 5.0
-            },
-            set: { value in
-                // Re-round despite the slider's step: float dust would
-                // jitter the readout and the STATE snapshot.
-                streamer.greenScreenMaxDistance = (value * 10).rounded() / 10
-            })
-    }
-
-    private var isoRange: ClosedRange<CGFloat> {
-        // One line: a leading "..." on a continuation line parses as a
-        // separate prefix-range statement, not as this range.
-        let range = streamer.camera.isoRange
-        let upper = CGFloat(max(range.upperBound, range.lowerBound + 1))
-        return CGFloat(range.lowerBound)...upper
-    }
-
-    /// Maps shutterSeconds onto a 0…1 log-scale slider position, with
-    /// left = long/slow (more light) and right = short/fast.
-    private var shutterBinding: Binding<Double> {
-        let minSeconds = max(streamer.camera.minShutterSeconds, 1.0 / 8000)
-        let maxSeconds = max(
-            streamer.camera.maxShutterSeconds(fps: Int32(streamer.fps)),
-            minSeconds * 2)
-        let logMin = log(minSeconds)
-        let logMax = log(maxSeconds)
-        return Binding(
-            get: {
-                let seconds = min(max(streamer.shutterSeconds, minSeconds),
-                                  maxSeconds)
-                return 1 - (log(seconds) - logMin) / (logMax - logMin)
-            },
-            set: { position in
-                streamer.shutterSeconds =
-                    exp(logMax - position * (logMax - logMin))
-            })
     }
 
     private var shutterReadout: String {
@@ -1258,15 +1549,62 @@ struct StreamingView: View {
         return "1/\(Int((1 / seconds).rounded()))"
     }
 
-    private var exposureRange: ClosedRange<CGFloat> {
-        let r = streamer.camera.exposureBiasRange
-        return CGFloat(r.lowerBound)...CGFloat(r.upperBound)
+    private func doubleBinding(_ source: Binding<Float>) -> Binding<Double> {
+        Binding(get: { Double(source.wrappedValue) },
+                set: { source.wrappedValue = Float($0) })
     }
 
     /// Bridges a Float model value to the CGFloat sliders.
     private func floatBinding(_ source: Binding<Float>) -> Binding<CGFloat> {
         Binding(get: { CGFloat(source.wrappedValue) },
                 set: { source.wrappedValue = Float($0) })
+    }
+}
+
+/// The lens row's dial: ticks that slide under a fixed yellow centre
+/// line, the value under the line being the current one.
+private struct DialRuler: View {
+    /// Points from the centre line, with a label on the major ticks.
+    let ticks: [(offset: CGFloat, label: String?)]
+
+    var body: some View {
+        Canvas { context, size in
+            let mid = size.width / 2
+            for tick in ticks {
+                let x = mid + tick.offset
+                guard x > 4, x < size.width - 4 else { continue }
+                let height: CGFloat = tick.label == nil ? 8 : 14
+                context.fill(Path(CGRect(x: x - 0.75, y: size.height - 8 - height,
+                                         width: 1.5, height: height)),
+                             with: .color(Theme.textPrimary
+                                .opacity(tick.label == nil ? 0.4 : 0.75)))
+                if let label = tick.label {
+                    context.draw(Text(label)
+                                    .font(.system(size: 10, weight: .bold,
+                                                  design: .rounded))
+                                    .foregroundColor(Theme.textPrimary.opacity(0.62)),
+                                 at: CGPoint(x: x, y: size.height - 8 - height - 9))
+                }
+            }
+            context.fill(Path(roundedRect: CGRect(x: mid - 1, y: 6, width: 2,
+                                                  height: size.height - 12),
+                              cornerRadius: 1),
+                         with: .color(Theme.cameraYellow))
+        }
+        .frame(height: 54)
+        .glassBackground(RoundedRectangle(cornerRadius: 14, style: .continuous),
+                         style: .scrim(0.5))
+    }
+}
+
+private extension View {
+    @ViewBuilder func adjustable(
+        _ action: ((AccessibilityAdjustmentDirection) -> Void)?) -> some View {
+        if let action {
+            accessibilityAdjustableAction(action)
+        } else {
+            self
+        }
     }
 }
 

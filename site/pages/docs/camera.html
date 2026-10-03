@@ -45,24 +45,29 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
 <p>
   On the phone, the Live screen shows the picture, the status pill, Pause,
   Stop, and the lens buttons — <strong>.5</strong>, <strong>1×</strong>,
-  <strong>2</strong>, as in the Camera app. Pinch to zoom, tap to focus, and
-  drag up or down on the picture to brighten or darken the shot. The chevron
-  opens the <strong>adjust tray</strong>: one dial and a chip for each thing
-  it can drive. A yellow <strong>A</strong> on a chip means that setting is
+  <strong>2</strong>, as in the Camera app, with the green screen button
+  beside them. Pinch, or tap the active lens button for a zoom dial, to zoom; tap
+  to focus, and drag up or down on the picture to brighten or darken the
+  shot. The chevron opens the <strong>adjust tray</strong>: one dial and a
+  chip for each thing it can drive (Focus, WB, EV, ISO, Shutter). The ISO,
+  Shutter and EV dials click between the usual stops; Focus and WB are
+  smooth, and small icons under WB mark where bulbs, office lights,
+  daylight, cloud and shade sit. The buttons under the dial stay in the
+  same place on every chip. A yellow <strong>A</strong> on a chip means that setting is
   on auto; drag the dial and it goes manual, tap the active chip again and
   it goes back. The browser panel lays the same controls out as rows.
 </p>
 <table>
   <thead><tr><th>Control</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td>Zoom</td><td>1× to the lens maximum. Pinch the Live screen, tap a lens button, or use the Zoom chip or the panel's slider. On phones with a 48 MP Main camera, an extra <strong>2</strong> lens button lands exactly on its full-detail 2× sensor crop, and pinch and the Zoom dial settle on that crop when they pass close by. It is noticeably sharper than other zoom levels at 4K.</td></tr>
-    <tr><td>Exposure</td><td>On auto, a bias dial (drag the picture on the phone). Drag <strong>Shutter</strong> to take exposure manual — the Exposure chip becomes <strong>ISO</strong> — or pick <strong>Manual</strong> in the panel. Manual is hidden on cameras that lack it.</td></tr>
+    <tr><td>Zoom</td><td>1× to the lens maximum. Pinch the Live screen, tap the active lens button for a zoom dial under the lens buttons (they move up above it, so the other lenses stay a tap away; tap it again to reset), tap a lens button, or use the panel's slider. On phones with a 48 MP Main camera, an extra <strong>2</strong> lens button lands exactly on its full-detail 2× sensor crop, and pinch and the zoom dial settle on that crop when they pass close by. It is noticeably sharper than other zoom levels at 4K.</td></tr>
+    <tr><td>Exposure</td><td>On auto, the <strong>EV</strong> chip is a bias dial in third stops (or drag the picture on the phone). Drag <strong>ISO</strong> or <strong>Shutter</strong> to take exposure manual, which greys out EV, or pick <strong>Manual</strong> in the panel. ISO and Shutter are hidden on cameras that lack manual exposure.</td></tr>
     <tr><td>Natural motion blur</td><td>On by default. Auto exposure keeps the shutter at half the frame interval or faster (the 180° rule: 1/60 at 30 fps), so motion blurs the way film does and a dim room raises ISO instead of smearing. Turn it off in Options, with the button on the Shutter chip in the tray, or the button beside AE / Manual in the panel, even mid-stream.</td></tr>
     <tr><td>Focus</td><td>Auto, or locked with a near-to-far dial. On auto the camera follows faces (Options → Focus on faces). Tap the preview to focus and expose there until the scene changes; hold it to pin focus and exposure to that spot of the frame, so they keep following whatever is there as you move the phone, until a tap lets it go.</td></tr>
     <tr><td>White balance</td><td>Auto, or locked with a 2500–8000 K dial. To calibrate, put plain white paper anywhere in the shot under your lights, tap the eyedropper on the WB chip, then tap the paper in the picture. In the panel, hold the paper in the middle of the picture and click <strong>Calibrate</strong>. White balance locks to the paper, green or magenta tint included, which fixes LED and fluorescent casts the dial can't. Tap WB again for auto.</td></tr>
     <tr><td>Lock</td><td>In the tray's bottom row on the phone. Tap it to lock the selected value (ISO and shutter together, white balance, or focus) at what auto is doing right now, or to hand it back to auto. Hold it to lock every value at once, or unlock them all. The lock fills in while the selected value is locked, and turns into a stack of locks when everything is.</td></tr>
-    <tr><td>Flashlight</td><td>On or off. A hard fill at close range, and not much else. In the tray's bottom row on the phone.</td></tr>
-    <tr><td>Lens</td><td>The device's real lenses: the lens buttons on the phone, a menu in the panel. Tap the active lens button to reset its zoom. On a device with two front cameras (an iPad Pro, for example), the front camera has its own lens buttons.</td></tr>
+    <tr><td>Flashlight</td><td>On or off. A hard fill at close range, and not much else. In the tray's bottom row on the phone, dimmed on a camera without one.</td></tr>
+    <tr><td>Lens</td><td>The device's real lenses: the lens buttons on the phone, a menu in the panel. Tap the active lens button for the zoom dial, and again to reset its zoom. On a device with two front cameras (an iPad Pro, for example), the front camera has its own lens buttons.</td></tr>
     <tr><td>Flip</td><td>Front to back and back again. In the tray's bottom row on the phone.</td></tr>
   </tbody>
 </table>
@@ -101,10 +106,14 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
   Everything but you is painted solid green <em>before</em> the video leaves the
   phone; turning it on sets Color to Standard. The source then adds a tuned
   chroma-key filter in OBS — once only, so deleting or re-tuning it sticks.
+  Turn it on in the app before going live, or mid-stream by holding the
+  green screen button beside the lens buttons (it lights up yellow while
+  on) or with the panel's button. Switching it restarts the camera
+  briefly.
 </p>
 <ul>
   <li><strong>Depth assist</strong> sharpens the cutout with real depth: the front camera on Face ID phones, the rear Main lens on Pro (LiDAR) phones. Other lenses use shape detection alone, which keeps every person in frame. It also turns off Center Stage and the other system effects.</li>
-  <li><strong>Subject distance</strong> appears while depth assist runs: anything beyond the cutoff becomes background, which is how you drop someone walking past behind you. Drag for 0.5–5.0 m, or tap the readout for <strong>All</strong>.</li>
+  <li><strong>Subject distance</strong> works while depth assist runs: anything farther from the phone than the cutoff becomes background, which is how you drop someone walking past behind you. It starts on <strong>Auto</strong>, which keeps the cutoff about half a metre behind you as you move. Tap the lit green screen button for the dial and drag for 0.5–5.0 m, or past 5 m for <strong>All</strong> (no cutoff); tap the button again for Auto. In the panel, drag the slider, or click its readout for Auto.</li>
 </ul>
 
 

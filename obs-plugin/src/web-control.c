@@ -66,7 +66,8 @@ static const char *const web_text_keys[] = {
 	"Web.ColorTemperature",
 	"Web.FocusPosition",
 	"Web.SubjectDistance",
-	"Web.SubjectAll.Tip",
+	"Web.SubjectAuto.Tip",
+	"Web.Auto",
 	"Web.Lens.Front",
 	"Web.Lens.FrontUltraWide",
 	"Web.Lens.MainWide",
@@ -234,19 +235,18 @@ static const char control_page[] =
 	/* Green screen: hidden until the app's STATE advertises support
 	 * (supportsGreenScreen). The subject-distance slider appears only
 	 * while depth assist is actually running (greenScreenDepth). Same
-	 * anatomy as the app's Live row (UI_DESIGN §5): with no cutoff the
-	 * thumb parks at the far (5.0) end and the readout shows "All";
-	 * tapping the readout returns to "All" (sends 0). The slider only
-	 * ever sends real cutoffs (0.5-5.0) — 0 comes from the readout. */
+	 * stops as the app's Subject dial (UI_DESIGN §5): 0.5-5.0 m, then
+	 * "All" (sends 0) past the far end; clicking the readout hands the
+	 * cutoff back to Auto (sends -1). */
 	"<div class='row' id='gsrow' style='display:none'>"
 	"<button class='chip' id='gs' data-t-title='GreenScreen'>"
 	"<svg class='ic' aria-hidden='true' focusable='false' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
 	"stroke-width='2' stroke-linecap='round'><circle cx='12' cy='8' r='4'/>"
 	"<path d='M4 21 v-1 a8 8 0 0 1 16 0 v1'/></svg></button>"
-	"<input id='gsd' type='range' min='0.5' max='5' step='0.1' value='5' "
+	"<input id='gsd' type='range' min='0.5' max='5.5' step='0.1' value='5.5' "
 	"style='display:none' data-t-title='SubjectDistance'>"
 	"<span class='ro' id='gsdv' style='display:none' role='button' "
-	"tabindex='0' data-t-title='SubjectAll.Tip' data-t='All'></span>"
+	"tabindex='0' data-t-title='SubjectAuto.Tip' data-t='Auto'></span>"
 	"<span class='hint' id='gshint' data-t='GreenScreen'></span></div>"
 	/* Mic picker: shown while the app streams its mic as the source's
 	 * audio (STATE micEnabled) — mirrors the app's mic row. */
@@ -427,20 +427,20 @@ static const char control_page[] =
 	"temperature:+wbtempEl.value}),60);"
 	"wbtempEl.oninput=()=>{touch();wbvEl.textContent=wbtempEl.value+'K';"
 	"vt(wbtempEl,wbvEl.textContent);dWb()};"
-	/* Green screen: optimistic chip toggle. Dragging the slider always
-	 * sets a real cutoff (0.5-5.0 m); "All" (0) is reachable only by
-	 * clicking the readout, mirroring the app's Live row exactly so the
-	 * full-left gesture means "tightest cutoff" on both surfaces. */
+	/* Green screen: optimistic chip toggle. The slider sets a cutoff
+	 * (0.5-5.0 m, All past 5); Auto (-1) is the readout's click, like
+	 * tapping the app's Subject button while its dial is open. */
 	"let gson=false;"
 	"function gsUI(on){gson=on;gsEl.className=on?'chip on':'chip';pressed(gsEl,on)}"
 	"gsEl.onclick=()=>{touch();gsUI(!gson);send({cmd:'green_screen',on:gson})};"
-	"const gsLabel=v=>v?v.toFixed(1)+' m':t('All');"
-	"const dGs=deb(()=>send({cmd:'green_screen',maxDistance:+gsdEl.value}),60);"
-	"gsdEl.oninput=()=>{touch();gsdvEl.textContent=gsLabel(+gsdEl.value);"
+	"const gsLabel=v=>v<0?t('Auto'):v?v.toFixed(1)+' m':t('All');"
+	"const gsVal=()=>+gsdEl.value>5.05?0:+gsdEl.value;"
+	"const dGs=deb(()=>send({cmd:'green_screen',maxDistance:gsVal()}),60);"
+	"gsdEl.oninput=()=>{touch();gsdvEl.textContent=gsLabel(gsVal());"
 	"vt(gsdEl,gsdvEl.textContent);dGs()};"
-	"gsdvEl.onclick=()=>{touch();gsdEl.value=5;gsdvEl.textContent=gsLabel(0);"
+	"gsdvEl.onclick=()=>{touch();gsdvEl.textContent=gsLabel(-1);"
 	"vt(gsdEl,gsdvEl.textContent);"
-	"send({cmd:'green_screen',maxDistance:0})};"
+	"send({cmd:'green_screen',maxDistance:-1})};"
 	"gsdvEl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){"
 	"e.preventDefault();gsdvEl.onclick()}};"
 	"micselEl.onchange=()=>send({cmd:'mic',id:micselEl.value});"
@@ -545,8 +545,8 @@ static const char control_page[] =
 	"gshintEl.style.display=gd?'none':'';"
 	"let md=typeof st.greenScreenMaxDistance==='number'"
 	"?st.greenScreenMaxDistance:0;"
-	"md=md<0.5?0:Math.min(md,5);"
-	"gsdEl.value=md||5;gsdvEl.textContent=gsLabel(md);"
+	"md=md<0?-1:md<0.5?0:Math.min(md,5);"
+	"if(md>=0)gsdEl.value=md||5.5;gsdvEl.textContent=gsLabel(md);"
 	"vt(gsdEl,gsdvEl.textContent)}"
 	/* Mic picker, only while the phone mic is live as source audio.
 	 * Options are {id,name} pairs: ids round-trip, names display. */

@@ -253,8 +253,9 @@ either field may appear alone. `on` arms/disarms the segmentation +
 green composite (the compositing happens **on the phone, before
 encoding** — the wire carries ordinary video whose background happens
 to be chroma green, so receivers need no new decode behaviour).
-`maxDistance` (metres; `0` = no cutoff, otherwise 0.5–5.0) drives the
-depth-assisted subject cutoff and is meaningful only while depth
+`maxDistance` (metres; `0` = no cutoff, `-1` = Auto, which keeps the
+cutoff about half a metre behind the person the depth map finds,
+otherwise 0.5–5.0) drives the depth-assisted subject cutoff and is meaningful only while depth
 assist is active — the app clamps and ignores as needed. Green screen
 is SDR-only: arming it forces the Standard colour pipeline, and the
 STATE fields below keep every surface honest about what's running.
@@ -346,7 +347,9 @@ their row on it), `"greenScreen": true` appears while it is armed,
 (TrueDepth front / LiDAR rear Main lens, and a depth-capable format
 matched — absent means segmentation-only; remote UIs key the distance
 control off truthiness), and `"greenScreenMaxDistance"` carries the
-cutoff in metres when one is set. Boolean snapshot fields are emitted
+cutoff in metres when one is set, or `-1` while it is on Auto (absent
+means no cutoff). Older apps treat a `-1` command as no cutoff, and
+older panels show a `-1` snapshot as "All". Boolean snapshot fields are emitted
 only when true: a receiver's STATE cache has finite room (older
 plugins truncate silently past 1 KiB), so snapshot growth is real
 cost — weigh every new field against it. The plugin also reacts to `"greenScreen": true` on a
