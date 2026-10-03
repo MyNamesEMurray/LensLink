@@ -421,13 +421,42 @@ final class CameraManager: NSObject {
     /// SL = Studio Light, R = Reactions) — the field diagnostic behind
     /// Options → Camera diagnostics, copyable straight from the phone.
     static func formatReport() -> String {
-        var out = ["\(UIDevice.current.model) — iOS "
+        var out = ["\(hardwareModel()) — iOS "
                    + UIDevice.current.systemVersion,
-                   "flags: binned / CS / P / SL / R / colour / depth", ""]
+                   "flags: binned / CS / P / SL / R / colour / depth"
+                   + " / ISO / max exposure / FOV / max zoom / native crops",
+                   ""]
         for lens in availableLenses() {
             guard let device = device(for: lens) else { continue }
             out.append("== \(lens.label) ==")
+            out.append(String(format: "f/%.2f  min focus %ldmm  WB gain<=%.2f"
+                              + "  exposure bias %.1f...%.1f",
+                              device.lensAperture,
+                              device.minimumFocusDistance,
+                              device.maxWhiteBalanceGain,
+                              device.minExposureTargetBias,
+                              device.maxExposureTargetBias))
             appendFormatRows(of: device, to: &out)
+            out.append("")
+        }
+        let virtualTypes: [(String, AVCaptureDevice.DeviceType)] = [
+            ("Triple", .builtInTripleCamera),
+            ("Dual Wide", .builtInDualWideCamera),
+            ("Dual", .builtInDualCamera),
+        ]
+        for (name, type) in virtualTypes {
+            guard let device = AVCaptureDevice.default(
+                    type, for: .video, position: .back) else { continue }
+            let members = device.constituentDevices.map {
+                $0.deviceType.rawValue.replacingOccurrences(
+                        of: "AVCaptureDeviceTypeBuiltIn", with: "")
+            }
+            let switchOvers = device.virtualDeviceSwitchOverVideoZoomFactors
+                .map { String(format: "%.2f", $0.doubleValue) }
+            out.append("== \(name) (virtual) ==")
+            out.append("lenses: " + members.joined(separator: ", "))
+            out.append("switch-over zoom: "
+                       + switchOvers.joined(separator: ", "))
             out.append("")
         }
         // The depth-sibling devices (green screen's depth assist) carry
@@ -455,6 +484,14 @@ final class CameraManager: NSObject {
         return out.joined(separator: "\n")
     }
 
+    private static func hardwareModel() -> String {
+        var info = utsname()
+        uname(&info)
+        return withUnsafeBytes(of: &info.machine) {
+            String(decoding: $0.prefix(while: { $0 != 0 }), as: UTF8.self)
+        }
+    }
+
     /// One diagnostics row per capture format of `device` — shared by
     /// the user-facing lens dumps and the depth-sibling dumps above.
     private static func appendFormatRows(of device: AVCaptureDevice,
@@ -479,6 +516,17 @@ final class CameraManager: NSObject {
             }
             flags.append(colourFlags(format))
             flags.append(depthFlags(format))
+            flags.append(String(format: "ISO%.0f-%.0f exp<=%.0fms fov%.1f z<=%.0f",
+                                format.minISO, format.maxISO,
+                                format.maxExposureDuration.seconds * 1000,
+                                format.videoFieldOfView,
+                                format.videoMaxZoomFactor))
+            if #available(iOS 16.0, *),
+               !format.secondaryNativeResolutionZoomFactors.isEmpty {
+                flags.append("crops " + format.secondaryNativeResolutionZoomFactors
+                    .map { String(format: "%.1fx", $0) }
+                    .joined(separator: ","))
+            }
             out.append(String(format: "%5dx%-5d fps<=%-3.0f  %@",
                               dims.width, dims.height, maxFps,
                               flags.joined(separator: " ")))
