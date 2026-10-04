@@ -337,7 +337,7 @@
 "**Focus on faces** keeps focus and exposure on the faces the camera sees while focus is on auto, the way the Camera app does — a tap on the picture outranks it until the scene changes, and a lock ignores it. Off, the camera weights the centre of the frame." = "**人脸对焦**在对焦处于自动时，像相机 App 一样让对焦和曝光跟随摄像头看到的人脸：轻点画面的优先级更高，直到场景变化为止；锁定时则不起作用。关闭后，摄像头以画面中央为重点。";
 
 /* Documentation → Options, Camera behavior section, second paragraph: the Natural motion blur toggle (Markdown: keep the ** markers; 180° rule is the film shutter-angle rule) */
-"**Natural motion blur**, off by default, stops auto exposure from running the shutter slower than half the frame interval (the 180° rule: 1/60 at 30 fps), so movement doesn't smear in a dim room; ISO rises instead. The same switch is on the adjust tray's Shutter chip and in the web panel." = "**自然动态模糊**默认关闭，它不让自动曝光把快门放慢到超过帧间隔的一半（180° 规则：30 fps 时为 1/60），这样在暗室中动作也不会拖影，而是改为提高 ISO。调节栏的“快门”按钮下和浏览器面板中也有同样的开关。";
+"**Natural motion blur**, on by default, stops auto exposure from running the shutter slower than half the frame interval (the 180° rule: 1/60 at 30 fps), so movement doesn't smear in a dim room; ISO rises instead. The same switch is on the adjust tray's Shutter chip and in the web panel." = "**自然动态模糊**默认开启，它不让自动曝光把快门放慢到超过帧间隔的一半（180° 规则：30 fps 时为 1/60），这样在暗室中动作也不会拖影，而是改为提高 ISO。调节栏的“快门”按钮下和浏览器面板中也有同样的开关。";
 
 /* Documentation section header on the Options page */
 "Camera behavior" = "摄像头行为";
