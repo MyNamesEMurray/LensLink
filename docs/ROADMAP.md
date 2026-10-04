@@ -19,7 +19,6 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P1 | Graduate the GPU decode pipeline | Performance | Small |
 | P2 | Digital pan/tilt + crop | Control & workflow | Medium |
 | P2 | Voice isolation for the phone mic | Video & audio quality | Small |
-| P2 | Document the control API | Control & workflow | Small |
 | P3 | Manual bitrate cap | Video & audio quality | Small |
 | P3 | Zero-copy encoder output | Performance | Medium |
 | P3 | Two lenses at once (multicam) | Video & audio quality | Large |
@@ -35,7 +34,9 @@ tally light with customizable colours (v1.8.0), 10-bit HDR (HLG) with
 the zero-copy GPU path and Apple Log (v1.9.0), virtual green screen
 with depth assist and subject-distance cutoff (v1.10.0), iPad
 multitasking capture — streaming continues in Split View, Slide Over
-and Stage Manager on iPads that support it. Pairing &
+and Stage Manager on iPads that support it, and a native Stream Deck
+plugin (`streamdeck/`, 2026-10, on request) on top of the documented
+control API. Pairing &
 encryption was explicitly deprioritized by the maintainer in 2026-07 —
 revisit when remote start gets promoted or users stream on shared
 networks.
@@ -131,15 +132,6 @@ region, it reads sharper than cropping in OBS. New CONTROL command with
 a normalized crop rect, STATE carries it back, web panel and Live
 screen get a drag-to-frame control. *The biggest quality-of-life gap
 for the mounted-phone use case this app is built around.*
-
-### Document the control API — Stream Deck without a plugin — P2, small
-The web panel's endpoints (`/api/state`, `POST /api/control`) are
-stable and already scriptable; what's missing is a docs page listing
-the commands with curl examples and a Stream Deck "Website"-action /
-Bitfocus Companion recipe. That unlocks hardware-button control without
-shipping or maintaining a native Stream Deck plugin — revisit a real
-plugin only if demand shows up. *Docs-only; a good first-contribution
-item.*
 
 ## Not planned — revisit when the world changes
 

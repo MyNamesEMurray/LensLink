@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<script src="locales.js"></script>
+</head>
+<body>
+	<sdpi-item label="__MSG_Source__">
+		<sdpi-select setting="source" datasource="sources" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Key goes to__">
+		<sdpi-textfield setting="zoom" default="2"></sdpi-textfield>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Dial step__">
+		<sdpi-select setting="step" default="0.1">
+			<option value="0.05">__MSG_Fine__</option>
+			<option value="0.1">__MSG_Normal__</option>
+			<option value="0.5">__MSG_Coarse__</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_OBS port__">
+		<sdpi-textfield setting="port" global placeholder="9980"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

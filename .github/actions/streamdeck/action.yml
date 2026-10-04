@@ -1,0 +1,46 @@
+name: Stream Deck plugin
+description: >-
+  Builds, validates and smoke-tests the Stream Deck plugin in streamdeck/,
+  then packs cam.lenslink.streamdeck.streamDeckPlugin in the workspace
+  root. Shared by build.yml and release.yml, so a pull request builds
+  exactly what a release ships.
+
+inputs:
+  version:
+    description: >-
+      Release tag (v1.8.2 or v1.8.2-beta.1) or empty for pull requests.
+      Stream Deck versions have four numeric parts, so a tag becomes
+      1.8.2.0 and a pull request packs 0.0.0.0.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: streamdeck/package-lock.json
+
+    - name: Build and test
+      shell: bash
+      working-directory: streamdeck
+      run: |
+        npm ci
+        npm run build
+        npx streamdeck validate cam.lenslink.streamdeck.sdPlugin --no-update-check
+        npm test
+
+    - name: Pack
+      shell: bash
+      working-directory: streamdeck
+      env:
+        TAG: ${{ inputs.version }}
+      run: |
+        version=${TAG#v}
+        version=${version%%-*}
+        version=${version:-0.0.0}.0
+        npx streamdeck pack cam.lenslink.streamdeck.sdPlugin \
+          --version "$version" --output .. --force --no-update-check
+        ls -l ../cam.lenslink.streamdeck.streamDeckPlugin

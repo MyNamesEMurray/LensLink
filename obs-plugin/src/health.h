@@ -24,6 +24,7 @@ struct lenslink_health {
 	bool is_screen;        /* LensLink Screen vs LensLink Camera */
 	uint64_t frames;       /* decoded frames, cumulative */
 	uint64_t bytes;        /* wire video bytes, cumulative */
+	uint64_t sample_ns;
 	int latency_ms;        /* avg capture→decode; 0 until measured */
 
 	/* Added for the diagnostics report (diagnostics.c). The dock and

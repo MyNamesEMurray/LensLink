@@ -1,0 +1,149 @@
+{
+	"Name": "LensLink",
+	"Description": "OBSでLensLinkのiPhoneカメラを操作：開始と停止、レンズ、ズーム、ピント、露出、ホワイトバランスなど。キーにはカメラの今の状態が表示されます。",
+	"cam.lenslink.streamdeck.camera": {
+		"Name": "カメラ",
+		"Tooltip": "iPhoneのカメラを開始・停止します。"
+	},
+	"cam.lenslink.streamdeck.pause": {
+		"Name": "一時停止",
+		"Tooltip": "配信を止めずに映像を止めます。"
+	},
+	"cam.lenslink.streamdeck.flip": {
+		"Name": "カメラを切り替え",
+		"Tooltip": "前面と背面のカメラを切り替えます。"
+	},
+	"cam.lenslink.streamdeck.lens": {
+		"Name": "レンズ",
+		"Tooltip": "特定のレンズに切り替えるか、順に切り替えます。"
+	},
+	"cam.lenslink.streamdeck.zoom": {
+		"Name": "ズーム",
+		"Tooltip": "キー：設定したズームに移動。ダイヤル：回してズーム、押すと1×。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "ズーム",
+				"Push": "1×に戻す"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.flashlight": {
+		"Name": "フラッシュライト",
+		"Tooltip": "iPhoneのフラッシュライトをオン・オフします。"
+	},
+	"cam.lenslink.streamdeck.lock": {
+		"Name": "ロック",
+		"Tooltip": "自動で決まっている今の値をロック、または自動に戻します。"
+	},
+	"cam.lenslink.streamdeck.white-balance": {
+		"Name": "ホワイトバランス",
+		"Tooltip": "キー：色温度でロック、または自動に戻す。ダイヤル：回してケルビン、押すと自動。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "色温度",
+				"Push": "自動"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.calibrate": {
+		"Name": "ホワイトバランスをキャリブレーション",
+		"Tooltip": "白い紙かグレーカードを画面中央に映してから押します。"
+	},
+	"cam.lenslink.streamdeck.exposure": {
+		"Name": "露出",
+		"Tooltip": "キー：EVを上げ下げ、または設定。ダイヤル：回してEV、押すと0。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "露出",
+				"Push": "0 EVに戻す"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.iso": {
+		"Name": "ISOとシャッター",
+		"Tooltip": "ダイヤル：回してISOかシャッター、押すと切り替え、画面をタップで自動露出。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "ISOかシャッター",
+				"Push": "ISO / シャッター切り替え",
+				"Touch": "自動露出"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.focus": {
+		"Name": "ピント",
+		"Tooltip": "キー：自動、顔、または保存した位置。ダイヤル：回してピント合わせ、押すと自動。",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "ピント",
+				"Push": "自動"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.green-screen": {
+		"Name": "グリーンバック",
+		"Tooltip": "iPhone上で背景を切り抜きます。"
+	},
+	"cam.lenslink.streamdeck.format": {
+		"Name": "フォーマット",
+		"Tooltip": "解像度、フレームレート、コーデックをワンタッチで切り替えます。"
+	},
+	"cam.lenslink.streamdeck.mic": {
+		"Name": "マイク",
+		"Tooltip": "ソースに使うiPhoneのマイクを選びます。"
+	},
+	"Localization": {
+		"Not connected": "未接続",
+		"Live": "ライブ",
+		"Paused": "一時停止中",
+		"Armed": "リモート開始有効",
+		"OBS connected": "OBS接続済み",
+		"Pause": "一時停止",
+		"Front": "前面",
+		"Back": "背面",
+		"Lens": "レンズ",
+		"Zoom": "ズーム",
+		"On": "オン",
+		"Off": "オフ",
+		"Locked": "ロック中",
+		"Auto": "自動",
+		"White balance": "ホワイトバランス",
+		"Calibrate": "キャリブレーション",
+		"Exposure": "露出",
+		"Shutter": "シャッター",
+		"Faces": "顔",
+		"Focus": "ピント",
+		"Mic": "マイク",
+		"Source": "ソース",
+		"First camera": "最初のカメラ",
+		"OBS port": "OBSのポート",
+		"Press": "押したとき",
+		"Start and stop": "開始と停止",
+		"Start only": "開始のみ",
+		"Stop only": "停止のみ",
+		"Cycle through all": "順に切り替え",
+		"Key goes to": "キーで設定する値",
+		"Dial step": "ダイヤルの刻み",
+		"Fine": "細かく",
+		"Normal": "標準",
+		"Coarse": "粗く",
+		"Locks": "ロック対象",
+		"Everything": "すべて",
+		"Key sets": "キーの動作",
+		"Temperature": "色温度",
+		"Kelvin": "ケルビン",
+		"Key does": "キーの動作",
+		"Step up": "1段上げる",
+		"Step down": "1段下げる",
+		"Set": "設定",
+		"Step": "刻み",
+		"Set to": "設定値",
+		"Position": "位置",
+		"Cutoff": "範囲",
+		"All": "すべて",
+		"Resolution": "解像度",
+		"Frame rate": "フレームレート",
+		"Codec": "コーデック",
+		"Keep current": "現在のまま"
+	}
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<script src="locales.js"></script>
+</head>
+<body>
+	<sdpi-item label="__MSG_Source__">
+		<sdpi-select setting="source" datasource="sources" hot-reload default=""></sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_Cutoff__">
+		<sdpi-select setting="cutoff" default="-1">
+			<option value="-1">__MSG_Auto__</option>
+			<option value="0">__MSG_All__</option>
+			<option value="1">1 m</option>
+			<option value="1.5">1.5 m</option>
+			<option value="2">2 m</option>
+			<option value="2.5">2.5 m</option>
+			<option value="3">3 m</option>
+			<option value="4">4 m</option>
+			<option value="5">5 m</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="__MSG_OBS port__">
+		<sdpi-textfield setting="port" global placeholder="9980"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

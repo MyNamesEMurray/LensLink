@@ -39,6 +39,7 @@ jobs:
       l10n: ${{ steps.diff.outputs.l10n }}
       workflows: ${{ steps.diff.outputs.workflows }}
       icon: ${{ steps.diff.outputs.icon }}
+      streamdeck: ${{ steps.diff.outputs.streamdeck }}
     steps:
       - uses: actions/checkout@v7
 
@@ -55,6 +56,7 @@ jobs:
             echo "l10n=true" >> "$GITHUB_OUTPUT"
             echo "workflows=true" >> "$GITHUB_OUTPUT"
             echo "icon=true" >> "$GITHUB_OUTPUT"
+            echo "streamdeck=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git fetch --depth=1 origin "$BASE"
@@ -96,6 +98,12 @@ jobs:
             echo "icon=true" >> "$GITHUB_OUTPUT"
           else
             echo "icon=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$CHANGED" | \
+             grep -qE '^(streamdeck/|\.github/workflows/build\.yml|\.github/actions/streamdeck/)'; then
+            echo "streamdeck=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "streamdeck=false" >> "$GITHUB_OUTPUT"
           fi
 
   # GitHub validates expressions EVERYWHERE in a workflow file — comments
@@ -153,6 +161,15 @@ jobs:
 
       - name: Check localized strings
         run: python3 tools/check-l10n.py
+
+  streamdeck:
+    name: Stream Deck plugin
+    needs: changes
+    if: needs.changes.outputs.streamdeck == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/streamdeck
 
   obs-plugin-linux:
     name: OBS plugin (Linux)

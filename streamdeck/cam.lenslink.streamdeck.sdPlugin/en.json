@@ -1,0 +1,149 @@
+{
+	"Name": "LensLink",
+	"Description": "Control the LensLink iPhone camera in OBS: start and stop, lenses, zoom, focus, exposure, white balance and more, with keys that show the camera's live state.",
+	"cam.lenslink.streamdeck.camera": {
+		"Name": "Camera",
+		"Tooltip": "Start or stop the camera on the phone."
+	},
+	"cam.lenslink.streamdeck.pause": {
+		"Name": "Pause",
+		"Tooltip": "Hold the picture without ending the stream."
+	},
+	"cam.lenslink.streamdeck.flip": {
+		"Name": "Flip camera",
+		"Tooltip": "Switch between the front and back camera."
+	},
+	"cam.lenslink.streamdeck.lens": {
+		"Name": "Lens",
+		"Tooltip": "Jump to one lens, or cycle through them."
+	},
+	"cam.lenslink.streamdeck.zoom": {
+		"Name": "Zoom",
+		"Tooltip": "Key: go to a set zoom. Dial: turn to zoom, press for 1×.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Zoom",
+				"Push": "Reset to 1×"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.flashlight": {
+		"Name": "Flashlight",
+		"Tooltip": "Turn the phone's flashlight on or off."
+	},
+	"cam.lenslink.streamdeck.lock": {
+		"Name": "Lock",
+		"Tooltip": "Lock what auto is doing right now, or hand it back to auto."
+	},
+	"cam.lenslink.streamdeck.white-balance": {
+		"Name": "White balance",
+		"Tooltip": "Key: lock at a temperature or go back to auto. Dial: turn for kelvin, press for auto.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Temperature",
+				"Push": "Auto"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.calibrate": {
+		"Name": "Calibrate white balance",
+		"Tooltip": "Hold white paper or a gray card in the middle of the picture, then press."
+	},
+	"cam.lenslink.streamdeck.exposure": {
+		"Name": "Exposure",
+		"Tooltip": "Key: step EV up or down, or set it. Dial: turn for EV, press for 0.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Exposure",
+				"Push": "Reset to 0 EV"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.iso": {
+		"Name": "ISO and shutter",
+		"Tooltip": "Dial: turn for ISO or shutter, press to switch between them, tap the screen for auto exposure.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "ISO or shutter",
+				"Push": "Switch ISO / shutter",
+				"Touch": "Auto exposure"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.focus": {
+		"Name": "Focus",
+		"Tooltip": "Key: auto focus, face focus or a saved position. Dial: turn to focus, press for auto.",
+		"Encoder": {
+			"TriggerDescription": {
+				"Rotate": "Focus",
+				"Push": "Auto"
+			}
+		}
+	},
+	"cam.lenslink.streamdeck.green-screen": {
+		"Name": "Green screen",
+		"Tooltip": "Cut out the background on the phone."
+	},
+	"cam.lenslink.streamdeck.format": {
+		"Name": "Format",
+		"Tooltip": "Switch resolution, frame rate and codec in one press."
+	},
+	"cam.lenslink.streamdeck.mic": {
+		"Name": "Microphone",
+		"Tooltip": "Pick which phone mic feeds the source."
+	},
+	"Localization": {
+		"Not connected": "Not connected",
+		"Live": "Live",
+		"Paused": "Paused",
+		"Armed": "Armed",
+		"OBS connected": "OBS connected",
+		"Pause": "Pause",
+		"Front": "Front",
+		"Back": "Back",
+		"Lens": "Lens",
+		"Zoom": "Zoom",
+		"On": "On",
+		"Off": "Off",
+		"Locked": "Locked",
+		"Auto": "Auto",
+		"White balance": "White balance",
+		"Calibrate": "Calibrate",
+		"Exposure": "Exposure",
+		"Shutter": "Shutter",
+		"Faces": "Faces",
+		"Focus": "Focus",
+		"Mic": "Mic",
+		"Source": "Source",
+		"First camera": "First camera",
+		"OBS port": "OBS port",
+		"Press": "Press",
+		"Start and stop": "Start and stop",
+		"Start only": "Start only",
+		"Stop only": "Stop only",
+		"Cycle through all": "Cycle through all",
+		"Key goes to": "Key goes to",
+		"Dial step": "Dial step",
+		"Fine": "Fine",
+		"Normal": "Normal",
+		"Coarse": "Coarse",
+		"Locks": "Locks",
+		"Everything": "Everything",
+		"Key sets": "Key sets",
+		"Temperature": "Temperature",
+		"Kelvin": "Kelvin",
+		"Key does": "Key does",
+		"Step up": "Step up",
+		"Step down": "Step down",
+		"Set": "Set",
+		"Step": "Step",
+		"Set to": "Set to",
+		"Position": "Position",
+		"Cutoff": "Cutoff",
+		"All": "All",
+		"Resolution": "Resolution",
+		"Frame rate": "Frame rate",
+		"Codec": "Codec",
+		"Keep current": "Keep current"
+	}
+}

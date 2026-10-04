@@ -85,6 +85,7 @@ DOC_ORDER = [
         ("docs/audio.html", "docs.page.audio"),
         ("docs/remote-start.html", "docs.page.remote_start"),
         ("docs/web-panel.html", "docs.page.web_panel"),
+        ("docs/stream-deck.html", "docs.page.stream_deck"),
     ]),
     ("docs.group.reference", [
         ("docs/settings.html", "docs.page.settings"),

@@ -46,8 +46,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 
 <h2>The HTTP API</h2>
 <p>
-  The panel is one client of a small HTTP API on the same port; a stream deck or
-  a script can be another. Every endpoint except <code>/api/sources</code> and
+  The panel is one client of a small HTTP API on the same port; the
+  <a href="/docs/stream-deck/">Stream Deck plugin</a> or a script can be another. Every endpoint except <code>/api/sources</code> and
   <code>/api/diagnostics</code> takes an optional <code>?src=&lt;id&gt;</code>,
   with an <code>id</code> from <code>/api/sources</code>. Without it the plugin
   uses the first registered source, the one <code>/api/sources</code> lists

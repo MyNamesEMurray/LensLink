@@ -1,0 +1,5 @@
+node_modules/
+*.sdPlugin/bin
+*.sdPlugin/logs
+*.streamDeckPlugin
+*.sdPlugin/ui/locales.js
