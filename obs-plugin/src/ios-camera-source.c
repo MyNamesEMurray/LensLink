@@ -143,6 +143,7 @@ struct ios_camera_source {
 	 * armed/dial_failures are touched only by the dial-loop thread. */
 	volatile bool auto_start;
 	bool auto_start_armed;
+	bool stop_requested;
 	int dial_failures;
 	/* Why the last dial failed, for the diagnostics report: the UI can
 	 * only say "not reachable", but EPERM (macOS Local Network denied)
@@ -248,6 +249,7 @@ struct ios_camera_source {
 	bool stat_connected;
 	uint64_t stat_frames;
 	uint64_t stat_bytes;
+	uint64_t stat_time_ns;
 	char stat_device[64];
 	/* Mirrored once a second for the diagnostics report; see health.h
 	 * for why the counters travel together. */
@@ -432,6 +434,7 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		h->unarmed = s->unarmed;
 		h->frames = s->stat_frames;
 		h->bytes = s->stat_bytes;
+		h->sample_ns = s->stat_time_ns;
 		h->video_packets = s->stat_packets;
 		h->keyframes = s->stat_keyframes;
 		h->decode_errors = s->stat_decode_errors;
@@ -1625,6 +1628,8 @@ static void control_tick(struct ios_camera_source *s, struct client_state *c)
 		obsc_build_header(packet, OBSC_PKT_CONTROL, 0, 0,
 				  (uint32_t)len);
 		memcpy(packet + OBSC_HEADER_SIZE, pending[i], len);
+		if (strstr(pending[i], "\"stop_stream\""))
+			s->stop_requested = true;
 
 		client_send(c, packet, total);
 
@@ -1753,6 +1758,7 @@ static void stats_tick(struct ios_camera_source *s, struct client_state *c)
 	s->stat_connected = true;
 	s->stat_frames = c->frames_output;
 	s->stat_bytes = c->video_bytes;
+	s->stat_time_ns = now;
 	s->stat_packets = c->video_packets;
 	s->stat_keyframes = c->keyframes_seen;
 	s->stat_decode_errors = c->decode_errors;
@@ -2012,6 +2018,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		/* Video config means the stream is (re)starting — a standby
 		 * connection has left standby. (A remote start also re-sends
 		 * HELLO, but don't rely on it.) */
+		s->stop_requested = false;
 		if (c->standby) {
 			c->standby = false;
 			c->unarmed = false;
@@ -2699,7 +2706,8 @@ static void dial_loop(struct ios_camera_source *s)
 					   "%s", why);
 				/* Phone not reachable: re-arm auto-start so
 				 * it fires when the app comes (back) up. */
-				if (++s->dial_failures >= 2)
+				if (++s->dial_failures >= 2 &&
+				    !s->stop_requested)
 					s->auto_start_armed = true;
 				sleep_ms_interruptible(s, 1000);
 				continue;
@@ -2743,7 +2751,7 @@ static void dial_loop(struct ios_camera_source *s)
 			 * starts the moment the app becomes reachable again
 			 * (two consecutive failures, not one, so a blip
 			 * right after a manual stop can't retrigger it). */
-			if (++s->dial_failures >= 2)
+			if (++s->dial_failures >= 2 && !s->stop_requested)
 				s->auto_start_armed = true;
 			sleep_ms_interruptible(s, 2000);
 			continue;
