@@ -649,7 +649,7 @@ final class Streamer: ObservableObject {
     /// Options → Natural motion blur, and the Shutter chip's button: the
     /// 180° rule for auto exposure (`CameraManager.setNaturalBlur`).
     @Published var naturalBlur: Bool =
-        UserDefaults.standard.object(forKey: "naturalBlur") as? Bool ?? true {
+        UserDefaults.standard.object(forKey: "naturalBlur") as? Bool ?? false {
         didSet {
             UserDefaults.standard.set(naturalBlur, forKey: "naturalBlur")
             camera.setNaturalBlur(naturalBlur)

@@ -111,23 +111,24 @@ data\obs-plugins\ios-camera-source\</code></pre>
 
 <h2>The picture is grainy in a dim room</h2>
 <p>
-  <strong>Natural motion blur</strong> is on by default: auto exposure keeps the
-  shutter at half the frame interval or faster (1/60 at 30 fps) and raises ISO
-  instead, and high ISO means grain. More light is the real fix. Turning it off
-  in <strong>Options</strong>, on the tray's Shutter chip or in the browser
-  panel lets the shutter stay open longer, which trades the grain for smeared
-  motion.
+  More light is the real fix. If you turned on <strong>Natural motion
+  blur</strong>, auto exposure keeps the shutter at half the frame interval or
+  faster (1/60 at 30 fps) and raises ISO instead, and high ISO means grain.
+  Turning it off in <strong>Options</strong>, on the tray's Shutter chip or in
+  the browser panel lets the shutter stay open longer, which trades the grain
+  for smeared motion.
 </p>
 
-<h2>The picture flickers or shows rolling bands under room lights</h2>
+<h2>The picture flickers or shows rolling bands</h2>
 <p>
-  Mains-powered lights pulse 100 times a second where the grid is 50 Hz and
-  120 times where it is 60 Hz. Auto exposure avoids this by picking a shutter
-  that spans whole pulses, so keep exposure on auto. With a manual shutter,
-  use 1/50 or 1/100 on 50 Hz power and 1/60 or 1/120 on 60 Hz. At 120 fps or
-  more there is no flicker-safe shutter on 50 Hz power; use 60 fps or less.
-  Cheap LED bulbs and dimmers can flicker at other rates no shutter cancels;
-  try another light.
+  Most lights pulse faster than the eye can see: mains lights 100 or 120 times
+  a second, and monitors, LED bulbs and dimmers at their own rates. Auto
+  exposure hides this by picking a longer shutter, so keep exposure on auto and
+  <strong>Natural motion blur</strong> off; its faster shutter is the usual
+  cause. Light from a monitor that changes colour with the screen can also make
+  exposure and white balance keep adjusting; holding the tray's lock freezes
+  them. With a manual shutter, use 1/50 or 1/100 on 50 Hz power and 1/60 or
+  1/120 on 60 Hz.
 </p>
 
 <h2>"Connected, but this OBS build can't decode the stream"</h2>
