@@ -1455,8 +1455,10 @@ final class CameraManager: NSObject {
     /// Natural motion blur: auto exposure never runs its shutter slower
     /// than half the frame interval (the 180° rule, 1/60 at 30 fps), so
     /// in a dim room it raises ISO instead. Bright light still gets a
-    /// faster shutter. The limit resets with the format, so configure
-    /// re-applies it.
+    /// faster shutter. Above 50 fps the limit is 1/100 instead (capped
+    /// at the frame interval), so auto exposure can still pick a shutter
+    /// that cancels 50 Hz and 60 Hz mains flicker. The limit resets with
+    /// the format, so configure re-applies it.
     private(set) var naturalBlur = false
 
     func setNaturalBlur(_ on: Bool) {
@@ -1471,8 +1473,12 @@ final class CameraManager: NSObject {
                 return
             }
             let format = device.activeFormat
+            let halfFrame = CMTime(value: 1, timescale: configuredFps * 2)
+            let flickerSafe = CMTimeMinimum(
+                CMTime(value: 1, timescale: 100),
+                CMTime(value: 1, timescale: configuredFps))
             device.activeMaxExposureDuration = CMTimeClampToRange(
-                CMTime(value: 1, timescale: configuredFps * 2),
+                CMTimeMaximum(halfFrame, flickerSafe),
                 range: CMTimeRange(start: format.minExposureDuration,
                                    end: format.maxExposureDuration))
         }

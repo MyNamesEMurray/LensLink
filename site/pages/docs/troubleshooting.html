@@ -119,6 +119,17 @@ data\obs-plugins\ios-camera-source\</code></pre>
   motion.
 </p>
 
+<h2>The picture flickers or shows rolling bands under room lights</h2>
+<p>
+  Mains-powered lights pulse 100 times a second where the grid is 50 Hz and
+  120 times where it is 60 Hz. Auto exposure avoids this by picking a shutter
+  that spans whole pulses, so keep exposure on auto. With a manual shutter,
+  use 1/50 or 1/100 on 50 Hz power and 1/60 or 1/120 on 60 Hz. At 120 fps or
+  more there is no flicker-safe shutter on 50 Hz power; use 60 fps or less.
+  Cheap LED bulbs and dimmers can flicker at other rates no shutter cancels;
+  try another light.
+</p>
+
 <h2>"Connected, but this OBS build can't decode the stream"</h2>
 <p>
   That build has no HEVC decoder. Switch the app to <strong>H.264</strong> — the
