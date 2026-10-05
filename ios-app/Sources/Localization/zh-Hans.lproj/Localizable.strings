@@ -294,6 +294,8 @@
 /* Documentation → Using the camera, Lenses & zoom section, second paragraph: the 48 MP Main camera's 2× full-detail crop button (Markdown: keep the ** markers) */
 "When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it." = "如果主摄采用 4800 万像素传感器，**1×** 旁会多出一个 **2** 按钮，使用传感器中央区域的完整细节，比变焦更清晰。双指捏合和变焦转盘经过时会停在这一档。只有支持该裁切的格式才会显示它。";
 
+"**Flashlight**: on a camera with a flash, the bolt button left of the lens buttons lights it. Hold it to turn the flashlight on or off. While it is on, tap it for a brightness dial, and tap again to go back to full brightness. It comes back at the brightness you left it at." = "**手电筒**：在带闪光灯的摄像头上，镜头按钮左侧的闪电按钮可以点亮它。按住可打开或关闭手电筒。打开时轻点会出现亮度转盘，再轻点一次恢复最大亮度。下次打开时会沿用上次的亮度。";
+
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "镜头与变焦";
 
@@ -308,6 +310,8 @@
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "调节栏底行的**锁**会把所选设置固定在自动当前使用的值；再次轻点即恢复自动。按住可一次锁定或解锁全部设置。在“快门”按钮下，光圈按钮可开关**自然动态模糊**：自动曝光将快门保持在帧间隔的一半或更快（30 fps 时为 1/60），光线暗时改为提高 ISO。";
+
+"**ISO** and **Shutter** go manual one at a time. Fix the shutter and ISO keeps adjusting to hold the exposure; fix ISO and the shutter adjusts instead, and EV keeps working either way. Natural motion blur only limits a shutter that is on auto, so its button dims while you set the shutter by hand." = "**ISO** 和**快门**可以分别切换为手动。固定快门后，ISO 会继续调整以保持曝光；固定 ISO 后则由快门调整，两种情况下 EV 都仍然可用。自然动态模糊只限制自动快门，因此手动设置快门时它的按钮会变暗。";
 
 /* Documentation → Using the camera, Adjust tray section, third paragraph: white balance calibration with the WB chip's eyedropper and the web panel's Calibrate (Markdown: keep the ** markers) */
 "On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture." = "在“白平衡”按钮下，**吸管**可以根据一张白纸设置白平衡：先轻点吸管，再轻点画面中的白纸。白平衡会锁定到白纸上，同时校正部分 LED 灯和荧光灯带来的偏绿或偏洋红，直到白平衡恢复自动。在浏览器面板中，**校准**会以画面中央的白纸完成同样的操作。";
@@ -707,6 +711,9 @@
 
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "关闭绿幕";
+"Hold to turn on the flashlight" = "按住以打开手电筒";
+"Turn on the flashlight" = "打开手电筒";
+"Turn off the flashlight" = "关闭手电筒";
 
 
 

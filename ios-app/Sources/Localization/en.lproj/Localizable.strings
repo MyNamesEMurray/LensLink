@@ -294,6 +294,9 @@
 /* Documentation → Using the camera, Lenses & zoom section, second paragraph: the 48 MP Main camera's 2× full-detail crop button (Markdown: keep the ** markers) */
 "When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it." = "When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it.";
 
+/* Live camera help: the lens row's Flashlight button */
+"**Flashlight**: on a camera with a flash, the bolt button left of the lens buttons lights it. Hold it to turn the flashlight on or off. While it is on, tap it for a brightness dial, and tap again to go back to full brightness. It comes back at the brightness you left it at." = "**Flashlight**: on a camera with a flash, the bolt button left of the lens buttons lights it. Hold it to turn the flashlight on or off. While it is on, tap it for a brightness dial, and tap again to go back to full brightness. It comes back at the brightness you left it at.";
+
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "Lenses & zoom";
 
@@ -308,6 +311,9 @@
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead.";
+
+/* Live camera help: ISO and Shutter on auto or manual one at a time */
+"**ISO** and **Shutter** go manual one at a time. Fix the shutter and ISO keeps adjusting to hold the exposure; fix ISO and the shutter adjusts instead, and EV keeps working either way. Natural motion blur only limits a shutter that is on auto, so its button dims while you set the shutter by hand." = "**ISO** and **Shutter** go manual one at a time. Fix the shutter and ISO keeps adjusting to hold the exposure; fix ISO and the shutter adjusts instead, and EV keeps working either way. Natural motion blur only limits a shutter that is on auto, so its button dims while you set the shutter by hand.";
 
 /* Documentation → Using the camera, Adjust tray section, third paragraph: white balance calibration with the WB chip's eyedropper and the web panel's Calibrate (Markdown: keep the ** markers) */
 "On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture." = "On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture.";
@@ -708,6 +714,14 @@
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "Turn off green screen";
 
+/* Live screen: the Flashlight button by the lens buttons switches only on a hold; a tap while it is off says so */
+"Hold to turn on the flashlight" = "Hold to turn on the flashlight";
+
+/* VoiceOver action on the lens row's Flashlight button */
+"Turn on the flashlight" = "Turn on the flashlight";
+
+/* VoiceOver action on the lit Flashlight button */
+"Turn off the flashlight" = "Turn off the flashlight";
 
 
 

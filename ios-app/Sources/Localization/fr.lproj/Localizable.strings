@@ -294,6 +294,8 @@
 /* Documentation → Using the camera, Lenses & zoom section, second paragraph: the 48 MP Main camera's 2× full-detail crop button (Markdown: keep the ** markers) */
 "When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it." = "Si la caméra principale a un capteur de 48 Mpx, un bouton **2** supplémentaire à côté de **1×** utilise le centre du capteur en pleine définition, plus net qu’un zoom. Le pincement et la molette de zoom s’y arrêtent au passage. Seuls les formats qui prennent en charge ce recadrage l’affichent.";
 
+"**Flashlight**: on a camera with a flash, the bolt button left of the lens buttons lights it. Hold it to turn the flashlight on or off. While it is on, tap it for a brightness dial, and tap again to go back to full brightness. It comes back at the brightness you left it at." = "**Lampe torche** : sur une caméra avec flash, le bouton éclair à gauche des boutons d’objectif l’allume. Maintenez-le pour allumer ou éteindre la lampe torche. Quand elle est allumée, touchez-le pour une molette de luminosité, et touchez-le encore pour revenir à la luminosité maximale. Elle se rallume à la luminosité où vous l’avez laissée.";
+
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "Objectifs et zoom";
 
@@ -308,6 +310,8 @@
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "Le **cadenas** de la rangée du bas du tiroir fige le réglage sélectionné sur ce que fait l’automatique à cet instant ; touchez-le à nouveau pour revenir en automatique. Maintenez-le pour tout verrouiller ou tout déverrouiller d’un coup. Sur la puce Vitesse, le bouton d’ouverture active ou désactive le **Flou de mouvement naturel** : l’exposition automatique garde une vitesse d’au moins la moitié de l’intervalle entre images (1/60 à 30 i/s) et monte plutôt l’ISO en faible lumière.";
+
+"**ISO** and **Shutter** go manual one at a time. Fix the shutter and ISO keeps adjusting to hold the exposure; fix ISO and the shutter adjusts instead, and EV keeps working either way. Natural motion blur only limits a shutter that is on auto, so its button dims while you set the shutter by hand." = "**ISO** et **Vitesse** (l’obturateur) passent en manuel un par un. Fixez l’obturateur et l’ISO continue de s’ajuster pour garder l’exposition ; fixez l’ISO et c’est l’obturateur qui s’ajuste, et l’EV fonctionne toujours dans les deux cas. Le flou de mouvement naturel ne limite qu’un obturateur en auto, son bouton s’estompe donc quand vous réglez l’obturateur à la main.";
 
 /* Documentation → Using the camera, Adjust tray section, third paragraph: white balance calibration with the WB chip's eyedropper and the web panel's Calibrate (Markdown: keep the ** markers) */
 "On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture." = "Sur la puce BB, la **pipette** règle la balance des blancs d’après une feuille de papier blanc : touchez-la, puis touchez le papier dans l’image. La balance des blancs se verrouille sur le papier, en corrigeant la dominante verte ou magenta de certains éclairages LED et fluorescents, jusqu’au retour de la BB en automatique. Dans le panneau web, **Calibrer** fait de même avec le papier au centre de l’image.";
@@ -707,6 +711,9 @@
 
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "Désactiver l’écran vert";
+"Hold to turn on the flashlight" = "Maintenez pour allumer la lampe torche";
+"Turn on the flashlight" = "Allumer la lampe torche";
+"Turn off the flashlight" = "Éteindre la lampe torche";
 
 
 

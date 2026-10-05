@@ -1437,18 +1437,24 @@ final class CameraManager: NSObject {
 
     /// Manual exposure: fixed ISO and shutter. Values are clamped to the
     /// active format's limits.
+    /// On the session queue, so it lands after any change the priority
+    /// loop already has queued.
     func setManualExposure(iso: Float, shutterSeconds: Double) {
-        withLockedDevice { device in
-            guard device.isExposureModeSupported(.custom) else { return }
-            let format = device.activeFormat
-            let clampedISO = max(format.minISO, min(iso, format.maxISO))
-            let seconds = max(format.minExposureDuration.seconds,
-                              min(shutterSeconds,
-                                  format.maxExposureDuration.seconds))
-            device.setExposureModeCustom(
-                duration: CMTime(seconds: seconds,
-                                 preferredTimescale: 1_000_000),
-                iso: clampedISO)
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.stopPriorityExposure()
+            self.withLockedDevice { device in
+                guard device.isExposureModeSupported(.custom) else { return }
+                let format = device.activeFormat
+                let clampedISO = max(format.minISO, min(iso, format.maxISO))
+                let seconds = max(format.minExposureDuration.seconds,
+                                  min(shutterSeconds,
+                                      format.maxExposureDuration.seconds))
+                device.setExposureModeCustom(
+                    duration: CMTime(seconds: seconds,
+                                     preferredTimescale: 1_000_000),
+                    iso: clampedISO)
+            }
         }
     }
 
@@ -1478,6 +1484,80 @@ final class CameraManager: NSObject {
         }
     }
 
+    /// ISO or shutter by hand, the other one automatic. iOS's auto
+    /// exposure only ever runs the pair, so this holds the fixed one in
+    /// custom mode and steers the free one from the meter: each time the
+    /// exposure target offset moves, the free value goes half the way
+    /// back to the target. The meter includes the EV bias in custom mode,
+    /// so the EV dial still works. Natural motion blur caps an automatic
+    /// shutter here too.
+    private var priorityObservation: NSKeyValueObservation?
+    private var priorityISO: Float?
+    private var prioritySeconds: Double?
+    /// One custom-exposure change in flight at a time; the meter is read
+    /// again once it lands.
+    private var priorityPending = false
+    private weak var observedDevice: AVCaptureDevice?
+
+    func setPriorityExposure(iso: Float?, shutterSeconds: Double?) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = self.activeDevice,
+                  device.isExposureModeSupported(.custom) else { return }
+            if self.priorityObservation != nil, device !== self.observedDevice {
+                self.stopPriorityExposure()
+            }
+            self.observedDevice = device
+            self.priorityISO = iso
+            self.prioritySeconds = shutterSeconds
+            self.priorityPending = false
+            if self.priorityObservation == nil {
+                self.priorityObservation = device.observe(
+                    \.exposureTargetOffset) { [weak self] observed, _ in
+                    self?.sessionQueue.async { self?.steerPriorityExposure(observed) }
+                }
+            }
+            self.steerPriorityExposure(device)
+        }
+    }
+
+    /// sessionQueue only.
+    private func stopPriorityExposure() {
+        priorityObservation?.invalidate()
+        priorityObservation = nil
+    }
+
+    /// sessionQueue only.
+    private func steerPriorityExposure(_ device: AVCaptureDevice) {
+        guard priorityObservation != nil, !priorityPending,
+              device === activeDevice,
+              priorityISO != nil || prioritySeconds != nil else { return }
+        let format = device.activeFormat
+        let offset = device.exposureMode == .custom
+            ? Double(device.exposureTargetOffset) : 0
+        let step = abs(offset) < 0.1 ? 1 : pow(2, -offset / 2)
+        let iso = priorityISO ?? Float(Double(device.iso) * step)
+        var longest = min(format.maxExposureDuration.seconds,
+                          1.0 / Double(configuredFps))
+        if naturalBlur, prioritySeconds == nil {
+            longest = min(longest, 1.0 / Double(configuredFps * 2))
+        }
+        let seconds = prioritySeconds ?? device.exposureDuration.seconds * step
+        let clampedISO = max(format.minISO, min(iso, format.maxISO))
+        let clampedSeconds = max(format.minExposureDuration.seconds,
+                                 min(seconds, longest))
+        guard device.exposureMode != .custom
+                || abs(clampedISO - device.iso) > 0.5
+                || abs(clampedSeconds - device.exposureDuration.seconds) > 1e-6,
+              (try? device.lockForConfiguration()) != nil else { return }
+        priorityPending = true
+        device.setExposureModeCustom(
+            duration: CMTime(seconds: clampedSeconds, preferredTimescale: 1_000_000),
+            iso: clampedISO) { [weak self] _ in
+            self?.sessionQueue.async { self?.priorityPending = false }
+        }
+        device.unlockForConfiguration()
+    }
+
     private var stabilization: AVCaptureVideoStabilizationMode = .off
 
     func setStabilization(_ mode: AVCaptureVideoStabilizationMode) {
@@ -1499,9 +1579,13 @@ final class CameraManager: NSObject {
     }
 
     func setAutoExposure() {
-        withLockedDevice { device in
-            if device.isExposureModeSupported(.continuousAutoExposure) {
-                device.exposureMode = .continuousAutoExposure
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.stopPriorityExposure()
+            self.withLockedDevice { device in
+                if device.isExposureModeSupported(.continuousAutoExposure) {
+                    device.exposureMode = .continuousAutoExposure
+                }
             }
         }
     }
@@ -1513,10 +1597,17 @@ final class CameraManager: NSObject {
         return activeDevice?.hasTorch ?? false
     }
 
-    func setFlashlight(_ on: Bool) {
+    /// 0 is off; anything else is the torch level, up to what iOS
+    /// allows right now (it lowers the ceiling when the phone runs hot).
+    func setFlashlight(_ level: Float) {
         withLockedDevice { device in
             guard device.hasTorch else { return }
-            device.torchMode = on ? .on : .off
+            guard level > 0 else {
+                device.torchMode = .off
+                return
+            }
+            try? device.setTorchModeOn(
+                level: max(min(level, device.maxAvailableTorchLevel), 0.01))
         }
     }
 

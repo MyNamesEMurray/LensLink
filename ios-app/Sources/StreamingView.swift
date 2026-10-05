@@ -57,7 +57,7 @@ struct StreamingView: View {
     /// would have to be a hold to do).
     @State private var rowHint: String?
 
-    private enum RowDial { case zoom, subject }
+    private enum RowDial { case zoom, subject, flashlight }
     /// Each back lens's magnification relative to Main, for the lens
     /// buttons' labels. Read once per stream: it walks the device list.
 #if DEBUG
@@ -332,7 +332,7 @@ struct StreamingView: View {
     /// has no meaning — ISO and shutter are the dial's job there.
     private func verticalDrag(_ phase: CameraPreviewView.PinchPhase,
                               travel: CGFloat) {
-        guard streamer.exposureSetting == .auto else { return }
+        guard streamer.exposureSetting != .manual else { return }
         touched()
         switch phase {
         case .began:
@@ -737,6 +737,8 @@ struct StreamingView: View {
     /// subject cutoff.
     private static let zoomDialPoints: CGFloat = 120
     private static let subjectDialPoints: Double = 60
+    /// Points per percent of flashlight brightness.
+    private static let flashlightDialPoints: Double = 2.4
     /// The Subject dial's stop past 5 m, which means no cutoff.
     private static let subjectAllStop = 5.5
 
@@ -763,8 +765,8 @@ struct StreamingView: View {
                     }
             }
             VStack(spacing: Theme.Space.s) {
-                if rowDial == .subject {
-                    Text(subjectDistanceText)
+                if rowDial == .subject || rowDial == .flashlight {
+                    Text(rowDial == .subject ? subjectDistanceText : flashlightLevelText)
                         .font(.system(.subheadline, design: .rounded).weight(.bold)
                                 .monospacedDigit())
                         .foregroundColor(Theme.cameraYellow)
@@ -772,31 +774,45 @@ struct StreamingView: View {
                         .accessibilityHidden(true)
                 }
                 // Each dial keeps only its own buttons: the lenses for
-                // zoom, green screen for Subject.
+                // zoom, green screen for Subject, the Flashlight for
+                // brightness.
                 HStack(spacing: Theme.Space.s) {
-                    if rowDial != .subject {
+                    if rowDial == nil || rowDial == .flashlight,
+                       streamer.camera.hasFlashlight {
+                        flashlightButton
+                            .padding(.trailing, rowDial == nil ? Theme.Space.s : 0)
+                    }
+                    if rowDial == nil || rowDial == .zoom {
                         lensButtons
                     }
-                    if rowDial != .zoom, streamer.greenScreenOffered {
+                    if rowDial == nil || rowDial == .subject,
+                       streamer.greenScreenOffered {
                         greenScreenButton
                             .padding(.leading, rowDial == nil ? Theme.Space.s : 0)
                     }
                 }
                 if let dial = rowDial {
-                    DialRuler(ticks: dial == .zoom ? zoomTicks : subjectTicks)
+                    DialRuler(ticks: dial == .zoom ? zoomTicks
+                              : dial == .subject ? subjectTicks : flashlightTicks)
                 }
             }
             .contentShape(Rectangle())
             .onChange(of: streamer.greenScreenDepthActive) { depth in
                 if depth, rowDial == .zoom { rowDial = nil }
             }
+            .onChange(of: streamer.flashlightOn) { on in
+                if !on, rowDial == .flashlight { rowDial = nil }
+            }
             .simultaneousGesture(DragGesture(minimumDistance: 12)
                 .onChanged { value in
                     guard let dial = rowDial else { return }
                     touched()
                     if rowDialBase == nil {
-                        rowDialBase = dial == .zoom
-                            ? Double(streamer.zoom) : subjectDialValue
+                        switch dial {
+                        case .zoom: rowDialBase = Double(streamer.zoom)
+                        case .subject: rowDialBase = subjectDialValue
+                        case .flashlight: rowDialBase = flashlightPercent
+                        }
                     }
                     dragRowDial(by: value.translation.width)
                 }
@@ -831,9 +847,93 @@ struct StreamingView: View {
             let value = min(max(base - Double(travel) / Self.subjectDialPoints, 0.5),
                             Self.subjectAllStop)
             setSubjectDial((value * 10).rounded() / 10)
+        case .flashlight?:
+            setFlashlightDial(base - Double(travel) / Self.flashlightDialPoints)
         case nil:
             break
         }
+    }
+
+    private var flashlightPercent: Double {
+        (Double(streamer.flashlightLevel) * 100).rounded()
+    }
+
+    /// 1 to 100 %, with a click on each quarter.
+    private func setFlashlightDial(_ percent: Double) {
+        let next = min(max(percent.rounded(), 1), 100)
+        guard next != flashlightPercent else { return }
+        if floor(next / 25) != floor(flashlightPercent / 25) {
+            Self.notchFeedback.selectionChanged()
+        }
+        streamer.flashlightLevel = Float(next / 100)
+    }
+
+    private var flashlightLevelText: String {
+        (flashlightPercent / 100).formatted(.percent.precision(.fractionLength(0)))
+    }
+
+    private var flashlightTicks: [(offset: CGFloat, label: String?)] {
+        let now = flashlightPercent
+        let place = { (v: Double) in CGFloat((v - now) * Self.flashlightDialPoints) }
+        var ticks: [(offset: CGFloat, label: String?)] = stride(
+            from: 5, through: 95, by: 5).filter { $0.truncatingRemainder(dividingBy: 25) != 0 }
+            .map { (offset: place($0), label: nil) }
+        for mark in [1.0, 25, 50, 75, 100] {
+            ticks.append((offset: place(mark), label: String(Int(mark))))
+        }
+        return ticks
+    }
+
+    /// The Flashlight on the lens row, built like the green screen
+    /// button: lit while the light is on, and only a hold switches it.
+    /// A tap opens the brightness dial while it is on (and, while the
+    /// dial is open, puts it back to full); otherwise it says to hold.
+    private var flashlightButton: some View {
+        let on = streamer.flashlightOn
+        let toggle = {
+            touched()
+            rowDial = nil
+            streamer.flashlightOn.toggle()
+        }
+        let tap = {
+            touched()
+            guard on else {
+                withAnimation { rowHint = L("Hold to turn on the flashlight") }
+                return
+            }
+            if rowDial == .flashlight {
+                streamer.flashlightLevel = 1
+            }
+            rowDial = .flashlight
+            rowDialTouch = UUID()
+        }
+        return Image(systemName: on ? "bolt.fill" : "bolt.slash")
+            .font(.system(size: 15, weight: .semibold))
+            .onGlassText(on ? .black : Theme.textPrimary.opacity(0.85),
+                         increased: on ? .black : Theme.textPrimary)
+            .frame(width: 32, height: 32)
+            .glassBackground(Circle(), style: on ? .solid(Theme.cameraYellow)
+                                                 : .scrim(0.45))
+            .contentShape(Circle())
+            .onTapGesture(perform: tap)
+            .onLongPressGesture(minimumDuration: 0.5, perform: toggle)
+            .accessibilityElement()
+            .accessibilityLabel(L("Flashlight"))
+            .accessibilityValue(on ? flashlightLevelText : L("Off"))
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(named: Text(on ? L("Turn off the flashlight")
+                                                : L("Turn on the flashlight")),
+                                 toggle)
+            .adjustable(on ? adjustFlashlight : nil)
+            .accessibilityShowsLargeContentViewer {
+                Label(L("Flashlight"), systemImage: "bolt.fill")
+            }
+    }
+
+    /// VoiceOver's stand-in for the brightness dial: 10 % a step.
+    private func adjustFlashlight(_ direction: AccessibilityAdjustmentDirection) {
+        touched()
+        setFlashlightDial(flashlightPercent + (direction == .increment ? 10 : -10))
     }
 
     /// Sets the cutoff from a dial position, where anything past 5 m is
@@ -1218,6 +1318,8 @@ struct StreamingView: View {
     @ViewBuilder private var chipTool: some View {
         switch activeTarget {
         case .shutter:
+            // It caps an automatic shutter, so it means nothing while
+            // the shutter is set by hand: dimmed, but still saved.
             ControlButton(L("Natural motion blur"),
                           systemImage: "camera.aperture",
                           isOn: streamer.naturalBlur,
@@ -1225,6 +1327,8 @@ struct StreamingView: View {
                 touched()
                 streamer.naturalBlur.toggle()
             }
+            .disabled(streamer.exposureSetting.shutterManual)
+            .opacity(streamer.exposureSetting.shutterManual ? 0.4 : 1)
         case .whiteBalance:
             ControlButton(L("Calibrate white balance"),
                           systemImage: "eyedropper",
@@ -1263,7 +1367,9 @@ struct StreamingView: View {
 
     private func lockTarget(_ target: DialTarget) -> Streamer.LockTarget {
         switch target {
-        case .exposure, .iso, .shutter: return .exposure
+        case .exposure: return .exposure
+        case .iso: return .iso
+        case .shutter: return .shutter
         case .whiteBalance: return .whiteBalance
         case .focus: return .focus
         }
@@ -1343,7 +1449,8 @@ struct StreamingView: View {
     private func isAuto(_ target: DialTarget) -> Bool? {
         switch target {
         case .exposure: return nil
-        case .iso, .shutter: return streamer.exposureSetting == .auto
+        case .iso: return !streamer.exposureSetting.isoManual
+        case .shutter: return !streamer.exposureSetting.shutterManual
         case .whiteBalance: return streamer.whiteBalanceSetting == .auto
         case .focus: return streamer.focusSetting == .auto
         }
@@ -1353,7 +1460,8 @@ struct StreamingView: View {
         switch target {
         case .exposure:
             if streamer.exposureSetting == .auto { streamer.exposureBias = 0 }
-        case .iso, .shutter: streamer.exposureSetting = .auto
+        case .iso: streamer.setLocked(.iso, false)
+        case .shutter: streamer.setLocked(.shutter, false)
         case .whiteBalance: streamer.whiteBalanceSetting = .auto
         case .focus: streamer.focusSetting = .auto
         }
@@ -1544,10 +1652,10 @@ struct StreamingView: View {
         case .exposure:
             return String(format: "%+.1f EV", streamer.exposureBias)
         case .iso:
-            return streamer.exposureSetting == .manual
+            return streamer.exposureSetting.isoManual
                 ? "ISO \(Int(streamer.iso.rounded()))" : L("Auto")
         case .shutter:
-            return streamer.exposureSetting == .manual ? shutterReadout : L("Auto")
+            return streamer.exposureSetting.shutterManual ? shutterReadout : L("Auto")
         case .whiteBalance:
             return streamer.whiteBalanceSetting == .locked
                 ? "\(Int(streamer.whiteBalanceTemperature)) K" : L("Auto")

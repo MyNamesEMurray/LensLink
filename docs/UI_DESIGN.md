@@ -296,10 +296,10 @@ surfaces.
 | Zoom        | web: a slider under the lens buttons; app: the lens row | Slider 1×…max, readout in true magnification (`2.4×`, web: `cameraYellow`). On the phone, pinch, or tap the active lens button for the lens row's zoom dial (the Camera app's); the lens buttons (`.5` · `1×` · `2`) switch physical lenses, and a 48 MP Main camera gets a `2` button for its full-detail sensor crop |
 | Exposure    | the **EV** chip (web and app); app also: or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
 | Focus       | the **Focus** chip | Lens position 0=near … 1=far. The chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
-| Exposure mode | the **ISO** and **Shutter** chips | Readouts `ISO 200`, `1/125`. Dragging ISO or Shutter takes exposure manual and EV greys out; tapping either active chip returns to auto. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): auto exposure keeps the shutter at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the same button in the web panel's tray |
+| Exposure mode | the **ISO** and **Shutter** chips | Readouts `ISO 200`, `1/125`. Each is on auto or by hand on its own (`isoMode`, `shutterMode` in STATE): dragging ISO fixes ISO and leaves the shutter on auto, and the other way round; tapping the active chip returns that one to auto. Both on auto is iOS's auto exposure; one by hand runs the other from the meter, with EV still working; EV greys out only while both are by hand. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): an automatic shutter stays at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the same button in the web panel's tray; the button dims while the shutter is by hand, where it has nothing to cap |
 | White balance | the **WB** chip | 2500–8000 K, readout `5600 K`. **Calibrate** (`eyedropper`) locks to white paper at a tapped spot: in the app on the picture, in the web panel on a still of the current shot the plugin grabs for it (keyboard: the centre). Temperature and tint. Hidden if unsupported |
-| Lock | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (EV, ISO and Shutter are one lock). Long press (web: Shift-click) = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
-| Flashlight  | `bolt.fill` (toggle; hidden on the web, dimmed in the app, if unavailable) | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row |
+| Lock | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (ISO and Shutter lock on their own; on EV it locks the pair). Long press (web: Shift-click) = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
+| Flashlight  | `bolt.fill` (toggle; hidden on the web, dimmed in the app, if unavailable) | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row, and on the lens row's left (the **Flashlight dial**, §6). Brightness 1–100 % (`flashlightLevel` in STATE), remembered |
 | Lens        | the lens buttons (web: a menu for apps without `lensFactors`) | The buttons show each lens's magnification relative to Main (front lenses: relative to the regular front camera), the active one in `cameraYellow` carrying the live zoom (`2.4×`); tapping the active one brings up the zoom dial, and a second tap resets its zoom |
 | Flip        | `arrow.triangle.2.circlepath.camera`      | Quick front/back. In the app, in the tray's bottom row |
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
@@ -483,6 +483,18 @@ Full-screen black; camera preview `resizeAspect`; two layers over it.
     button steps aside until the dial tucks away. It tucks away 2 s after
     the last touch (VoiceOver adjusts the active lens button instead, and
     its tap resets at once).
+  - **Flashlight button** (`bolt.fill`, `bolt.slash` while off; before
+    the lens buttons, a small gap apart): only on a camera with a
+    flash, so the front camera's row is unchanged. Built like the green
+    screen button: solid `cameraYellow` with a black glyph while the
+    light is on, and only a **long press** turns it on or off; a tap
+    while it is off says "Hold to turn on the flashlight" in a passing
+    pill. While it is on, a tap brings up the **Flashlight dial**: the
+    lens buttons step aside, a readout pill (`60%`) sits over the button
+    and the ruler under it runs 1–100 %, with a click on each quarter;
+    a second tap while it is open puts the brightness back to 100 %. It
+    tucks away like the others. The tray's Flashlight button still
+    switches it too.
   - **Green screen button** (`person.fill.viewfinder`, after the lens
     buttons, a small gap apart): there when green screen was on at
     stream start or has been turned on since (a hold that turns it off
@@ -540,17 +552,18 @@ under the lens row; 200 ms):
   cloud 6500 K, shade 7500 K). No caption: the readout and the A badge
   say the mode.
 - **Auto ↔ manual rule:** a drag on the dial takes that parameter out of
-  auto on the first touch (ISO or Shutter → manual exposure, WB → lock,
+  auto on the first touch (ISO or Shutter → that one by hand, WB → lock,
   Focus → lock), starting from what auto was doing. Tapping the *active*
   chip again hands it back to auto. EV is the bias dial, an
   auto-exposure control, so dragging it leaves auto alone, and tapping
   the active EV chip sets the bias back to 0; it is greyed out while
-  exposure is manual.
+  ISO and Shutter are both by hand.
 - **Bottom row, fixed slots** filled from the right so no shared button
   moves between chips or cameras: the chip's own tool, else a gap
   (`eyedropper` on WB: Calibrate white balance, the next tap on the
   picture samples white paper instead of focusing; `camera.aperture` on
-  Shutter: Natural motion blur) · Lock · Flashlight (dimmed in place on a
+  Shutter: Natural motion blur, dimmed while the shutter is by hand) ·
+  Lock · Flashlight (dimmed in place on a
   camera without one) · Flip · `chevron.down` to close. While calibration
   waits on a tap, "Tap the white paper in the picture" takes the space to
   the left and wraps.
@@ -616,9 +629,12 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    the header — only when more than one camera source is live. Every API
    request carries the selected source's `?src=` id; one page controls
    every phone.
-3. **Controls**, laid out like the Live screen: the lens row (lens
-   buttons `.5 · 1× · 2 · 3` and the Green screen chip) with the zoom
-   slider under it (the Subject slider instead while depth runs), then
+3. **Controls**, laid out like the Live screen: the lens row (the
+   Flashlight chip on a camera with a flash, lens buttons `.5 · 1× · 2 ·
+   3` and the Green screen chip) with the zoom slider under it (the
+   Subject slider instead while depth runs, and a Flashlight brightness
+   row while the light is on, whose readout puts it back to 100 % on a
+   click), then
    the adjust tray: chips **Focus · WB · EV · ISO · Shutter** with the
    **A** badge, one dial with a `cameraYellow` readout (WB adds the
    light-source icons), and the bottom row of the chip's own button

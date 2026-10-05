@@ -294,6 +294,8 @@
 /* Documentation → Using the camera, Lenses & zoom section, second paragraph: the 48 MP Main camera's 2× full-detail crop button (Markdown: keep the ** markers) */
 "When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it." = "メインカメラが48MPセンサーの場合、**1×**の横に**2**ボタンが追加されます。センサー中央部をフル解像度で使うので、ズームするよりシャープです。ピンチやズームダイヤルは通過するときにこの倍率で止まります。このクロップに対応するフォーマットでのみ表示されます。";
 
+"**Flashlight**: on a camera with a flash, the bolt button left of the lens buttons lights it. Hold it to turn the flashlight on or off. While it is on, tap it for a brightness dial, and tap again to go back to full brightness. It comes back at the brightness you left it at." = "**フラッシュライト**：フラッシュのあるカメラでは、レンズボタンの左の稲妻ボタンで点灯します。長押しでフラッシュライトをオン／オフします。点灯中にタップすると明るさのダイヤルが開き、もう一度タップすると最大の明るさに戻ります。次に点けるときは、前回の明るさで点灯します。";
+
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "レンズとズーム";
 
@@ -308,6 +310,8 @@
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "トレイ下段の**ロック**をタップすると、選択中の設定を自動が今使っている値で固定します。もう一度タップすると自動に戻ります。長押しすると、すべての設定をまとめてロックまたは解除します。SSのチップでは、絞りのボタンで**自然なモーションブラー**をオン/オフできます。自動露出でシャッター速度をフレーム間隔の半分以上の速さ（30fpsで1/60）に保ち、暗い場所では代わりにISOを上げます。";
+
+"**ISO** and **Shutter** go manual one at a time. Fix the shutter and ISO keeps adjusting to hold the exposure; fix ISO and the shutter adjusts instead, and EV keeps working either way. Natural motion blur only limits a shutter that is on auto, so its button dims while you set the shutter by hand." = "**ISO** と**シャッター**（SS）は一つずつ手動にできます。シャッターを固定すると ISO が露出を保つように調整され、ISO を固定するとシャッターが調整されます。どちらの場合も EV はそのまま使えます。自然なモーションブラーは自動のシャッターだけを制限するので、シャッターを手動で設定している間はボタンが淡色表示になります。";
 
 /* Documentation → Using the camera, Adjust tray section, third paragraph: white balance calibration with the WB chip's eyedropper and the web panel's Calibrate (Markdown: keep the ** markers) */
 "On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture." = "WBのチップでは、**スポイト**で白い紙からホワイトバランスを設定できます。スポイトをタップしてから、映像内の紙をタップします。ホワイトバランスが紙に合わせて固定され、一部のLEDや蛍光灯による緑やマゼンタの色かぶりも補正されます。WBを自動に戻すまでその状態が続きます。Webパネルでは、**キャリブレーション**で映像の中央にある紙に対して同じことができます。";
@@ -707,6 +711,9 @@
 
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "グリーンバックをオフ";
+"Hold to turn on the flashlight" = "長押しでフラッシュライトをオン";
+"Turn on the flashlight" = "フラッシュライトをオン";
+"Turn off the flashlight" = "フラッシュライトをオフ";
 
 
 
