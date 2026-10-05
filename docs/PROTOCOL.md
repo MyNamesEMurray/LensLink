@@ -133,6 +133,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
 { "cmd": "focus", "faces": true }
 { "cmd": "flashlight", "on": true }
+{ "cmd": "flashlight", "on": true, "level": 0.6 }
 { "cmd": "natural_blur", "on": true }
 { "cmd": "flip" }
 { "cmd": "selectLens", "label": "Ultra Wide (0.5×)" }
@@ -144,6 +145,8 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "stabilization", "mode": "cinematic" }
 { "cmd": "exposure", "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
 { "cmd": "exposure", "mode": "auto" }
+{ "cmd": "exposure", "shutterMode": "manual", "shutterSeconds": 0.01 }
+{ "cmd": "exposure", "isoMode": "auto" }
 { "cmd": "start_stream" }
 { "cmd": "stop_stream" }
 { "cmd": "pause_stream" }
@@ -169,7 +172,8 @@ command treats it as `"auto"`.
 
 `lock` is the app's tray Lock button: `on: true` freezes what auto is
 doing right now for `target` — `"focus"`, `"whiteBalance"`,
-`"exposure"` (ISO and shutter together) or `"all"` — so the picture
+`"exposure"` (ISO and shutter together), `"iso"`, `"shutter"` or
+`"all"` — so the picture
 doesn't jump the way a `locked`/`manual` command carrying stale values
 would; `on: false` hands it back to auto. Apps that predate it ignore
 it; remote UIs tell them apart by the absence of `lensFactors` in STATE
@@ -231,9 +235,27 @@ whenever the connection drops, so a stale "live" can't outlive the OBS
 that set it. Screen-mirror connections receive it too and ignore it: the
 broadcast extension has no UI.
 
+`exposure` sets ISO and shutter. `mode` sets both halves at once
+(`"manual"` fixes both at `iso` / `shutterSeconds`, `"auto"` hands both
+back); `isoMode` and `shutterMode` set one half each and win over
+`mode`, and a half no field names stays as it is. With both on auto the
+app runs iOS's auto exposure; with both manual it fixes the pair; with
+one manual it fixes that one and steers the other from the camera's
+meter (the EV bias still applies). Apps that predate `isoMode` /
+`shutterMode` ignore them and treat a command without `mode` as
+`"auto"`, so remote UIs send them only to an app whose STATE carries
+`isoMode`. The `lock` targets `"iso"` and `"shutter"` follow the same
+rule.
+
+`flashlight` takes `on`, `level` (brightness, 0.01 to 1), or both;
+an absent field is left as it is. The app remembers the level and lights
+at it; iOS may cap it lower while the phone is hot. An app that predates
+`level` ignores it and lights at full power.
+
 `natural_blur` turns the 180° shutter rule for auto exposure on or off:
 while on, auto exposure never runs the shutter slower than half the frame
-interval (1/60 at 30 fps) and raises ISO instead. The STATE snapshot
+interval (1/60 at 30 fps) and raises ISO instead. It has nothing to cap
+while the shutter is manual. The STATE snapshot
 reports it as `naturalBlur`; an app that predates it ignores the command
 and omits the field.
 
@@ -328,7 +350,8 @@ changes and once on connect. Payload: UTF-8 JSON, e.g.
   "focusMode": "locked", "lensPosition": 0.4,
   "faceFocus": true, "supportsFaceFocus": true,
   "quality": "balanced",
-  "flashlight": true, "hasFlashlight": true, "camera": "back" }
+  "flashlight": true, "flashlightLevel": 0.6, "hasFlashlight": true,
+  "camera": "back" }
 ```
 
 The plugin caches the latest snapshot and serves it at `/api/state` so
@@ -337,8 +360,9 @@ was made.
 
 The snapshot also carries white-balance and manual-exposure state
 (`whiteBalanceMode`/`whiteBalanceTemperature`/`whiteBalanceTint`, the
-tint being 0 unless set by a calibration, `exposureMode`/`iso`/
-`shutterSeconds` with their ranges `minISO`/`maxISO` and
+tint being 0 unless set by a calibration, `exposureMode` (`"manual"`
+when either half is), `isoMode`/`shutterMode` (each half on its own),
+`iso`/`shutterSeconds` with their ranges `minISO`/`maxISO` and
 `minShutterSeconds`/`maxShutterSeconds` (the longest shutter is capped
 at one frame interval, so it follows `fps`), plus
 `supportsWhiteBalanceLock` and `supportsManualExposure` so UIs hide what

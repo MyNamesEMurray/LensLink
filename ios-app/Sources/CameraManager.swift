@@ -78,6 +78,7 @@ final class CameraManager: NSObject {
     private var _onDepthData: ((AVDepthData) -> Void)?
     private var _onWhiteSample: ((CVPixelBuffer) -> Void)?
     private var whiteSampleID = 0
+    private var whiteSampleAfter = CMTime.invalid
 
     /// Capture was interrupted (phone call, Camera app, a second app on
     /// screen where the iPad won't share the camera) or resumed.
@@ -1275,7 +1276,7 @@ final class CameraManager: NSObject {
     }
 
     private func calibrateWhiteBalance(
-        patch: @escaping (AVCaptureVideoDataOutput) -> CGRect, rounds: Int = 3,
+        patch: @escaping (AVCaptureVideoDataOutput) -> CGRect, rounds: Int = 8,
         completion: @escaping
             (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void) {
         guard let device = activeDevice,
@@ -1283,30 +1284,39 @@ final class CameraManager: NSObject {
         else { return completion(nil) }
         var gains = device.deviceWhiteBalanceGains
         var left = rounds
-        func step() {
-            sampleColor(patch: patch) { rgb in
+        func lock() {
+            gains = Self.legal(gains, device)
+            var locked = false
+            withLockedDevice {
+                $0.setWhiteBalanceModeLocked(with: gains) { measure(after: $0) }
+                locked = true
+            }
+            if !locked { completion(nil) }
+        }
+        func measure(after syncTime: CMTime) {
+            sampleColor(patch: patch, after: syncTime) { rgb in
                 guard let rgb else { return completion(nil) }
-                gains.redGain *= rgb.g / rgb.r
-                gains.blueGain *= rgb.g / rgb.b
+                let red = rgb.g / rgb.r
+                let blue = rgb.g / rgb.b
+                left -= 1
+                if left == 0 || (abs(red - 1) < 0.01 && abs(blue - 1) < 0.01) {
+                    return completion(device.temperatureAndTintValues(for: gains))
+                }
+                gains.redGain *= pow(red, 0.7)
+                gains.blueGain *= pow(blue, 0.7)
                 let least = min(gains.redGain, gains.greenGain, gains.blueGain)
                 gains.redGain /= least
                 gains.greenGain /= least
                 gains.blueGain /= least
-                gains = Self.legal(gains, device)
-                self.withLockedDevice { $0.setWhiteBalanceModeLocked(with: gains) }
-                left -= 1
-                if left > 0 {
-                    self.sessionQueue.asyncAfter(deadline: .now() + 0.3) { step() }
-                } else {
-                    completion(device.temperatureAndTintValues(for: gains))
-                }
+                lock()
             }
         }
-        step()
+        lock()
     }
 
     private func sampleColor(
         patch makePatch: @escaping (AVCaptureVideoDataOutput) -> CGRect,
+        after syncTime: CMTime,
         completion: @escaping ((r: Float, g: Float, b: Float)?) -> Void) {
         sessionQueue.async { [weak self] in
             guard let self, let output = self.videoOutput else {
@@ -1316,10 +1326,16 @@ final class CameraManager: NSObject {
             self.callbackLock.lock()
             self.whiteSampleID += 1
             let id = self.whiteSampleID
+            self.whiteSampleAfter = syncTime
             self._onWhiteSample = { pixels in
                 completion(Self.meanColor(pixels, in: patch))
             }
             self.callbackLock.unlock()
+            self.sessionQueue.asyncAfter(deadline: .now() + 0.4) {
+                self.callbackLock.lock()
+                if id == self.whiteSampleID { self.whiteSampleAfter = .invalid }
+                self.callbackLock.unlock()
+            }
             self.sessionQueue.asyncAfter(deadline: .now() + 1) {
                 self.callbackLock.lock()
                 let stale = id == self.whiteSampleID && self._onWhiteSample != nil
@@ -1333,8 +1349,12 @@ final class CameraManager: NSObject {
     private func deliverWhiteSample(_ sampleBuffer: CMSampleBuffer) {
         callbackLock.lock()
         let handler = _onWhiteSample
-        _onWhiteSample = nil
+        let fresh = !whiteSampleAfter.isValid || CMTimeCompare(
+            CMSampleBufferGetPresentationTimeStamp(sampleBuffer),
+            whiteSampleAfter) >= 0
+        if fresh { _onWhiteSample = nil }
         callbackLock.unlock()
+        guard fresh else { return }
         if let handler, let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) {
             handler(pixels)
         }
@@ -1437,18 +1457,24 @@ final class CameraManager: NSObject {
 
     /// Manual exposure: fixed ISO and shutter. Values are clamped to the
     /// active format's limits.
+    /// On the session queue, so it lands after any change the priority
+    /// loop already has queued.
     func setManualExposure(iso: Float, shutterSeconds: Double) {
-        withLockedDevice { device in
-            guard device.isExposureModeSupported(.custom) else { return }
-            let format = device.activeFormat
-            let clampedISO = max(format.minISO, min(iso, format.maxISO))
-            let seconds = max(format.minExposureDuration.seconds,
-                              min(shutterSeconds,
-                                  format.maxExposureDuration.seconds))
-            device.setExposureModeCustom(
-                duration: CMTime(seconds: seconds,
-                                 preferredTimescale: 1_000_000),
-                iso: clampedISO)
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.stopPriorityExposure()
+            self.withLockedDevice { device in
+                guard device.isExposureModeSupported(.custom) else { return }
+                let format = device.activeFormat
+                let clampedISO = max(format.minISO, min(iso, format.maxISO))
+                let seconds = max(format.minExposureDuration.seconds,
+                                  min(shutterSeconds,
+                                      format.maxExposureDuration.seconds))
+                device.setExposureModeCustom(
+                    duration: CMTime(seconds: seconds,
+                                     preferredTimescale: 1_000_000),
+                    iso: clampedISO)
+            }
         }
     }
 
@@ -1478,6 +1504,80 @@ final class CameraManager: NSObject {
         }
     }
 
+    /// ISO or shutter by hand, the other one automatic. iOS's auto
+    /// exposure only ever runs the pair, so this holds the fixed one in
+    /// custom mode and steers the free one from the meter: each time the
+    /// exposure target offset moves, the free value goes half the way
+    /// back to the target. The meter includes the EV bias in custom mode,
+    /// so the EV dial still works. Natural motion blur caps an automatic
+    /// shutter here too.
+    private var priorityObservation: NSKeyValueObservation?
+    private var priorityISO: Float?
+    private var prioritySeconds: Double?
+    /// One custom-exposure change in flight at a time; the meter is read
+    /// again once it lands.
+    private var priorityPending = false
+    private weak var observedDevice: AVCaptureDevice?
+
+    func setPriorityExposure(iso: Float?, shutterSeconds: Double?) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = self.activeDevice,
+                  device.isExposureModeSupported(.custom) else { return }
+            if self.priorityObservation != nil, device !== self.observedDevice {
+                self.stopPriorityExposure()
+            }
+            self.observedDevice = device
+            self.priorityISO = iso
+            self.prioritySeconds = shutterSeconds
+            self.priorityPending = false
+            if self.priorityObservation == nil {
+                self.priorityObservation = device.observe(
+                    \.exposureTargetOffset) { [weak self] observed, _ in
+                    self?.sessionQueue.async { self?.steerPriorityExposure(observed) }
+                }
+            }
+            self.steerPriorityExposure(device)
+        }
+    }
+
+    /// sessionQueue only.
+    private func stopPriorityExposure() {
+        priorityObservation?.invalidate()
+        priorityObservation = nil
+    }
+
+    /// sessionQueue only.
+    private func steerPriorityExposure(_ device: AVCaptureDevice) {
+        guard priorityObservation != nil, !priorityPending,
+              device === activeDevice,
+              priorityISO != nil || prioritySeconds != nil else { return }
+        let format = device.activeFormat
+        let offset = device.exposureMode == .custom
+            ? Double(device.exposureTargetOffset) : 0
+        let step = abs(offset) < 0.1 ? 1 : pow(2, -offset / 2)
+        let iso = priorityISO ?? Float(Double(device.iso) * step)
+        var longest = min(format.maxExposureDuration.seconds,
+                          1.0 / Double(configuredFps))
+        if naturalBlur, prioritySeconds == nil {
+            longest = min(longest, 1.0 / Double(configuredFps * 2))
+        }
+        let seconds = prioritySeconds ?? device.exposureDuration.seconds * step
+        let clampedISO = max(format.minISO, min(iso, format.maxISO))
+        let clampedSeconds = max(format.minExposureDuration.seconds,
+                                 min(seconds, longest))
+        guard device.exposureMode != .custom
+                || abs(clampedISO - device.iso) > 0.5
+                || abs(clampedSeconds - device.exposureDuration.seconds) > 1e-6,
+              (try? device.lockForConfiguration()) != nil else { return }
+        priorityPending = true
+        device.setExposureModeCustom(
+            duration: CMTime(seconds: clampedSeconds, preferredTimescale: 1_000_000),
+            iso: clampedISO) { [weak self] _ in
+            self?.sessionQueue.async { self?.priorityPending = false }
+        }
+        device.unlockForConfiguration()
+    }
+
     private var stabilization: AVCaptureVideoStabilizationMode = .off
 
     func setStabilization(_ mode: AVCaptureVideoStabilizationMode) {
@@ -1499,9 +1599,13 @@ final class CameraManager: NSObject {
     }
 
     func setAutoExposure() {
-        withLockedDevice { device in
-            if device.isExposureModeSupported(.continuousAutoExposure) {
-                device.exposureMode = .continuousAutoExposure
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.stopPriorityExposure()
+            self.withLockedDevice { device in
+                if device.isExposureModeSupported(.continuousAutoExposure) {
+                    device.exposureMode = .continuousAutoExposure
+                }
             }
         }
     }
@@ -1513,10 +1617,22 @@ final class CameraManager: NSObject {
         return activeDevice?.hasTorch ?? false
     }
 
-    func setFlashlight(_ on: Bool) {
+    /// 0 is off; anything else is the torch level. Full is iOS's "as
+    /// bright as allowed right now", and a level iOS refuses while the
+    /// phone is hot falls back to that.
+    func setFlashlight(_ level: Float) {
         withLockedDevice { device in
             guard device.hasTorch else { return }
-            device.torchMode = on ? .on : .off
+            guard level > 0 else {
+                device.torchMode = .off
+                return
+            }
+            let full = AVCaptureDevice.maxAvailableTorchLevel
+            do {
+                try device.setTorchModeOn(level: level >= 1 ? full : max(level, 0.01))
+            } catch {
+                try? device.setTorchModeOn(level: full)
+            }
         }
     }
 

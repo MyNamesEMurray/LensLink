@@ -294,6 +294,8 @@
 /* Documentation → Using the camera, Lenses & zoom section, second paragraph: the 48 MP Main camera's 2× full-detail crop button (Markdown: keep the ** markers) */
 "When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it." = "Se a câmera principal tiver um sensor de 48 MP, um botão **2** extra ao lado de **1×** usa o centro do sensor com todo o detalhe, mais nítido do que dar zoom. A pinça e o dial de zoom param nele no caminho. Só os formatos compatíveis com esse recorte mostram o botão.";
 
+"**Flashlight**: on a camera with a flash, the bolt button left of the lens buttons lights it. Hold it to turn the flashlight on or off. While it is on, tap it for a brightness dial, and tap again to go back to full brightness. It comes back at the brightness you left it at." = "**Lanterna**: em uma câmera com flash, o botão de raio à esquerda dos botões de lente a acende. Toque e segure para ligar ou desligar a lanterna. Com ela ligada, toque para abrir um dial de brilho e toque de novo para voltar ao brilho máximo. Ela volta com o brilho em que você a deixou.";
+
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "Lentes e zoom";
 
@@ -308,6 +310,8 @@
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "O **cadeado** na fileira de baixo da bandeja congela o ajuste selecionado no que o automático está fazendo agora; toque de novo para voltar ao automático. Mantenha pressionado para travar ou destravar tudo de uma vez. No chip Obtur., o botão de abertura liga ou desliga o **Desfoque de movimento natural**: a exposição automática mantém o obturador em metade do intervalo entre quadros ou mais rápido (1/60 a 30 fps) e, com pouca luz, aumenta o ISO no lugar.";
+
+"**ISO** and **Shutter** go manual one at a time. Fix the shutter and ISO keeps adjusting to hold the exposure; fix ISO and the shutter adjusts instead, and EV keeps working either way. Natural motion blur only limits a shutter that is on auto, so its button dims while you set the shutter by hand." = "**ISO** e **Obturador** vão para o manual um de cada vez. Fixe o obturador e o ISO continua se ajustando para manter a exposição; fixe o ISO e o obturador se ajusta, e o EV continua funcionando nos dois casos. O desfoque de movimento natural só limita um obturador no automático, então o botão dele fica esmaecido enquanto você ajusta o obturador à mão.";
 
 /* Documentation → Using the camera, Adjust tray section, third paragraph: white balance calibration with the WB chip's eyedropper and the web panel's Calibrate (Markdown: keep the ** markers) */
 "On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture." = "No chip WB, o **conta-gotas** define o equilíbrio de branco a partir de uma folha de papel branco: toque nele e depois toque no papel na imagem. O equilíbrio de branco trava no papel, corrigindo o tom verde ou magenta que algumas luzes LED e fluorescentes adicionam, até o WB voltar ao automático. No painel web, **Calibrar** faz o mesmo com o papel no centro da imagem.";
@@ -707,6 +711,9 @@
 
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "Desativar a tela verde";
+"Hold to turn on the flashlight" = "Toque e segure para ligar a lanterna";
+"Turn on the flashlight" = "Ligar a lanterna";
+"Turn off the flashlight" = "Desligar a lanterna";
 
 
 

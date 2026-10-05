@@ -154,6 +154,7 @@ class FakePhone:
                 "exposureBias": 0.0,
                 "focusMode": "auto",
                 "flashlight": False,
+                "flashlightLevel": 1.0,
                 "hasFlashlight": True,
                 "camera": "back",
                 "resolution": f"{self.args.height}p",

@@ -294,6 +294,8 @@
 /* Documentation → Using the camera, Lenses & zoom section, second paragraph: the 48 MP Main camera's 2× full-detail crop button (Markdown: keep the ** markers) */
 "When the Main camera has a 48 MP sensor, an extra **2** button beside **1×** uses the middle of the sensor at full detail, sharper than zooming in. Pinch and the zoom dial stop at it on the way past. Only formats that support the crop show it." = "Si la cámara principal tiene un sensor de 48 MP, un botón **2** adicional junto a **1×** usa el centro del sensor con todo el detalle, más nítido que hacer zoom. El pellizco y el dial de zoom se detienen en él al pasar. Solo lo muestran los formatos que admiten ese recorte.";
 
+"**Flashlight**: on a camera with a flash, the bolt button left of the lens buttons lights it. Hold it to turn the flashlight on or off. While it is on, tap it for a brightness dial, and tap again to go back to full brightness. It comes back at the brightness you left it at." = "**Linterna**: en una cámara con flash, el botón del rayo a la izquierda de los botones de lente la enciende. Mantenlo pulsado para encender o apagar la linterna. Mientras está encendida, tócalo para abrir un dial de brillo y vuelve a tocarlo para volver al brillo máximo. Vuelve con el brillo con el que la dejaste.";
+
 /* Documentation section header on the Using the camera page */
 "Lenses & zoom" = "Lentes y zoom";
 
@@ -308,6 +310,8 @@
 
 /* Documentation → Using the camera, Adjust tray section, second paragraph (Markdown: keep the ** markers) */
 "The **lock** in the tray's bottom row freezes the selected setting at what auto is doing right now; tap it again for auto. Hold it to lock or unlock everything at once. On the Shutter chip, the aperture button turns **Natural motion blur** on or off: auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), raising ISO in dim light instead." = "El **candado** de la fila inferior de la bandeja congela el ajuste seleccionado en lo que el modo automático hace en ese momento; tócalo de nuevo para volver a automático. Mantenlo pulsado para bloquear o desbloquear todo a la vez. En el chip Obtur., el botón de apertura activa o desactiva el **Desenfoque de movimiento natural**: la exposición automática mantiene el obturador a la mitad del intervalo entre fotogramas o más rápido (1/60 a 30 fps) y, con poca luz, sube el ISO en su lugar.";
+
+"**ISO** and **Shutter** go manual one at a time. Fix the shutter and ISO keeps adjusting to hold the exposure; fix ISO and the shutter adjusts instead, and EV keeps working either way. Natural motion blur only limits a shutter that is on auto, so its button dims while you set the shutter by hand." = "**ISO** y **Obturador** pasan a manual de uno en uno. Fija el obturador y el ISO sigue ajustándose para mantener la exposición; fija el ISO y se ajusta el obturador, y el EV sigue funcionando en ambos casos. El desenfoque de movimiento natural solo limita un obturador en automático, así que su botón se atenúa mientras ajustas el obturador a mano.";
 
 /* Documentation → Using the camera, Adjust tray section, third paragraph: white balance calibration with the WB chip's eyedropper and the web panel's Calibrate (Markdown: keep the ** markers) */
 "On the WB chip, the **eyedropper** sets white balance from a sheet of white paper: tap it, then tap the paper in the picture. White balance locks to the paper, correcting the green or magenta tint some LED and fluorescent lights add, until WB goes back to auto. In the web panel, **Calibrate** does the same with the paper in the middle of the picture." = "En el chip WB, el **cuentagotas** ajusta el balance de blancos a partir de una hoja de papel blanco: tócalo y luego toca el papel en la imagen. El balance de blancos se fija en el papel y corrige el tono verde o magenta que añaden algunas luces LED y fluorescentes, hasta que WB vuelve a automático. En el panel web, **Calibrar** hace lo mismo con el papel en el centro de la imagen.";
@@ -707,6 +711,9 @@
 
 /* VoiceOver action on the lit green screen button */
 "Turn off green screen" = "Desactivar la pantalla verde";
+"Hold to turn on the flashlight" = "Mantén pulsado para encender la linterna";
+"Turn on the flashlight" = "Encender la linterna";
+"Turn off the flashlight" = "Apagar la linterna";
 
 
 

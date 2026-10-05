@@ -678,7 +678,17 @@ final class Streamer: ObservableObject {
     }
     @Published var flashlightOn: Bool = false {
         didSet {
-            camera.setFlashlight(flashlightOn)
+            camera.setFlashlight(flashlightOn ? flashlightLevel : 0)
+            scheduleStateSend()
+        }
+    }
+    /// The lens row's Flashlight dial, 0.01 to 1. Remembered, so the
+    /// light comes back at the brightness it was left at.
+    @Published var flashlightLevel: Float =
+        (UserDefaults.standard.object(forKey: "flashlightLevel") as? NSNumber)?.floatValue ?? 1 {
+        didSet {
+            UserDefaults.standard.set(flashlightLevel, forKey: "flashlightLevel")
+            if flashlightOn { camera.setFlashlight(flashlightLevel) }
             scheduleStateSend()
         }
     }
@@ -721,15 +731,22 @@ final class Streamer: ObservableObject {
         { [weak self] values in
             Task { @MainActor [weak self] in
                 guard let self, let values else { return }
+                self.keepingCalibratedGains = true
                 self.whiteBalanceSetting = .locked
                 self.whiteBalanceTint = min(max(values.tint, -150), 150)
-                self.whiteBalanceTemperature = min(max(values.temperature, 2500), 8000)
+                self.whiteBalanceTemperature = values.temperature
+                self.keepingCalibratedGains = false
             }
         }
     }
-    enum ExposureSetting: Equatable {
-        case auto
-        case manual
+    /// ISO and shutter each on auto or by hand. Both on auto is iOS's
+    /// own auto exposure; one by hand runs the other from the meter
+    /// (`CameraManager.setPriorityExposure`).
+    struct ExposureSetting: Equatable {
+        var isoManual = false
+        var shutterManual = false
+        static let auto = ExposureSetting()
+        static let manual = ExposureSetting(isoManual: true, shutterManual: true)
     }
     @Published var exposureSetting: ExposureSetting = .auto {
         didSet {
@@ -739,13 +756,13 @@ final class Streamer: ObservableObject {
     }
     @Published var iso: Float = 200 {
         didSet {
-            if exposureSetting == .manual { applyExposure() }
+            if exposureSetting.isoManual { applyExposure() }
             scheduleStateSend()
         }
     }
     @Published var shutterSeconds: Double = 1.0 / 60 {
         didSet {
-            if exposureSetting == .manual { applyExposure() }
+            if exposureSetting.shutterManual { applyExposure() }
             scheduleStateSend()
         }
     }
@@ -760,6 +777,8 @@ final class Streamer: ObservableObject {
     /// hatch; turning it off forgets everything stored.
     struct RememberedSettings: Codable {
         var exposureManual: Bool
+        var isoManual: Bool?
+        var shutterManual: Bool?
         var exposureBias: Float
         var iso: Float
         var shutterSeconds: Double
@@ -802,7 +821,9 @@ final class Streamer: ObservableObject {
         guard rememberCameraSettings, isStreaming else { return }
         var stored = rememberedSettings()
         stored[lensID] = RememberedSettings(
-            exposureManual: exposureSetting == .manual,
+            exposureManual: exposureSetting != .auto,
+            isoManual: exposureSetting.isoManual,
+            shutterManual: exposureSetting.shutterManual,
             exposureBias: exposureBias,
             iso: iso,
             shutterSeconds: shutterSeconds,
@@ -830,7 +851,9 @@ final class Streamer: ObservableObject {
         exposureBias = saved.exposureBias
         iso = saved.iso
         shutterSeconds = saved.shutterSeconds
-        exposureSetting = saved.exposureManual ? .manual : .auto
+        exposureSetting = ExposureSetting(
+            isoManual: saved.isoManual ?? saved.exposureManual,
+            shutterManual: saved.shutterManual ?? saved.exposureManual)
         whiteBalanceTemperature = saved.whiteBalanceTemperature
         whiteBalanceSetting = saved.whiteBalanceLocked ? .locked : .auto
         whiteBalanceTint = saved.whiteBalanceTint ?? 0
@@ -842,7 +865,10 @@ final class Streamer: ObservableObject {
         scheduleStateSend()
     }
 
+    private var keepingCalibratedGains = false
+
     private func applyWhiteBalance() {
+        guard !keepingCalibratedGains else { return }
         switch whiteBalanceSetting {
         case .auto:
             camera.setAutoWhiteBalance()
@@ -858,6 +884,10 @@ final class Streamer: ObservableObject {
             camera.setAutoExposure()
         case .manual:
             camera.setManualExposure(iso: iso, shutterSeconds: shutterSeconds)
+        default:
+            camera.setPriorityExposure(
+                iso: exposureSetting.isoManual ? iso : nil,
+                shutterSeconds: exposureSetting.shutterManual ? shutterSeconds : nil)
         }
     }
 
@@ -879,18 +909,19 @@ final class Streamer: ObservableObject {
                               pinned: true)
     }
 
-    /// What the tray's lock button freezes. ISO and shutter are one lock:
-    /// the camera only holds them as a pair.
-    enum LockTarget: CaseIterable {
-        case exposure, whiteBalance, focus
+    /// What the tray's lock button freezes. ISO and shutter lock one at
+    /// a time from their own chips; `exposure` is the pair, for the EV
+    /// chip and Lock all.
+    enum LockTarget {
+        case exposure, iso, shutter, whiteBalance, focus
     }
 
     var lockTargets: [LockTarget] {
-        LockTarget.allCases.filter {
+        [LockTarget.exposure, .whiteBalance, .focus].filter {
             switch $0 {
-            case .exposure: return camera.supportsManualExposure
             case .whiteBalance: return camera.supportsWhiteBalanceLock
             case .focus: return true
+            default: return camera.supportsManualExposure
             }
         }
     }
@@ -898,6 +929,8 @@ final class Streamer: ObservableObject {
     func isLocked(_ target: LockTarget) -> Bool {
         switch target {
         case .exposure: return exposureSetting == .manual
+        case .iso: return exposureSetting.isoManual
+        case .shutter: return exposureSetting.shutterManual
         case .whiteBalance: return whiteBalanceSetting == .locked
         case .focus: return focusSetting == .locked
         }
@@ -913,6 +946,8 @@ final class Streamer: ObservableObject {
         guard locked else {
             switch target {
             case .exposure: exposureSetting = .auto
+            case .iso: exposureSetting.isoManual = false
+            case .shutter: exposureSetting.shutterManual = false
             case .whiteBalance: whiteBalanceSetting = .auto
             case .focus: focusSetting = .auto
             }
@@ -922,13 +957,19 @@ final class Streamer: ObservableObject {
         switch target {
         case .exposure:
             if let live {
-                iso = live.iso
-                shutterSeconds = live.shutterSeconds
+                if !exposureSetting.isoManual { iso = live.iso }
+                if !exposureSetting.shutterManual { shutterSeconds = live.shutterSeconds }
             }
             exposureSetting = .manual
+        case .iso:
+            if let live { iso = live.iso }
+            exposureSetting.isoManual = true
+        case .shutter:
+            if let live { shutterSeconds = live.shutterSeconds }
+            exposureSetting.shutterManual = true
         case .whiteBalance:
             if let live {
-                whiteBalanceTemperature = min(max(live.temperature, 2500), 8000)
+                whiteBalanceTemperature = live.temperature
                 whiteBalanceTint = min(max(live.tint, -150), 150)
             }
             whiteBalanceSetting = .locked
@@ -988,6 +1029,7 @@ final class Streamer: ObservableObject {
             "naturalBlur": naturalBlur,
             "supportsFaceFocus": camera.supportsFaceDrivenFocus,
             "flashlight": flashlightOn,
+            "flashlightLevel": Double(flashlightLevel),
             "hasFlashlight": camera.hasFlashlight,
             "camera": selectedLens.position == .front ? "front" : "back",
             "lens": selectedLens.label,
@@ -998,7 +1040,9 @@ final class Streamer: ObservableObject {
             "whiteBalanceTemperature": Double(whiteBalanceTemperature),
             "whiteBalanceTint": Double(whiteBalanceTint),
             "supportsWhiteBalanceLock": camera.supportsWhiteBalanceLock,
-            "exposureMode": exposureSetting == .manual ? "manual" : "auto",
+            "exposureMode": exposureSetting == .auto ? "auto" : "manual",
+            "isoMode": exposureSetting.isoManual ? "manual" : "auto",
+            "shutterMode": exposureSetting.shutterManual ? "manual" : "auto",
             "iso": Double(iso),
             "minISO": Double(camera.isoRange.lowerBound),
             "maxISO": Double(camera.isoRange.upperBound),
@@ -1757,6 +1801,9 @@ final class Streamer: ObservableObject {
                 focusSetting = mode == "locked" ? .locked : .auto
             }
         case "flashlight":
+            if let level = (command["level"] as? NSNumber)?.floatValue {
+                flashlightLevel = min(max(level, 0.01), 1)
+            }
             if let on = command["on"] as? Bool {
                 flashlightOn = on
             }
@@ -1779,6 +1826,8 @@ final class Streamer: ObservableObject {
             switch command["target"] as? String {
             case "all": setAllLocked(on)
             case "exposure": setLocked(.exposure, on)
+            case "iso": setLocked(.iso, on)
+            case "shutter": setLocked(.shutter, on)
             case "whiteBalance": setLocked(.whiteBalance, on)
             case "focus": setLocked(.focus, on)
             default: break
@@ -1803,8 +1852,14 @@ final class Streamer: ObservableObject {
                 shutterSeconds = min(max(value, camera.minShutterSeconds),
                                      camera.maxShutterSeconds(fps: Int32(fps)))
             }
-            exposureSetting =
-                (command["mode"] as? String) == "manual" ? .manual : .auto
+            // isoMode/shutterMode set one of the pair; mode, from a panel
+            // that predates them, sets both.
+            let mode = (command["mode"] as? String).map { $0 == "manual" }
+            exposureSetting = ExposureSetting(
+                isoManual: (command["isoMode"] as? String).map { $0 == "manual" }
+                    ?? mode ?? exposureSetting.isoManual,
+                shutterManual: (command["shutterMode"] as? String).map { $0 == "manual" }
+                    ?? mode ?? exposureSetting.shutterManual)
         case "set_quality":
             if let raw = command["quality"] as? String,
                let parsed = StreamQuality(rawValue: raw) {
