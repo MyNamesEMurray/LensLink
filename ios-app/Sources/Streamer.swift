@@ -724,7 +724,7 @@ final class Streamer: ObservableObject {
                 self.keepingCalibratedGains = true
                 self.whiteBalanceSetting = .locked
                 self.whiteBalanceTint = min(max(values.tint, -150), 150)
-                self.whiteBalanceTemperature = min(max(values.temperature, 2500), 8000)
+                self.whiteBalanceTemperature = values.temperature
                 self.keepingCalibratedGains = false
             }
         }
@@ -933,7 +933,7 @@ final class Streamer: ObservableObject {
             exposureSetting = .manual
         case .whiteBalance:
             if let live {
-                whiteBalanceTemperature = min(max(live.temperature, 2500), 8000)
+                whiteBalanceTemperature = live.temperature
                 whiteBalanceTint = min(max(live.tint, -150), 150)
             }
             whiteBalanceSetting = .locked
