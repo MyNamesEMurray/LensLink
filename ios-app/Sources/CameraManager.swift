@@ -1597,8 +1597,9 @@ final class CameraManager: NSObject {
         return activeDevice?.hasTorch ?? false
     }
 
-    /// 0 is off; anything else is the torch level, up to what iOS
-    /// allows right now (it lowers the ceiling when the phone runs hot).
+    /// 0 is off; anything else is the torch level. Full is iOS's "as
+    /// bright as allowed right now", and a level iOS refuses while the
+    /// phone is hot falls back to that.
     func setFlashlight(_ level: Float) {
         withLockedDevice { device in
             guard device.hasTorch else { return }
@@ -1606,8 +1607,12 @@ final class CameraManager: NSObject {
                 device.torchMode = .off
                 return
             }
-            try? device.setTorchModeOn(
-                level: max(min(level, device.maxAvailableTorchLevel), 0.01))
+            let full = AVCaptureDevice.maxAvailableTorchLevel
+            do {
+                try device.setTorchModeOn(level: level >= 1 ? full : max(level, 0.01))
+            } catch {
+                try? device.setTorchModeOn(level: full)
+            }
         }
     }
 
