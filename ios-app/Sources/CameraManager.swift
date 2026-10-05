@@ -78,6 +78,7 @@ final class CameraManager: NSObject {
     private var _onDepthData: ((AVDepthData) -> Void)?
     private var _onWhiteSample: ((CVPixelBuffer) -> Void)?
     private var whiteSampleID = 0
+    private var whiteSampleAfter = CMTime.invalid
 
     /// Capture was interrupted (phone call, Camera app, a second app on
     /// screen where the iPad won't share the camera) or resumed.
@@ -1275,7 +1276,7 @@ final class CameraManager: NSObject {
     }
 
     private func calibrateWhiteBalance(
-        patch: @escaping (AVCaptureVideoDataOutput) -> CGRect, rounds: Int = 3,
+        patch: @escaping (AVCaptureVideoDataOutput) -> CGRect, rounds: Int = 8,
         completion: @escaping
             (AVCaptureDevice.WhiteBalanceTemperatureAndTintValues?) -> Void) {
         guard let device = activeDevice,
@@ -1283,30 +1284,39 @@ final class CameraManager: NSObject {
         else { return completion(nil) }
         var gains = device.deviceWhiteBalanceGains
         var left = rounds
-        func step() {
-            sampleColor(patch: patch) { rgb in
+        func lock() {
+            gains = Self.legal(gains, device)
+            var locked = false
+            withLockedDevice {
+                $0.setWhiteBalanceModeLocked(with: gains) { measure(after: $0) }
+                locked = true
+            }
+            if !locked { completion(nil) }
+        }
+        func measure(after syncTime: CMTime) {
+            sampleColor(patch: patch, after: syncTime) { rgb in
                 guard let rgb else { return completion(nil) }
-                gains.redGain *= rgb.g / rgb.r
-                gains.blueGain *= rgb.g / rgb.b
+                let red = rgb.g / rgb.r
+                let blue = rgb.g / rgb.b
+                left -= 1
+                if left == 0 || (abs(red - 1) < 0.01 && abs(blue - 1) < 0.01) {
+                    return completion(device.temperatureAndTintValues(for: gains))
+                }
+                gains.redGain *= pow(red, 0.7)
+                gains.blueGain *= pow(blue, 0.7)
                 let least = min(gains.redGain, gains.greenGain, gains.blueGain)
                 gains.redGain /= least
                 gains.greenGain /= least
                 gains.blueGain /= least
-                gains = Self.legal(gains, device)
-                self.withLockedDevice { $0.setWhiteBalanceModeLocked(with: gains) }
-                left -= 1
-                if left > 0 {
-                    self.sessionQueue.asyncAfter(deadline: .now() + 0.3) { step() }
-                } else {
-                    completion(device.temperatureAndTintValues(for: gains))
-                }
+                lock()
             }
         }
-        step()
+        lock()
     }
 
     private func sampleColor(
         patch makePatch: @escaping (AVCaptureVideoDataOutput) -> CGRect,
+        after syncTime: CMTime,
         completion: @escaping ((r: Float, g: Float, b: Float)?) -> Void) {
         sessionQueue.async { [weak self] in
             guard let self, let output = self.videoOutput else {
@@ -1316,10 +1326,16 @@ final class CameraManager: NSObject {
             self.callbackLock.lock()
             self.whiteSampleID += 1
             let id = self.whiteSampleID
+            self.whiteSampleAfter = syncTime
             self._onWhiteSample = { pixels in
                 completion(Self.meanColor(pixels, in: patch))
             }
             self.callbackLock.unlock()
+            self.sessionQueue.asyncAfter(deadline: .now() + 0.4) {
+                self.callbackLock.lock()
+                if id == self.whiteSampleID { self.whiteSampleAfter = .invalid }
+                self.callbackLock.unlock()
+            }
             self.sessionQueue.asyncAfter(deadline: .now() + 1) {
                 self.callbackLock.lock()
                 let stale = id == self.whiteSampleID && self._onWhiteSample != nil
@@ -1333,8 +1349,12 @@ final class CameraManager: NSObject {
     private func deliverWhiteSample(_ sampleBuffer: CMSampleBuffer) {
         callbackLock.lock()
         let handler = _onWhiteSample
-        _onWhiteSample = nil
+        let fresh = !whiteSampleAfter.isValid || CMTimeCompare(
+            CMSampleBufferGetPresentationTimeStamp(sampleBuffer),
+            whiteSampleAfter) >= 0
+        if fresh { _onWhiteSample = nil }
         callbackLock.unlock()
+        guard fresh else { return }
         if let handler, let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) {
             handler(pixels)
         }

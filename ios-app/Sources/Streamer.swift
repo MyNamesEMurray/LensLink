@@ -721,9 +721,11 @@ final class Streamer: ObservableObject {
         { [weak self] values in
             Task { @MainActor [weak self] in
                 guard let self, let values else { return }
+                self.keepingCalibratedGains = true
                 self.whiteBalanceSetting = .locked
                 self.whiteBalanceTint = min(max(values.tint, -150), 150)
                 self.whiteBalanceTemperature = min(max(values.temperature, 2500), 8000)
+                self.keepingCalibratedGains = false
             }
         }
     }
@@ -842,7 +844,10 @@ final class Streamer: ObservableObject {
         scheduleStateSend()
     }
 
+    private var keepingCalibratedGains = false
+
     private func applyWhiteBalance() {
+        guard !keepingCalibratedGains else { return }
         switch whiteBalanceSetting {
         case .auto:
             camera.setAutoWhiteBalance()
