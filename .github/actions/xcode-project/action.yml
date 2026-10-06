@@ -15,18 +15,17 @@ runs:
   using: composite
   steps:
     # App Store Connect rejects uploads built with older SDKs ("must be
-    # built with the iOS 26 SDK or later"), so pick the release Xcode
-    # <major>.0 on the image, never one of its betas.
+    # built with the iOS 26 SDK or later"), so pick the newest release
+    # Xcode <major>.x on the image, never one of its betas. The newest
+    # minor matters: only the iOS 27.1 SDK lays the app out edge to edge
+    # on both iPhone Duo displays.
     - name: Select Xcode ${{ inputs.xcode }}
       if: inputs.xcode != ''
       shell: bash
       env:
         XCODE_MAJOR: ${{ inputs.xcode }}
       run: |
-        XCODE=$(ls -d "/Applications/Xcode_${XCODE_MAJOR}.0"*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
-        if [ -z "$XCODE" ]; then
-          XCODE=$(ls -d "/Applications/Xcode_${XCODE_MAJOR}"*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
-        fi
+        XCODE=$(ls -d "/Applications/Xcode_${XCODE_MAJOR}."*.app "/Applications/Xcode_${XCODE_MAJOR}.app" 2>/dev/null | grep -vi beta | sort -V | tail -1)
         if [ -z "$XCODE" ]; then
           echo "::error::No release Xcode $XCODE_MAJOR on this runner image. Installed:"
           ls /Applications | grep -i xcode || true
