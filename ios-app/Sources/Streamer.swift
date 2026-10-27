@@ -161,9 +161,12 @@ final class Streamer: ObservableObject {
         }
     }
     /// The frame rates any picker may offer before the camera's own
-    /// filter: the ordinary pair, or the experimental set.
+    /// filter: the ordinary set, or the experimental one. 24 (cinema) and
+    /// 25/50 (PAL) are captured natively — the sensor's frame duration is
+    /// set to the rate, nothing is dropped or retimed — so they match a
+    /// 24 or 25 fps OBS canvas and edit timeline frame for frame.
     var candidateFrameRates: [Int] {
-        highFrameRate ? [30, 60, 120, 240] : [30, 60]
+        highFrameRate ? [24, 25, 30, 50, 60, 120, 240] : [24, 25, 30, 50, 60]
     }
 
     /// How hard to push the connection (Format → Quality). Balanced is the
