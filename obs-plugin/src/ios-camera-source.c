@@ -508,7 +508,8 @@ struct sync_view {
 
 /* Reads the group for `self`. Called WITHOUT self->status_mutex held
  * (lock order is g_health_mutex, then a source's status_mutex). The writer
- * of a mic's offset is the first live member syncing to that mic. */
+ * of a mic's offset is the first live member syncing to that mic, auto-
+ * calibrating members first. */
 static void sync_group_view(struct ios_camera_source *self,
 			    struct sync_view *v)
 {
@@ -522,6 +523,7 @@ static void sync_group_view(struct ios_camera_source *self,
 	int64_t target = 0;
 	int n = 0;
 	struct ios_camera_source *owner = NULL;
+	bool owner_auto = false;
 	int64_t slowest_mic = 0, any_mic = 0, mic_min = 0, mic_max = 0;
 
 	pthread_mutex_lock(&g_health_mutex);
@@ -544,8 +546,14 @@ static void sync_group_view(struct ios_camera_source *self,
 				target = s->last_video_latency_ns;
 				slowest_mic = locked;
 			}
-			if (!owner && same_mic)
+			/* Prefer a camera that auto-calibrates: a manual one
+			 * would steer the mic from a typed device latency and
+			 * ignore the group's measured reading. */
+			if (same_mic &&
+			    (!owner || (!owner_auto && s->auto_calibrate))) {
 				owner = s;
+				owner_auto = s->auto_calibrate;
+			}
 		}
 		if (locked) {
 			if (!any_mic)
