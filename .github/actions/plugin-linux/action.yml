@@ -66,7 +66,12 @@ runs:
     # before it opens any plugin, so the symbols resolve without one.
     - name: Drop the libobs soname dependency
       shell: bash
-      run: patchelf --remove-needed libobs.so.0 obs-plugin/build/lenslink.so
+      # Whichever soname the runner's libobs-dev links (Ubuntu moved from
+      # libobs.so.0 to libobs.so.30), drop it.
+      run: |
+        for so in $(patchelf --print-needed obs-plugin/build/lenslink.so | grep '^libobs\.so'); do
+          patchelf --remove-needed "$so" obs-plugin/build/lenslink.so
+        done
 
     # Fail the build if the binary regressed to soname-coupled shared
     # FFmpeg (the exact breakage of issue #65), lost its VAAPI or libdrm
