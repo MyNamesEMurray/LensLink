@@ -72,6 +72,7 @@ static void gpu_pipeline_free(struct ios_camera_source *s);
 #define S_AUDIO_LATENCY "audio_device_latency_ms"
 #define S_AUTO_CALIBRATE "audio_auto_calibrate"
 #define S_AUTO_VIDEO_DELAY "audio_auto_video_delay"
+#define S_MULTICAM_SYNC "multicam_sync"
 #define S_DEACTIVATE_HIDDEN "deactivate_when_hidden"
 #define S_AUTO_START "auto_start"
 #define S_SCREEN_FPS "screen_fps"
@@ -178,6 +179,17 @@ struct ios_camera_source {
 	 * (set_video_delay(0) runs on every settings update). */
 	bool sync_offset_owned;
 	int64_t last_video_latency_ns; /* avg capture->decode, for the offset */
+	uint64_t latency_seen_ns;      /* when last_video_latency_ns was set */
+
+	/* Multicam sync (see the sync group section): every LensLink camera
+	 * with it on is shown at the slowest one's latency, and one of them
+	 * owns the shared mic offset. The video delay is two shares added
+	 * together — set_video_delay's (a slower mic) and the group's. */
+	bool multicam_sync;
+	int mic_video_delay_ms;
+	int group_delay_ms;
+	int group_size; /* live synced cameras last time we looked, self too */
+	bool mic_owner;          /* dial-loop thread only */
 
 	/* Auto lip-sync cross-correlator. `lipsync` is fed by the network
 	 * thread (reference) and the OBS audio thread (mic capture callback),
@@ -289,6 +301,13 @@ struct ios_camera_source {
 	AVFrame *xfer;   /* scratch for hw->sw transfer on map failure */
 	bool clear_current; /* set under frame_mutex by disconnect; the
 			     * graphics thread frees current_frame for it */
+	/* Video delay for this pipeline (the async filter only works on
+	 * async sources): decoded frames wait here until due. frame_mutex. */
+#define GPU_DELAY_MAX 6
+	int64_t gpu_delay_ns;
+	AVFrame *delay_q[GPU_DELAY_MAX];
+	uint64_t delay_due[GPU_DELAY_MAX];
+	int delay_count;
 	int render_path; /* 0 unknown, 1 zero-copy, 2 cpu fallback (logged
 			  * on transition so a black source is explicable) */
 	bool render_hdr; /* current frame is HDR (HLG/PQ transfer); set on
@@ -452,6 +471,63 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 	}
 	pthread_mutex_unlock(&g_health_mutex);
 	return n;
+}
+
+/* ------------------------------------------------------------------ */
+/* Multicam sync group. Each camera's latency is measured against its
+ * phone's clock (timesync), so latencies of different phones on different
+ * links are directly comparable: showing every synced camera at the
+ * slowest one's latency lines their pictures up, and the mic offset is
+ * derived from that one shared figure. The group is just the health
+ * registry filtered by the option: no thread, no timer — each camera
+ * re-reads it when its own latency is measured (every 5 s). */
+
+/* A camera drops out of the group this long after its last measurement
+ * (an unstable link stops producing them). */
+#define SYNC_STALE_NS 12000000000ULL
+
+/* Returns the latency every synced camera is shown at, and whether `self`
+ * is the one camera that writes `self`'s mic offset: the first live member
+ * syncing to the same audio source. Called WITHOUT self->status_mutex
+ * held (lock order is g_health_mutex, then a source's status_mutex). */
+static int64_t sync_group_target(struct ios_camera_source *self,
+				 bool *mic_owner, int *size)
+{
+	char mic[256];
+	pthread_mutex_lock(&self->status_mutex);
+	snprintf(mic, sizeof(mic), "%s",
+		 self->audio_sync ? self->audio_source : "");
+	pthread_mutex_unlock(&self->status_mutex);
+
+	uint64_t now = os_gettime_ns();
+	int64_t target = 0;
+	int n = 0;
+	struct ios_camera_source *owner = NULL;
+
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES; i++) {
+		struct ios_camera_source *s = g_health_sources[i];
+		if (!s)
+			continue;
+		pthread_mutex_lock(&s->status_mutex);
+		bool live = s->multicam_sync && s->stat_connected &&
+			    s->latency_seen_ns &&
+			    now - s->latency_seen_ns < SYNC_STALE_NS;
+		if (live) {
+			n++;
+			if (s->last_video_latency_ns > target)
+				target = s->last_video_latency_ns;
+			if (!owner && mic[0] && s->audio_sync &&
+			    strcmp(s->audio_source, mic) == 0)
+				owner = s;
+		}
+		pthread_mutex_unlock(&s->status_mutex);
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+
+	*mic_owner = !owner || owner == self;
+	*size = n;
+	return target;
 }
 
 bool ios_camera_is_connected(struct ios_camera_source *s)
@@ -850,13 +926,19 @@ static void hook_audio(struct ios_camera_source *s, const char *name)
  * in lipsync-cal.h, free of libobs so it can be exercised standalone. */
 
 /*
- * Adds/updates/removes a private "Video Delay (Async)" filter on our own
- * source so the video can be delayed to line up with a slower microphone.
- * delay_ms <= 0 removes it. Safe to call from any thread (OBS guards the
- * filter list internally).
+ * Delays our video by the sum of its two shares (a slower mic, and the
+ * multicam sync group). The standard pipeline uses a private "Video Delay
+ * (Async)" filter on our own source; the GPU pipeline is not an async
+ * source, so its frames wait in delay_q instead. A total <= 0 removes the
+ * delay. Safe to call from any thread (OBS guards the filter list
+ * internally).
  */
-static void set_video_delay(struct ios_camera_source *s, int delay_ms)
+static void apply_video_delay(struct ios_camera_source *s)
 {
+	pthread_mutex_lock(&s->status_mutex);
+	int delay_ms = s->mic_video_delay_ms + s->group_delay_ms;
+	pthread_mutex_unlock(&s->status_mutex);
+
 	obs_source_t *existing = obs_source_get_filter_by_name(
 		s->source, ASYNC_DELAY_FILTER_NAME);
 
@@ -877,6 +959,13 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 	} else if (s->sync_offset_owned) {
 		obs_source_set_sync_offset(s->source, 0);
 		s->sync_offset_owned = false;
+	}
+
+	if (g_gpu_pipeline_mode) {
+		pthread_mutex_lock(&s->frame_mutex);
+		s->gpu_delay_ns = delay_ms > 0 ? (int64_t)delay_ms * 1000000 : 0;
+		pthread_mutex_unlock(&s->frame_mutex);
+		return;
 	}
 
 	if (delay_ms <= 0) {
@@ -909,6 +998,58 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 	obs_data_release(settings);
 }
 
+/* The slower-mic share of the video delay (auto lip-sync). */
+static void set_video_delay(struct ios_camera_source *s, int delay_ms)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	s->mic_video_delay_ms = delay_ms > 0 ? delay_ms : 0;
+	pthread_mutex_unlock(&s->status_mutex);
+	apply_video_delay(s);
+}
+
+/* The multicam share: how far this camera is held back to match the
+ * slowest synced camera. */
+static void set_group_delay(struct ios_camera_source *s, int delay_ms)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	bool changed = s->group_delay_ms != delay_ms;
+	s->group_delay_ms = delay_ms;
+	pthread_mutex_unlock(&s->status_mutex);
+	if (changed)
+		apply_video_delay(s);
+}
+
+/* Moves the group share toward target - own. Latency wobbles a ms or two
+ * per window and every delay change is a visible hitch, so small moves are
+ * ignored (the same 5 ms hysteresis as the mic offset). Dial-loop thread. */
+static void apply_group_delay(struct ios_camera_source *s, int64_t own_ns,
+			      int64_t target_ns, int size)
+{
+	int want = (int)((target_ns - own_ns) / 1000000);
+	pthread_mutex_lock(&s->status_mutex);
+	int cur = s->group_delay_ms;
+	s->group_size = size;
+	pthread_mutex_unlock(&s->status_mutex);
+	/* want == 0: this is the slowest camera, which never waits. */
+	if (want == 0 || abs(want - cur) >= 5)
+		set_group_delay(s, want);
+}
+
+/* Only one camera may write a shared mic's offset, or the cameras take
+ * turns overwriting each other. Dial-loop thread. */
+static void set_mic_owner(struct ios_camera_source *s, bool owner)
+{
+	if (owner == s->mic_owner)
+		return;
+	s->mic_owner = owner;
+	pthread_mutex_lock(&s->status_mutex);
+	/* A new owner rewrites the offset on its next apply (the sentinel
+	 * defeats the hysteresis); one that lost it must never clear or
+	 * rewrite an offset that is now someone else's. */
+	s->applied_audio_offset = owner ? INT64_MIN / 2 : 0;
+	pthread_mutex_unlock(&s->status_mutex);
+}
+
 /*
  * What to append to a connected status line when the phone is painting its
  * background chroma green. Without this, a solid green picture looks like
@@ -924,6 +1065,22 @@ static void set_video_delay(struct ios_camera_source *s, int delay_ms)
 static const char *paused_suffix(struct ios_camera_source *s)
 {
 	return s->stream_paused ? T_("Status.StreamPaused") : "";
+}
+
+/* Appended while this camera is synced with at least one other: says it is,
+ * and how far it is held back to match (the slowest camera says +0 ms). */
+static void multicam_suffix(struct ios_camera_source *s, char *buf,
+			    size_t size)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	int members = s->multicam_sync ? s->group_size : 0;
+	int delay = s->group_delay_ms;
+	pthread_mutex_unlock(&s->status_mutex);
+	if (members > 1)
+		snprintf(buf, size, "%s +%d ms", T_("Status.MulticamSynced"),
+			 delay);
+	else
+		buf[0] = 0;
 }
 
 static enum ios_camera_status_tone connected_tone(struct ios_camera_source *s)
@@ -1036,7 +1193,7 @@ static void apply_calibrated_offset(struct ios_camera_source *s,
 	int64_t diff = offset - applied;
 	if (diff < 0)
 		diff = -diff;
-	if (diff >= 5 * CAL_NS_MS) {
+	if (diff >= 5 * CAL_NS_MS && s->mic_owner) {
 		obs_source_t *audio = obs_get_source_by_name(name);
 		if (audio) {
 			obs_source_set_sync_offset(audio, offset);
@@ -1050,6 +1207,11 @@ static void apply_calibrated_offset(struct ios_camera_source *s,
 	/* ... or delay the video to match a slower mic, if enabled. */
 	if (video_delay)
 		set_video_delay(s, video_delay_ms);
+
+	/* Another synced camera owns this mic: nothing applied, nothing to
+	 * log. */
+	if (!s->mic_owner)
+		return;
 
 	/* Tracking a latency change against an already-known mic figure is
 	 * routine and happens every window — only log when something is
@@ -1344,7 +1506,7 @@ static void apply_audio_sync(struct ios_camera_source *s, int64_t latency_ns)
 		(int64_t)s->audio_device_latency_ms * 1000000;
 	pthread_mutex_unlock(&s->status_mutex);
 
-	if (!enabled || !name[0])
+	if (!enabled || !name[0] || !s->mic_owner)
 		return;
 
 	/* The audio device has its own capture latency; the delay we add
@@ -1662,11 +1824,13 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		     "[lenslink] capture->decode latency: avg %u ms "
 		     "(min %u / max %u), link rtt %u ms, %u frames",
 		     avg_ms, min_ms, max_ms, rtt_ms, (unsigned)t->count);
-		set_status(s, connected_tone(s), "%s %s — ~%u ms%s%s",
+		char synced[96];
+		multicam_suffix(s, synced, sizeof(synced));
+		set_status(s, connected_tone(s), "%s %s — ~%u ms%s%s%s",
 			   T_("Status.Connected"),
 			   c->name[0] ? c->name
 				      : T_("Status.UnknownDevice"), avg_ms,
-			   green_screen_suffix(s), paused_suffix(s));
+			   synced, green_screen_suffix(s), paused_suffix(s));
 
 		/* Only steer audio sync from stable measurements: a
 		 * congested link makes latency oscillate wildly, and
@@ -1677,15 +1841,30 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 			int64_t avg = (int64_t)(t->sum_ns / t->count);
 			pthread_mutex_lock(&s->status_mutex);
 			s->last_video_latency_ns = avg;
+			s->latency_seen_ns = now;
 			bool auto_cal = s->auto_calibrate;
+			bool multicam = s->multicam_sync;
 			pthread_mutex_unlock(&s->status_mutex);
+
+			/* Multicam: hold this camera back to the slowest synced
+			 * one, and steer the mic from that shared latency. */
+			int64_t shown = avg;
+			bool owner = true;
+			if (multicam) {
+				int size = 0;
+				shown = sync_group_target(s, &owner, &size);
+				if (shown < avg)
+					shown = avg;
+				apply_group_delay(s, avg, shown, size);
+			}
+			set_mic_owner(s, owner);
 
 			/* Auto-calibrate measures the mic latency directly;
 			 * the manual path assumes a fixed device latency. */
 			if (auto_cal)
-				apply_auto_calibrated(s, c, avg);
+				apply_auto_calibrated(s, c, shown);
 			else
-				apply_audio_sync(s, avg);
+				apply_audio_sync(s, shown);
 		}
 
 		t->sum_ns = 0;
@@ -2981,6 +3160,11 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 	bool want_hook =
 		s->audio_sync && s->auto_calibrate && s->audio_source[0];
 	bool want_video_delay = want_hook && s->auto_video_delay;
+	s->multicam_sync = !s->is_screen_source &&
+			   obs_data_get_bool(settings, S_MULTICAM_SYNC);
+	bool multicam = s->multicam_sync;
+	if (!multicam)
+		s->group_size = 0;
 	char hook_name[256];
 	snprintf(hook_name, sizeof(hook_name), "%s", s->audio_source);
 	pthread_mutex_unlock(&s->status_mutex);
@@ -3010,6 +3194,8 @@ static void ios_camera_update(void *data, obs_data_t *settings)
 	 * loop re-adds/updates it when needed. */
 	if (!want_video_delay)
 		set_video_delay(s, 0);
+	if (!multicam)
+		set_group_delay(s, 0);
 
 	/* Screen sources never run the web panel: nothing to control. The
 	 * enable/port live in the plugin-wide settings now (Tools menu). */
@@ -3079,6 +3265,9 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 		obs_data_get_bool(settings, S_AUTO_VIDEO_DELAY);
 	snprintf(s->audio_source, sizeof(s->audio_source), "%s",
 		 obs_data_get_string(settings, S_AUDIO_SOURCE));
+	s->multicam_sync = !s->is_screen_source &&
+			   obs_data_get_bool(settings, S_MULTICAM_SYNC);
+	s->mic_owner = true;
 
 	/* Camera-only machinery: a screen mirror has no camera controls to
 	 * serve and no camera latency to lip-sync against. */
@@ -3149,6 +3338,9 @@ static void ios_camera_get_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, S_AUDIO_LATENCY, 0);
 	obs_data_set_default_bool(settings, S_AUTO_CALIBRATE, false);
 	obs_data_set_default_bool(settings, S_AUTO_VIDEO_DELAY, false);
+	/* On: with one camera it does nothing, and with several, cameras
+	 * that disagree by tens of ms are never what anyone wants. */
+	obs_data_set_default_bool(settings, S_MULTICAM_SYNC, true);
 	obs_data_set_default_bool(settings, S_DEACTIVATE_HIDDEN, false);
 	obs_data_set_default_bool(settings, S_AUTO_START, true);
 	obs_data_set_default_int(settings, S_SCREEN_FPS, 60);
@@ -3360,6 +3552,10 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 			props, S_AUDIO_LATENCY, T_("AudioLatency"), 0, 500, 1);
 		obs_property_int_set_suffix(audio_lat, " ms");
 
+		obs_property_t *multicam = obs_properties_add_bool(
+			props, S_MULTICAM_SYNC, T_("MulticamSync"));
+		obs_property_set_long_description(multicam,
+						  T_("MulticamSync.Desc"));
 	}
 
 	/* Web panel / diagnostics / stream dump moved to the plugin-wide
@@ -3412,14 +3608,50 @@ static obs_properties_t *lenslink_screen_get_properties(void *data)
 /* GPU (beta) pipeline: sync-source rendering                          */
 /* ------------------------------------------------------------------ */
 
-/* Decode thread -> render thread hand-off: newest frame wins. */
+/* Makes `frame` the newest one for the render to adopt. frame_mutex held. */
+static void gpu_set_pending(struct ios_camera_source *s, AVFrame *frame)
+{
+	if (s->pending_frame)
+		av_frame_free(&s->pending_frame);
+	s->pending_frame = frame;
+}
+
+/* Releases delayed frames whose time has come (all of them when `all`).
+ * frame_mutex held. */
+static void gpu_delay_release(struct ios_camera_source *s, uint64_t now,
+			      bool all)
+{
+	int n = 0;
+	while (n < s->delay_count && (all || s->delay_due[n] <= now))
+		gpu_set_pending(s, s->delay_q[n++]);
+	if (!n)
+		return;
+	s->delay_count -= n;
+	memmove(s->delay_q, s->delay_q + n,
+		sizeof(s->delay_q[0]) * (size_t)s->delay_count);
+	memmove(s->delay_due, s->delay_due + n,
+		sizeof(s->delay_due[0]) * (size_t)s->delay_count);
+}
+
+/* Decode thread -> render thread hand-off: newest frame wins, after
+ * waiting out the video delay (lip sync / multicam) if there is one. */
 static void gpu_pipeline_sink(void *ud, AVFrame *frame)
 {
 	struct ios_camera_source *s = ud;
 	pthread_mutex_lock(&s->frame_mutex);
-	if (s->pending_frame)
-		av_frame_free(&s->pending_frame);
-	s->pending_frame = frame;
+	if (s->gpu_delay_ns > 0 || s->delay_count) {
+		uint64_t now = os_gettime_ns();
+		/* Full (the render isn't draining us — source hidden, or a
+		 * delay longer than the queue): drop-don't-queue, the oldest
+		 * goes straight to pending. */
+		if (s->delay_count == GPU_DELAY_MAX)
+			gpu_delay_release(s, s->delay_due[0], false);
+		s->delay_q[s->delay_count] = frame;
+		s->delay_due[s->delay_count++] =
+			now + (uint64_t)s->gpu_delay_ns;
+	} else {
+		gpu_set_pending(s, frame);
+	}
 	s->frame_width = (uint32_t)frame->width;
 	s->frame_height = (uint32_t)frame->height;
 	pthread_mutex_unlock(&s->frame_mutex);
@@ -3435,6 +3667,7 @@ static void gpu_pipeline_clear(struct ios_camera_source *s)
 	if (!g_gpu_pipeline_mode)
 		return;
 	pthread_mutex_lock(&s->frame_mutex);
+	gpu_delay_release(s, 0, true);
 	if (s->pending_frame)
 		av_frame_free(&s->pending_frame);
 	s->clear_current = true;
@@ -3578,8 +3811,10 @@ static void ios_camera_video_render(void *data, gs_effect_t *unused)
 	UNUSED_PARAMETER(unused);
 	struct ios_camera_source *s = data;
 
-	/* Adopt the newest decoded frame, if any. */
+	/* Adopt the newest decoded frame that is due, if any. */
 	pthread_mutex_lock(&s->frame_mutex);
+	if (s->delay_count)
+		gpu_delay_release(s, os_gettime_ns(), false);
 	AVFrame *fresh = s->pending_frame;
 	s->pending_frame = NULL;
 	bool clear = s->clear_current;
@@ -3777,6 +4012,7 @@ static void gpu_pipeline_free(struct ios_camera_source *s)
 			s->cpu_tex[i] = NULL;
 		}
 	}
+	gpu_delay_release(s, 0, true);
 	if (s->pending_frame)
 		av_frame_free(&s->pending_frame);
 	if (s->current_frame)
