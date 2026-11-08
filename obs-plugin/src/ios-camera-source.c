@@ -190,6 +190,11 @@ struct ios_camera_source {
 	int group_delay_ms;
 	int group_size; /* live synced cameras last time we looked, self too */
 	bool mic_owner;          /* dial-loop thread only */
+	/* The group's mic reading (sync_view.mic_ns) while this camera owns
+	 * the mic, else 0; and whether the cameras' readings disagree. Both
+	 * dial-loop thread only. */
+	int64_t group_mic_ns;
+	bool mic_spread_warned;
 
 	/* Auto lip-sync cross-correlator. `lipsync` is fed by the network
 	 * thread (reference) and the OBS audio thread (mic capture callback),
@@ -486,12 +491,26 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
  * (an unstable link stops producing them). */
 #define SYNC_STALE_NS 12000000000ULL
 
-/* Returns the latency every synced camera is shown at, and whether `self`
- * is the one camera that writes `self`'s mic offset: the first live member
- * syncing to the same audio source. Called WITHOUT self->status_mutex
- * held (lock order is g_health_mutex, then a source's status_mutex). */
-static int64_t sync_group_target(struct ios_camera_source *self,
-				 bool *mic_owner, int *size)
+/* What a camera learns from the group each time it measures its latency. */
+struct sync_view {
+	int64_t target_ns; /* latency every synced camera is shown at */
+	int size;          /* live synced cameras, self included */
+	bool mic_owner;    /* self writes the offset of self's mic */
+	/* The mic latency to steer that offset with, 0 if no camera has
+	 * locked one: preferably the SLOWEST camera's own reading. A phone's
+	 * clock-sync error skews its latency and its mic reading alike, and
+	 * the offset is target - mic, so taking both from one camera cancels
+	 * it; mixing cameras (or averaging) would not. Any other camera's
+	 * reading stands in until the slowest one locks. */
+	int64_t mic_ns;
+	int64_t mic_spread_ns; /* max - min of the cameras' locked readings */
+};
+
+/* Reads the group for `self`. Called WITHOUT self->status_mutex held
+ * (lock order is g_health_mutex, then a source's status_mutex). The writer
+ * of a mic's offset is the first live member syncing to that mic. */
+static void sync_group_view(struct ios_camera_source *self,
+			    struct sync_view *v)
 {
 	char mic[256];
 	pthread_mutex_lock(&self->status_mutex);
@@ -503,6 +522,7 @@ static int64_t sync_group_target(struct ios_camera_source *self,
 	int64_t target = 0;
 	int n = 0;
 	struct ios_camera_source *owner = NULL;
+	int64_t slowest_mic = 0, any_mic = 0, mic_min = 0, mic_max = 0;
 
 	pthread_mutex_lock(&g_health_mutex);
 	for (int i = 0; i < MAX_HEALTH_SOURCES; i++) {
@@ -513,21 +533,37 @@ static int64_t sync_group_target(struct ios_camera_source *self,
 		bool live = s->multicam_sync && s->stat_connected &&
 			    s->latency_seen_ns &&
 			    now - s->latency_seen_ns < SYNC_STALE_NS;
+		bool same_mic = live && mic[0] && s->audio_sync &&
+				strcmp(s->audio_source, mic) == 0;
+		int64_t locked = same_mic && s->cal_locked
+					 ? s->cal_locked_mic_ns
+					 : 0;
 		if (live) {
 			n++;
-			if (s->last_video_latency_ns > target)
+			if (s->last_video_latency_ns > target) {
 				target = s->last_video_latency_ns;
-			if (!owner && mic[0] && s->audio_sync &&
-			    strcmp(s->audio_source, mic) == 0)
+				slowest_mic = locked;
+			}
+			if (!owner && same_mic)
 				owner = s;
+		}
+		if (locked) {
+			if (!any_mic)
+				any_mic = locked;
+			if (!mic_min || locked < mic_min)
+				mic_min = locked;
+			if (locked > mic_max)
+				mic_max = locked;
 		}
 		pthread_mutex_unlock(&s->status_mutex);
 	}
 	pthread_mutex_unlock(&g_health_mutex);
 
-	*mic_owner = !owner || owner == self;
-	*size = n;
-	return target;
+	v->target_ns = target;
+	v->size = n;
+	v->mic_owner = !owner || owner == self;
+	v->mic_ns = slowest_mic ? slowest_mic : any_mic;
+	v->mic_spread_ns = mic_max - mic_min;
 }
 
 bool ios_camera_is_connected(struct ios_camera_source *s)
@@ -1035,6 +1071,21 @@ static void apply_group_delay(struct ios_camera_source *s, int64_t own_ns,
 		set_group_delay(s, want);
 }
 
+/* Cameras measuring one mic should agree; more than a 60 fps frame apart
+ * means a phone's clock sync is off. Logged on the transition only, by the
+ * mic's owner. Dial-loop thread. */
+static void warn_mic_spread(struct ios_camera_source *s, int64_t spread_ns)
+{
+	bool wide = spread_ns > 17 * CAL_NS_MS;
+	if (wide && !s->mic_spread_warned)
+		blog(LOG_WARNING,
+		     "[lenslink] multicam sync: cameras disagree on the mic "
+		     "latency by %d ms — one phone's clock sync is off; using "
+		     "the slowest camera's reading",
+		     (int)(spread_ns / CAL_NS_MS));
+	s->mic_spread_warned = wide;
+}
+
 /* Only one camera may write a shared mic's offset, or the cameras take
  * turns overwriting each other. Dial-loop thread. */
 static void set_mic_owner(struct ios_camera_source *s, bool owner)
@@ -1287,9 +1338,17 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 
 	uint64_t now = os_gettime_ns();
 
+	/* Multicam: steer the shared mic from the group's reading (see
+	 * sync_view.mic_ns) — even before this camera has locked its own. */
+	if (s->group_mic_ns && !locked)
+		apply_calibrated_offset(s, video_latency_ns, s->group_mic_ns,
+					name, video_delay, applied, true, 0);
+
 	if (locked) {
-		apply_calibrated_offset(s, video_latency_ns, locked_mic, name,
-					video_delay, applied, true, 0);
+		apply_calibrated_offset(s, video_latency_ns,
+					s->group_mic_ns ? s->group_mic_ns
+							: locked_mic,
+					name, video_delay, applied, true, 0);
 
 		if (!s->verify_pending) {
 			if (!lipsync_cal_due_for_verify(now,
@@ -1430,8 +1489,9 @@ static void apply_auto_calibrated(struct ios_camera_source *s,
 	     "(conf %.2f) — tracking video latency from here",
 	     (int)(median / CAL_NS_MS), conf);
 
-	apply_calibrated_offset(s, video_latency_ns, median, name, video_delay,
-				applied, false, conf);
+	apply_calibrated_offset(s, video_latency_ns,
+				s->group_mic_ns ? s->group_mic_ns : median, name,
+				video_delay, applied, false, conf);
 }
 
 /*
@@ -1850,12 +1910,17 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 			 * one, and steer the mic from that shared latency. */
 			int64_t shown = avg;
 			bool owner = true;
+			s->group_mic_ns = 0;
 			if (multicam) {
-				int size = 0;
-				shown = sync_group_target(s, &owner, &size);
-				if (shown < avg)
-					shown = avg;
-				apply_group_delay(s, avg, shown, size);
+				struct sync_view v;
+				sync_group_view(s, &v);
+				shown = v.target_ns > avg ? v.target_ns : avg;
+				owner = v.mic_owner;
+				apply_group_delay(s, avg, shown, v.size);
+				if (owner) {
+					s->group_mic_ns = v.mic_ns;
+					warn_mic_spread(s, v.mic_spread_ns);
+				}
 			}
 			set_mic_owner(s, owner);
 
