@@ -90,18 +90,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
-runtime="$(xcrun simctl list runtimes -j | python3 -c '
+runtime_for() {
+  xcrun simctl list runtimes -j | python3 -c '
 import json, sys
 runtimes = [r for r in json.load(sys.stdin)["runtimes"]
             if r.get("platform") == "iOS" and r.get("isAvailable")]
 runtimes.sort(key=lambda r: [int(p) for p in r["version"].split(".")])
-print(runtimes[-1]["identifier"] if runtimes else "")
-')"
-if [ -z "$runtime" ]; then
-  echo "error: no iOS simulator runtime installed" >&2
-  exit 1
-fi
-echo "runtime: $runtime"
+fits = [r for r in runtimes
+        if any(d.get("identifier") == sys.argv[1]
+               for d in r.get("supportedDeviceTypes", []))]
+pick = fits or runtimes
+print(pick[-1]["identifier"] if pick else "")
+' "$1"
+}
 
 device_type() {
   xcrun simctl list devicetypes -j | python3 -c '
@@ -129,7 +130,13 @@ capture_family() {
     echo "error: no simulator device type matches $pattern" >&2
     exit 1
   fi
-  echo "$name: $type"
+  local runtime
+  runtime="$(runtime_for "$type")"
+  if [ -z "$runtime" ]; then
+    echo "error: no iOS simulator runtime installed" >&2
+    exit 1
+  fi
+  echo "$name: $type on $runtime"
 
   local udid
   udid="$(xcrun simctl create "LensLink screenshots ($name)" "$type" "$runtime")"
