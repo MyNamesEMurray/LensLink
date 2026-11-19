@@ -38,6 +38,7 @@
 #include "h264-decoder.h"
 #include "usbmux.h"
 #include "web-control.h"
+#include "camera-controls.h"
 #include "lipsync.h"
 #include "lipsync-cal.h"
 #include "plugin-settings.h"
@@ -454,6 +455,40 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 	return n;
 }
 
+bool lenslink_source_state(const char *name, char *buf, size_t size)
+{
+	bool found = false;
+
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES && !found; i++) {
+		struct ios_camera_source *s = g_health_sources[i];
+		const char *n = s ? obs_source_get_name(s->source) : NULL;
+		if (n && !s->is_screen_source && !strcmp(n, name)) {
+			ios_camera_copy_state(s, buf, size);
+			found = true;
+		}
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+	return found;
+}
+
+bool lenslink_source_send(const char *name, const char *json)
+{
+	bool found = false;
+
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES && !found; i++) {
+		struct ios_camera_source *s = g_health_sources[i];
+		const char *n = s ? obs_source_get_name(s->source) : NULL;
+		if (n && !s->is_screen_source && !strcmp(n, name)) {
+			ios_camera_enqueue_control(s, json, strlen(json));
+			found = true;
+		}
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+	return found;
+}
+
 bool ios_camera_is_connected(struct ios_camera_source *s)
 {
 	pthread_mutex_lock(&s->status_mutex);
@@ -511,6 +546,18 @@ void ios_camera_enqueue_control(struct ios_camera_source *s, const char *json,
 	copy[len] = 0;
 
 	pthread_mutex_lock(&s->status_mutex);
+	static const char *const continuous[] = {
+		"{\"cmd\":\"zoom\"", "{\"cmd\":\"reframe\",\"zoom\""};
+	for (size_t i = 0; i < 2 && s->control_count > 0; i++) {
+		size_t n = strlen(continuous[i]);
+		char *last = s->control_queue[s->control_count - 1];
+		if (!strncmp(copy, continuous[i], n) &&
+		    !strncmp(last, continuous[i], n)) {
+			bfree(last);
+			s->control_queue[--s->control_count] = NULL;
+			break;
+		}
+	}
 	if (s->control_count >= CONTROL_QUEUE_MAX) {
 		/* Full: drop the oldest command. */
 		bfree(s->control_queue[0]);
@@ -3360,6 +3407,11 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 			props, S_AUDIO_LATENCY, T_("AudioLatency"), 0, 500, 1);
 		obs_property_int_set_suffix(audio_lat, " ms");
 
+		if (s && s->source) {
+			obs_data_t *current = obs_source_get_settings(s->source);
+			lenslink_camera_controls_add(props, s, current);
+			obs_data_release(current);
+		}
 	}
 
 	/* Web panel / diagnostics / stream dump moved to the plugin-wide

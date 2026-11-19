@@ -68,6 +68,8 @@ add_library(${PROJECT_NAME} MODULE
   src/pipeline-bench.c
   src/json-reader.c
   src/handshake.c
+  src/controls.c
+  src/camera-controls.c
   src/protocol.h
   src/web-control.h
   src/lipsync.h

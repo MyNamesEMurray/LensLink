@@ -671,6 +671,20 @@ inside OBS's chrome, OBS's design language wins; our vocabulary (the
 status wording, `fps · Mb/s · ms` ordering, monospace-style numerals)
 is what carries over.
 
+A second dock, **LensLink Controls** (`frontend-ui.cpp`), carries the web
+panel's basic controls: zoom, lens, flashlight, flip, stabilization,
+reframe (zoom slider, drag pad drawn in `accent`, High-quality reframe),
+green screen and the format pickers. The same controls appear as a
+**Camera controls** group in each camera source's properties (native OBS
+widgets: sliders, lists, toggles; no drag pad). Both read the cached
+STATE through `controls.c` and send CONTROL packets, so they stay in
+lock-step with the app and the web panel. Like the rest of §6.4 they use
+OBS's theme, not our palette. The dock mirrors the phone about once a
+second and holds off for 1.5 s after the operator touches it; the
+properties group is a snapshot taken when the sheet opens (Refresh
+reloads it). Exposure, white balance, focus, tally and the mic picker
+stay in the web panel.
+
 ### 6.5 Plugin settings dialog (Tools → LensLink Settings)
 
 Plugin-wide switches live here, not in source properties: anything with
