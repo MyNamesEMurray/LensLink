@@ -186,7 +186,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -216,7 +216,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -242,7 +242,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: windows-2022
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -262,7 +262,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
@@ -286,7 +286,7 @@ jobs:
     # Needs Xcode 16+: current XcodeGen emits project format 77, which
     # Xcode 15 (macos-14 runners) cannot open.
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
@@ -297,7 +297,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ios == 'true'
     runs-on: xcode-27
-    timeout-minutes: 90
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 

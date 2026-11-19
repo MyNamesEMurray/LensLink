@@ -50,6 +50,7 @@ jobs:
         with:
           name: release-linux
           if-no-files-found: error
+          retention-days: 3
           path: lenslink-linux-x86_64.tar.gz
 
   plugin-windows:
@@ -69,6 +70,7 @@ jobs:
         with:
           name: release-windows
           if-no-files-found: error
+          retention-days: 3
           path: |
             lenslink-windows-x64.zip
             LensLink-installer-windows-x64.exe
@@ -90,6 +92,7 @@ jobs:
         with:
           name: release-macos
           if-no-files-found: error
+          retention-days: 3
           path: |
             lenslink-macos-universal.zip
             LensLink-installer-macos-universal.pkg
@@ -112,6 +115,7 @@ jobs:
         with:
           name: release-ipa
           if-no-files-found: error
+          retention-days: 3
           path: ios-app/LensLink-unsigned.ipa
 
   streamdeck:
@@ -131,6 +135,7 @@ jobs:
         with:
           name: release-streamdeck
           if-no-files-found: error
+          retention-days: 3
           path: cam.lenslink.streamdeck.streamDeckPlugin
 
   publish:

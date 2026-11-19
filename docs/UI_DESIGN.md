@@ -857,16 +857,3 @@ Screen-reader basics, in the same vocabulary:
   poll never re-announces.
 
 ---
-
-## 9. Reconciliation checklist (this revision)
-
-- [x] Status **word** unified via `Status.displayName` (was two different
-      strings for connecting across Setup vs Live).
-- [x] Status **colour** unified via `Status.tint` (Live screen previously
-      had no error/idle colour).
-- [x] Shared **design tokens** (`DesignSystem.swift`) replace ad-hoc
-      opacities, radii and paddings.
-- [x] "Torch" → **"Flashlight"** everywhere (icon-only in app, labelled on
-      web).
-- [x] Web panel restyled to the palette, typography, control metaphors and
-      ordering above; **Lens selection** added for parity with the app.
