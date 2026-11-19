@@ -105,15 +105,22 @@ Microphone group, applied to the send-phone-mic path. *Makes the
 "phone as wireless mic" feature genuinely usable in untreated rooms.*
 
 ### Two lenses at once (multicam) — P3, large
-`AVCaptureMultiCamSession` (iOS 13+) can run the front and a rear
-camera simultaneously — one phone feeding a face cam *and* a scene cam
-as two LensLink sources (a second connection with its own HELLO; the
-plugin's per-source device pinning already gives each stream a home).
-No competitor does this. It's P3 for a reason: multicam formats are
-heavily restricted (no 4K, limited fps), the thermal budget for two
-encodes is severe (prototype heat before UI), and the app's
-capture/encode/listener plumbing is currently single-stream. *Trigger:
-real user demand, and a thermal prototype that survives 30 minutes.*
+`AVCaptureMultiCamSession` (iOS 13+) runs two cameras at once (front plus
+a rear lens, or two rear lenses on newer phones): one phone feeding a face
+cam *and* a scene cam as two LensLink sources. No competitor does this.
+Design sketch: a second listener (next port, own Bonjour record) so the
+plugin's existing per-source dial and device pinning give each stream a
+home, a `stream` field in HELLO, and per-stream STATE/CONTROL so every
+existing control already addresses the right camera. The work is in the
+app: `Streamer` owns one camera, one encoder and one client, so this
+means N capture-encode-send pipelines. Hard limits, all Apple's: only
+formats flagged `isMultiCamSupported` (no 4K, usually 30 fps and below
+the single-camera maximum), a combined `hardwareCost` and
+`systemPressureCost` under 1.0 or the session refuses to start, one
+microphone, no depth assist (green screen is segmentation-only), no
+Cinematic stabilization, and 10-bit colour often unavailable. Heat is the
+real risk: prototype two encodes for 30 minutes before any UI. *Trigger:
+real user demand and a thermal prototype that survives 30 minutes.*
 
 ### Manual bitrate cap — P3, small
 Adaptive bitrate already reacts to congestion, but there's no user
