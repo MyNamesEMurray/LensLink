@@ -75,6 +75,8 @@ static const char *const web_text_keys[] = {
 	"Web.Reframe",
 	"Web.Reframe.Tip",
 	"Web.Reframe.Pad",
+	"Web.Reframe.HQ",
+	"Web.Reframe.HQ.Tip",
 	"Web.Lens.Front",
 	"Web.Lens.FrontUltraWide",
 	"Web.Lens.MainWide",
@@ -258,6 +260,9 @@ static const char control_page[] =
 	"data-t-title='Reframe.Tip'></span></div>"
 	"<div class='pad' id='rfpad' tabindex='0' role='application' "
 	"data-t-title='Reframe.Pad' style='display:none'><div id='rfwin'></div></div>"
+	"<div class='row' id='rfhqrow' style='display:none'>"
+	"<button class='primary toggle' id='rfhq' data-t='Reframe.HQ' "
+	"data-t-title='Reframe.HQ.Tip'></button></div>"
 	"<div class='row' id='flrow' style='display:none'>"
 	"<span class='lbl' id='fll' data-t='Flashlight'></span>"
 	"<input id='fld' class='y' type='range' min='1' max='100' step='1' value='100' "
@@ -632,7 +637,11 @@ static const char control_page[] =
 	"cinematic:t('Stabilization.Cinematic')};"
 	"stabEl.onchange=()=>send({cmd:'stabilization',mode:stabEl.value});"
 	"const rfrowEl=$('rfrow'),rfzEl=$('rfz'),rfvEl=$('rfv'),rfpadEl=$('rfpad'),"
-	"rfwinEl=$('rfwin');"
+	"rfwinEl=$('rfwin'),rfhqrowEl=$('rfhqrow'),rfhqEl=$('rfhq');"
+	"let rfhq=false;"
+	"function hqUI(on){rfhq=on;rfhqEl.className=on?'primary toggle on':'primary toggle';"
+	"pressed(rfhqEl,on)}"
+	"rfhqEl.onclick=()=>{touch();hqUI(!rfhq);send({cmd:'reframe',hq:rfhq})};"
 	"let RF={zoom:1,x:.5,y:.5};"
 	"function rfUI(){RF.zoom=Math.min(Math.max(RF.zoom,1),4);const h=.5/RF.zoom;"
 	"RF.x=Math.min(Math.max(RF.x,h),1-h);RF.y=Math.min(Math.max(RF.y,h),1-h);"
@@ -754,7 +763,8 @@ static const char control_page[] =
 	"fillSel(fmtcodecEl,codecs,S.codec,c=>CODEC_NAMES[c]||c)}"
 	"show(rfrowEl,!!S.supportsReframe);"
 	"if(S.supportsReframe){const r=S.reframe;"
-	"RF=r?{zoom:+r.zoom||1,x:+r.x||.5,y:+r.y||.5}:{zoom:1,x:.5,y:.5};rfUI()}"
+	"RF=r?{zoom:+r.zoom||1,x:+r.x||.5,y:+r.y||.5}:{zoom:1,x:.5,y:.5};rfUI();"
+	"show(rfhqrowEl,!!(S.supportsReframeHQ||S.reframeHQ));hqUI(!!S.reframeHQ)}"
 	"show(stabrowEl,typeof S.stabilization==='string');"
 	"if(typeof S.stabilization==='string'){"
 	"fillSel(stabEl,Object.keys(STAB),S.stabilization,m=>STAB[m]);"

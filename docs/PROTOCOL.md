@@ -197,6 +197,13 @@ carries `"reframe": { "zoom", "x", "y" }` only while the window is not
 the whole picture. The setting is not saved: it resets when the app
 restarts. Apps that predate it ignore the command.
 
+`reframe` also takes `"hq": true`: the phone then captures one size above
+the stream (1080p for a 720p stream, 4K for 1080p) and crops the window
+from that, so zoom keeps real detail. It is off by default, does nothing
+at 4K, and turns green screen off (turning green screen on turns it off).
+STATE advertises `"supportsReframeHQ": true` when a larger format exists
+and carries `"reframeHQ": true` while it is on.
+
 `set_format` switches the capture format mid-stream; any subset of its
 fields may be present. The app validates the combination against the
 active lens (the STATE snapshot advertises the valid choices in

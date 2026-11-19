@@ -732,6 +732,12 @@
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "防抖";
 
+/* Options sheet row: toggle that captures bigger than the stream so the web panel's Reframe zoom keeps real detail */
+"High-quality reframe" = "高质量重新取景";
+
+/* Documentation → Options, Camera behavior section: High-quality reframe (Markdown: keep the ** markers) */
+"**High-quality reframe** captures at the next size up (1080p for a 720p stream, 4K for 1080p) and takes the web panel's Reframe window from that, so zoom keeps real detail instead of stretching pixels. It uses more power and heat, turns green screen off, and does nothing at 4K." = "**高质量重新取景**会以更高一档的尺寸采集（720p 串流用 1080p，1080p 用 4K），并从中截取网页面板的取景窗口，这样缩放时保留真实细节，而不是拉伸像素。它会增加耗电和发热，关闭绿幕，在 4K 下不起作用。";
+
 /* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal; the parenthesis warns it delays the stream a lot */
 "Cinematic (high delay)" = "电影级（延迟高）";
 

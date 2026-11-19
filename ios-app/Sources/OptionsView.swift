@@ -33,6 +33,12 @@ struct OptionsView: View {
                                          systemImage: "waveform.path",
                                          color: Theme.cameraYellow)
                     }
+                    Toggle(isOn: $streamer.reframeHQ) {
+                        SettingsRowLabel(L("High-quality reframe"),
+                                         systemImage: "crop",
+                                         color: Theme.cameraYellow)
+                    }
+                    .disabled(streamer.resolution == .uhd4k)
                     Toggle(isOn: $streamer.rememberCameraSettings) {
                         SettingsRowLabel(L("Remember camera settings"),
                                          systemImage: "clock.arrow.circlepath",

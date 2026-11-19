@@ -36,7 +36,12 @@ final class FrameReframer {
     private var cachedFormatDescription: CMVideoFormatDescription?
     private var loggedStages = Set<String>()
 
-    init?() {
+    private let outputWidth: Int
+    private let outputHeight: Int
+
+    init?(width: Int, height: Int) {
+        outputWidth = width
+        outputHeight = height
         var created: VTPixelTransferSession?
         guard VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault,
                                            pixelTransferSessionOut: &created) == noErr,
@@ -57,12 +62,14 @@ final class FrameReframer {
 
     func reframe(sampleBuffer: CMSampleBuffer,
                  window: ReframeCell.Window) -> CMSampleBuffer? {
-        guard window.isActive,
-              let source = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+        guard let source = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return sampleBuffer
         }
         let width = CVPixelBufferGetWidth(source)
         let height = CVPixelBufferGetHeight(source)
+        guard window.isActive || width != outputWidth || height != outputHeight else {
+            return sampleBuffer
+        }
         let format = CVPixelBufferGetPixelFormatType(source)
 
         guard let surface = CVPixelBufferGetIOSurface(source)?.takeUnretainedValue()
@@ -90,8 +97,8 @@ final class FrameReframer {
         CVBufferSetAttachment(view, kCVImageBufferCleanApertureKey,
                               aperture as CFDictionary, .shouldNotPropagate)
 
-        let key = "\(width)x\(height)/\(format)"
-        if pool == nil || key != poolKey { rebuildPool(width: width, height: height, format: format, key: key) }
+        let key = "\(outputWidth)x\(outputHeight)/\(format)"
+        if pool == nil || key != poolKey { rebuildPool(width: outputWidth, height: outputHeight, format: format, key: key) }
         guard let pool else { return sampleBuffer }
         var allocated: CVPixelBuffer?
         let aux = [kCVPixelBufferPoolAllocationThresholdKey as String: 6]

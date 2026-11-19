@@ -260,7 +260,7 @@ final class Streamer: ObservableObject {
         let color: StreamColor
         do {
             color = try camera.configure(lens: selectedLens,
-                                         resolution: resolution,
+                                         resolution: captureResolution,
                                          fps: Int32(fps),
                                          lockFrameRate: !allowVideoEffects,
                                          color: activeColor,
@@ -367,7 +367,9 @@ final class Streamer: ObservableObject {
         compositor?.onAutoCutoff = { [weak self] metres in
             Task { @MainActor in self?.greenScreenAutoCutoff = Double(metres) }
         }
-        let reframer = FrameReframer()
+        let streamSize = resolution.size
+        let reframer = FrameReframer(width: Int(streamSize.width),
+                                     height: Int(streamSize.height))
         let reframeWindow = reframeCell
         if let compositor {
             camera.onSampleBuffer = { [weak encoder, compositor, reframer,
@@ -466,6 +468,11 @@ final class Streamer: ObservableObject {
             UserDefaults.standard.set(greenScreenEnabled,
                                       forKey: "greenScreen")
             if greenScreenEnabled { greenScreenOffered = true }
+            var reconfigured = false
+            if greenScreenEnabled && reframeHQ {
+                reframeHQ = false
+                reconfigured = isStreaming
+            }
             if greenScreenEnabled && colorSetting != .sdr {
                 // Forcing Standard runs colorSetting's didSet, which
                 // reconfigures a live stream itself (with green screen
@@ -473,7 +480,7 @@ final class Streamer: ObservableObject {
                 // reconfigure.
                 colorSetting = .sdr
             } else if isStreaming && greenScreenEnabled != oldValue
-                        && colorSetting == .sdr {
+                        && colorSetting == .sdr && !reconfigured {
                 // Arm/disarm changes the capture wiring and the depth
                 // request (wantsDepth), so a live change rebuilds like
                 // a format change. The colorSetting == .sdr guard skips
@@ -1071,7 +1078,7 @@ final class Streamer: ObservableObject {
         ]
         if camera.maxZoomFactor > 1,
            let crop = CameraManager.nativeCropZoomFactor(
-               resolution: resolution, fps: Int32(fps), color: activeColor) {
+               resolution: captureResolution, fps: Int32(fps), color: activeColor) {
             state["cropZoom"] = Double(crop)
         }
         // Absent = SDR — remote UIs key off the keys' absence, and an
@@ -1094,6 +1101,8 @@ final class Streamer: ObservableObject {
         // not the setting, is the truth — so a snapshot with green
         // screen off matches today's apart from supportsGreenScreen.
         state["supportsReframe"] = true
+        if biggerCaptureResolution != nil { state["supportsReframeHQ"] = true }
+        if reframeHQ { state["reframeHQ"] = true }
         if reframeWindow.isActive {
             state["reframe"] = ["zoom": reframeWindow.zoom,
                                 "x": reframeWindow.x, "y": reframeWindow.y]
@@ -1434,6 +1443,42 @@ final class Streamer: ObservableObject {
     /// queue, where the compositor's `maxDistance` is confined.
     private let greenScreenDistance = GreenScreenDistanceCell()
     private let reframeCell = ReframeCell()
+    @Published var reframeHQ: Bool = UserDefaults.standard.bool(forKey: "reframeHQ") {
+        didSet {
+            UserDefaults.standard.set(reframeHQ, forKey: "reframeHQ")
+            var reconfigured = false
+            if reframeHQ && greenScreenEnabled {
+                greenScreenEnabled = false
+                reconfigured = isStreaming && colorSetting == .sdr
+            }
+            if isStreaming && reframeHQ != oldValue && !reconfigured {
+                reconfigureLiveCapture(formatChanged: true)
+            }
+            scheduleStateSend()
+        }
+    }
+    private var reframeHQCache: (key: String, ok: Bool)?
+
+    private var biggerCaptureResolution: CameraManager.Resolution? {
+        let bigger: CameraManager.Resolution
+        switch resolution {
+        case .hd720: bigger = .hd1080
+        case .hd1080: bigger = .uhd4k
+        case .uhd4k: return nil
+        }
+        let key = "\(selectedLens.id)|\(bigger.rawValue)|\(fps)|\(activeColor.rawValue)"
+        if let cached = reframeHQCache, cached.key == key {
+            return cached.ok ? bigger : nil
+        }
+        let ok = CameraManager.supports(resolution: bigger, fps: Int32(fps),
+                                        lens: selectedLens, color: activeColor)
+        reframeHQCache = (key, ok)
+        return ok ? bigger : nil
+    }
+
+    private var captureResolution: CameraManager.Resolution {
+        reframeHQ ? biggerCaptureResolution ?? resolution : resolution
+    }
     @Published private(set) var reframeWindow = ReframeCell.Window()
 
     init() {
@@ -1910,6 +1955,7 @@ final class Streamer: ObservableObject {
                     : distance == 0 ? 0 : min(max(distance, 0.5), 5.0)
             }
         case "reframe":
+            if let hq = command["hq"] as? Bool, hq != reframeHQ { reframeHQ = hq }
             var next = reframeWindow
             if let zoom = (command["zoom"] as? NSNumber)?.doubleValue { next.zoom = zoom }
             if let x = (command["x"] as? NSNumber)?.doubleValue { next.x = x }
@@ -2013,7 +2059,7 @@ final class Streamer: ObservableObject {
         let encoder: VideoEncoder
         do {
             let color = try camera.configure(lens: selectedLens,
-                                             resolution: resolution,
+                                             resolution: captureResolution,
                                              fps: Int32(fps),
                                              lockFrameRate: !allowVideoEffects,
                                              color: activeColor,
