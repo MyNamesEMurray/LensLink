@@ -107,6 +107,11 @@ Slide Over and Stage Manager.
   **subject distance** cutoff (app Live screen or web panel) drops
   people walking by behind you. It starts on Auto, which keeps the
   cutoff just behind you as you move.
+- **Reframe.** Digital zoom and pan from the web panel or OBS, applied
+  on the phone before encoding (locked to 16:9, so the stream never
+  changes shape). **High-quality reframe** captures one size up so a
+  zoomed window keeps real detail; it runs warmer and turns green
+  screen off.
 - **Pick any lens** — Main, Ultra Wide, Telephoto, or Front — switchable
   live while you stream. On a 48 MP Main camera, a 2× button uses the
   sensor's full-detail crop.

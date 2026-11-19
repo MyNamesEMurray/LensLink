@@ -17,7 +17,6 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P1 | Thermal & low-power adaptation | Reliability & security | Medium |
 | P1 | Optional pairing & encryption | Reliability & security | Medium |
 | P1 | Graduate the GPU decode pipeline | Performance | Small |
-| P2 | Digital pan/tilt + crop | Control & workflow | Medium |
 | P2 | Voice isolation for the phone mic | Video & audio quality | Small |
 | P3 | Manual bitrate cap | Video & audio quality | Small |
 | P3 | Zero-copy encoder output | Performance | Medium |
@@ -36,7 +35,10 @@ with depth assist and subject-distance cutoff (v1.10.0), iPad
 multitasking capture — streaming continues in Split View, Slide Over
 and Stage Manager on iPads that support it, and a native Stream Deck
 plugin (`streamdeck/`, 2026-10, on request) on top of the documented
-control API. Pairing &
+control API, and digital reframe — zoom and pan from the web panel or
+OBS, applied on the phone before encoding, locked to 16:9, with an opt-in
+high-quality mode that captures one size up so zoom keeps real detail
+(2026-11). Pairing &
 encryption was explicitly deprioritized by the maintainer in 2026-07 —
 revisit when remote start gets promoted or users stream on shared
 networks.
@@ -120,18 +122,6 @@ set it) keeps shared/metered networks and multi-phone rigs predictable.
 STATE advertises the cap so remote UIs stay in lock-step. *Trigger:
 users actually hitting the situations it solves; the adaptive path
 covers most of them today.*
-
-## Control & workflow
-
-### Digital pan/tilt + crop — reframe without touching the rig — P2, medium
-Zoom today is the camera's own, always center-locked. An adjustable
-crop applied on the phone *before* encoding (Camera Hub's signature
-control) lets the operator reframe a mounted phone from the web panel —
-and because the full encode bitrate then covers only the cropped
-region, it reads sharper than cropping in OBS. New CONTROL command with
-a normalized crop rect, STATE carries it back, web panel and Live
-screen get a drag-to-frame control. *The biggest quality-of-life gap
-for the mounted-phone use case this app is built around.*
 
 ## Not planned — revisit when the world changes
 
