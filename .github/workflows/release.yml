@@ -36,8 +36,11 @@ jobs:
   plugin-linux:
     name: OBS plugin (Linux)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag_name || github.ref }}
 
       - uses: ./.github/actions/plugin-linux
         with:
@@ -46,13 +49,17 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: release-linux
+          if-no-files-found: error
           path: lenslink-linux-x86_64.tar.gz
 
   plugin-windows:
     name: OBS plugin (Windows)
     runs-on: windows-2022
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag_name || github.ref }}
 
       - uses: ./.github/actions/plugin-windows
         with:
@@ -61,6 +68,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: release-windows
+          if-no-files-found: error
           path: |
             lenslink-windows-x64.zip
             LensLink-installer-windows-x64.exe
@@ -68,8 +76,11 @@ jobs:
   plugin-macos:
     name: OBS plugin (macOS)
     runs-on: macos-15
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag_name || github.ref }}
 
       - uses: ./.github/actions/plugin-macos
         with:
@@ -78,6 +89,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: release-macos
+          if-no-files-found: error
           path: |
             lenslink-macos-universal.zip
             LensLink-installer-macos-universal.pkg
@@ -85,8 +97,11 @@ jobs:
   ios-app:
     name: iOS app (unsigned IPA)
     runs-on: xcode-27
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag_name || github.ref }}
 
       - uses: ./.github/actions/unsigned-ipa
         with:
@@ -96,13 +111,17 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: release-ipa
+          if-no-files-found: error
           path: ios-app/LensLink-unsigned.ipa
 
   streamdeck:
     name: Stream Deck plugin
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag_name || github.ref }}
 
       - uses: ./.github/actions/streamdeck
         with:
@@ -111,12 +130,14 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: release-streamdeck
+          if-no-files-found: error
           path: cam.lenslink.streamdeck.streamDeckPlugin
 
   publish:
     name: Publish release
     needs: [plugin-linux, plugin-windows, plugin-macos, ios-app, streamdeck]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: startsWith(github.ref, 'refs/tags/') || inputs.tag_name != ''
     permissions:
       contents: write
@@ -144,12 +165,20 @@ jobs:
       - name: Which components changed
         id: components
         working-directory: src
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ inputs.tag_name || github.ref_name }}"
           repo_url="https://github.com/${{ github.repository }}"
-          # Newest first, by creation: CI cuts tags in order, and version
-          # sort would put a beta above the stable it precedes.
-          mapfile -t tags < <(git tag --list 'v*' --sort=-creatordate)
+          # Published releases only, newest first by creation: a tag whose
+          # release failed must not count as a release that changed
+          # something, and version sort would put a beta above the stable
+          # it precedes. This release is not published yet, so it leads.
+          mapfile -t tags < <({ echo "$tag"
+            gh release list --repo "${{ github.repository }}" --exclude-drafts \
+              --limit 200 --json tagName,createdAt \
+              --jq 'sort_by(.createdAt) | reverse | .[].tagName'
+          } | awk '!seen[$0]++')
           start=-1
           for i in "${!tags[@]}"; do
             if [ "${tags[$i]}" = "$tag" ]; then start=$i; break; fi
@@ -202,6 +231,7 @@ jobs:
         with:
           tag_name: ${{ inputs.tag_name || github.ref_name }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
           # The tag name is authoritative as well as the input: a -beta.N
           # tag pushed by hand must not publish as a stable release just
           # because it arrived without the flag set.

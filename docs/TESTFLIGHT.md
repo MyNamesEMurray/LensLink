@@ -64,8 +64,11 @@ can never repeat that mistake.
 ## "What to Test" fills itself in
 
 After each upload, the workflow waits for App Store Connect to finish
-processing the build and writes the latest GitHub release's "What's
-Changed" notes (as plain text) into the build's **What to Test** field —
+processing the build and writes the "What's
+Changed" notes of the GitHub release for the tag it was built from (the
+latest stable release when no tag is passed; auto-releases and the
+manual dispatch's `tag` input pass one, which pre-releases need) as plain
+text into the build's **What to Test** field —
 so testers see the actual changelog in the TestFlight app without anyone
 typing it twice. It runs as a separate job on a Linux runner, so the
 wait doesn't hold a macOS runner, and it is non-fatal: if it can't run

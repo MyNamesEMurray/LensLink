@@ -19,6 +19,7 @@ jobs:
   sync:
     name: Feedback → issues
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -38,7 +39,7 @@ jobs:
 
       - name: Install PyJWT
         if: steps.guard.outputs.run == 'true'
-        run: pip install --quiet PyJWT cryptography
+        run: pip install --quiet -r .github/scripts/requirements.txt
 
       - name: Mirror feedback into issues
         if: steps.guard.outputs.run == 'true'
