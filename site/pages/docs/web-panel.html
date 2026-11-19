@@ -15,10 +15,21 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   control panel</strong>.
 </p>
 <div class="callout">
-  <p><strong>Loopback only.</strong> The panel binds to <code>127.0.0.1</code>,
-  so nothing on the network can reach it — deliberate, since it can start
-  cameras and has no authentication.</p>
+  <p><strong>This computer only, by default.</strong> The panel binds to
+  <code>127.0.0.1</code>, so nothing on the network can reach it — deliberate,
+  since it can start cameras.</p>
 </div>
+<p>
+  <strong>From another device.</strong> Turn on <strong>Allow other devices on
+  this network to open the web panel</strong> in Tools → LensLink Settings
+  (off by default). The dialog then shows an address like
+  <code>http://192.168.1.20:9980/?key=…</code>: open it once in the browser of
+  a phone or another computer on the same network, and the browser remembers
+  the key. Without the key, other devices get <code>403 Forbidden</code>.
+  <strong>New key</strong> replaces it and signs every other device out.
+  The panel is plain HTTP, so anyone on the network can read the key off the
+  wire — use this only on a network you trust, such as at home.
+</p>
 <p>
   <strong>Panel port</strong> (default <code>9980</code>) is a plugin-wide
   setting if something else already has that port.
