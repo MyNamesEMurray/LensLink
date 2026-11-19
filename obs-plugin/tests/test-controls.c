@@ -49,9 +49,39 @@ static void test_defaults_and_bad_input(void)
 	CHECK(!lenslink_ctl_parse("nope", 4, &s));
 }
 
+static void test_clamps(void)
+{
+	struct lenslink_ctl_state s;
+	const char *a =
+		"{\"zoom\":1e30,\"maxZoom\":1e300,\"fps\":1e30,"
+		"\"frameRates\":[-5,1e30,60],"
+		"\"reframe\":{\"zoom\":99,\"x\":-3,\"y\":7}}";
+	CHECK(lenslink_ctl_parse(a, strlen(a), &s));
+	CHECK_NEAR(s.max_zoom, 20);
+	CHECK_NEAR(s.zoom, 20);
+	CHECK(s.fps == 1000);
+	CHECK(s.frame_rate_count == 3);
+	CHECK(s.frame_rates[0] == 0 && s.frame_rates[1] == 1000 &&
+	      s.frame_rates[2] == 60);
+	CHECK_NEAR(s.reframe_zoom, 4);
+	CHECK_NEAR(s.reframe_x, 0);
+	CHECK_NEAR(s.reframe_y, 1);
+
+	const char *b = "{\"zoom\":0.2,\"maxZoom\":-4,\"fps\":-1e30}";
+	CHECK(lenslink_ctl_parse(b, strlen(b), &s));
+	CHECK_NEAR(s.max_zoom, 1);
+	CHECK_NEAR(s.zoom, 1);
+	CHECK(s.fps == 0);
+
+	const char *c = "{\"zoom\":3,\"maxZoom\":2}";
+	CHECK(lenslink_ctl_parse(c, strlen(c), &s));
+	CHECK_NEAR(s.zoom, 2);
+}
+
 int main(void)
 {
 	test_full_state();
 	test_defaults_and_bad_input();
+	test_clamps();
 	TEST_MAIN_END();
 }

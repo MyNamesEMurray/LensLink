@@ -1,8 +1,23 @@
 #include "controls.h"
 #include "json-reader.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
+
+static bool clamp_num(double in, double lo, double hi, double *out)
+{
+	if (isnan(in))
+		return false;
+	*out = in < lo ? lo : in > hi ? hi : in;
+	return true;
+}
+
+static int clamp_rate(double in)
+{
+	double v;
+	return clamp_num(in, 0, 1000, &v) ? (int)v : 0;
+}
 
 static void read_strings(struct json_reader *r, char (*out)[LL_CTL_STR],
 			 size_t size, int *count)
@@ -36,14 +51,19 @@ static void read_reframe(struct json_reader *r, struct lenslink_ctl_state *s)
 	}
 	while (lenslink_json_object_next(r, key, sizeof(key), &truncated)) {
 		double *target = NULL;
-		if (!truncated && !strcmp(key, "zoom"))
+		double lo = 0, hi = 1, num;
+		if (!truncated && !strcmp(key, "zoom")) {
 			target = &s->reframe_zoom;
-		else if (!truncated && !strcmp(key, "x"))
+			lo = 1;
+			hi = 4;
+		} else if (!truncated && !strcmp(key, "x"))
 			target = &s->reframe_x;
 		else if (!truncated && !strcmp(key, "y"))
 			target = &s->reframe_y;
-		if (!target || !lenslink_json_read_number(r, target))
+		if (!target || !lenslink_json_read_number(r, &num))
 			lenslink_json_skip(r);
+		else
+			clamp_num(num, lo, hi, target);
 	}
 }
 
@@ -78,17 +98,17 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 			lenslink_json_skip(&r);
 		} else if (!strcmp(key, "zoom")) {
 			if (lenslink_json_read_number(&r, &num))
-				s->zoom = num;
+				clamp_num(num, 1, 1e9, &s->zoom);
 			else
 				lenslink_json_skip(&r);
 		} else if (!strcmp(key, "maxZoom")) {
 			if (lenslink_json_read_number(&r, &num))
-				s->max_zoom = num;
+				clamp_num(num, 1, 20, &s->max_zoom);
 			else
 				lenslink_json_skip(&r);
 		} else if (!strcmp(key, "fps")) {
 			if (lenslink_json_read_number(&r, &num))
-				s->fps = (int)num;
+				s->fps = clamp_rate(num);
 			else
 				lenslink_json_skip(&r);
 		} else if (!strcmp(key, "lens")) {
@@ -112,7 +132,7 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 					if (s->frame_rate_count < LL_CTL_LIST &&
 					    lenslink_json_read_number(&r, &num))
 						s->frame_rates[s->frame_rate_count++] =
-							(int)num;
+							clamp_rate(num);
 					else
 						lenslink_json_skip(&r);
 				}
@@ -145,6 +165,8 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 				*target = flag;
 		}
 	}
+	if (s->zoom > s->max_zoom)
+		s->zoom = s->max_zoom;
 	s->valid = !r.error;
 	return s->valid;
 }
