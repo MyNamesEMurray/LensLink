@@ -17,7 +17,6 @@ Continuity Camera, iVCam/Iriun, NDI HX Camera/Larix).
 | P1 | Thermal & low-power adaptation | Reliability & security | Medium |
 | P1 | Optional pairing & encryption | Reliability & security | Medium |
 | P1 | Graduate the GPU decode pipeline | Performance | Small |
-| P2 | Digital pan/tilt + crop | Control & workflow | Medium |
 | P2 | Voice isolation for the phone mic | Video & audio quality | Small |
 | P3 | Manual bitrate cap | Video & audio quality | Small |
 | P3 | Zero-copy encoder output | Performance | Medium |
@@ -36,7 +35,10 @@ with depth assist and subject-distance cutoff (v1.10.0), iPad
 multitasking capture — streaming continues in Split View, Slide Over
 and Stage Manager on iPads that support it, and a native Stream Deck
 plugin (`streamdeck/`, 2026-10, on request) on top of the documented
-control API. Pairing &
+control API, and digital reframe — zoom and pan from the web panel or
+OBS, applied on the phone before encoding, locked to 16:9, with an opt-in
+high-quality mode that captures one size up so zoom keeps real detail
+(2026-11). Pairing &
 encryption was explicitly deprioritized by the maintainer in 2026-07 —
 revisit when remote start gets promoted or users stream on shared
 networks.
@@ -103,15 +105,22 @@ Microphone group, applied to the send-phone-mic path. *Makes the
 "phone as wireless mic" feature genuinely usable in untreated rooms.*
 
 ### Two lenses at once (multicam) — P3, large
-`AVCaptureMultiCamSession` (iOS 13+) can run the front and a rear
-camera simultaneously — one phone feeding a face cam *and* a scene cam
-as two LensLink sources (a second connection with its own HELLO; the
-plugin's per-source device pinning already gives each stream a home).
-No competitor does this. It's P3 for a reason: multicam formats are
-heavily restricted (no 4K, limited fps), the thermal budget for two
-encodes is severe (prototype heat before UI), and the app's
-capture/encode/listener plumbing is currently single-stream. *Trigger:
-real user demand, and a thermal prototype that survives 30 minutes.*
+`AVCaptureMultiCamSession` (iOS 13+) runs two cameras at once (front plus
+a rear lens, or two rear lenses on newer phones): one phone feeding a face
+cam *and* a scene cam as two LensLink sources. No competitor does this.
+Design sketch: a second listener (next port, own Bonjour record) so the
+plugin's existing per-source dial and device pinning give each stream a
+home, a `stream` field in HELLO, and per-stream STATE/CONTROL so every
+existing control already addresses the right camera. The work is in the
+app: `Streamer` owns one camera, one encoder and one client, so this
+means N capture-encode-send pipelines. Hard limits, all Apple's: only
+formats flagged `isMultiCamSupported` (no 4K, usually 30 fps and below
+the single-camera maximum), a combined `hardwareCost` and
+`systemPressureCost` under 1.0 or the session refuses to start, one
+microphone, no depth assist (green screen is segmentation-only), no
+Cinematic stabilization, and 10-bit colour often unavailable. Heat is the
+real risk: prototype two encodes for 30 minutes before any UI. *Trigger:
+real user demand and a thermal prototype that survives 30 minutes.*
 
 ### Manual bitrate cap — P3, small
 Adaptive bitrate already reacts to congestion, but there's no user
@@ -120,18 +129,6 @@ set it) keeps shared/metered networks and multi-phone rigs predictable.
 STATE advertises the cap so remote UIs stay in lock-step. *Trigger:
 users actually hitting the situations it solves; the adaptive path
 covers most of them today.*
-
-## Control & workflow
-
-### Digital pan/tilt + crop — reframe without touching the rig — P2, medium
-Zoom today is the camera's own, always center-locked. An adjustable
-crop applied on the phone *before* encoding (Camera Hub's signature
-control) lets the operator reframe a mounted phone from the web panel —
-and because the full encode bitrate then covers only the cropped
-region, it reads sharper than cropping in OBS. New CONTROL command with
-a normalized crop rect, STATE carries it back, web panel and Live
-screen get a drag-to-frame control. *The biggest quality-of-life gap
-for the mounted-phone use case this app is built around.*
 
 ## Not planned — revisit when the world changes
 

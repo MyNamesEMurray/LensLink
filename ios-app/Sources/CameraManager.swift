@@ -140,14 +140,14 @@ final class CameraManager: NSObject {
     }
 
     @objc private func sessionResumed(_ note: Notification) {
-        start() // the session does not restart itself
+        restartIfWanted() // the session does not restart itself
         DispatchQueue.main.async { self.onInterruption?(.ended) }
     }
 
     @objc private func sessionRuntimeError(_ note: Notification) {
         // Media services reset and similar: restarting the session is the
         // documented recovery.
-        start()
+        restartIfWanted()
     }
 
     static func requestPermission() async -> Bool {
@@ -443,7 +443,7 @@ final class CameraManager: NSObject {
     static func formatReport() -> String {
         var out = ["\(hardwareModel()) — iOS "
                    + UIDevice.current.systemVersion,
-                   "flags: binned / CS / P / SL / R / colour / depth"
+                   "flags: binned / CS / P / SL / R / MC / colour / depth"
                    + " / ISO / max exposure / FOV / max zoom / native crops",
                    ""]
         for lens in availableLenses() {
@@ -479,6 +479,37 @@ final class CameraManager: NSObject {
                        + switchOvers.joined(separator: ", "))
             out.append("")
         }
+        out.append("== Multicam ==")
+        out.append("AVCaptureMultiCamSession.isMultiCamSupported: "
+                   + (AVCaptureMultiCamSession.isMultiCamSupported ? "yes" : "no"))
+        let allTypes: [AVCaptureDevice.DeviceType] = [
+            .builtInWideAngleCamera, .builtInUltraWideCamera,
+            .builtInTelephotoCamera,
+        ]
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: allTypes, mediaType: .video, position: .unspecified)
+        let sets = discovery.supportedMultiCamDeviceSets
+        out.append("supported device sets: \(sets.count)")
+        for set in sets {
+            out.append("  " + set.map { device in
+                let kind = device.deviceType.rawValue.replacingOccurrences(
+                    of: "AVCaptureDeviceTypeBuiltIn", with: "")
+                return "\(kind)/\(device.position == .front ? "front" : "back")"
+            }.sorted().joined(separator: " + "))
+        }
+        for lens in availableLenses() {
+            guard let device = device(for: lens) else { continue }
+            let rows = device.formats.filter { $0.isMultiCamSupported }.map { format -> String in
+                let dims = CMVideoFormatDescriptionGetDimensions(
+                    format.formatDescription)
+                let maxFps = format.videoSupportedFrameRateRanges
+                    .map(\.maxFrameRate).max() ?? 0
+                return "\(dims.width)x\(dims.height)@\(Int(maxFps))"
+            }
+            out.append("\(lens.label) multicam formats: "
+                       + (rows.isEmpty ? "none" : rows.joined(separator: ", ")))
+        }
+        out.append("")
         // The depth-sibling devices (green screen's depth assist) carry
         // their own format tables, different from the plain lenses above.
         // Dump them under their own headers so device reports answer
@@ -534,6 +565,7 @@ final class CameraManager: NSObject {
             } else {
                 flags.append("?")
             }
+            flags.append(format.isMultiCamSupported ? "MC" : "--")
             flags.append(colourFlags(format))
             flags.append(depthFlags(format))
             flags.append(String(format: "ISO%.0f-%.0f exp<=%.0fms fov%.1f z<=%.0f",
@@ -632,18 +664,6 @@ final class CameraManager: NSObject {
         guard let sibling = depthSiblingDevice(for: lens) else { return false }
         return format(for: sibling, resolution: resolution, fps: fps,
                       color: .sdr, requireDepth: true) != nil
-    }
-
-    /// Whether the lens has depth assist at any format.
-    static func hasDepth(lens: Lens) -> Bool {
-        depthSiblingDevice(for: lens) != nil
-    }
-
-    /// Whether this combo has a 10-bit HLG capture format — the UI's
-    /// gate for what the HDR choice can actually deliver.
-    static func hdrAvailable(lens: Lens, resolution: Resolution,
-                             fps: Int32) -> Bool {
-        supports(resolution: resolution, fps: fps, lens: lens, color: .hlg)
     }
 
     /// Whether any lens on this device has an Apple Log capture format —
@@ -867,7 +887,7 @@ final class CameraManager: NSObject {
         fpsThrottled = false
         pressureObservation?.invalidate()
         pressureObservation = device.observe(\.systemPressureState,
-                                             options: [.new]) {
+                                             options: [.initial, .new]) {
             [weak self] observedDevice, _ in
             self?.systemPressureChanged(on: observedDevice)
         }
@@ -1636,9 +1656,21 @@ final class CameraManager: NSObject {
         }
     }
 
+    /// sessionQueue only.
+    private var wantsRunning = false
+
     func start() {
         sessionQueue.async { [session] in
+            self.wantsRunning = true
             if !session.isRunning {
+                session.startRunning()
+            }
+        }
+    }
+
+    private func restartIfWanted() {
+        sessionQueue.async { [session] in
+            if self.wantsRunning, !session.isRunning {
                 session.startRunning()
             }
         }
@@ -1646,6 +1678,7 @@ final class CameraManager: NSObject {
 
     func stop() {
         sessionQueue.async { [session] in
+            self.wantsRunning = false
             if session.isRunning {
                 session.stopRunning()
             }

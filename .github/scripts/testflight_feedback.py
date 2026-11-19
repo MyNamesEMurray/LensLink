@@ -40,13 +40,21 @@ def request(url, token, method="GET", body=None):
     if body is not None:
         req.add_header("Content-Type", "application/json")
         req.data = json.dumps(body).encode()
-    try:
-        with urllib.request.urlopen(req) as resp:
-            raw = resp.read()
-            # Relationship writes answer 204 with an empty body.
-            return resp.status, (json.loads(raw) if raw else {})
-    except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read() or b"{}")
+    for attempt in range(3 if method == "GET" else 1):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                raw = resp.read()
+                # Relationship writes answer 204 with an empty body.
+                return resp.status, (json.loads(raw) if raw else {})
+        except urllib.error.HTTPError as e:
+            if method == "GET" and e.code >= 500 and attempt < 2:
+                time.sleep(2 ** attempt)
+                continue
+            return e.code, json.loads(e.read() or b"{}")
+        except (urllib.error.URLError, TimeoutError):
+            if method != "GET" or attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
 
 
 def asc_token():
@@ -83,17 +91,19 @@ def gh(path, method="GET", body=None):
 
 
 def existing_marker_ids(repo):
-    """Scan issues labelled `testflight` for already-mirrored feedback."""
+    """Scan every issue, open or closed, for already-mirrored feedback."""
     seen, page = set(), 1
     while True:
-        status, issues = gh(f"/repos/{repo}/issues?labels={LABEL}"
-                            f"&state=all&per_page=100&page={page}")
-        if status != 200 or not issues:
-            break
+        status, issues = gh(f"/repos/{repo}/issues?state=all"
+                            f"&per_page=100&page={page}")
+        if status != 200:
+            raise RuntimeError(f"listing issues failed ({status}): "
+                               f"{json.dumps(issues)[:300]}")
+        if not issues:
+            return seen
         for issue in issues:
             seen.update(re.findall(rf"{MARKER}: (\S+)", issue.get("body") or ""))
         page += 1
-    return seen
 
 
 def build_versions(payload):

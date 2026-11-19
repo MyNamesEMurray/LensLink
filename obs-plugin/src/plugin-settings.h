@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,13 @@ bool lenslink_settings_gpu_pipeline(void);
 
 bool lenslink_settings_web_enabled(void);
 int lenslink_settings_web_port(void);
+/* LAN access to the web panel (off by default) and its access key. */
+bool lenslink_settings_web_lan(void);
+void lenslink_settings_web_key(char *out, size_t size);
+/* A fresh random key (33 bytes incl. NUL) for the dialog's "New key". */
+bool lenslink_settings_new_key(char *out, size_t size);
+/* This PC's outbound IPv4 address as text, false when it has none. */
+bool lenslink_settings_local_ipv4(char *out, size_t size);
 bool lenslink_settings_diagnostics(void);
 bool lenslink_settings_dump_stream(void);
 /* Pipeline benchmark logging (see pipeline-bench.h). */
@@ -59,6 +67,8 @@ void ios_camera_apply_global_settings(void);
 #define LLS_GPU_PIPELINE "gpu_pipeline"
 #define LLS_WEB_ENABLED "web_control"
 #define LLS_WEB_PORT "web_control_port"
+#define LLS_WEB_LAN "web_control_lan"
+#define LLS_WEB_KEY "web_control_key"
 #define LLS_DIAGNOSTICS "diagnostics"
 #define LLS_DUMP_STREAM "dump_stream"
 #define LLS_BENCHMARK "pipeline_benchmark"

@@ -24,11 +24,22 @@
 
 #include <QCheckBox>
 #include <QClipboard>
+#include <QComboBox>
+#include <QDateTime>
+#include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QSignalBlocker>
+#include <QSlider>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGuiApplication>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QSpinBox>
@@ -37,10 +48,13 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <functional>
 #include <string>
 #include <unordered_map>
 
 extern "C" {
+#include "camera-controls.h"
+#include "controls.h"
 #include "diagnostics.h"
 #include "health.h"
 #include "plugin-settings.h"
@@ -58,6 +72,7 @@ namespace {
 
 constexpr int MAX_SOURCES = 16;
 constexpr char DOCK_ID[] = "lenslink_health";
+constexpr char CONTROLS_DOCK_ID[] = "lenslink_controls";
 
 /* Runtime-resolved frontend API (see file comment). */
 struct FrontendApi {
@@ -87,6 +102,424 @@ template<typename T> void resolve(T &fn, const char *name)
 QLabel *status_label = nullptr;
 QLabel *dock_label = nullptr; /* owned by OBS once the dock is added */
 QTimer *timer = nullptr;
+
+class FramePad : public QWidget {
+public:
+	std::function<void(double, double)> on_move;
+	double zoom = 1.0;
+	double cx = 0.5;
+	double cy = 0.5;
+	bool dragging = false;
+
+	FramePad()
+	{
+		setMinimumHeight(72);
+		setCursor(Qt::OpenHandCursor);
+	}
+
+	QSize sizeHint() const override { return QSize(200, 112); }
+
+	void set_window(double z, double x, double y)
+	{
+		zoom = z;
+		cx = x;
+		cy = y;
+		update();
+	}
+
+protected:
+	void paintEvent(QPaintEvent *) override
+	{
+		QPainter p(this);
+		p.fillRect(rect(), QColor(255, 255, 255, 20));
+		double w = width() / zoom;
+		double h = height() / zoom;
+		QRectF box(cx * width() - w / 2, cy * height() - h / 2, w, h);
+		p.setBrush(QColor(61, 123, 255, 60));
+		p.setPen(QPen(QColor(61, 123, 255), 2));
+		p.drawRoundedRect(box.adjusted(1, 1, -1, -1), 4, 4);
+	}
+
+	void mousePressEvent(QMouseEvent *e) override
+	{
+		dragging = true;
+		move_to(e->position());
+	}
+
+	void mouseMoveEvent(QMouseEvent *e) override
+	{
+		if (dragging)
+			move_to(e->position());
+	}
+
+	void mouseReleaseEvent(QMouseEvent *) override { dragging = false; }
+
+private:
+	void move_to(QPointF at)
+	{
+		double half = 0.5 / zoom;
+		cx = qBound(half, at.x() / width(), 1.0 - half);
+		cy = qBound(half, at.y() / height(), 1.0 - half);
+		update();
+		if (on_move)
+			on_move(cx, cy);
+	}
+};
+
+struct Controls {
+	QWidget *root = nullptr;
+	QComboBox *source = nullptr;
+	QLabel *note = nullptr;
+	QWidget *body = nullptr;
+	QSlider *zoom = nullptr;
+	QLabel *zoom_value = nullptr;
+	QWidget *zoom_row = nullptr;
+	QComboBox *lens = nullptr;
+	QWidget *lens_row = nullptr;
+	QPushButton *flash = nullptr;
+	QSlider *rf_zoom = nullptr;
+	QLabel *rf_value = nullptr;
+	FramePad *pad = nullptr;
+	QWidget *rf_box = nullptr;
+	QCheckBox *hq = nullptr;
+	QCheckBox *gs = nullptr;
+	QComboBox *stab = nullptr;
+	QWidget *stab_row = nullptr;
+	QComboBox *res = nullptr;
+	QComboBox *fps = nullptr;
+	QComboBox *codec = nullptr;
+	QWidget *format_row = nullptr;
+	qint64 touched = 0;
+	lenslink_ctl_state state = {};
+} ctl;
+
+QString num(double v, int digits)
+{
+	return QString::number(v, 'f', digits);
+}
+
+void ctl_send(const QString &json)
+{
+	if (!ctl.source || ctl.source->currentIndex() < 0)
+		return;
+	ctl.touched = QDateTime::currentMSecsSinceEpoch();
+	QByteArray name = ctl.source->currentData().toString().toUtf8();
+	lenslink_source_send(name.constData(), json.toUtf8().constData());
+}
+
+void ctl_send_reframe()
+{
+	ctl_send(QStringLiteral("{\"cmd\":\"reframe\",\"zoom\":%1,\"x\":%2,\"y\":%3}")
+			 .arg(num(ctl.rf_zoom->value() / 10.0, 2),
+			      num(ctl.pad->cx, 3), num(ctl.pad->cy, 3)));
+}
+
+QWidget *labelled(const char *key, QWidget *field, QWidget *parent)
+{
+	auto *row = new QWidget(parent);
+	auto *layout = new QHBoxLayout(row);
+	layout->setContentsMargins(0, 0, 0, 0);
+	auto *label = new QLabel(QString::fromUtf8(obs_module_text(key)), row);
+	label->setMinimumWidth(84);
+	layout->addWidget(label);
+	layout->addWidget(field, 1);
+	return row;
+}
+
+QWidget *build_controls()
+{
+	auto *root = new QWidget;
+	ctl.root = root;
+	auto *outer = new QVBoxLayout(root);
+	outer->setContentsMargins(10, 8, 10, 8);
+
+	ctl.source = new QComboBox(root);
+	outer->addWidget(ctl.source);
+	ctl.note = new QLabel(root);
+	ctl.note->setWordWrap(true);
+	ctl.note->setStyleSheet(QStringLiteral("color: gray;"));
+	outer->addWidget(ctl.note);
+
+	ctl.body = new QWidget(root);
+	auto *body = new QVBoxLayout(ctl.body);
+	body->setContentsMargins(0, 0, 0, 0);
+	outer->addWidget(ctl.body);
+
+	ctl.zoom = new QSlider(Qt::Horizontal, ctl.body);
+	ctl.zoom_value = new QLabel(ctl.body);
+	ctl.zoom_value->setMinimumWidth(40);
+	auto *zoom_field = new QWidget(ctl.body);
+	auto *zoom_layout = new QHBoxLayout(zoom_field);
+	zoom_layout->setContentsMargins(0, 0, 0, 0);
+	zoom_layout->addWidget(ctl.zoom, 1);
+	zoom_layout->addWidget(ctl.zoom_value);
+	ctl.zoom_row = labelled("Web.Zoom", zoom_field, ctl.body);
+	body->addWidget(ctl.zoom_row);
+	QObject::connect(ctl.zoom, &QSlider::valueChanged, [](int v) {
+		ctl.zoom_value->setText(num(v / 10.0, 1) + QStringLiteral("×"));
+		ctl_send(QStringLiteral("{\"cmd\":\"zoom\",\"value\":%1}")
+				 .arg(num(v / 10.0, 2)));
+	});
+
+	ctl.lens = new QComboBox(ctl.body);
+	ctl.lens_row = labelled("Web.Lens", ctl.lens, ctl.body);
+	body->addWidget(ctl.lens_row);
+	QObject::connect(ctl.lens, &QComboBox::activated, [](int i) {
+		QJsonObject cmd;
+		cmd["cmd"] = "selectLens";
+		cmd["label"] = ctl.lens->itemData(i).toString();
+		ctl_send(QString::fromUtf8(
+			QJsonDocument(cmd).toJson(QJsonDocument::Compact)));
+	});
+
+	auto *buttons = new QWidget(ctl.body);
+	auto *buttons_layout = new QHBoxLayout(buttons);
+	buttons_layout->setContentsMargins(0, 0, 0, 0);
+	ctl.flash = new QPushButton(QString::fromUtf8(obs_module_text("Web.Flashlight")),
+				    buttons);
+	ctl.flash->setCheckable(true);
+	auto *flip = new QPushButton(QString::fromUtf8(obs_module_text("Web.Flip")),
+				     buttons);
+	buttons_layout->addWidget(ctl.flash);
+	buttons_layout->addWidget(flip);
+	body->addWidget(buttons);
+	QObject::connect(ctl.flash, &QPushButton::clicked, [](bool on) {
+		ctl_send(QStringLiteral("{\"cmd\":\"flashlight\",\"on\":%1}")
+				 .arg(on ? "true" : "false"));
+	});
+	QObject::connect(flip, &QPushButton::clicked,
+			 [] { ctl_send(QStringLiteral("{\"cmd\":\"flip\"}")); });
+
+	ctl.rf_box = new QWidget(ctl.body);
+	auto *rf = new QVBoxLayout(ctl.rf_box);
+	rf->setContentsMargins(0, 0, 0, 0);
+	ctl.rf_zoom = new QSlider(Qt::Horizontal, ctl.rf_box);
+	ctl.rf_zoom->setRange(10, 40);
+	ctl.rf_value = new QLabel(ctl.rf_box);
+	ctl.rf_value->setMinimumWidth(40);
+	auto *rf_field = new QWidget(ctl.rf_box);
+	auto *rf_layout = new QHBoxLayout(rf_field);
+	rf_layout->setContentsMargins(0, 0, 0, 0);
+	rf_layout->addWidget(ctl.rf_zoom, 1);
+	rf_layout->addWidget(ctl.rf_value);
+	rf->addWidget(labelled("Web.Reframe", rf_field, ctl.rf_box));
+	ctl.pad = new FramePad;
+	ctl.pad->setParent(ctl.rf_box);
+	ctl.pad->setToolTip(QString::fromUtf8(obs_module_text("Web.Reframe.Pad")));
+	rf->addWidget(ctl.pad);
+	ctl.hq = new QCheckBox(QString::fromUtf8(obs_module_text("Web.Reframe.HQ")),
+			       ctl.rf_box);
+	ctl.hq->setToolTip(QString::fromUtf8(obs_module_text("Web.Reframe.HQ.Tip")));
+	rf->addWidget(ctl.hq);
+	body->addWidget(ctl.rf_box);
+	QObject::connect(ctl.rf_zoom, &QSlider::valueChanged, [](int v) {
+		ctl.rf_value->setText(num(v / 10.0, 1) + QStringLiteral("×"));
+		double half = 0.5 / (v / 10.0);
+		ctl.pad->set_window(v / 10.0, qBound(half, ctl.pad->cx, 1.0 - half),
+				    qBound(half, ctl.pad->cy, 1.0 - half));
+		ctl_send_reframe();
+	});
+	ctl.pad->on_move = [](double, double) { ctl_send_reframe(); };
+	QObject::connect(ctl.hq, &QCheckBox::clicked, [](bool on) {
+		ctl_send(QStringLiteral("{\"cmd\":\"reframe\",\"hq\":%1}")
+				 .arg(on ? "true" : "false"));
+	});
+
+	ctl.gs = new QCheckBox(QString::fromUtf8(obs_module_text("Web.GreenScreen")),
+			       ctl.body);
+	body->addWidget(ctl.gs);
+	QObject::connect(ctl.gs, &QCheckBox::clicked, [](bool on) {
+		ctl_send(QStringLiteral("{\"cmd\":\"green_screen\",\"on\":%1}")
+				 .arg(on ? "true" : "false"));
+	});
+
+	ctl.stab = new QComboBox(ctl.body);
+	ctl.stab->addItem(QString::fromUtf8(obs_module_text("Web.Stabilization.Off")),
+			  QStringLiteral("off"));
+	ctl.stab->addItem(
+		QString::fromUtf8(obs_module_text("Web.Stabilization.Standard")),
+		QStringLiteral("standard"));
+	ctl.stab->addItem(
+		QString::fromUtf8(obs_module_text("Web.Stabilization.Cinematic")),
+		QStringLiteral("cinematic"));
+	ctl.stab_row = labelled("Web.Stabilization", ctl.stab, ctl.body);
+	body->addWidget(ctl.stab_row);
+	QObject::connect(ctl.stab, &QComboBox::activated, [](int i) {
+		ctl_send(QStringLiteral("{\"cmd\":\"stabilization\",\"mode\":\"%1\"}")
+				 .arg(ctl.stab->itemData(i).toString()));
+	});
+
+	ctl.format_row = new QWidget(ctl.body);
+	auto *format = new QHBoxLayout(ctl.format_row);
+	format->setContentsMargins(0, 0, 0, 0);
+	ctl.res = new QComboBox(ctl.format_row);
+	ctl.fps = new QComboBox(ctl.format_row);
+	ctl.codec = new QComboBox(ctl.format_row);
+	format->addWidget(ctl.res);
+	format->addWidget(ctl.fps);
+	format->addWidget(ctl.codec);
+	body->addWidget(ctl.format_row);
+	QObject::connect(ctl.res, &QComboBox::activated, [](int i) {
+		ctl_send(QStringLiteral("{\"cmd\":\"set_format\",\"resolution\":\"%1\"}")
+				 .arg(ctl.res->itemText(i)));
+	});
+	QObject::connect(ctl.fps, &QComboBox::activated, [](int i) {
+		ctl_send(QStringLiteral("{\"cmd\":\"set_format\",\"fps\":%1}")
+				 .arg(ctl.fps->itemData(i).toInt()));
+	});
+	QObject::connect(ctl.codec, &QComboBox::activated, [](int i) {
+		ctl_send(QStringLiteral("{\"cmd\":\"set_format\",\"codec\":\"%1\"}")
+				 .arg(ctl.codec->itemData(i).toString()));
+	});
+
+	outer->addStretch(1);
+	return root;
+}
+
+void fill_combo(QComboBox *box, const QStringList &labels,
+		const QVariantList &values, const QVariant &current)
+{
+	QSignalBlocker block(box);
+	bool same = box->count() == labels.size();
+	for (int i = 0; same && i < labels.size(); i++)
+		same = box->itemData(i) == values[i];
+	if (!same) {
+		box->clear();
+		for (int i = 0; i < labels.size(); i++)
+			box->addItem(labels[i], values[i]);
+	}
+	box->setCurrentIndex(box->findData(current));
+}
+
+void refresh_controls(const lenslink_health *list, size_t count)
+{
+	if (!ctl.source)
+		return;
+
+	QStringList names;
+	for (size_t i = 0; i < count; i++)
+		if (!list[i].is_screen)
+			names << QString::fromUtf8(list[i].source_name);
+	{
+		QSignalBlocker block(ctl.source);
+		QString keep = ctl.source->currentData().toString();
+		bool same = ctl.source->count() == names.size();
+		for (int i = 0; same && i < names.size(); i++)
+			same = ctl.source->itemData(i).toString() == names[i];
+		if (!same) {
+			ctl.source->clear();
+			for (const QString &n : names)
+				ctl.source->addItem(n, n);
+			int at = ctl.source->findData(keep);
+			ctl.source->setCurrentIndex(at >= 0 ? at : 0);
+		}
+	}
+	ctl.source->setVisible(names.size() > 1);
+
+	if (names.isEmpty()) {
+		ctl.body->setVisible(false);
+		ctl.note->setText(QString::fromUtf8(obs_module_text("ControlsDock.Empty")));
+		return;
+	}
+
+	char json[2048];
+	QByteArray name = ctl.source->currentData().toString().toUtf8();
+	lenslink_ctl_state st;
+	if (!lenslink_source_state(name.constData(), json, sizeof(json)) ||
+	    !lenslink_ctl_parse(json, strlen(json), &st) || st.lens_count == 0) {
+		ctl.body->setVisible(false);
+		ctl.note->setText(QString::fromUtf8(obs_module_text("Controls.NotConnected")));
+		return;
+	}
+	ctl.note->clear();
+	ctl.body->setVisible(true);
+
+	if (QDateTime::currentMSecsSinceEpoch() - ctl.touched < 1500 ||
+	    ctl.pad->dragging || ctl.zoom->isSliderDown() ||
+	    ctl.rf_zoom->isSliderDown())
+		return;
+
+	{
+		QSignalBlocker block(ctl.zoom);
+		ctl.zoom_row->setVisible(st.max_zoom > 1.0);
+		ctl.zoom->setRange(10, qRound(st.max_zoom * 10));
+		ctl.zoom->setValue(qRound(st.zoom * 10));
+		ctl.zoom_value->setText(num(st.zoom, 1) + QStringLiteral("×"));
+	}
+
+	QStringList labels;
+	QVariantList values;
+	for (int i = 0; i < st.lens_count; i++) {
+		labels << QString::fromUtf8(lenslink_lens_text(st.lenses[i]));
+		values << QString::fromUtf8(st.lenses[i]);
+	}
+	ctl.lens_row->setVisible(st.lens_count > 1);
+	fill_combo(ctl.lens, labels, values, QString::fromUtf8(st.lens));
+
+	ctl.flash->setVisible(st.has_flashlight);
+	{
+		QSignalBlocker block(ctl.flash);
+		ctl.flash->setChecked(st.flashlight);
+	}
+
+	ctl.stab_row->setVisible(st.stabilization[0] != 0);
+	{
+		QSignalBlocker block(ctl.stab);
+		ctl.stab->setCurrentIndex(
+			ctl.stab->findData(QString::fromUtf8(st.stabilization)));
+	}
+
+	ctl.rf_box->setVisible(st.supports_reframe);
+	{
+		QSignalBlocker block(ctl.rf_zoom);
+		ctl.rf_zoom->setValue(qRound(st.reframe_zoom * 10));
+		ctl.rf_value->setText(num(st.reframe_zoom, 1) + QStringLiteral("×"));
+		ctl.pad->set_window(st.reframe_zoom, st.reframe_x, st.reframe_y);
+		ctl.pad->setVisible(st.reframe_zoom > 1.01);
+	}
+	ctl.hq->setVisible(st.supports_reframe_hq || st.reframe_hq);
+	{
+		QSignalBlocker block(ctl.hq);
+		ctl.hq->setChecked(st.reframe_hq);
+	}
+
+	ctl.gs->setVisible(st.supports_green_screen);
+	{
+		QSignalBlocker block(ctl.gs);
+		ctl.gs->setChecked(st.green_screen);
+	}
+
+	bool formats = st.resolution_count > 0 && st.frame_rate_count > 0;
+	ctl.format_row->setVisible(formats);
+	if (formats) {
+		QStringList res;
+		QVariantList res_values;
+		for (int i = 0; i < st.resolution_count; i++) {
+			res << QString::fromUtf8(st.resolutions[i]);
+			res_values << QString::fromUtf8(st.resolutions[i]);
+		}
+		fill_combo(ctl.res, res, res_values, QString::fromUtf8(st.resolution));
+		QStringList fps;
+		QVariantList fps_values;
+		for (int i = 0; i < st.frame_rate_count; i++) {
+			fps << QStringLiteral("%1 fps").arg(st.frame_rates[i]);
+			fps_values << st.frame_rates[i];
+		}
+		fill_combo(ctl.fps, fps, fps_values, st.fps);
+		QStringList codecs;
+		QVariantList codec_values;
+		for (int i = 0; i < st.codec_count; i++) {
+			QString c = QString::fromUtf8(st.codecs[i]);
+			codecs << (c == QStringLiteral("hevc") ? QStringLiteral("HEVC")
+				   : c == QStringLiteral("h264") ? QStringLiteral("H.264")
+								 : c);
+			codec_values << c;
+		}
+		ctl.codec->setVisible(st.codec_count > 1);
+		fill_combo(ctl.codec, codecs, codec_values,
+			   QString::fromUtf8(st.codec));
+	}
+}
 
 /* Rate derivation: previous cumulative counters per source name. */
 struct PrevSample {
@@ -197,6 +630,8 @@ void refresh()
 		status_label->setVisible(false);
 	}
 
+	refresh_controls(list, count);
+
 	if (dock_label) {
 		dock_label->setText(
 			dock_rows.isEmpty()
@@ -234,6 +669,16 @@ void create_widgets()
 		}
 	}
 
+	if (api.add_dock_by_id) {
+		QWidget *controls = build_controls();
+		if (!api.add_dock_by_id(CONTROLS_DOCK_ID,
+					obs_module_text("ControlsDock"),
+					controls)) {
+			delete controls;
+			ctl = Controls();
+		}
+	}
+
 	timer = new QTimer(window);
 	QObject::connect(timer, &QTimer::timeout, [] { refresh(); });
 	timer->start(1000);
@@ -263,6 +708,11 @@ void destroy_widgets()
 			api.remove_dock(DOCK_ID);
 		dock_label = nullptr;
 	}
+	if (ctl.root) {
+		if (api.remove_dock)
+			api.remove_dock(CONTROLS_DOCK_ID);
+		ctl = Controls();
+	}
 	previous.clear();
 }
 
@@ -288,6 +738,17 @@ void show_settings_dialog(void *)
 	auto *web = new QCheckBox(obs_module_text("Settings.Web"), &dialog);
 	auto *port = new QSpinBox(&dialog);
 	port->setRange(1024, 65535);
+	auto *lan = new QCheckBox(obs_module_text("Settings.WebLan"), &dialog);
+	auto *lan_note = new QLabel(obs_module_text("Settings.WebLan.Note"),
+				    &dialog);
+	lan_note->setWordWrap(true);
+	lan_note->setStyleSheet(QStringLiteral("color: gray;"));
+	auto *lan_url = new QLineEdit(&dialog);
+	lan_url->setReadOnly(true);
+	auto *lan_copy = new QPushButton(obs_module_text("Settings.WebLanCopy"),
+					 &dialog);
+	auto *lan_new = new QPushButton(obs_module_text("Settings.WebLanNewKey"),
+					&dialog);
 	auto *diag = new QCheckBox(obs_module_text("Settings.Diagnostics"),
 				   &dialog);
 	auto *dump = new QCheckBox(obs_module_text("Settings.Dump"), &dialog);
@@ -299,6 +760,9 @@ void show_settings_dialog(void *)
 	gpu->setChecked(obs_data_get_bool(current, LLS_GPU_PIPELINE));
 	web->setChecked(obs_data_get_bool(current, LLS_WEB_ENABLED));
 	port->setValue((int)obs_data_get_int(current, LLS_WEB_PORT));
+	lan->setChecked(obs_data_get_bool(current, LLS_WEB_LAN));
+	QString key = QString::fromUtf8(
+		obs_data_get_string(current, LLS_WEB_KEY));
 	diag->setChecked(obs_data_get_bool(current, LLS_DIAGNOSTICS));
 	dump->setChecked(obs_data_get_bool(current, LLS_DUMP_STREAM));
 	bench->setChecked(obs_data_get_bool(current, LLS_BENCHMARK));
@@ -311,10 +775,51 @@ void show_settings_dialog(void *)
 	auto *form = new QFormLayout();
 	form->addRow(obs_module_text("Settings.WebPort"), port);
 	layout->addLayout(form);
+	layout->addWidget(lan);
+	layout->addWidget(lan_note);
+	auto *lan_row = new QHBoxLayout();
+	lan_row->addWidget(lan_url, 1);
+	lan_row->addWidget(lan_copy);
+	lan_row->addWidget(lan_new);
+	layout->addLayout(lan_row);
 	layout->addSpacing(12);
 	layout->addWidget(diag);
 	layout->addWidget(dump);
 	layout->addWidget(bench);
+
+	char new_key[64];
+	if (key.isEmpty() && lenslink_settings_new_key(new_key, sizeof(new_key)))
+		key = QString::fromUtf8(new_key);
+
+	char ip[64];
+	QString host = lenslink_settings_local_ipv4(ip, sizeof(ip))
+			       ? QString::fromUtf8(ip)
+			       : QStringLiteral("0.0.0.0");
+	auto refresh_url = [=, &key]() {
+		lan_url->setText(QStringLiteral("http://%1:%2/?key=%3")
+					 .arg(host)
+					 .arg(port->value())
+					 .arg(key));
+		bool on = lan->isChecked() && web->isChecked();
+		lan_url->setEnabled(on);
+		lan_copy->setEnabled(on);
+		lan_new->setEnabled(on);
+	};
+	refresh_url();
+	QObject::connect(lan, &QCheckBox::toggled, refresh_url);
+	QObject::connect(web, &QCheckBox::toggled, refresh_url);
+	QObject::connect(port, QOverload<int>::of(&QSpinBox::valueChanged),
+			 refresh_url);
+	QObject::connect(lan_copy, &QPushButton::clicked, [lan_url]() {
+		QGuiApplication::clipboard()->setText(lan_url->text());
+	});
+	QObject::connect(lan_new, &QPushButton::clicked, [&key, refresh_url]() {
+		char fresh[64];
+		if (lenslink_settings_new_key(fresh, sizeof(fresh))) {
+			key = QString::fromUtf8(fresh);
+			refresh_url();
+		}
+	});
 
 	/* Version footer, mirroring the source-properties one. */
 	auto *version = new QLabel(
@@ -361,6 +866,8 @@ void show_settings_dialog(void *)
 	obs_data_set_bool(values, LLS_GPU_PIPELINE, gpu->isChecked());
 	obs_data_set_bool(values, LLS_WEB_ENABLED, web->isChecked());
 	obs_data_set_int(values, LLS_WEB_PORT, port->value());
+	obs_data_set_bool(values, LLS_WEB_LAN, lan->isChecked());
+	obs_data_set_string(values, LLS_WEB_KEY, key.toUtf8().constData());
 	obs_data_set_bool(values, LLS_DIAGNOSTICS, diag->isChecked());
 	obs_data_set_bool(values, LLS_DUMP_STREAM, dump->isChecked());
 	obs_data_set_bool(values, LLS_BENCHMARK, bench->isChecked());

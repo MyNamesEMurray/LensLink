@@ -263,7 +263,7 @@ ELEMENT_ID = re.compile(r'(?<![\w-])id="([^"]*)"')
 def localize_links(body, loc, known):
     def repl(match):
         href = match.group(1)
-        path = re.split(r"[?#]", href, 1)[0]
+        path = re.split(r"[?#]", href, maxsplit=1)[0]
         return 'href="%s"' % loc.url(href) if path in known else match.group(0)
     return HREF.sub(repl, body)
 

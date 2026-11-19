@@ -159,3 +159,17 @@ static inline bool net_set_blocking(socket_t s)
 	return fcntl(s, F_SETFL, flags & ~O_NONBLOCK) == 0;
 #endif
 }
+
+/* Send/receive timeouts in seconds (0 = block forever). */
+static inline void net_set_timeouts(socket_t s, int seconds)
+{
+#ifdef _WIN32
+	DWORD ms = (DWORD)seconds * 1000;
+	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&ms, sizeof(ms));
+	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char *)&ms, sizeof(ms));
+#else
+	struct timeval tv = {.tv_sec = seconds, .tv_usec = 0};
+	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+#endif
+}

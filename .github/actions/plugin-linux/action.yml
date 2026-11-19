@@ -64,9 +64,14 @@ runs:
     # Flatpak) as libobs.so.30: a NEEDED entry for either soname stops the
     # module loading under the other (issue #157). OBS has libobs loaded
     # before it opens any plugin, so the symbols resolve without one.
+    # Whatever soname the runner's libobs-dev carries is dropped, so a
+    # runner image moving to a newer libobs cannot fail the guard below.
     - name: Drop the libobs soname dependency
       shell: bash
-      run: patchelf --remove-needed libobs.so.0 obs-plugin/build/lenslink.so
+      run: |
+        for lib in $(readelf -d obs-plugin/build/lenslink.so | grep -o 'libobs\.so[^]]*'); do
+          patchelf --remove-needed "$lib" obs-plugin/build/lenslink.so
+        done
 
     # Fail the build if the binary regressed to soname-coupled shared
     # FFmpeg (the exact breakage of issue #65), lost its VAAPI or libdrm
