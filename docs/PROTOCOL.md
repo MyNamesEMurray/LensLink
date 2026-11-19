@@ -192,7 +192,8 @@ default) to 4; `x` and `y` are the window's centre, 0–1 from the top-left
 of the streamed picture, and the app clamps them so the window stays
 inside the frame. Any subset of the fields may be present. Camera `zoom`
 is separate and still applies first. STATE advertises
-`"supportsReframe": true` (remote UIs gate their control on it) and
+`"supportsReframe": true` (remote UIs gate their control on it; phones
+on iOS 15 never advertise it, since the scaler needs iOS 16) and
 carries `"reframe": { "zoom", "x", "y" }` only while the window is not
 the whole picture. The setting is not saved: it resets when the app
 restarts. Apps that predate it ignore the command.

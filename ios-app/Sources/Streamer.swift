@@ -367,13 +367,9 @@ final class Streamer: ObservableObject {
         compositor?.onAutoCutoff = { [weak self] metres in
             Task { @MainActor in self?.greenScreenAutoCutoff = Double(metres) }
         }
-        let streamSize = resolution.size
-        let reframer = FrameReframer(width: Int(streamSize.width),
-                                     height: Int(streamSize.height))
-        let reframeWindow = reframeCell
+        let reframe = makeReframeStep()
         if let compositor {
-            camera.onSampleBuffer = { [weak encoder, compositor, reframer,
-                                       reframeWindow,
+            camera.onSampleBuffer = { [weak encoder, compositor, reframe,
                                        still = pausedStill,
                                        gate = pauseGate] sampleBuffer in
                 // Fail-open is the compositor's contract: any
@@ -381,8 +377,7 @@ final class Streamer: ObservableObject {
                 // untouched; nil only on pool exhaustion — drop the
                 // frame, never queue.
                 if let composed = compositor.composite(sampleBuffer: sampleBuffer),
-                   let output = FrameReframer.apply(reframer, to: composed,
-                                                    cell: reframeWindow) {
+                   let output = reframe(composed) {
                     // What the still is drawn from is what OBS was
                     // seeing: the composited frame, green screen and all.
                     still.note(output)
@@ -399,11 +394,10 @@ final class Streamer: ObservableObject {
                 compositor.updateDepth(depth)
             }
         } else {
-            camera.onSampleBuffer = { [weak encoder, reframer, reframeWindow,
+            camera.onSampleBuffer = { [weak encoder, reframe,
                                        still = pausedStill,
                                        gate = pauseGate] captured in
-                guard let sampleBuffer = FrameReframer.apply(
-                    reframer, to: captured, cell: reframeWindow) else { return }
+                guard let sampleBuffer = reframe(captured) else { return }
                 still.note(sampleBuffer)
                 // The gate sits here, at the encoder's input: while a
                 // stream is held the camera's frames simply aren't
@@ -1100,12 +1094,14 @@ final class Streamer: ObservableObject {
         // live keys appear only while actually armed — the compositor,
         // not the setting, is the truth — so a snapshot with green
         // screen off matches today's apart from supportsGreenScreen.
-        state["supportsReframe"] = true
-        if biggerCaptureResolution != nil { state["supportsReframeHQ"] = true }
-        if reframeHQ { state["reframeHQ"] = true }
-        if reframeWindow.isActive {
-            state["reframe"] = ["zoom": reframeWindow.zoom,
-                                "x": reframeWindow.x, "y": reframeWindow.y]
+        if Self.reframeAvailable {
+            state["supportsReframe"] = true
+            if biggerCaptureResolution != nil { state["supportsReframeHQ"] = true }
+            if reframeHQ { state["reframeHQ"] = true }
+            if reframeWindow.isActive {
+                state["reframe"] = ["zoom": reframeWindow.zoom,
+                                    "x": reframeWindow.x, "y": reframeWindow.y]
+            }
         }
         state["supportsGreenScreen"] = FrameCompositor.supportsSegmentation
             && greenScreenOffered
@@ -1476,8 +1472,25 @@ final class Streamer: ObservableObject {
         return ok ? bigger : nil
     }
 
+    static var reframeAvailable: Bool {
+        if #available(iOS 16.0, *) { return true }
+        return false
+    }
+
     private var captureResolution: CameraManager.Resolution {
-        reframeHQ ? biggerCaptureResolution ?? resolution : resolution
+        reframeHQ && Self.reframeAvailable
+            ? biggerCaptureResolution ?? resolution : resolution
+    }
+
+    private func makeReframeStep() -> (CMSampleBuffer) -> CMSampleBuffer? {
+        guard #available(iOS 16.0, *) else { return { $0 } }
+        let size = resolution.size
+        guard let reframer = FrameReframer(width: Int(size.width),
+                                           height: Int(size.height)) else {
+            return { $0 }
+        }
+        let cell = reframeCell
+        return { FrameReframer.apply(reframer, to: $0, cell: cell) }
     }
     @Published private(set) var reframeWindow = ReframeCell.Window()
 

@@ -29,6 +29,7 @@ final class ReframeCell: @unchecked Sendable {
     }
 }
 
+@available(iOS 16.0, *)
 final class FrameReframer {
     private let session: VTPixelTransferSession
     private var pool: CVPixelBufferPool?
