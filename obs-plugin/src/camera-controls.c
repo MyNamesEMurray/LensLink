@@ -22,6 +22,19 @@
 #define CTL_FPS "ctl_fps"
 #define CTL_CODEC "ctl_codec"
 
+#define CTL_STATE_BUF (32 * 1024 + 1)
+
+void lenslink_camera_controls_clear(obs_data_t *settings)
+{
+	static const char *const keys[] = {
+		CTL_ZOOM, CTL_LENS,  CTL_FLASH, CTL_STAB,  CTL_RF_ZOOM,
+		CTL_RF_X, CTL_RF_Y,  CTL_RF_HQ, CTL_GS,    CTL_RES,
+		CTL_FPS,  CTL_CODEC,
+	};
+	for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
+		obs_data_erase(settings, keys[i]);
+}
+
 const char *lenslink_lens_text(const char *label)
 {
 	static const struct {
@@ -57,10 +70,11 @@ static bool ctl_modified(obs_properties_t *props, obs_property_t *property,
 	if (!s)
 		return false;
 
-	char state[2048];
+	char state[CTL_STATE_BUF];
 	struct lenslink_ctl_state st;
 	ios_camera_copy_state(s, state, sizeof(state));
-	if (!lenslink_ctl_parse(state, strlen(state), &st))
+	if (!lenslink_ctl_parse(state, strlen(state), &st) ||
+	    st.lens_count == 0)
 		return false;
 
 	const char *name = obs_property_name(property);
@@ -205,7 +219,7 @@ void lenslink_camera_controls_add(obs_properties_t *props,
 	obs_properties_t *g = obs_properties_create();
 	obs_properties_set_param(g, s, NULL);
 
-	char state[2048];
+	char state[CTL_STATE_BUF];
 	struct lenslink_ctl_state st;
 	ios_camera_copy_state(s, state, sizeof(state));
 	bool live = lenslink_ctl_parse(state, strlen(state), &st) &&
