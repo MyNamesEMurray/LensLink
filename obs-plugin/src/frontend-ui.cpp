@@ -28,7 +28,9 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGuiApplication>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QSpinBox>
@@ -288,6 +290,17 @@ void show_settings_dialog(void *)
 	auto *web = new QCheckBox(obs_module_text("Settings.Web"), &dialog);
 	auto *port = new QSpinBox(&dialog);
 	port->setRange(1024, 65535);
+	auto *lan = new QCheckBox(obs_module_text("Settings.WebLan"), &dialog);
+	auto *lan_note = new QLabel(obs_module_text("Settings.WebLan.Note"),
+				    &dialog);
+	lan_note->setWordWrap(true);
+	lan_note->setStyleSheet(QStringLiteral("color: gray;"));
+	auto *lan_url = new QLineEdit(&dialog);
+	lan_url->setReadOnly(true);
+	auto *lan_copy = new QPushButton(obs_module_text("Settings.WebLanCopy"),
+					 &dialog);
+	auto *lan_new = new QPushButton(obs_module_text("Settings.WebLanNewKey"),
+					&dialog);
 	auto *diag = new QCheckBox(obs_module_text("Settings.Diagnostics"),
 				   &dialog);
 	auto *dump = new QCheckBox(obs_module_text("Settings.Dump"), &dialog);
@@ -299,6 +312,9 @@ void show_settings_dialog(void *)
 	gpu->setChecked(obs_data_get_bool(current, LLS_GPU_PIPELINE));
 	web->setChecked(obs_data_get_bool(current, LLS_WEB_ENABLED));
 	port->setValue((int)obs_data_get_int(current, LLS_WEB_PORT));
+	lan->setChecked(obs_data_get_bool(current, LLS_WEB_LAN));
+	QString key = QString::fromUtf8(
+		obs_data_get_string(current, LLS_WEB_KEY));
 	diag->setChecked(obs_data_get_bool(current, LLS_DIAGNOSTICS));
 	dump->setChecked(obs_data_get_bool(current, LLS_DUMP_STREAM));
 	bench->setChecked(obs_data_get_bool(current, LLS_BENCHMARK));
@@ -311,10 +327,51 @@ void show_settings_dialog(void *)
 	auto *form = new QFormLayout();
 	form->addRow(obs_module_text("Settings.WebPort"), port);
 	layout->addLayout(form);
+	layout->addWidget(lan);
+	layout->addWidget(lan_note);
+	auto *lan_row = new QHBoxLayout();
+	lan_row->addWidget(lan_url, 1);
+	lan_row->addWidget(lan_copy);
+	lan_row->addWidget(lan_new);
+	layout->addLayout(lan_row);
 	layout->addSpacing(12);
 	layout->addWidget(diag);
 	layout->addWidget(dump);
 	layout->addWidget(bench);
+
+	char new_key[64];
+	if (key.isEmpty() && lenslink_settings_new_key(new_key, sizeof(new_key)))
+		key = QString::fromUtf8(new_key);
+
+	char ip[64];
+	QString host = lenslink_settings_local_ipv4(ip, sizeof(ip))
+			       ? QString::fromUtf8(ip)
+			       : QStringLiteral("0.0.0.0");
+	auto refresh_url = [=, &key]() {
+		lan_url->setText(QStringLiteral("http://%1:%2/?key=%3")
+					 .arg(host)
+					 .arg(port->value())
+					 .arg(key));
+		bool on = lan->isChecked() && web->isChecked();
+		lan_url->setEnabled(on);
+		lan_copy->setEnabled(on);
+		lan_new->setEnabled(on);
+	};
+	refresh_url();
+	QObject::connect(lan, &QCheckBox::toggled, refresh_url);
+	QObject::connect(web, &QCheckBox::toggled, refresh_url);
+	QObject::connect(port, QOverload<int>::of(&QSpinBox::valueChanged),
+			 refresh_url);
+	QObject::connect(lan_copy, &QPushButton::clicked, [lan_url]() {
+		QGuiApplication::clipboard()->setText(lan_url->text());
+	});
+	QObject::connect(lan_new, &QPushButton::clicked, [&key, refresh_url]() {
+		char fresh[64];
+		if (lenslink_settings_new_key(fresh, sizeof(fresh))) {
+			key = QString::fromUtf8(fresh);
+			refresh_url();
+		}
+	});
 
 	/* Version footer, mirroring the source-properties one. */
 	auto *version = new QLabel(
@@ -361,6 +418,8 @@ void show_settings_dialog(void *)
 	obs_data_set_bool(values, LLS_GPU_PIPELINE, gpu->isChecked());
 	obs_data_set_bool(values, LLS_WEB_ENABLED, web->isChecked());
 	obs_data_set_int(values, LLS_WEB_PORT, port->value());
+	obs_data_set_bool(values, LLS_WEB_LAN, lan->isChecked());
+	obs_data_set_string(values, LLS_WEB_KEY, key.toUtf8().constData());
 	obs_data_set_bool(values, LLS_DIAGNOSTICS, diag->isChecked());
 	obs_data_set_bool(values, LLS_DUMP_STREAM, dump->isChecked());
 	obs_data_set_bool(values, LLS_BENCHMARK, bench->isChecked());

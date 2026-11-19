@@ -12,11 +12,14 @@
 
 #include "net-compat.h"
 #include "web-control.h"
+#include "web-auth.h"
 #include "plugin-settings.h"
 #include "diagnostics.h"
+#include "json-reader.h"
 
 #define MAX_REQUEST (16 * 1024)
 #define MAX_CONTROL_BODY 512
+#define REQUEST_DEADLINE_NS (3ULL * 1000000000ULL)
 
 /*
  * Browser control panel, styled to docs/UI_DESIGN.md (shared palette,
@@ -729,6 +732,7 @@ struct web_control {
 	volatile bool stop;
 	socket_t listener;
 	uint16_t port;
+	bool lan;
 };
 
 /* One server, many sources. The registry maps small stable ids (what
@@ -817,19 +821,6 @@ static enum pick_result locked_pick_source(const char *request,
 	return PICK_UNKNOWN;
 }
 
-static void set_timeouts(socket_t s, int seconds)
-{
-#ifdef _WIN32
-	DWORD ms = (DWORD)seconds * 1000;
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&ms, sizeof(ms));
-	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char *)&ms, sizeof(ms));
-#else
-	struct timeval tv = {.tv_sec = seconds, .tv_usec = 0};
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-#endif
-}
-
 static void send_bytes(socket_t s, const char *p, size_t len)
 {
 	while (len > 0) {
@@ -850,12 +841,13 @@ static void respond_len(socket_t s, const char *status_line,
 			const char *content_type, const char *body,
 			size_t len)
 {
-	char header[256];
+	char header[320];
 	snprintf(header, sizeof(header),
 		 "HTTP/1.1 %s\r\n"
 		 "Content-Type: %s\r\n"
 		 "Content-Length: %zu\r\n"
 		 "Cache-Control: no-store\r\n"
+		 "X-Frame-Options: DENY\r\n"
 		 "Connection: close\r\n\r\n",
 		 status_line, content_type, len);
 	send_str(s, header);
@@ -1007,36 +999,73 @@ static const char *tone_name(enum ios_camera_status_tone tone)
 	}
 }
 
-/* True if the header value (up to CR/LF) names a loopback host, e.g.
- * "localhost:9980" or "127.0.0.1:9980" or "http://localhost:9980". */
-static bool value_is_local(const char *v)
+static enum web_auth_result request_auth(const char *request,
+					 bool peer_loopback, bool lan)
 {
-	while (*v == ' ' || *v == '\t')
-		v++;
-	if (strncmp(v, "http://", 7) == 0)
-		v += 7;
-	return strncmp(v, "localhost", 9) == 0 ||
-	       strncmp(v, "127.0.0.1", 9) == 0;
+	char key[WEB_AUTH_KEY_SIZE];
+	lenslink_settings_web_key(key, sizeof(key));
+	return web_auth_check(find_header(request, "Host"),
+			      find_header(request, "Origin"),
+			      find_header(request, "Cookie"), request,
+			      peer_loopback, lan, key);
 }
 
-/* The listener binds to loopback, but that alone doesn't stop DNS
- * rebinding (Host: attacker.com resolving to 127.0.0.1) or cross-site
- * POSTs from web pages the streamer happens to visit (a text/plain POST
- * is a "simple request" — no CORS preflight). Require a loopback Host,
- * and a loopback Origin whenever the browser sends one. */
-static bool request_is_local(const char *request)
+static void respond_login(socket_t s)
 {
-	const char *host = find_header(request, "Host");
-	if (!host || !value_is_local(host))
-		return false;
-	const char *origin = find_header(request, "Origin");
-	if (origin && !value_is_local(origin))
-		return false;
-	return true;
+	char key[WEB_AUTH_KEY_SIZE], header[320];
+	lenslink_settings_web_key(key, sizeof(key));
+	snprintf(header, sizeof(header),
+		 "HTTP/1.1 302 Found\r\n"
+		 "Location: /\r\n"
+		 "Set-Cookie: ll_key=%s; Path=/; SameSite=Strict; HttpOnly\r\n"
+		 "Content-Length: 0\r\n"
+		 "Cache-Control: no-store\r\n"
+		 "X-Frame-Options: DENY\r\n"
+		 "Connection: close\r\n\r\n",
+		 key);
+	send_str(s, header);
 }
 
-static void handle_client(socket_t client)
+static int recv_by(socket_t s, char *buf, int len, uint64_t deadline)
 {
+	uint64_t now = os_gettime_ns();
+	if (now >= deadline)
+		return -1;
+	int ms = (int)((deadline - now) / 1000000ULL) + 1;
+	if (net_wait(s, NET_WAIT_READ, ms) <= 0)
+		return -1;
+	return (int)recv(s, buf, len, 0);
+}
+
+static bool json_object_complete(const char *body, size_t len)
+{
+	struct json_reader r;
+	lenslink_json_reader_init(&r, body, len);
+	return lenslink_json_peek(&r) == JSON_TYPE_OBJECT &&
+	       lenslink_json_skip(&r) && lenslink_json_reader_done(&r);
+}
+
+static bool parse_autostart_body(const char *body, size_t len, bool *on)
+{
+	struct json_reader r;
+	char key[16];
+	bool truncated, found = false;
+	lenslink_json_reader_init(&r, body, len);
+	if (!lenslink_json_object_begin(&r))
+		return false;
+	while (lenslink_json_object_next(&r, key, sizeof(key), &truncated)) {
+		if (!truncated && strcmp(key, "on") == 0 &&
+		    lenslink_json_read_bool(&r, on))
+			found = true;
+		else if (!lenslink_json_skip(&r))
+			return false;
+	}
+	return found && lenslink_json_reader_done(&r);
+}
+
+static void handle_client(socket_t client, bool peer_loopback, bool lan)
+{
+	uint64_t deadline = os_gettime_ns() + REQUEST_DEADLINE_NS;
 	char request[MAX_REQUEST + 1];
 	size_t have = 0;
 	const char *body = NULL;
@@ -1044,12 +1073,12 @@ static void handle_client(socket_t client)
 	/* On Windows the accepted socket inherits the listener's
 	 * non-blocking mode; this handler needs blocking reads. */
 	net_set_blocking(client);
-	set_timeouts(client, 2);
+	net_set_timeouts(client, 2);
 
 	/* Read until end of headers. */
 	while (have < MAX_REQUEST) {
-		int n = (int)recv(client, request + have,
-				  (int)(MAX_REQUEST - have), 0);
+		int n = recv_by(client, request + have,
+				(int)(MAX_REQUEST - have), deadline);
 		if (n <= 0)
 			return;
 		have += (size_t)n;
@@ -1063,6 +1092,18 @@ static void handle_client(socket_t client)
 	if (!body)
 		return;
 
+	enum web_auth_result auth = request_auth(request, peer_loopback, lan);
+	if (auth == WEB_AUTH_DENY) {
+		respond(client, "403 Forbidden", "text/plain", "forbidden");
+		return;
+	}
+	if (auth == WEB_AUTH_OK_QUERY_KEY &&
+	    (strncmp(request, "GET / ", 6) == 0 ||
+	     strncmp(request, "GET /?", 6) == 0)) {
+		respond_login(client);
+		return;
+	}
+
 	/* For POSTs, pull the whole body in before touching the source
 	 * registry — a slow client must never stall register/unregister
 	 * (the OBS UI thread) on our socket reads. */
@@ -1070,21 +1111,21 @@ static void handle_client(socket_t client)
 	size_t content_length = 0;
 	if (strncmp(request, "POST ", 5) == 0) {
 		const char *cl = find_header(request, "Content-Length");
-		content_length = cl ? (size_t)strtoul(cl, NULL, 10) : 0;
+		if (cl && !web_auth_content_length(cl, MAX_CONTROL_BODY,
+						   &content_length)) {
+			respond(client, "400 Bad Request", "text/plain",
+				"bad length");
+			return;
+		}
 		/* A zero-length body is legal here: action-only endpoints
 		 * (/api/recalibrate) POST with no body at all, and rejecting
 		 * that generically 400'd them before routing — the panel's
 		 * Recalibrate button died of exactly that. Endpoints that
 		 * *need* a body enforce it themselves below. */
-		if (content_length > MAX_CONTROL_BODY) {
-			respond(client, "400 Bad Request", "text/plain",
-				"bad length");
-			return;
-		}
 		while (have - body_offset < content_length &&
 		       have < MAX_REQUEST) {
-			int n = (int)recv(client, request + have,
-					  (int)(MAX_REQUEST - have), 0);
+			int n = recv_by(client, request + have,
+					(int)(MAX_REQUEST - have), deadline);
 			if (n <= 0)
 				return;
 			have += (size_t)n;
@@ -1098,11 +1139,6 @@ static void handle_client(socket_t client)
 				"truncated body");
 			return;
 		}
-	}
-
-	if (!request_is_local(request)) {
-		respond(client, "403 Forbidden", "text/plain", "forbidden");
-		return;
 	}
 
 	if (strncmp(request, "GET / ", 6) == 0) {
@@ -1215,13 +1251,18 @@ static void handle_client(socket_t client)
 				"body required");
 			return;
 		}
+		bool on = false;
+		if (!parse_autostart_body(request + body_offset, content_length,
+					  &on)) {
+			respond(client, "400 Bad Request", "text/plain",
+				"bad body");
+			return;
+		}
 		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
 		enum pick_result pick = locked_pick_source(request, &s);
 		if (s)
-			ios_camera_set_auto_start(
-				s,
-				strstr(request + body_offset, "true") != NULL);
+			ios_camera_set_auto_start(s, on);
 		pthread_mutex_unlock(&g_reg.mutex);
 		if (!s)
 			respond_pick_error(client, pick);
@@ -1276,6 +1317,12 @@ static void handle_client(socket_t client)
 				"body required");
 			return;
 		}
+		if (!json_object_complete(request + body_offset,
+					  content_length)) {
+			respond(client, "400 Bad Request", "text/plain",
+				"bad body");
+			return;
+		}
 		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
 		enum pick_result pick = locked_pick_source(request, &s);
@@ -1313,14 +1360,16 @@ static void *web_thread(void *data)
 		if (client == OBSC_INVALID_SOCKET)
 			continue;
 
-		handle_client(client);
+		handle_client(client,
+			      (ntohl(from.sin_addr.s_addr) >> 24) == 127,
+			      wc->lan);
 		net_close(client);
 	}
 
 	return NULL;
 }
 
-static struct web_control *server_start(uint16_t port)
+static struct web_control *server_start(uint16_t port, bool lan)
 {
 	socket_t listener = socket(AF_INET, SOCK_STREAM, 0);
 	if (listener == OBSC_INVALID_SOCKET)
@@ -1330,10 +1379,11 @@ static struct web_control *server_start(uint16_t port)
 	setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes,
 		   sizeof(yes));
 
-	/* Local machine only — this is a control surface. */
+	/* Local machine only unless LAN access is on — this is a control
+	 * surface. */
 	struct sockaddr_in addr = {0};
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	addr.sin_addr.s_addr = htonl(lan ? INADDR_ANY : INADDR_LOOPBACK);
 	addr.sin_port = htons(port);
 
 	if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) != 0 ||
@@ -1352,6 +1402,7 @@ static struct web_control *server_start(uint16_t port)
 	struct web_control *wc = bzalloc(sizeof(*wc));
 	wc->listener = listener;
 	wc->port = port;
+	wc->lan = lan;
 
 	if (pthread_create(&wc->thread, NULL, web_thread, wc) != 0) {
 		net_close(listener);
@@ -1360,8 +1411,9 @@ static struct web_control *server_start(uint16_t port)
 	}
 
 	blog(LOG_INFO,
-	     "[lenslink] web control panel at http://localhost:%u/",
-	     (unsigned)port);
+	     "[lenslink] web control panel at http://localhost:%u/%s",
+	     (unsigned)port, lan ? " (and on the local network, key required)"
+				 : "");
 	return wc;
 }
 
@@ -1384,10 +1436,12 @@ void web_control_apply_settings(void)
 {
 	struct web_control *to_stop = NULL;
 	uint16_t port = (uint16_t)lenslink_settings_web_port();
+	bool lan = lenslink_settings_web_lan();
 
 	pthread_mutex_lock(&g_reg.mutex);
 	bool want = lenslink_settings_web_enabled() && g_reg.count > 0;
-	if (g_reg.server && (!want || g_reg.server->port != port)) {
+	if (g_reg.server && (!want || g_reg.server->port != port ||
+			     g_reg.server->lan != lan)) {
 		to_stop = g_reg.server;
 		g_reg.server = NULL;
 	}
@@ -1399,7 +1453,7 @@ void web_control_apply_settings(void)
 	if (!need_start)
 		return;
 
-	struct web_control *wc = server_start(port);
+	struct web_control *wc = server_start(port, lan);
 	if (!wc)
 		return;
 	pthread_mutex_lock(&g_reg.mutex);

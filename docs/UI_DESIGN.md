@@ -675,7 +675,12 @@ is what carries over.
 
 Plugin-wide switches live here, not in source properties: anything with
 one value for the whole plugin (web panel + its port, diagnostics, the
-stream dump, the GPU pipeline beta). Native Qt widgets, OBS's theme,
+stream dump, the GPU pipeline beta). Network exposure is opt-in: "Allow
+other devices on this network to open the web panel" is off by default,
+carries a muted note that the panel is plain HTTP for trusted networks
+only, and shows a read-only address field holding the access key with
+Copy address and New key buttons beside it (enabled only while the
+panel and the option are both on). Native Qt widgets, OBS's theme,
 no custom chrome. Rules of the room: a setting that needs an OBS
 restart says so right under its checkbox in muted text; per-source
 properties never duplicate a global (the property sheet points at the
