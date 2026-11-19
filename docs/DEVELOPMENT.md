@@ -9,6 +9,7 @@ Contributor and maintainer notes. End-user documentation is in the
 |-----------|------|--------------|
 | **OBS plugin** (`LensLink Camera` source) | [`obs-plugin/`](../obs-plugin/) | Connects to the phone (LAN IP or USB via usbmuxd), decodes the incoming H.264/HEVC stream with FFmpeg (GPU when available), and renders it as a normal OBS video source. |
 | **iOS app** (`LensLink`) | [`ios-app/`](../ios-app/) | Captures the camera with AVFoundation, hardware-encodes with VideoToolbox, and serves the stream to the plugin over TCP (port 9979 on the device). |
+| **Stream Deck plugin** | [`streamdeck/`](../streamdeck/) | TypeScript plugin on Elgato's SDK; a client of the web panel's HTTP API (`/api/sources`, `/api/state`, `POST /api/control`) with no protocol of its own. |
 
 ```
 ┌────────────── iPhone ───────────────┐         ┌─────────── Computer ────────────┐
@@ -40,6 +41,7 @@ ios-app/               SwiftUI companion app (XcodeGen project)
   Sources/Localization.swift    L() lookup, shared with the broadcast extension
   Sources/Localization/         <lang>.lproj string tables (en is the source)
 installer/windows/     Inno Setup script for the Windows plugin installer
+streamdeck/            Stream Deck plugin (TypeScript, @elgato/streamdeck)
 site/                  lenslink.cam — static site generator (stdlib only)
   build.py             renders pages/ into dist/; DOC_ORDER drives the docs nav
   pages/               one HTML fragment per page, with front matter
@@ -47,6 +49,7 @@ site/                  lenslink.cam — static site generator (stdlib only)
   i18n/                shell strings per language (en.json is the source)
   translations/        translated pages, mirroring pages/ per language
 tools/check-l10n.py    checks every localized surface (runs in CI)
+tools/l10n_*.py        the per-surface checkers check-l10n.py runs (ios, plugin, site, streamdeck)
 tools/fake-phone.py    stands in for the phone on 127.0.0.1 (see Testing)
 docs/PROTOCOL.md       wire protocol specification
 docs/UI_DESIGN.md      app + web-panel design system
@@ -145,14 +148,19 @@ which builds only the areas the PR touches:
   `-DLENSLINK_BUILD_TESTS=ON` and `-Werror` on Ubuntu, run with `ctest`
   under AddressSanitizer and UBSan.
 - **Localization**: `tools/check-l10n.py` checks the app, plugin, web
-  panel and website strings against their English sources (see
+  panel, Stream Deck plugin and website strings against their English sources (see
   [`LOCALIZATION.md`](LOCALIZATION.md)).
+- **Stream Deck plugin**: build, `streamdeck validate` and the smoke test
+  (`npm test`) in `streamdeck/`, via the `streamdeck` composite action.
 - **Workflow files lint**: `actionlint` over the workflows whenever a
-  workflow or composite action changes.
+  workflow, composite action, `.github/scripts/` or `tools/*.py` changes;
+  the same job byte-compiles those Python scripts and runs
+  `.github/scripts/test-next-version.sh`, the table-driven test of the
+  release-version logic.
 
 The build steps themselves live in composite actions under
 [`.github/actions/`](../.github/actions/) (`plugin-linux`,
-`plugin-windows`, `plugin-macos`, `unsigned-ipa`, plus `libobs`,
+`plugin-windows`, `plugin-macos`, `unsigned-ipa`, `streamdeck`, plus `libobs`,
 `static-ffmpeg` and `xcode-project` beneath them), shared by `build.yml`
 and `release.yml`: a PR builds what a release ships, and a build change
 is made once. The libobs and static FFmpeg builds are cached, but only
@@ -173,12 +181,17 @@ capture script, the scene photo or the workflow itself.
 A maintainer enables auto-merge on a PR; it then merges once the
 required Build checks pass (branch protection on `main`).
 
+Every job sets `timeout-minutes` (15 for lint and small jobs, 45 for
+Linux and Windows builds, 90 for macOS and Xcode jobs), so a hung runner
+fails instead of burning the six-hour default.
+
 ## Releases
 
-Every merge to `main` that touches `obs-plugin/`, `ios-app/`, or
-`installer/` automatically tags a version and publishes a GitHub Release
-with ready-to-install builds (Windows and macOS plugin installers and
-zips, Linux plugin tarball, unsigned IPA), via
+Every merge to `main` that touches `obs-plugin/`, `ios-app/`,
+`installer/` or `streamdeck/` automatically tags a version and publishes a
+GitHub Release with ready-to-install builds (Windows and macOS plugin
+installers and zips, Linux plugin tarball, unsigned IPA, Stream Deck
+plugin), via
 [`.github/workflows/auto-release.yml`](../.github/workflows/auto-release.yml).
 The TestFlight upload piggybacks on that release, but only when the merge
 touched `ios-app/`.
@@ -250,8 +263,15 @@ nothing to indicate it had.
 Because it must be a standalone line, mentioning the keywords in prose
 can't trigger a bump.
 
-**The last directive wins.** Every commit of the merged PR is scanned, in
-order, and the newest release directive is the one that counts — a later
+**The last directive wins.** Every commit since the newest release tag is
+scanned (so a merge that queued behind a running release keeps its
+trailers), in order, and the newest release directive is the one that
+counts. A `Release-Skip` from before the pushed merge is ignored, so an
+earlier skipped merge can't suppress this one. The computation lives in
+[`.github/scripts/next-version.sh`](../.github/scripts/next-version.sh),
+which `.github/scripts/test-next-version.sh` exercises in CI. If the
+release build fails before publishing, the workflow deletes the tag it
+pushed so the next merge reuses the number — a later
 commit revises an earlier one, in either direction. Asking to release
 clears an earlier skip; asking to skip after that suppresses it again.
 This matters on branches that start with a docs-only commit: a
@@ -291,10 +311,10 @@ FFmpeg inside whatever OBS release users run.
 
 Every release page follows a fixed template: a **What's in this
 release** table first — one row per component (OBS plugin, iPhone/iPad
-app) saying whether this release changed it, and if not, which release
+app, Stream Deck plugin) saying whether this release changed it, and if not, which release
 did ("Unchanged since v1.13.0-beta.3 — nothing to reinstall"); the
-publish job computes it by diffing tag to tag over `obs-plugin/` +
-`installer/` and `ios-app/`, so a release cut for an app change never
+publish job computes it by diffing tag to tag, over published releases only, across `obs-plugin/` +
+`installer/`, `ios-app/` and `streamdeck/`, so a release cut for an app change never
 reads as "download the plugin again" — then a compact **Install** table
 (direct asset links, with manual/sideload/USB detail collapsed
 underneath), then GitHub's generated **What's Changed** changelog, shaped
