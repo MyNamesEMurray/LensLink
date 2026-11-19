@@ -1251,9 +1251,9 @@ static void handle_client(socket_t client, bool peer_loopback, bool lan)
 	}
 
 	if (strncmp(request, "GET /api/state", 14) == 0) {
-		/* Must fit the source's whole device_state cache (2048) —
+		/* Must fit the source's whole device_state cache (32 KB cap) —
 		 * truncation here would hand the panel unparsable JSON. */
-		char state[2048] = {0};
+		char state[32 * 1024 + 1] = {0};
 		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
 		enum pick_result pick = locked_pick_source(request, &s);
