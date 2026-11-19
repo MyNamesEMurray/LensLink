@@ -80,6 +80,12 @@ mutation driver (`LENSLINK_FUZZ_ITERATIONS`, default 200000), and
 `-DLENSLINK_FUZZ_LIBFUZZER=ON` with clang builds real libFuzzer binaries
 instead. CI runs all of them under AddressSanitizer and UBSan.
 
+The app has no Xcode test target, but its Foundation-only pieces
+(`Sources/ReframeCell.swift`, `Sources/Locked.swift`) are compiled and
+run by `ios-app/syntax-check.sh --test` with the same Linux Swift
+toolchain; the tests live in `ios-app/Tests/main.swift`. Add that command
+to the Linux CI notes alongside the plain syntax check.
+
 Without a phone, `tools/fake-phone.py` (standard library only) speaks
 the phone side of the protocol: it listens on `127.0.0.1:9979`, sends
 HELLO, STATE, VIDEO_CONFIG and a looping H.264 test pattern

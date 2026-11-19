@@ -22,13 +22,6 @@ import Vision
 /// rule.
 final class FrameCompositor {
 
-    /// Person segmentation exists on every OS this app runs on
-    /// (VNGeneratePersonSegmentationRequest is iOS 15.0+, the deployment
-    /// floor). Kept as an explicit gate for symmetry with
-    /// `hdrAvailable` / `appleLogCaptureAvailable`, so a future
-    /// capability split or floor change has one place to land.
-    static var supportsSegmentation: Bool { true }
-
     /// Max subject distance in meters: anything farther is treated as
     /// background even where the person mask disagrees (iOS 15's
     /// segmentation is ONE mask covering all people, so this is the only

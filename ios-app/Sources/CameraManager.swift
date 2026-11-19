@@ -140,14 +140,14 @@ final class CameraManager: NSObject {
     }
 
     @objc private func sessionResumed(_ note: Notification) {
-        start() // the session does not restart itself
+        restartIfWanted() // the session does not restart itself
         DispatchQueue.main.async { self.onInterruption?(.ended) }
     }
 
     @objc private func sessionRuntimeError(_ note: Notification) {
         // Media services reset and similar: restarting the session is the
         // documented recovery.
-        start()
+        restartIfWanted()
     }
 
     static func requestPermission() async -> Bool {
@@ -666,18 +666,6 @@ final class CameraManager: NSObject {
                       color: .sdr, requireDepth: true) != nil
     }
 
-    /// Whether the lens has depth assist at any format.
-    static func hasDepth(lens: Lens) -> Bool {
-        depthSiblingDevice(for: lens) != nil
-    }
-
-    /// Whether this combo has a 10-bit HLG capture format — the UI's
-    /// gate for what the HDR choice can actually deliver.
-    static func hdrAvailable(lens: Lens, resolution: Resolution,
-                             fps: Int32) -> Bool {
-        supports(resolution: resolution, fps: fps, lens: lens, color: .hlg)
-    }
-
     /// Whether any lens on this device has an Apple Log capture format —
     /// the UI's gate for offering the Apple Log choice at all. Always
     /// false below iOS 17 (`.appleLog` doesn't exist there). Cached like
@@ -899,7 +887,7 @@ final class CameraManager: NSObject {
         fpsThrottled = false
         pressureObservation?.invalidate()
         pressureObservation = device.observe(\.systemPressureState,
-                                             options: [.new]) {
+                                             options: [.initial, .new]) {
             [weak self] observedDevice, _ in
             self?.systemPressureChanged(on: observedDevice)
         }
@@ -1668,9 +1656,21 @@ final class CameraManager: NSObject {
         }
     }
 
+    /// sessionQueue only.
+    private var wantsRunning = false
+
     func start() {
         sessionQueue.async { [session] in
+            self.wantsRunning = true
             if !session.isRunning {
+                session.startRunning()
+            }
+        }
+    }
+
+    private func restartIfWanted() {
+        sessionQueue.async { [session] in
+            if self.wantsRunning, !session.isRunning {
                 session.startRunning()
             }
         }
@@ -1678,6 +1678,7 @@ final class CameraManager: NSObject {
 
     func stop() {
         sessionQueue.async { [session] in
+            self.wantsRunning = false
             if session.isRunning {
                 session.stopRunning()
             }

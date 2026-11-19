@@ -330,6 +330,7 @@ final class Streamer: ObservableObject {
         }
         wireCameraToEncoder(newEncoder, color: color)
         encoder = newEncoder
+        if isPaused { startPausedStill() }
         client.sendVideoConfig(codec: activeCodec,
                                width: size.width, height: size.height,
                                fps: Int32(fps),
@@ -349,8 +350,7 @@ final class Streamer: ObservableObject {
     /// rebuildEncoder) plus the lens-only reconfigure while armed.
     private func wireCameraToEncoder(_ encoder: VideoEncoder,
                                      color: StreamColor) {
-        if greenScreenEnabled, color == .sdr,
-           FrameCompositor.supportsSegmentation {
+        if greenScreenEnabled, color == .sdr {
             // A fresh instance per (re)configure: the compositor's
             // Vision request and cached depth map are stream-shaped
             // state, and a lens/format change must not leak a stale
@@ -372,6 +372,10 @@ final class Streamer: ObservableObject {
             camera.onSampleBuffer = { [weak encoder, compositor, reframe,
                                        still = pausedStill,
                                        gate = pauseGate] sampleBuffer in
+                guard !gate.value else {
+                    still.note(sampleBuffer)
+                    return
+                }
                 // Fail-open is the compositor's contract: any
                 // Vision/Metal failure returns the original buffer
                 // untouched; nil only on pool exhaustion — drop the
@@ -381,7 +385,6 @@ final class Streamer: ObservableObject {
                     // What the still is drawn from is what OBS was
                     // seeing: the composited frame, green screen and all.
                     still.note(output)
-                    guard !gate.isPaused else { return }
                     encoder?.encode(output)
                 }
             }
@@ -397,13 +400,16 @@ final class Streamer: ObservableObject {
             camera.onSampleBuffer = { [weak encoder, reframe,
                                        still = pausedStill,
                                        gate = pauseGate] captured in
-                guard let sampleBuffer = reframe(captured) else { return }
-                still.note(sampleBuffer)
                 // The gate sits here, at the encoder's input: while a
                 // stream is held the camera's frames simply aren't
                 // encoded, which leaves the send path free to carry the
                 // one frame that should go out — the paused still.
-                guard !gate.isPaused else { return }
+                guard !gate.value else {
+                    still.note(captured)
+                    return
+                }
+                guard let sampleBuffer = reframe(captured) else { return }
+                still.note(sampleBuffer)
                 encoder?.encode(sampleBuffer)
             }
             camera.onDepthData = nil
@@ -1103,8 +1109,7 @@ final class Streamer: ObservableObject {
                                     "x": reframeWindow.x, "y": reframeWindow.y]
             }
         }
-        state["supportsGreenScreen"] = FrameCompositor.supportsSegmentation
-            && greenScreenOffered
+        state["supportsGreenScreen"] = greenScreenOffered
         if compositor != nil {
             state["greenScreen"] = true
             // Only when true: absent reads as false to every truthiness
@@ -1202,7 +1207,7 @@ final class Streamer: ObservableObject {
     private let pausedStill = PausedStill()
     /// Read on the capture queue, written here: while set, camera frames
     /// are not encoded at all.
-    private let pauseGate = PauseGate()
+    private let pauseGate = Locked(false)
     /// Re-sends the still about once a second while paused, so a source
     /// that reconnects or a scene that comes back mid-pause still finds
     /// a picture that says "paused" rather than the last live frame.
@@ -1227,7 +1232,9 @@ final class Streamer: ObservableObject {
     /// is no worse than before.
     private func startPausedStill() {
         pausedStillTask?.cancel()
-        guard let frame = pausedStill.makeFrame() else {
+        let size = resolution.size
+        guard let frame = pausedStill.makeFrame(width: Int(size.width),
+                                                height: Int(size.height)) else {
             pausedStillTask = nil
             return
         }
@@ -1255,7 +1262,7 @@ final class Streamer: ObservableObject {
         // Stops the camera's frames reaching the encoder (and lets them
         // through again), so the only thing that can go out while held
         // is the still below.
-        pauseGate.set(paused)
+        pauseGate.value = paused
         if paused {
             if reason == .user {
                 status = .paused
@@ -1437,7 +1444,7 @@ final class Streamer: ObservableObject {
     private var compositor: FrameCompositor?
     /// Bridges the main-actor `greenScreenMaxDistance` onto the capture
     /// queue, where the compositor's `maxDistance` is confined.
-    private let greenScreenDistance = GreenScreenDistanceCell()
+    private let greenScreenDistance = Locked<Float>(0)
     private let reframeCell = ReframeCell()
     @Published var reframeHQ: Bool = UserDefaults.standard.bool(forKey: "reframeHQ") {
         didSet {
@@ -1473,7 +1480,7 @@ final class Streamer: ObservableObject {
     }
 
     static var reframeAvailable: Bool {
-        if #available(iOS 16.0, *) { return true }
+        if #available(iOS 16.0, *) { return FrameReframer.canCreate }
         return false
     }
 
@@ -1597,6 +1604,7 @@ final class Streamer: ObservableObject {
         client.onControl = { [weak self] json in
             Task { @MainActor [weak self] in
                 self?.handleRemoteControl(json)
+                self?.client.controlHandled()
             }
         }
         client.onFrameDropped = { [weak self] in
@@ -1606,7 +1614,8 @@ final class Streamer: ObservableObject {
         }
         camera.onInterruption = { [weak self] interruption in
             Task { @MainActor [weak self] in
-                guard let self, self.isStreaming else { return }
+                guard let self, self.isStreaming,
+                      self.pauseReason != .user else { return }
                 switch interruption {
                 case .began(let reason):
                     // Held, not broken: OBS is told the stream is paused
@@ -1807,12 +1816,12 @@ final class Streamer: ObservableObject {
             // it arrives on connect, and the Home screen is where the
             // name matters most.
             obsHost = (command["host"] as? String).flatMap {
-                $0.isEmpty ? nil : $0
+                $0.isEmpty ? nil : String($0.prefix(64))
             }
             obsVersion = (command["obs"] as? String).flatMap {
-                $0.isEmpty ? nil : $0
+                $0.isEmpty ? nil : String($0.prefix(64))
             }
-            obsTransport = command["transport"] as? String
+            obsTransport = (command["transport"] as? String).map { String($0.prefix(64)) }
             return
         case "tally":
             // Handled before the isStreaming guard: the plugin announces
@@ -2146,6 +2155,7 @@ final class Streamer: ObservableObject {
             micPermissionDenied = true
             return
         }
+        guard isStreaming, audioReference == nil else { return }
         let capture = AudioReference(purpose: purpose)
         capture.preferredMicID = selectedMicID
         capture.onPCM = { [weak self] pcm, pts in
@@ -2354,7 +2364,7 @@ final class Streamer: ObservableObject {
         // would swallow the first frames of the next one.
         isPaused = false
         pauseReason = nil
-        pauseGate.set(false)
+        pauseGate.value = false
         pausedStillTask?.cancel()
         pausedStillTask = nil
         status = .idle
@@ -2488,28 +2498,3 @@ extension Streamer {
     }
 }
 #endif
-
-/// A locked Float cell bridging the main-actor `greenScreenMaxDistance`
-/// onto the capture queue: the compositor's `maxDistance` is
-/// capture-queue-confined by contract, so the armed depth closure
-/// re-reads this cell there instead of touching main-actor state. File
-/// scope on purpose — nested inside Streamer it would inherit
-/// @MainActor and defeat the point. Same NSLock-per-callback pattern as
-/// CameraManager's closure properties.
-private final class GreenScreenDistanceCell {
-    private let lock = NSLock()
-    private var stored: Float = 0
-
-    var value: Float {
-        get {
-            lock.lock()
-            defer { lock.unlock() }
-            return stored
-        }
-        set {
-            lock.lock()
-            stored = newValue
-            lock.unlock()
-        }
-    }
-}

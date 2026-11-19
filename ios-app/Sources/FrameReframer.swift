@@ -2,33 +2,6 @@ import Foundation
 import AVFoundation
 import VideoToolbox
 
-final class ReframeCell: @unchecked Sendable {
-    struct Window: Equatable {
-        var zoom = 1.0
-        var x = 0.5
-        var y = 0.5
-        var isActive: Bool { zoom > 1.0001 }
-    }
-
-    static let maxZoom = 4.0
-
-    private let lock = NSLock()
-    private var stored = Window()
-
-    var window: Window {
-        get { lock.lock(); defer { lock.unlock() }; return stored }
-        set {
-            let zoom = min(max(newValue.zoom, 1), Self.maxZoom)
-            let half = 0.5 / zoom
-            lock.lock()
-            stored = Window(zoom: zoom,
-                            x: min(max(newValue.x, half), 1 - half),
-                            y: min(max(newValue.y, half), 1 - half))
-            lock.unlock()
-        }
-    }
-}
-
 @available(iOS 16.0, *)
 final class FrameReframer {
     private let session: VTPixelTransferSession
@@ -39,6 +12,8 @@ final class FrameReframer {
 
     private let outputWidth: Int
     private let outputHeight: Int
+
+    static let canCreate = FrameReframer(width: 2, height: 2) != nil
 
     init?(width: Int, height: Int) {
         outputWidth = width
@@ -68,22 +43,24 @@ final class FrameReframer {
         }
         let width = CVPixelBufferGetWidth(source)
         let height = CVPixelBufferGetHeight(source)
-        guard window.isActive || width != outputWidth || height != outputHeight else {
+        let resized = width != outputWidth || height != outputHeight
+        guard window.isActive || resized else {
             return sampleBuffer
         }
+        let fallback = resized ? nil : sampleBuffer
         let format = CVPixelBufferGetPixelFormatType(source)
 
         guard let surface = CVPixelBufferGetIOSurface(source)?.takeUnretainedValue()
         else {
             logOnce("surface", "FrameReframer: capture buffer has no IOSurface — passing frames through")
-            return sampleBuffer
+            return fallback
         }
         var wrapped: Unmanaged<CVPixelBuffer>?
         guard CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault, surface, nil,
                                                &wrapped) == kCVReturnSuccess,
               let view = wrapped?.takeRetainedValue() else {
             logOnce("wrap", "FrameReframer: IOSurface wrap failed — passing frames through")
-            return sampleBuffer
+            return fallback
         }
         let apertureW = Double(Int(Double(width) / window.zoom) & ~1)
         let apertureH = Double(Int(Double(height) / window.zoom) & ~1)
@@ -100,7 +77,7 @@ final class FrameReframer {
 
         let key = "\(outputWidth)x\(outputHeight)/\(format)"
         if pool == nil || key != poolKey { rebuildPool(width: outputWidth, height: outputHeight, format: format, key: key) }
-        guard let pool else { return sampleBuffer }
+        guard let pool else { return fallback }
         var allocated: CVPixelBuffer?
         let aux = [kCVPixelBufferPoolAllocationThresholdKey as String: 6]
         let poolStatus = CVPixelBufferPoolCreatePixelBufferWithAuxAttributes(
@@ -108,13 +85,13 @@ final class FrameReframer {
         if poolStatus == kCVReturnWouldExceedAllocationThreshold { return nil }
         guard poolStatus == kCVReturnSuccess, let output = allocated else {
             logOnce("pool-alloc", "FrameReframer: pool allocation failed (\(poolStatus)) — passing frames through")
-            return sampleBuffer
+            return fallback
         }
 
         let status = VTPixelTransferSessionTransferImage(session, from: view, to: output)
         guard status == noErr else {
             logOnce("transfer", "FrameReframer: pixel transfer failed (\(status)) — passing frames through")
-            return sampleBuffer
+            return fallback
         }
 
         CVBufferPropagateAttachments(source, output)
@@ -129,7 +106,7 @@ final class FrameReframer {
                 formatDescriptionOut: &created)
             cachedFormatDescription = created
         }
-        guard let formatDescription = cachedFormatDescription else { return sampleBuffer }
+        guard let formatDescription = cachedFormatDescription else { return fallback }
         var timing = CMSampleTimingInfo(
             duration: CMSampleBufferGetDuration(sampleBuffer),
             presentationTimeStamp: CMSampleBufferGetPresentationTimeStamp(sampleBuffer),
@@ -139,7 +116,7 @@ final class FrameReframer {
                 allocator: kCFAllocatorDefault, imageBuffer: output,
                 formatDescription: formatDescription, sampleTiming: &timing,
                 sampleBufferOut: &result) == noErr, let result else {
-            return sampleBuffer
+            return fallback
         }
         return result
     }
