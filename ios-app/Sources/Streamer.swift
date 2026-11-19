@@ -367,15 +367,20 @@ final class Streamer: ObservableObject {
         compositor?.onAutoCutoff = { [weak self] metres in
             Task { @MainActor in self?.greenScreenAutoCutoff = Double(metres) }
         }
+        let reframer = FrameReframer()
+        let reframeWindow = reframeCell
         if let compositor {
-            camera.onSampleBuffer = { [weak encoder, compositor,
+            camera.onSampleBuffer = { [weak encoder, compositor, reframer,
+                                       reframeWindow,
                                        still = pausedStill,
                                        gate = pauseGate] sampleBuffer in
                 // Fail-open is the compositor's contract: any
                 // Vision/Metal failure returns the original buffer
                 // untouched; nil only on pool exhaustion — drop the
                 // frame, never queue.
-                if let output = compositor.composite(sampleBuffer: sampleBuffer) {
+                if let composed = compositor.composite(sampleBuffer: sampleBuffer),
+                   let output = FrameReframer.apply(reframer, to: composed,
+                                                    cell: reframeWindow) {
                     // What the still is drawn from is what OBS was
                     // seeing: the composited frame, green screen and all.
                     still.note(output)
@@ -392,9 +397,11 @@ final class Streamer: ObservableObject {
                 compositor.updateDepth(depth)
             }
         } else {
-            camera.onSampleBuffer = { [weak encoder,
+            camera.onSampleBuffer = { [weak encoder, reframer, reframeWindow,
                                        still = pausedStill,
-                                       gate = pauseGate] sampleBuffer in
+                                       gate = pauseGate] captured in
+                guard let sampleBuffer = FrameReframer.apply(
+                    reframer, to: captured, cell: reframeWindow) else { return }
                 still.note(sampleBuffer)
                 // The gate sits here, at the encoder's input: while a
                 // stream is held the camera's frames simply aren't
@@ -1086,6 +1093,11 @@ final class Streamer: ObservableObject {
         // live keys appear only while actually armed — the compositor,
         // not the setting, is the truth — so a snapshot with green
         // screen off matches today's apart from supportsGreenScreen.
+        state["supportsReframe"] = true
+        if reframeWindow.isActive {
+            state["reframe"] = ["zoom": reframeWindow.zoom,
+                                "x": reframeWindow.x, "y": reframeWindow.y]
+        }
         state["supportsGreenScreen"] = FrameCompositor.supportsSegmentation
             && greenScreenOffered
         if compositor != nil {
@@ -1421,6 +1433,8 @@ final class Streamer: ObservableObject {
     /// Bridges the main-actor `greenScreenMaxDistance` onto the capture
     /// queue, where the compositor's `maxDistance` is confined.
     private let greenScreenDistance = GreenScreenDistanceCell()
+    private let reframeCell = ReframeCell()
+    @Published private(set) var reframeWindow = ReframeCell.Window()
 
     init() {
         let defaults = UserDefaults.standard
@@ -1895,6 +1909,14 @@ final class Streamer: ObservableObject {
                 greenScreenMaxDistance = distance < 0 ? Self.autoSubjectDistance
                     : distance == 0 ? 0 : min(max(distance, 0.5), 5.0)
             }
+        case "reframe":
+            var next = reframeWindow
+            if let zoom = (command["zoom"] as? NSNumber)?.doubleValue { next.zoom = zoom }
+            if let x = (command["x"] as? NSNumber)?.doubleValue { next.x = x }
+            if let y = (command["y"] as? NSNumber)?.doubleValue { next.y = y }
+            reframeCell.window = next
+            reframeWindow = reframeCell.window
+            scheduleStateSend()
         default:
             break
         }

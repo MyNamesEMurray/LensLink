@@ -143,6 +143,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "white_balance", "mode": "calibrate", "x": 0.31, "y": 0.62 }
 { "cmd": "lock", "target": "whiteBalance", "on": true }
 { "cmd": "stabilization", "mode": "cinematic" }
+{ "cmd": "reframe", "zoom": 2.0, "x": 0.4, "y": 0.5 }
 { "cmd": "exposure", "mode": "manual", "iso": 400, "shutterSeconds": 0.004 }
 { "cmd": "exposure", "mode": "auto" }
 { "cmd": "exposure", "shutterMode": "manual", "shutterSeconds": 0.01 }
@@ -183,6 +184,18 @@ and fall back to the explicit-value commands.
 `"standard"` or `"cinematic"` (the app's Options setting; the camera
 runs it off while depth assist does). STATE reports it as
 `stabilization`.
+
+`reframe` is a digital zoom and pan applied on the phone before encoding:
+the picture is cropped to a window and scaled back to the stream's size,
+so the wire geometry never changes. `zoom` is 1 (whole picture, the
+default) to 4; `x` and `y` are the window's centre, 0–1 from the top-left
+of the streamed picture, and the app clamps them so the window stays
+inside the frame. Any subset of the fields may be present. Camera `zoom`
+is separate and still applies first. STATE advertises
+`"supportsReframe": true` (remote UIs gate their control on it) and
+carries `"reframe": { "zoom", "x", "y" }` only while the window is not
+the whole picture. The setting is not saved: it resets when the app
+restarts. Apps that predate it ignore the command.
 
 `set_format` switches the capture format mid-stream; any subset of its
 fields may be present. The app validates the combination against the

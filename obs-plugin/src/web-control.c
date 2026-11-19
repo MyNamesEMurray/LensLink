@@ -72,6 +72,9 @@ static const char *const web_text_keys[] = {
 	"Web.Stabilization.Off",
 	"Web.Stabilization.Standard",
 	"Web.Stabilization.Cinematic",
+	"Web.Reframe",
+	"Web.Reframe.Tip",
+	"Web.Reframe.Pad",
 	"Web.Lens.Front",
 	"Web.Lens.FrontUltraWide",
 	"Web.Lens.MainWide",
@@ -156,6 +159,11 @@ static const char control_page[] =
 	"transform:translateX(-50%)}"
 	".still img{display:block;width:100%;border-radius:12px;cursor:crosshair;"
 	"background:#000;margin-bottom:12px}"
+	".pad{position:relative;aspect-ratio:16/9;margin:0 0 14px;border-radius:12px;"
+	"background:rgba(255,255,255,.08);touch-action:none;cursor:grab;overflow:hidden}"
+	".pad:focus-visible{outline:2px solid var(--accent)}"
+	".pad div{position:absolute;border:2px solid var(--accent);border-radius:6px;"
+	"background:rgba(255,255,255,.12);pointer-events:none}"
 	".tools{display:flex;gap:10px;align-items:center;justify-content:flex-end}"
 	".gap{width:44px;height:44px;flex:none}"
 	"select{flex:1;min-width:0;background:rgba(255,255,255,.12);color:var(--txt);border:0;"
@@ -242,6 +250,14 @@ static const char control_page[] =
 	 * actually running (greenScreenDepth). Same stops as the app's Subject dial
 	 * (UI_DESIGN §5): 0.5-5.0 m, then "All" (sends 0) past the far end;
 	 * clicking the readout hands the cutoff back to Auto (sends -1). */
+	"<div class='row' id='rfrow' style='display:none'>"
+	"<span class='lbl' id='rfl' data-t='Reframe'></span>"
+	"<input id='rfz' class='y' type='range' min='1' max='4' step='0.1' value='1' "
+	"aria-labelledby='rfl'>"
+	"<span class='ro y' id='rfv' role='button' tabindex='0' "
+	"data-t-title='Reframe.Tip'></span></div>"
+	"<div class='pad' id='rfpad' tabindex='0' role='application' "
+	"data-t-title='Reframe.Pad' style='display:none'><div id='rfwin'></div></div>"
 	"<div class='row' id='flrow' style='display:none'>"
 	"<span class='lbl' id='fll' data-t='Flashlight'></span>"
 	"<input id='fld' class='y' type='range' min='1' max='100' step='1' value='100' "
@@ -615,6 +631,28 @@ static const char control_page[] =
 	"const STAB={off:t('Stabilization.Off'),standard:t('Stabilization.Standard'),"
 	"cinematic:t('Stabilization.Cinematic')};"
 	"stabEl.onchange=()=>send({cmd:'stabilization',mode:stabEl.value});"
+	"const rfrowEl=$('rfrow'),rfzEl=$('rfz'),rfvEl=$('rfv'),rfpadEl=$('rfpad'),"
+	"rfwinEl=$('rfwin');"
+	"let RF={zoom:1,x:.5,y:.5};"
+	"function rfUI(){RF.zoom=Math.min(Math.max(RF.zoom,1),4);const h=.5/RF.zoom;"
+	"RF.x=Math.min(Math.max(RF.x,h),1-h);RF.y=Math.min(Math.max(RF.y,h),1-h);"
+	"rfzEl.value=RF.zoom;rfvEl.textContent=RF.zoom.toFixed(1)+'×';vt(rfzEl,rfvEl.textContent);"
+	"show(rfpadEl,RF.zoom>1.01);const s=rfwinEl.style;"
+	"s.left=(RF.x-h)*100+'%';s.top=(RF.y-h)*100+'%';"
+	"s.width=s.height=100/RF.zoom+'%'}"
+	"const dRf=deb(()=>send({cmd:'reframe',zoom:RF.zoom,x:RF.x,y:RF.y}),60);"
+	"rfzEl.oninput=()=>{touch();RF.zoom=+rfzEl.value;rfUI();dRf()};"
+	"rfvEl.onclick=()=>{touch();RF={zoom:1,x:.5,y:.5};rfUI();"
+	"send({cmd:'reframe',zoom:1})};"
+	"rfvEl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){"
+	"e.preventDefault();rfvEl.onclick()}};"
+	"const rfAt=e=>{const r=rfpadEl.getBoundingClientRect();touch();"
+	"RF.x=(e.clientX-r.left)/r.width;RF.y=(e.clientY-r.top)/r.height;rfUI();dRf()};"
+	"rfpadEl.onpointerdown=e=>{rfpadEl.setPointerCapture(e.pointerId);rfAt(e)};"
+	"rfpadEl.onpointermove=e=>{if(rfpadEl.hasPointerCapture(e.pointerId))rfAt(e)};"
+	"rfpadEl.onkeydown=e=>{const d={ArrowLeft:[-1,0],ArrowRight:[1,0],"
+	"ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!d)return;e.preventDefault();"
+	"touch();RF.x+=d[0]*.05;RF.y+=d[1]*.05;rfUI();dRf()};"
 	/* Green screen: optimistic chip toggle. The slider sets a cutoff
 	 * (0.5-5.0 m, All past 5); Auto (-1) is the readout's click, like
 	 * tapping the app's Subject button while its dial is open. */
@@ -714,6 +752,9 @@ static const char control_page[] =
 	"const codecs=Array.isArray(S.codecs)?S.codecs:[];"
 	"show(fmtcodecEl,codecs.length>1);"
 	"fillSel(fmtcodecEl,codecs,S.codec,c=>CODEC_NAMES[c]||c)}"
+	"show(rfrowEl,!!S.supportsReframe);"
+	"if(S.supportsReframe){const r=S.reframe;"
+	"RF=r?{zoom:+r.zoom||1,x:+r.x||.5,y:+r.y||.5}:{zoom:1,x:.5,y:.5};rfUI()}"
 	"show(stabrowEl,typeof S.stabilization==='string');"
 	"if(typeof S.stabilization==='string'){"
 	"fillSel(stabEl,Object.keys(STAB),S.stabilization,m=>STAB[m]);"
