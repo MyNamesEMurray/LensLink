@@ -12,6 +12,8 @@ void lenslink_camera_controls_add(obs_properties_t *props,
 				  struct ios_camera_source *s,
 				  obs_data_t *settings);
 
+void lenslink_camera_controls_clear(obs_data_t *settings);
+
 const char *lenslink_lens_text(const char *label);
 
 #ifdef __cplusplus
