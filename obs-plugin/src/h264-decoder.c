@@ -158,6 +158,10 @@ void h264_decoder_set_frame_sink(struct h264_decoder *dec,
 	dec->frame_sink = sink;
 	dec->frame_sink_ud = ud;
 	dec->gpu_frames = sink != NULL;
+	/* The GPU pipeline holds decoded surfaces past the decode: the
+	 * displayed + pending frame, and up to 6 waiting out a video delay
+	 * (GPU_DELAY_MAX). Fixed-size hw pools (D3D11VA) must have room. */
+	dec->ctx->extra_hw_frames = sink ? 8 : 0;
 }
 
 struct h264_decoder *h264_decoder_create(enum AVCodecID codec_id,
