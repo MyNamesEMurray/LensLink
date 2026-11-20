@@ -347,7 +347,9 @@ final class CameraManager: NSObject {
                                requireDepth: Bool = false) -> AVCaptureDevice.Format? {
         let target = resolution.size
         // Require exact dimensions and a frame-rate range covering the
-        // requested rate; earlier formats (unbinned, video-range) win ties.
+        // requested rate (both ends: configure pins the frame duration to
+        // it, and a duration outside the active format's range raises an
+        // NSException); earlier formats (unbinned, video-range) win ties.
         // HLG additionally requires a 10-bit (x420) format that can
         // capture BT.2020 HLG; Apple Log a 10-bit 4:2:2 (x422) format
         // that can capture .appleLog — nil (unsupported) if none exists.
@@ -384,8 +386,9 @@ final class CameraManager: NSObject {
                     return false
                 }
             }
-            return format.videoSupportedFrameRateRanges
-                .contains { $0.maxFrameRate >= Double(fps) }
+            return format.videoSupportedFrameRateRanges.contains {
+                $0.minFrameRate <= Double(fps) && $0.maxFrameRate >= Double(fps)
+            }
         }
         guard let first = candidates.first else { return nil }
 
@@ -693,8 +696,14 @@ final class CameraManager: NSObject {
     /// sessionQueue only.
     private func applyFrameRate(divisor: CMTimeValue) {
         guard let device = activeDevice else { return }
-        let duration = CMTime(value: divisor,
+        var duration = CMTime(value: divisor,
                               timescale: configuredFps)
+        // Halving 24 or 25 fps lands near the bottom of a format's range;
+        // a duration past its end raises an NSException, so clamp to it.
+        if let longest = device.activeFormat.videoSupportedFrameRateRanges
+            .map(\.maxFrameDuration).max(), duration > longest {
+            duration = longest
+        }
         do {
             try device.lockForConfiguration()
             device.activeVideoMinFrameDuration = duration
