@@ -32,3 +32,11 @@ fi
 
 "$SWIFTC" -parse Sources/*.swift BroadcastExtension/*.swift
 echo "✓ Swift sources parse clean (syntax only — the full type check runs in CI on macOS)"
+
+# Optional: also compile and run the Foundation-only unit tests.
+if [ "${1:-}" = "--test" ]; then
+    OUT="$(mktemp -d)"
+    trap 'rm -rf "$OUT"' EXIT
+    "$SWIFTC" Sources/Locked.swift Sources/ReframeCell.swift Tests/main.swift -o "$OUT/unit-tests"
+    "$OUT/unit-tests"
+fi

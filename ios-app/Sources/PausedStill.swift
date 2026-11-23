@@ -44,8 +44,6 @@ final class PausedStill: @unchecked Sendable {
     private var thumb = [UInt8](repeating: 0,
                                 count: thumbWidth * thumbHeight)
     private var haveThumb = false
-    private var sourceWidth = 0
-    private var sourceHeight = 0
     private var sourceFormat: OSType = 0
     private var lastSampleHostTime: CFTimeInterval = 0
 
@@ -112,26 +110,17 @@ final class PausedStill: @unchecked Sendable {
         lock.lock()
         thumb = sampled
         haveThumb = true
-        sourceWidth = width
-        sourceHeight = height
         sourceFormat = format
         lock.unlock()
     }
 
-    /// A stream that never delivered a frame has nothing to hold.
-    var isReady: Bool {
-        lock.lock(); defer { lock.unlock() }
-        return haveThumb
-    }
-
     /// Builds the still at the stream's own size and pixel format, so the
-    /// encoder takes it exactly as it takes a camera frame.
-    func makeFrame() -> CVPixelBuffer? {
+    /// encoder takes it exactly as it takes a camera frame. A stream that
+    /// never delivered a frame has nothing to hold.
+    func makeFrame(width: Int, height: Int) -> CVPixelBuffer? {
         lock.lock()
         let ready = haveThumb
         let snapshot = thumb
-        let width = sourceWidth
-        let height = sourceHeight
         let format = sourceFormat
         lock.unlock()
         guard ready, width > 0, height > 0 else { return nil }
@@ -192,19 +181,35 @@ final class PausedStill: @unchecked Sendable {
                            width: Int, height: Int, tenBit: Bool,
                            thumb: [UInt8]) {
         let span = PausedStill.lumaCeiling - PausedStill.lumaFloor
+        let tw = PausedStill.thumbWidth
+        let th = PausedStill.thumbHeight
+        // Dimmed, and mapped into video-range luma so OBS doesn't clip
+        // the result to black.
+        let mapped = thumb.map { value -> Int in
+            PausedStill.lumaFloor + Int(value) * PausedStill.dimNumerator /
+                PausedStill.dimDenominator * span / 255
+        }
+        var column0 = [Int](repeating: 0, count: width)
+        var columnWeight = [Int](repeating: 0, count: width)
+        for x in 0..<width {
+            let fixed = x * (tw - 1) * 256 / max(1, width - 1)
+            column0[x] = min(tw - 2, fixed >> 8)
+            columnWeight[x] = fixed - column0[x] * 256
+        }
+        var blended = [Int](repeating: 0, count: tw)
         for y in 0..<height {
-            let sourceY = Double(y) * Double(PausedStill.thumbHeight - 1) /
-                Double(max(1, height - 1))
+            let fixedY = y * (th - 1) * 256 / max(1, height - 1)
+            let y0 = min(th - 2, fixedY >> 8)
+            let wy = fixedY - y0 * 256
+            for x in 0..<tw {
+                blended[x] = (mapped[y0 * tw + x] * (256 - wy)
+                              + mapped[(y0 + 1) * tw + x] * wy) >> 8
+            }
             let row = base.advanced(by: y * rowBytes)
             for x in 0..<width {
-                let sourceX = Double(x) * Double(PausedStill.thumbWidth - 1) /
-                    Double(max(1, width - 1))
-                let sampled = PausedStill.bilinear(thumb, sourceX, sourceY)
-                // Dimmed, and mapped into video-range luma so OBS doesn't
-                // clip the result to black.
-                let dimmed = Int(sampled) * PausedStill.dimNumerator /
-                    PausedStill.dimDenominator
-                let value = PausedStill.lumaFloor + dimmed * span / 255
+                let c = column0[x]
+                let wx = columnWeight[x]
+                let value = (blended[c] * (256 - wx) + blended[c + 1] * wx) >> 8
                 PausedStill.write(UInt8(clamping: value), to: row, at: x,
                                   tenBit: tenBit)
             }
@@ -256,24 +261,6 @@ final class PausedStill: @unchecked Sendable {
         }
     }
 
-    private static func bilinear(_ thumb: [UInt8], _ fx: Double,
-                                 _ fy: Double) -> UInt8 {
-        let x0 = min(thumbWidth - 1, max(0, Int(fx)))
-        let y0 = min(thumbHeight - 1, max(0, Int(fy)))
-        let x1 = min(thumbWidth - 1, x0 + 1)
-        let y1 = min(thumbHeight - 1, y0 + 1)
-        let dx = fx - Double(x0)
-        let dy = fy - Double(y0)
-
-        let topLeft = Double(thumb[y0 * thumbWidth + x0])
-        let topRight = Double(thumb[y0 * thumbWidth + x1])
-        let bottomLeft = Double(thumb[y1 * thumbWidth + x0])
-        let bottomRight = Double(thumb[y1 * thumbWidth + x1])
-        let top = topLeft + (topRight - topLeft) * dx
-        let bottom = bottomLeft + (bottomRight - bottomLeft) * dx
-        return UInt8(clamping: Int(top + (bottom - top) * dy))
-    }
-
     private static func isTenBit(_ format: OSType) -> Bool {
         switch format {
         case kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange,
@@ -284,26 +271,5 @@ final class PausedStill: @unchecked Sendable {
         default:
             return false
         }
-    }
-}
-
-/// Whether video is being held, readable from the capture queue and
-/// writable from the main actor. The gate sits at the *input* to the
-/// encoder: while paused the camera's frames are simply not encoded, so
-/// anything that does reach the encoder — the paused still — goes out
-/// without needing an exception carved through the send path.
-final class PauseGate: @unchecked Sendable {
-    private let lock = NSLock()
-    private var paused = false
-
-    var isPaused: Bool {
-        lock.lock(); defer { lock.unlock() }
-        return paused
-    }
-
-    func set(_ value: Bool) {
-        lock.lock()
-        paused = value
-        lock.unlock()
     }
 }

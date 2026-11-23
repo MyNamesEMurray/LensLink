@@ -91,6 +91,22 @@ description: Use the phone as a wireless microphone, or send its mic as a timing
   doesn't.</p>
 </div>
 
+<h2>Several cameras</h2>
+<p>
+  Two phones rarely have the same latency: one on USB and one on Wi-Fi can be
+  tens of milliseconds apart. <strong>Keep in sync with other LensLink
+  cameras</strong> (on by default) holds every camera that has it on back to the
+  slowest one, so cuts between them line up. The microphone is then delayed
+  once for the whole group, by one camera, rather than by each camera in turn.
+  The status line reads <em>synced +N ms</em>, where N is how far that camera
+  is held back.
+</p>
+<p>
+  The cost is speed: the faster cameras give up their lead. Turn the option off
+  on a camera to leave it out of the group. Webcams, capture cards and NDI
+  sources don't share LensLink's clock, so they can't join.
+</p>
+
 <h2>Screen-mirror audio</h2>
 <p>
   The <strong>LensLink Screen</strong> source carries real, playable app and

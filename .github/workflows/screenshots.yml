@@ -26,7 +26,6 @@ on:
           - light
   pull_request:
     paths:
-      - ios-app/Sources/ScreenshotStage.swift
       - tools/store-screenshots/capture.sh
       - tools/store-screenshots/scene.jpg
       - .github/workflows/screenshots.yml
@@ -42,6 +41,7 @@ jobs:
   capture:
     name: Capture store screenshots
     runs-on: xcode-27
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
         with:

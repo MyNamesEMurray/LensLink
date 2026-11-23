@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Checks every localized surface: the iOS app, the OBS plugin and web
-panel, and the website. Standard library only.
+panel, the Stream Deck plugin, and the website. Standard library only.
 
     python3 tools/check-l10n.py            # all surfaces
     python3 tools/check-l10n.py ios site   # just these
@@ -16,7 +16,7 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOLS)
-SURFACES = ["ios", "plugin", "site"]
+SURFACES = ["ios", "plugin", "site", "streamdeck"]
 
 
 def load(surface):

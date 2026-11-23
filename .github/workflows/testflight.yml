@@ -46,6 +46,7 @@ jobs:
   upload:
     name: Build & upload to TestFlight
     runs-on: xcode-27
+    timeout-minutes: 90
     concurrency:
       group: testflight
       cancel-in-progress: false
@@ -93,7 +94,7 @@ jobs:
         run: |
           # Homebrew python3 is PEP 668 "externally managed" — venv it.
           python3 -m venv "$RUNNER_TEMP/asc-venv"
-          "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet PyJWT cryptography
+          "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet -r .github/scripts/requirements.txt
           "$RUNNER_TEMP/asc-venv/bin/python" \
             .github/scripts/testflight_next_build.py
 
@@ -173,12 +174,13 @@ jobs:
     name: What to Test & test groups
     needs: upload
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
 
       - name: Install PyJWT
-        run: pip install --quiet PyJWT cryptography
+        run: pip install --quiet -r .github/scripts/requirements.txt
 
       # Fills the TestFlight "What to Test" box from the latest GitHub
       # release's "What's Changed" notes, then assigns the build to the

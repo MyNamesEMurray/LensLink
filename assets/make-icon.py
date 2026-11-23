@@ -27,7 +27,6 @@ Outputs (run from the repo root):
 
 import collections
 import json
-import math
 import os
 import shutil
 

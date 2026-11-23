@@ -16,7 +16,7 @@ let chromium;
 try {
   ({ chromium } = require('playwright'));
 } catch {
-  ({ chromium } = require('/opt/node22/lib/node_modules/playwright'));
+  ({ chromium } = require(path.join(path.dirname(process.execPath), '..', 'lib', 'node_modules', 'playwright')));
 }
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');

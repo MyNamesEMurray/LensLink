@@ -32,6 +32,7 @@ jobs:
   changes:
     name: Detect changed areas
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       plugin: ${{ steps.diff.outputs.plugin }}
       ios: ${{ steps.diff.outputs.ios }}
@@ -83,12 +84,12 @@ jobs:
             echo "site=false" >> "$GITHUB_OUTPUT"
           fi
           if echo "$CHANGED" | \
-             grep -qE '^(ios-app/|obs-plugin/|site/|tools/(check-l10n|l10n_)|\.github/workflows/build\.yml)'; then
+             grep -qE '^(ios-app/|obs-plugin/|site/|streamdeck/|tools/(check-l10n|l10n_)|\.github/workflows/build\.yml)'; then
             echo "l10n=true" >> "$GITHUB_OUTPUT"
           else
             echo "l10n=false" >> "$GITHUB_OUTPUT"
           fi
-          if echo "$CHANGED" | grep -qE '^\.github/(workflows/|actions/|actionlint\.yaml)'; then
+          if echo "$CHANGED" | grep -qE '^(\.github/(workflows/|actions/|scripts/|actionlint\.yaml)|tools/[^/]*\.py)'; then
             echo "workflows=true" >> "$GITHUB_OUTPUT"
           else
             echo "workflows=false" >> "$GITHUB_OUTPUT"
@@ -117,6 +118,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - name: actionlint
@@ -132,6 +134,11 @@ jobs:
           # which kill the whole file at validation with no PR-visible
           # error — is actionlint's own check and stays fully on.
           ./actionlint -color -shellcheck= .github/workflows/*.yml
+
+      - name: Script checks
+        run: |
+          python3 -m py_compile .github/scripts/*.py tools/*.py
+          .github/scripts/test-next-version.sh
   # The marketing/documentation site (site/) is a stdlib-only static
   # generator, so this job is seconds: build it and fail the PR on a
   # broken internal link or anchor before Cloudflare Pages publishes it.
@@ -140,6 +147,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -156,6 +164,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.l10n == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -167,6 +176,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.streamdeck == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/streamdeck
@@ -176,6 +186,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -205,6 +216,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -230,6 +242,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: windows-2022
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -249,6 +262,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugin == 'true'
     runs-on: macos-15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
@@ -272,6 +286,7 @@ jobs:
     # Needs Xcode 16+: current XcodeGen emits project format 77, which
     # Xcode 15 (macos-14 runners) cannot open.
     runs-on: macos-15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
@@ -282,6 +297,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ios == 'true'
     runs-on: xcode-27
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 

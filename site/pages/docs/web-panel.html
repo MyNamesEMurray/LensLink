@@ -15,10 +15,21 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   control panel</strong>.
 </p>
 <div class="callout">
-  <p><strong>Loopback only.</strong> The panel binds to <code>127.0.0.1</code>,
-  so nothing on the network can reach it — deliberate, since it can start
-  cameras and has no authentication.</p>
+  <p><strong>This computer only, by default.</strong> The panel binds to
+  <code>127.0.0.1</code>, so nothing on the network can reach it — deliberate,
+  since it can start cameras.</p>
 </div>
+<p>
+  <strong>From another device.</strong> Turn on <strong>Allow other devices on
+  this network to open the web panel</strong> in Tools → LensLink Settings
+  (off by default). The dialog then shows an address like
+  <code>http://192.168.1.20:9980/?key=…</code>: open it once in the browser of
+  a phone or another computer on the same network, and the browser remembers
+  the key. Without the key, other devices get <code>403 Forbidden</code>.
+  <strong>New key</strong> replaces it and signs every other device out.
+  The panel is plain HTTP, so anyone on the network can read the key off the
+  wire — use this only on a network you trust, such as at home.
+</p>
 <p>
   <strong>Panel port</strong> (default <code>9980</code>) is a plugin-wide
   setting if something else already has that port.
@@ -34,6 +45,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <li><strong>Green screen</strong>, beside the lenses, when it was on at stream start or has been turned on since.</li>
   <li>The adjust tray: <strong>Focus · WB · EV · ISO · Shutter</strong> chips and one dial. A yellow <strong>A</strong> marks what is on auto; moving the dial takes that setting manual, and clicking the selected chip again hands it back to auto (on EV, back to 0).</li>
   <li>Under the dial: <strong>Calibrate</strong> on WB (click it, then click the white paper in the still of the shot that appears), <strong>Natural motion blur</strong> on Shutter, then <strong>Lock</strong>, which freezes what auto is doing right now (Shift-click locks or unlocks everything), <strong>Flashlight</strong> and <strong>Flip</strong>. See <a href="/docs/camera/#live-camera-controls">Live camera controls</a>.</li>
+  <li><strong>Reframe</strong>: digital zoom (1 to 4×) and pan, applied on the phone before encoding. Drag the box on the picture to move the frame (the picture is a still taken at 1×, and refreshes when you return to 1×); click the readout to reset. The <strong>High-quality reframe</strong> button captures at a higher resolution so zoom keeps real detail; it uses more heat and turns green screen off. The window is not saved and resets when the app restarts.</li>
   <li><strong>Format changes mid-stream</strong>: resolution, frame rate, codec, microphone, and <strong>Stabilization</strong> (off while depth assist runs).</li>
   <li><strong>Subject distance</strong>, while the green screen runs with depth assist: drag the slider for 0.5–5.0 m, or past 5 m for <strong>All</strong>, and click the readout to go back to <strong>Auto</strong>.</li>
   <li><strong>Start camera</strong> while idle (a reminder to arm the phone instead, when remote start isn't armed), red <strong>Stop camera</strong> while live, each with an <strong>Auto-start</strong> toggle.</li>
@@ -99,6 +111,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
     <tr><td><code>naturalBlur</code></td><td>Whether auto exposure keeps the shutter at half the frame interval or faster, as set by <code>natural_blur</code>. Absent from apps that predate it.</td></tr>
     <tr><td><code>flashlight</code>, <code>flashlightLevel</code>, <code>hasFlashlight</code></td><td>Flashlight state, its brightness (0.01 to 1), and whether this camera has one.</td></tr>
     <tr><td><code>camera</code>, <code>lens</code>, <code>lenses</code>, <code>lensFactors</code>, <code>cropZoom</code></td><td><code>"front"</code> or <code>"back"</code>, the current lens's label, and the labels of every lens on the phone, such as <code>"Main (Wide)"</code> or <code>"Ultra Wide (0.5×)"</code>. Labels stay English; they are the values <code>selectLens</code> takes. <code>lensFactors</code> gives each lens's magnification relative to Main, in the same order; <code>cropZoom</code>, when present, is the zoom of Main's full-detail sensor crop.</td></tr>
+    <tr><td><code>supportsReframe</code>, <code>reframe</code></td><td><code>supportsReframe</code> is <code>true</code> when the app can reframe; <code>supportsReframeHQ</code> and <code>reframeHQ</code> cover high-quality reframe. <code>reframe</code> (<code>zoom</code>, <code>x</code>, <code>y</code>) appears only while the window is not the whole picture.</td></tr>
     <tr><td><code>stabilization</code></td><td><code>"off"</code>, <code>"standard"</code> or <code>"cinematic"</code>, as set by <code>stabilization</code>.</td></tr>
     <tr><td><code>resolution</code>, <code>fps</code>, <code>codec</code>, <code>resolutions</code>, <code>frameRates</code>, <code>codecs</code></td><td>The current format, and the choices <code>set_format</code> accepts for the current lens.</td></tr>
     <tr><td><code>quality</code></td><td><code>"balanced"</code> or <code>"maximum"</code>, as set by <code>set_quality</code>.</td></tr>
@@ -129,6 +142,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 { "cmd": "white_balance", "mode": "calibrate", "x": 0.31, "y": 0.62 }
 { "cmd": "lock",          "target": "whiteBalance", "on": true }
 { "cmd": "stabilization", "mode": "cinematic" }
+{ "cmd": "reframe", "zoom": 2.0, "x": 0.4, "y": 0.5 }
+{ "cmd": "reframe", "hq": true }
 { "cmd": "natural_blur",  "on": true }
 { "cmd": "flashlight",    "on": true, "level": 0.6 }
 { "cmd": "flip" }
