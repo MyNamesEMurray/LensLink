@@ -58,6 +58,7 @@ add_library(${PROJECT_NAME} MODULE
   src/ios-camera-source.c
   src/h264-decoder.c
   src/usbmux.c
+  src/web-auth.c
   src/web-control.c
   src/still.c
   src/diagnostics.c
@@ -68,7 +69,10 @@ add_library(${PROJECT_NAME} MODULE
   src/pipeline-bench.c
   src/json-reader.c
   src/handshake.c
+  src/controls.c
+  src/camera-controls.c
   src/protocol.h
+  src/web-auth.h
   src/web-control.h
   src/lipsync.h
   src/lipsync-cal.h

@@ -1,8 +1,9 @@
-# Keeps the GitHub Actions in our workflows on their latest releases.
-# One grouped PR per week at most — action bumps are almost always
-# mechanical, and the group keeps them from arriving one-by-one.
-# (No pip/npm ecosystems: the Python workflow scripts install their two
-# deps ad hoc, and there's no manifest for Dependabot to watch.)
+# Keeps the GitHub Actions in our workflows and the Stream Deck plugin's
+# npm packages on their latest releases. One grouped PR per week at most
+# per ecosystem — bumps are almost always mechanical, and the group keeps
+# them from arriving one-by-one.
+# (No pip ecosystem: the Python workflow scripts pin their two deps in
+# .github/scripts/requirements.txt, which is bumped by hand.)
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -13,4 +14,12 @@ updates:
       interval: "weekly"
     groups:
       actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "npm"
+    directory: "/streamdeck"
+    schedule:
+      interval: "weekly"
+    groups:
+      streamdeck:
         patterns: ["*"]

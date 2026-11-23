@@ -146,7 +146,7 @@ to quote.
 
 - CI (`.github/workflows/build.yml`) runs on **pull requests only**, not
   branch pushes, and builds only the areas the PR touches (plugin on
-  Ubuntu/Windows/macOS with `-Werror`; the app as an unsigned device build
+  Ubuntu and macOS with `-Werror`, Windows without; the app as an unsigned device build
   on macOS). PRs merge automatically once the required checks pass.
 - The plugin and app build steps live in composite actions under
   `.github/actions/`, shared by `build.yml` and `release.yml`: change a

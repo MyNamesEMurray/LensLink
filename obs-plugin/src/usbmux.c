@@ -79,19 +79,6 @@ static bool read_all(socket_t s, void *buf, size_t len)
 	return true;
 }
 
-static void set_timeouts(socket_t s, int seconds)
-{
-#ifdef _WIN32
-	DWORD ms = (DWORD)seconds * 1000;
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&ms, sizeof(ms));
-	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char *)&ms, sizeof(ms));
-#else
-	struct timeval tv = {.tv_sec = seconds, .tv_usec = 0};
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-#endif
-}
-
 static socket_t usbmuxd_open(void)
 {
 #ifdef _WIN32
@@ -127,7 +114,7 @@ static socket_t usbmuxd_open(void)
 	/* Local IPC to a service on this machine: 1 s is generous, and the
 	 * properties dialog enumerates devices on the UI thread — a wedged
 	 * Apple Mobile Device service must not freeze OBS for long. */
-	set_timeouts(s, 1);
+	net_set_timeouts(s, 1);
 	return s;
 }
 
@@ -324,7 +311,7 @@ socket_t usbmux_connect_device(long device_id, uint16_t device_port)
 		goto fail; /* device present but app not listening (yet) */
 
 	/* From here the socket is a raw pipe to the app. */
-	set_timeouts(s, 0);
+	net_set_timeouts(s, 0);
 	net_set_nonblocking(s);
 	return s;
 

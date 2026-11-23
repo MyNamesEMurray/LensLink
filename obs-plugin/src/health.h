@@ -51,6 +51,13 @@ struct lenslink_health {
  * successive cumulative snapshots. */
 size_t lenslink_health_enum(struct lenslink_health *out, size_t max);
 
+/* The cached STATE JSON of the named camera source (not screen); false
+ * when no such source is live. */
+bool lenslink_source_state(const char *name, char *buf, size_t size);
+
+/* Queues one CONTROL command for the named camera source. */
+bool lenslink_source_send(const char *name, const char *json);
+
 #ifdef __cplusplus
 }
 #endif

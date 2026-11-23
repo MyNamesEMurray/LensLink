@@ -732,6 +732,12 @@
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "Stabilisation";
 
+/* Options sheet row: toggle that captures bigger than the stream so the web panel's Reframe zoom keeps real detail */
+"High-quality reframe" = "Recadrage haute qualité";
+
+/* Documentation → Options, Camera behavior section: High-quality reframe (Markdown: keep the ** markers) */
+"**High-quality reframe** captures at the next size up (1080p for a 720p stream, 4K for 1080p) and takes the web panel's Reframe window from that, so zoom keeps real detail instead of stretching pixels. It uses more power and heat, turns green screen off, and does nothing at 4K." = "**Recadrage haute qualité** capture à la taille supérieure (1080p pour un flux 720p, 4K pour 1080p) et en tire la fenêtre de recadrage du panneau web, de sorte que le zoom garde de vrais détails au lieu d’étirer les pixels. Il consomme plus d’énergie, chauffe davantage, désactive l’écran vert et ne fait rien en 4K.";
+
 /* Options sheet, Stabilization menu: Apple's strongest live stabilization, smooth like a gimbal; the parenthesis warns it delays the stream a lot */
 "Cinematic (high delay)" = "Cinématique (fort retard)";
 

@@ -47,6 +47,15 @@ should add as close to zero as possible.
   and re-encoded (not redrawn) once a second, which a static frame
   compresses to tens of bytes. Nothing is retained from the capture pool
   between frames, so no buffer is pinned.
+- **Reframe costs nothing at 1×.** `FrameReframer.apply` returns the
+  captured buffer untouched while the window is the whole picture and
+  the capture matches the stream size. Zoomed, it is one hardware
+  pixel-transfer (VideoToolbox scaler, no Metal) into a pooled buffer,
+  dropping the frame on pool exhaustion like the green screen
+  compositor. **High-quality reframe** captures one size above the
+  stream (more sensor work, more heat) and always scales; it is off by
+  default and untested for heat and latency, so quote numbers before
+  changing its defaults.
 - Idle standby listener costs nothing measurable: no timers, no camera —
   just an accepting socket and 1 Hz timesync replies while OBS is
   connected.

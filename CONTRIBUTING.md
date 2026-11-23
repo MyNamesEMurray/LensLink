@@ -33,8 +33,8 @@ surfaces follow).
 
 ## Releases
 
-Merging to `main` releases automatically when `obs-plugin/`, `ios-app/`
-or `installer/` changed: a patch bump by default, or the bump named by a
+Merging to `main` releases automatically when `obs-plugin/`, `ios-app/`,
+`installer/` or `streamdeck/` changed: a patch bump by default, or the bump named by a
 `Release-Bump: minor` / `Release-Bump: major` trailer line in a commit of
 the PR (`Release-Skip: true` suppresses it). `Release-Beta: true` publishes
 it as a pre-release instead — same builds, still uploaded to TestFlight,

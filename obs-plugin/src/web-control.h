@@ -1,7 +1,8 @@
 /*
  * Tiny embedded HTTP server providing a browser control panel for the
  * connected camera devices (zoom / exposure / focus / flashlight),
- * DroidCam-style. Serves on 127.0.0.1 only; control commands are queued
+ * DroidCam-style. Serves on 127.0.0.1 only, or on the LAN behind
+ * an access key when enabled in the settings; control commands are queued
  * onto the addressed source and forwarded to the device over the stream
  * connection.
  */

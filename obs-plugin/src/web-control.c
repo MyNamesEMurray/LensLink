@@ -12,11 +12,14 @@
 
 #include "net-compat.h"
 #include "web-control.h"
+#include "web-auth.h"
 #include "plugin-settings.h"
 #include "diagnostics.h"
+#include "json-reader.h"
 
 #define MAX_REQUEST (16 * 1024)
 #define MAX_CONTROL_BODY 512
+#define REQUEST_DEADLINE_NS (3ULL * 1000000000ULL)
 
 /*
  * Browser control panel, styled to docs/UI_DESIGN.md (shared palette,
@@ -72,6 +75,11 @@ static const char *const web_text_keys[] = {
 	"Web.Stabilization.Off",
 	"Web.Stabilization.Standard",
 	"Web.Stabilization.Cinematic",
+	"Web.Reframe",
+	"Web.Reframe.Tip",
+	"Web.Reframe.Pad",
+	"Web.Reframe.HQ",
+	"Web.Reframe.HQ.Tip",
 	"Web.Lens.Front",
 	"Web.Lens.FrontUltraWide",
 	"Web.Lens.MainWide",
@@ -156,6 +164,13 @@ static const char control_page[] =
 	"transform:translateX(-50%)}"
 	".still img{display:block;width:100%;border-radius:12px;cursor:crosshair;"
 	"background:#000;margin-bottom:12px}"
+	".pad{position:relative;aspect-ratio:16/9;margin:0 0 14px;border-radius:12px;"
+	"background:rgba(255,255,255,.08);touch-action:none;cursor:grab;overflow:hidden}"
+	".pad:focus-visible{outline:2px solid var(--accent)}"
+	".pad img{position:absolute;inset:0;width:100%;height:100%;display:none;"
+	"pointer-events:none;background:#000}.pad.bg img{display:block}"
+	".pad div{position:absolute;border:2px solid var(--accent);border-radius:6px;"
+	"background:rgba(255,255,255,.12);pointer-events:none}"
 	".tools{display:flex;gap:10px;align-items:center;justify-content:flex-end}"
 	".gap{width:44px;height:44px;flex:none}"
 	"select{flex:1;min-width:0;background:rgba(255,255,255,.12);color:var(--txt);border:0;"
@@ -242,6 +257,18 @@ static const char control_page[] =
 	 * actually running (greenScreenDepth). Same stops as the app's Subject dial
 	 * (UI_DESIGN §5): 0.5-5.0 m, then "All" (sends 0) past the far end;
 	 * clicking the readout hands the cutoff back to Auto (sends -1). */
+	"<div class='row' id='rfrow' style='display:none'>"
+	"<span class='lbl' id='rfl' data-t='Reframe'></span>"
+	"<input id='rfz' class='y' type='range' min='1' max='4' step='0.1' value='1' "
+	"aria-labelledby='rfl'>"
+	"<span class='ro y' id='rfv' role='button' tabindex='0' "
+	"data-t-title='Reframe.Tip'></span></div>"
+	"<div class='pad' id='rfpad' tabindex='0' role='application' "
+	"data-t-title='Reframe.Pad' style='display:none'><img id='rfimg' alt=''>"
+	"<div id='rfwin'></div></div>"
+	"<div class='row' id='rfhqrow' style='display:none'>"
+	"<button class='primary toggle' id='rfhq' data-t='Reframe.HQ' "
+	"data-t-title='Reframe.HQ.Tip'></button></div>"
 	"<div class='row' id='flrow' style='display:none'>"
 	"<span class='lbl' id='fll' data-t='Flashlight'></span>"
 	"<input id='fld' class='y' type='range' min='1' max='100' step='1' value='100' "
@@ -572,11 +599,12 @@ static const char control_page[] =
 	"if(stillEl.src)URL.revokeObjectURL(stillEl.src);"
 	"stillEl.src=URL.createObjectURL(b);show(stillboxEl,true);return}}}catch(e){}"
 	"if(picking===me){stillClose();setText(toolhintEl,t('Calibrate.NoPicture'))}};"
-	"stillEl.onload=()=>{const c=document.createElement('canvas');c.width=c.height=16;"
-	"const g=c.getContext('2d');g.drawImage(stillEl,0,0,16,16);let m=0;"
+	"const boost=im=>{const c=document.createElement('canvas');c.width=c.height=16;"
+	"const g=c.getContext('2d');g.drawImage(im,0,0,16,16);let m=0;"
 	"const d=g.getImageData(0,0,16,16).data;"
 	"for(let i=0;i<d.length;i+=4)m+=d[i]+d[i+1]+d[i+2];m/=256*3*255;"
-	"stillEl.style.filter='brightness('+Math.min(Math.max(0.45/(m||1),1),4)+')'};"
+	"im.style.filter='brightness('+Math.min(Math.max(0.45/(m||1),1),4)+')'};"
+	"stillEl.onload=()=>boost(stillEl);"
 	"const pick=(x,y)=>{send({cmd:'white_balance',mode:'calibrate',x,y});stillClose()};"
 	"stillEl.onclick=e=>{const r=stillEl.getBoundingClientRect();"
 	"pick(Math.min(Math.max((e.clientX-r.left)/r.width,0),1),"
@@ -615,6 +643,42 @@ static const char control_page[] =
 	"const STAB={off:t('Stabilization.Off'),standard:t('Stabilization.Standard'),"
 	"cinematic:t('Stabilization.Cinematic')};"
 	"stabEl.onchange=()=>send({cmd:'stabilization',mode:stabEl.value});"
+	"const rfrowEl=$('rfrow'),rfzEl=$('rfz'),rfvEl=$('rfv'),rfpadEl=$('rfpad'),"
+	"rfwinEl=$('rfwin'),rfhqrowEl=$('rfhqrow'),rfhqEl=$('rfhq'),rfimgEl=$('rfimg');"
+	"let rfBg=false,rfBusy=false,rfTry=0,rfZoomed=false;"
+	"async function rfStill(){if(rfBusy)return;rfBusy=true;rfTry=Date.now();try{"
+	"if(gone(await fetch('/api/still'+q(),{method:'POST'})))return;"
+	"for(let i=0;i<20;i++){await new Promise(r=>setTimeout(r,150));"
+	"const r=await fetch('/api/still'+q());if(gone(r))return;"
+	"if(r.status===200){const b=await r.blob();"
+	"if(rfimgEl.src)URL.revokeObjectURL(rfimgEl.src);"
+	"rfimgEl.onload=()=>boost(rfimgEl);rfimgEl.src=URL.createObjectURL(b);"
+	"rfBg=true;rfpadEl.classList.add('bg');return}}}catch(e){}finally{rfBusy=false}}"
+	"let rfhq=false;"
+	"function hqUI(on){rfhq=on;rfhqEl.className=on?'primary toggle on':'primary toggle';"
+	"pressed(rfhqEl,on)}"
+	"rfhqEl.onclick=()=>{touch();hqUI(!rfhq);send({cmd:'reframe',hq:rfhq})};"
+	"let RF={zoom:1,x:.5,y:.5};"
+	"function rfUI(){RF.zoom=Math.min(Math.max(RF.zoom,1),4);const h=.5/RF.zoom;"
+	"RF.x=Math.min(Math.max(RF.x,h),1-h);RF.y=Math.min(Math.max(RF.y,h),1-h);"
+	"rfzEl.value=RF.zoom;rfvEl.textContent=RF.zoom.toFixed(1)+'×';vt(rfzEl,rfvEl.textContent);"
+	"const zd=RF.zoom>1.01;if(zd!==rfZoomed){rfZoomed=zd;if(!zd)setTimeout(rfStill,700)}"
+	"const s=rfwinEl.style;"
+	"s.left=(RF.x-h)*100+'%';s.top=(RF.y-h)*100+'%';"
+	"s.width=s.height=100/RF.zoom+'%'}"
+	"const dRf=deb(()=>send({cmd:'reframe',zoom:RF.zoom,x:RF.x,y:RF.y}),60);"
+	"rfzEl.oninput=()=>{touch();RF.zoom=+rfzEl.value;rfUI();dRf()};"
+	"rfvEl.onclick=()=>{touch();RF={zoom:1,x:.5,y:.5};rfUI();"
+	"send({cmd:'reframe',zoom:1})};"
+	"rfvEl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){"
+	"e.preventDefault();rfvEl.onclick()}};"
+	"const rfAt=e=>{const r=rfpadEl.getBoundingClientRect();touch();"
+	"RF.x=(e.clientX-r.left)/r.width;RF.y=(e.clientY-r.top)/r.height;rfUI();dRf()};"
+	"rfpadEl.onpointerdown=e=>{rfpadEl.setPointerCapture(e.pointerId);rfAt(e)};"
+	"rfpadEl.onpointermove=e=>{if(rfpadEl.hasPointerCapture(e.pointerId))rfAt(e)};"
+	"rfpadEl.onkeydown=e=>{const d={ArrowLeft:[-1,0],ArrowRight:[1,0],"
+	"ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!d)return;e.preventDefault();"
+	"touch();RF.x+=d[0]*.05;RF.y+=d[1]*.05;rfUI();dRf()};"
 	/* Green screen: optimistic chip toggle. The slider sets a cutoff
 	 * (0.5-5.0 m, All past 5); Auto (-1) is the readout's click, like
 	 * tapping the app's Subject button while its dial is open. */
@@ -714,6 +778,11 @@ static const char control_page[] =
 	"const codecs=Array.isArray(S.codecs)?S.codecs:[];"
 	"show(fmtcodecEl,codecs.length>1);"
 	"fillSel(fmtcodecEl,codecs,S.codec,c=>CODEC_NAMES[c]||c)}"
+	"show(rfrowEl,!!S.supportsReframe);show(rfpadEl,!!S.supportsReframe);"
+	"if(S.supportsReframe){const r=S.reframe;"
+	"RF=r?{zoom:+r.zoom||1,x:+r.x||.5,y:+r.y||.5}:{zoom:1,x:.5,y:.5};rfUI();"
+	"show(rfhqrowEl,!!(S.supportsReframeHQ||S.reframeHQ));hqUI(!!S.reframeHQ);"
+	"if(!rfBg&&!rfZoomed&&Date.now()-rfTry>5000)rfStill()}"
 	"show(stabrowEl,typeof S.stabilization==='string');"
 	"if(typeof S.stabilization==='string'){"
 	"fillSel(stabEl,Object.keys(STAB),S.stabilization,m=>STAB[m]);"
@@ -729,6 +798,7 @@ struct web_control {
 	volatile bool stop;
 	socket_t listener;
 	uint16_t port;
+	bool lan;
 };
 
 /* One server, many sources. The registry maps small stable ids (what
@@ -817,19 +887,6 @@ static enum pick_result locked_pick_source(const char *request,
 	return PICK_UNKNOWN;
 }
 
-static void set_timeouts(socket_t s, int seconds)
-{
-#ifdef _WIN32
-	DWORD ms = (DWORD)seconds * 1000;
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&ms, sizeof(ms));
-	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char *)&ms, sizeof(ms));
-#else
-	struct timeval tv = {.tv_sec = seconds, .tv_usec = 0};
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-#endif
-}
-
 static void send_bytes(socket_t s, const char *p, size_t len)
 {
 	while (len > 0) {
@@ -850,12 +907,13 @@ static void respond_len(socket_t s, const char *status_line,
 			const char *content_type, const char *body,
 			size_t len)
 {
-	char header[256];
+	char header[320];
 	snprintf(header, sizeof(header),
 		 "HTTP/1.1 %s\r\n"
 		 "Content-Type: %s\r\n"
 		 "Content-Length: %zu\r\n"
 		 "Cache-Control: no-store\r\n"
+		 "X-Frame-Options: DENY\r\n"
 		 "Connection: close\r\n\r\n",
 		 status_line, content_type, len);
 	send_str(s, header);
@@ -1007,36 +1065,73 @@ static const char *tone_name(enum ios_camera_status_tone tone)
 	}
 }
 
-/* True if the header value (up to CR/LF) names a loopback host, e.g.
- * "localhost:9980" or "127.0.0.1:9980" or "http://localhost:9980". */
-static bool value_is_local(const char *v)
+static enum web_auth_result request_auth(const char *request,
+					 bool peer_loopback, bool lan)
 {
-	while (*v == ' ' || *v == '\t')
-		v++;
-	if (strncmp(v, "http://", 7) == 0)
-		v += 7;
-	return strncmp(v, "localhost", 9) == 0 ||
-	       strncmp(v, "127.0.0.1", 9) == 0;
+	char key[WEB_AUTH_KEY_SIZE];
+	lenslink_settings_web_key(key, sizeof(key));
+	return web_auth_check(find_header(request, "Host"),
+			      find_header(request, "Origin"),
+			      find_header(request, "Cookie"), request,
+			      peer_loopback, lan, key);
 }
 
-/* The listener binds to loopback, but that alone doesn't stop DNS
- * rebinding (Host: attacker.com resolving to 127.0.0.1) or cross-site
- * POSTs from web pages the streamer happens to visit (a text/plain POST
- * is a "simple request" — no CORS preflight). Require a loopback Host,
- * and a loopback Origin whenever the browser sends one. */
-static bool request_is_local(const char *request)
+static void respond_login(socket_t s)
 {
-	const char *host = find_header(request, "Host");
-	if (!host || !value_is_local(host))
-		return false;
-	const char *origin = find_header(request, "Origin");
-	if (origin && !value_is_local(origin))
-		return false;
-	return true;
+	char key[WEB_AUTH_KEY_SIZE], header[320];
+	lenslink_settings_web_key(key, sizeof(key));
+	snprintf(header, sizeof(header),
+		 "HTTP/1.1 302 Found\r\n"
+		 "Location: /\r\n"
+		 "Set-Cookie: ll_key=%s; Path=/; SameSite=Strict; HttpOnly\r\n"
+		 "Content-Length: 0\r\n"
+		 "Cache-Control: no-store\r\n"
+		 "X-Frame-Options: DENY\r\n"
+		 "Connection: close\r\n\r\n",
+		 key);
+	send_str(s, header);
 }
 
-static void handle_client(socket_t client)
+static int recv_by(socket_t s, char *buf, int len, uint64_t deadline)
 {
+	uint64_t now = os_gettime_ns();
+	if (now >= deadline)
+		return -1;
+	int ms = (int)((deadline - now) / 1000000ULL) + 1;
+	if (net_wait(s, NET_WAIT_READ, ms) <= 0)
+		return -1;
+	return (int)recv(s, buf, len, 0);
+}
+
+static bool json_object_complete(const char *body, size_t len)
+{
+	struct json_reader r;
+	lenslink_json_reader_init(&r, body, len);
+	return lenslink_json_peek(&r) == JSON_TYPE_OBJECT &&
+	       lenslink_json_skip(&r) && lenslink_json_reader_done(&r);
+}
+
+static bool parse_autostart_body(const char *body, size_t len, bool *on)
+{
+	struct json_reader r;
+	char key[16];
+	bool truncated, found = false;
+	lenslink_json_reader_init(&r, body, len);
+	if (!lenslink_json_object_begin(&r))
+		return false;
+	while (lenslink_json_object_next(&r, key, sizeof(key), &truncated)) {
+		if (!truncated && strcmp(key, "on") == 0 &&
+		    lenslink_json_read_bool(&r, on))
+			found = true;
+		else if (!lenslink_json_skip(&r))
+			return false;
+	}
+	return found && lenslink_json_reader_done(&r);
+}
+
+static void handle_client(socket_t client, bool peer_loopback, bool lan)
+{
+	uint64_t deadline = os_gettime_ns() + REQUEST_DEADLINE_NS;
 	char request[MAX_REQUEST + 1];
 	size_t have = 0;
 	const char *body = NULL;
@@ -1044,12 +1139,12 @@ static void handle_client(socket_t client)
 	/* On Windows the accepted socket inherits the listener's
 	 * non-blocking mode; this handler needs blocking reads. */
 	net_set_blocking(client);
-	set_timeouts(client, 2);
+	net_set_timeouts(client, 2);
 
 	/* Read until end of headers. */
 	while (have < MAX_REQUEST) {
-		int n = (int)recv(client, request + have,
-				  (int)(MAX_REQUEST - have), 0);
+		int n = recv_by(client, request + have,
+				(int)(MAX_REQUEST - have), deadline);
 		if (n <= 0)
 			return;
 		have += (size_t)n;
@@ -1063,6 +1158,18 @@ static void handle_client(socket_t client)
 	if (!body)
 		return;
 
+	enum web_auth_result auth = request_auth(request, peer_loopback, lan);
+	if (auth == WEB_AUTH_DENY) {
+		respond(client, "403 Forbidden", "text/plain", "forbidden");
+		return;
+	}
+	if (auth == WEB_AUTH_OK_QUERY_KEY &&
+	    (strncmp(request, "GET / ", 6) == 0 ||
+	     strncmp(request, "GET /?", 6) == 0)) {
+		respond_login(client);
+		return;
+	}
+
 	/* For POSTs, pull the whole body in before touching the source
 	 * registry — a slow client must never stall register/unregister
 	 * (the OBS UI thread) on our socket reads. */
@@ -1070,21 +1177,21 @@ static void handle_client(socket_t client)
 	size_t content_length = 0;
 	if (strncmp(request, "POST ", 5) == 0) {
 		const char *cl = find_header(request, "Content-Length");
-		content_length = cl ? (size_t)strtoul(cl, NULL, 10) : 0;
+		if (cl && !web_auth_content_length(cl, MAX_CONTROL_BODY,
+						   &content_length)) {
+			respond(client, "400 Bad Request", "text/plain",
+				"bad length");
+			return;
+		}
 		/* A zero-length body is legal here: action-only endpoints
 		 * (/api/recalibrate) POST with no body at all, and rejecting
 		 * that generically 400'd them before routing — the panel's
 		 * Recalibrate button died of exactly that. Endpoints that
 		 * *need* a body enforce it themselves below. */
-		if (content_length > MAX_CONTROL_BODY) {
-			respond(client, "400 Bad Request", "text/plain",
-				"bad length");
-			return;
-		}
 		while (have - body_offset < content_length &&
 		       have < MAX_REQUEST) {
-			int n = (int)recv(client, request + have,
-					  (int)(MAX_REQUEST - have), 0);
+			int n = recv_by(client, request + have,
+					(int)(MAX_REQUEST - have), deadline);
 			if (n <= 0)
 				return;
 			have += (size_t)n;
@@ -1098,11 +1205,6 @@ static void handle_client(socket_t client)
 				"truncated body");
 			return;
 		}
-	}
-
-	if (!request_is_local(request)) {
-		respond(client, "403 Forbidden", "text/plain", "forbidden");
-		return;
 	}
 
 	if (strncmp(request, "GET / ", 6) == 0) {
@@ -1149,9 +1251,9 @@ static void handle_client(socket_t client)
 	}
 
 	if (strncmp(request, "GET /api/state", 14) == 0) {
-		/* Must fit the source's whole device_state cache (2048) —
+		/* Must fit the source's whole device_state cache (32 KB cap) —
 		 * truncation here would hand the panel unparsable JSON. */
-		char state[2048] = {0};
+		char state[32 * 1024 + 1] = {0};
 		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
 		enum pick_result pick = locked_pick_source(request, &s);
@@ -1215,13 +1317,18 @@ static void handle_client(socket_t client)
 				"body required");
 			return;
 		}
+		bool on = false;
+		if (!parse_autostart_body(request + body_offset, content_length,
+					  &on)) {
+			respond(client, "400 Bad Request", "text/plain",
+				"bad body");
+			return;
+		}
 		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
 		enum pick_result pick = locked_pick_source(request, &s);
 		if (s)
-			ios_camera_set_auto_start(
-				s,
-				strstr(request + body_offset, "true") != NULL);
+			ios_camera_set_auto_start(s, on);
 		pthread_mutex_unlock(&g_reg.mutex);
 		if (!s)
 			respond_pick_error(client, pick);
@@ -1276,6 +1383,12 @@ static void handle_client(socket_t client)
 				"body required");
 			return;
 		}
+		if (!json_object_complete(request + body_offset,
+					  content_length)) {
+			respond(client, "400 Bad Request", "text/plain",
+				"bad body");
+			return;
+		}
 		struct ios_camera_source *s = NULL;
 		pthread_mutex_lock(&g_reg.mutex);
 		enum pick_result pick = locked_pick_source(request, &s);
@@ -1313,14 +1426,16 @@ static void *web_thread(void *data)
 		if (client == OBSC_INVALID_SOCKET)
 			continue;
 
-		handle_client(client);
+		handle_client(client,
+			      (ntohl(from.sin_addr.s_addr) >> 24) == 127,
+			      wc->lan);
 		net_close(client);
 	}
 
 	return NULL;
 }
 
-static struct web_control *server_start(uint16_t port)
+static struct web_control *server_start(uint16_t port, bool lan)
 {
 	socket_t listener = socket(AF_INET, SOCK_STREAM, 0);
 	if (listener == OBSC_INVALID_SOCKET)
@@ -1330,10 +1445,11 @@ static struct web_control *server_start(uint16_t port)
 	setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes,
 		   sizeof(yes));
 
-	/* Local machine only — this is a control surface. */
+	/* Local machine only unless LAN access is on — this is a control
+	 * surface. */
 	struct sockaddr_in addr = {0};
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	addr.sin_addr.s_addr = htonl(lan ? INADDR_ANY : INADDR_LOOPBACK);
 	addr.sin_port = htons(port);
 
 	if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) != 0 ||
@@ -1352,6 +1468,7 @@ static struct web_control *server_start(uint16_t port)
 	struct web_control *wc = bzalloc(sizeof(*wc));
 	wc->listener = listener;
 	wc->port = port;
+	wc->lan = lan;
 
 	if (pthread_create(&wc->thread, NULL, web_thread, wc) != 0) {
 		net_close(listener);
@@ -1360,8 +1477,9 @@ static struct web_control *server_start(uint16_t port)
 	}
 
 	blog(LOG_INFO,
-	     "[lenslink] web control panel at http://localhost:%u/",
-	     (unsigned)port);
+	     "[lenslink] web control panel at http://localhost:%u/%s",
+	     (unsigned)port, lan ? " (and on the local network, key required)"
+				 : "");
 	return wc;
 }
 
@@ -1384,10 +1502,12 @@ void web_control_apply_settings(void)
 {
 	struct web_control *to_stop = NULL;
 	uint16_t port = (uint16_t)lenslink_settings_web_port();
+	bool lan = lenslink_settings_web_lan();
 
 	pthread_mutex_lock(&g_reg.mutex);
 	bool want = lenslink_settings_web_enabled() && g_reg.count > 0;
-	if (g_reg.server && (!want || g_reg.server->port != port)) {
+	if (g_reg.server && (!want || g_reg.server->port != port ||
+			     g_reg.server->lan != lan)) {
 		to_stop = g_reg.server;
 		g_reg.server = NULL;
 	}
@@ -1399,7 +1519,7 @@ void web_control_apply_settings(void)
 	if (!need_start)
 		return;
 
-	struct web_control *wc = server_start(port);
+	struct web_control *wc = server_start(port, lan);
 	if (!wc)
 		return;
 	pthread_mutex_lock(&g_reg.mutex);

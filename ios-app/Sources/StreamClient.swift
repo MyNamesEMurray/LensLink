@@ -43,6 +43,21 @@ final class StreamClient {
 
     /// Incoming bytes from the plugin (timesync requests), queue-confined.
     private var receiveBuffer = Data()
+    private var lastReceiveNs: UInt64 = 0
+    private static let maxControlPayload: UInt32 = 16 * 1024
+    private static let maxPendingControl = 8
+    private static let busyWindowNs: UInt64 = 10_000_000_000
+    private let controlLock = NSLock()
+    private var pendingControl = 0
+
+    func controlHandled() {
+        controlLock.lock()
+        pendingControl = max(0, pendingControl - 1)
+        controlLock.unlock()
+    }
+
+    private var audioInFlightBytes = 0
+    private static let maxAudioInFlightBytes = 200 * 1024
 
     // MARK: - Lifecycle
     //
@@ -103,6 +118,7 @@ final class StreamClient {
         connection?.cancel()
         connection = nil
         inFlightFrames = 0
+        audioInFlightBytes = 0
         waitingForKeyframe = false
         receiveBuffer.removeAll(keepingCapacity: false)
     }
@@ -224,6 +240,11 @@ final class StreamClient {
                 newConnection.cancel()
                 return
             }
+            if let current = self.connection, current.state == .ready,
+               clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - self.lastReceiveNs < Self.busyWindowNs {
+                newConnection.cancel()
+                return
+            }
             // Newest connection wins (e.g. OBS restarted).
             self.teardownConnection()
             self.adopt(newConnection)
@@ -314,6 +335,7 @@ final class StreamClient {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self, weak connection] content, _, isComplete, error in
             guard let self, let connection, self.connection === connection else { return }
             if let content {
+                self.lastReceiveNs = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
                 self.receiveBuffer.append(content)
                 self.processIncoming()
             }
@@ -347,6 +369,12 @@ final class StreamClient {
                 return
             }
 
+            guard type != OBSCProtocol.PacketType.control.rawValue
+                    || payloadSize <= Self.maxControlPayload else {
+                connectionEnded(failure: "oversized control")
+                return
+            }
+
             let total = OBSCProtocol.headerSize + Int(payloadSize)
             guard receiveBuffer.count >= total else { return }
             let payload = receiveBuffer.subdata(
@@ -358,7 +386,15 @@ final class StreamClient {
             case OBSCProtocol.PacketType.timesyncReq.rawValue:
                 respondToTimesync(pluginClock: pts)
             case OBSCProtocol.PacketType.control.rawValue:
-                onControl?(payload)
+                controlLock.lock()
+                let accept = pendingControl < Self.maxPendingControl
+                if accept {
+                    pendingControl += 1
+                }
+                controlLock.unlock()
+                if accept {
+                    onControl?(payload)
+                }
             default:
                 break
             }
@@ -397,11 +433,21 @@ final class StreamClient {
         }
     }
 
-    private func sendOnQueue(_ data: Data, isVideoFrame: Bool) {
+    private func sendOnQueue(_ data: Data, isVideoFrame: Bool, audioBytes: Int = 0) {
         guard let connection else { return }
         connection.send(content: data,
                         completion: sendCompletion(for: connection,
-                                                   isVideoFrame: isVideoFrame))
+                                                   isVideoFrame: isVideoFrame,
+                                                   audioBytes: audioBytes))
+    }
+
+    private func sendAudioPacket(_ packet: Data) {
+        queue.async { [weak self] in
+            guard let self, self.connection != nil,
+                  self.audioInFlightBytes < Self.maxAudioInFlightBytes else { return }
+            self.audioInFlightBytes += packet.count
+            self.sendOnQueue(packet, isVideoFrame: false, audioBytes: packet.count)
+        }
     }
 
     /// Queue-confined. Video frames are the bulk of the bandwidth; sending
@@ -420,7 +466,8 @@ final class StreamClient {
     }
 
     private func sendCompletion(for connection: NWConnection,
-                                isVideoFrame: Bool) -> NWConnection.SendCompletion {
+                                isVideoFrame: Bool,
+                                audioBytes: Int = 0) -> NWConnection.SendCompletion {
         let enqueuedAt = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
         return .contentProcessed { [weak self, weak connection] error in
             guard let self else { return }
@@ -432,6 +479,9 @@ final class StreamClient {
             // backpressure) and log bogus send delays that make adaptive
             // bitrate cut the rate on a healthy link.
             guard let connection, self.connection === connection else { return }
+            if audioBytes > 0 {
+                self.audioInFlightBytes = max(0, self.audioInFlightBytes - audioBytes)
+            }
             if isVideoFrame {
                 if self.inFlightFrames > 0 {
                     self.inFlightFrames -= 1
@@ -529,9 +579,9 @@ final class StreamClient {
         queue.async { [weak self] in
             self?.diagAudioChunks += 1
         }
-        send(OBSCProtocol.packet(type: .screenAudio,
-                                 ptsNanoseconds: ptsNanoseconds,
-                                 payload: pcm))
+        sendAudioPacket(OBSCProtocol.packet(type: .screenAudio,
+                                            ptsNanoseconds: ptsNanoseconds,
+                                            payload: pcm))
     }
 
     /// Reports the app's current camera-control state so remote UIs
@@ -543,9 +593,9 @@ final class StreamClient {
 
     /// Sends a chunk of reference-audio PCM (lip-sync calibration).
     func sendAudio(_ pcm: Data, ptsNanoseconds: UInt64) {
-        send(OBSCProtocol.packet(type: .audio,
-                                 ptsNanoseconds: ptsNanoseconds,
-                                 payload: pcm))
+        sendAudioPacket(OBSCProtocol.packet(type: .audio,
+                                            ptsNanoseconds: ptsNanoseconds,
+                                            payload: pcm))
     }
 
     /// Called from the encoder's output thread; hops to the network queue

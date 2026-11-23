@@ -671,11 +671,30 @@ inside OBS's chrome, OBS's design language wins; our vocabulary (the
 status wording, `fps · Mb/s · ms` ordering, monospace-style numerals)
 is what carries over.
 
+A second dock, **LensLink Controls** (`frontend-ui.cpp`), carries the web
+panel's basic controls: zoom, lens, flashlight, flip, stabilization,
+reframe (zoom slider, drag pad drawn in `accent`, High-quality reframe),
+green screen and the format pickers. The same controls appear as a
+**Camera controls** group in each camera source's properties (native OBS
+widgets: sliders, lists, toggles; no drag pad). Both read the cached
+STATE through `controls.c` and send CONTROL packets, so they stay in
+lock-step with the app and the web panel. Like the rest of §6.4 they use
+OBS's theme, not our palette. The dock mirrors the phone about once a
+second and holds off for 1.5 s after the operator touches it; the
+properties group is a snapshot taken when the sheet opens (Refresh
+reloads it). Exposure, white balance, focus, tally and the mic picker
+stay in the web panel.
+
 ### 6.5 Plugin settings dialog (Tools → LensLink Settings)
 
 Plugin-wide switches live here, not in source properties: anything with
 one value for the whole plugin (web panel + its port, diagnostics, the
-stream dump, the GPU pipeline beta). Native Qt widgets, OBS's theme,
+stream dump, the GPU pipeline beta). Network exposure is opt-in: "Allow
+other devices on this network to open the web panel" is off by default,
+carries a muted note that the panel is plain HTTP for trusted networks
+only, and shows a read-only address field holding the access key with
+Copy address and New key buttons beside it (enabled only while the
+panel and the option are both on). Native Qt widgets, OBS's theme,
 no custom chrome. Rules of the room: a setting that needs an OBS
 restart says so right under its checkbox in muted text; per-source
 properties never duplicate a global (the property sheet points at the
@@ -838,16 +857,3 @@ Screen-reader basics, in the same vocabulary:
   poll never re-announces.
 
 ---
-
-## 9. Reconciliation checklist (this revision)
-
-- [x] Status **word** unified via `Status.displayName` (was two different
-      strings for connecting across Setup vs Live).
-- [x] Status **colour** unified via `Status.tint` (Live screen previously
-      had no error/idle colour).
-- [x] Shared **design tokens** (`DesignSystem.swift`) replace ad-hoc
-      opacities, radii and paddings.
-- [x] "Torch" → **"Flashlight"** everywhere (icon-only in app, labelled on
-      web).
-- [x] Web panel restyled to the palette, typography, control metaphors and
-      ordering above; **Lens selection** added for parity with the app.

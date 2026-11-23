@@ -38,6 +38,7 @@
 #include "h264-decoder.h"
 #include "usbmux.h"
 #include "web-control.h"
+#include "camera-controls.h"
 #include "lipsync.h"
 #include "lipsync-cal.h"
 #include "plugin-settings.h"
@@ -103,6 +104,16 @@ struct recv_buf {
 	size_t cap;
 };
 
+struct dns_cache {
+	char host[128];
+	struct in_addr addr;
+	bool ok;
+	uint64_t when_ns;
+};
+
+#define DNS_OK_TTL_NS 60000000000ULL
+#define DNS_FAIL_TTL_NS 30000000000ULL
+
 struct ios_camera_source {
 	obs_source_t *source;
 
@@ -112,6 +123,7 @@ struct ios_camera_source {
 
 	enum connection_mode conn_mode;
 	char host[128];
+	struct dns_cache dns;
 	char usb_device[64]; /* pinned UDID for USB mode; "" = auto-assign */
 	volatile bool hw_decode;
 	volatile bool diagnostics; /* verbose pipeline logging to the OBS log */
@@ -236,10 +248,15 @@ struct ios_camera_source {
 	int control_count;
 
 	/* Latest camera-state JSON reported by the app (for remote UIs).
-	 * Guarded by status_mutex. Sized well past today's biggest snapshot
-	 * (mics/resolutions/lens lists + green screen): silent truncation
-	 * here breaks the web panel's JSON.parse. */
-	char device_state[2048];
+	 * Guarded by status_mutex. Heap-sized to the payload (STATE_MAX_BYTES
+	 * cap): silent truncation breaks every JSON consumer. `name` caches
+	 * the source name for threads other than the UI thread. */
+	char *device_state;
+	size_t device_state_len;
+	char name[256];
+	uint64_t last_state_log_ns;
+	uint64_t last_hello_log_ns;
+	uint64_t last_unknown_log_ns;
 
 	/* Health mirrors for the frontend UI (the live counters belong to
 	 * the dial thread's client_state; these are 1 Hz copies). Guarded
@@ -303,7 +320,7 @@ struct ios_camera_source {
  * with the plugin-wide settings; the panel itself (one server for every
  * camera source) is reconciled by web_control_apply_settings. Main/UI
  * thread only (create/update/the settings dialog). */
-static void apply_web_settings(struct ios_camera_source *s)
+static void apply_web_registration(struct ios_camera_source *s)
 {
 	if (s->is_screen_source)
 		return;
@@ -311,6 +328,13 @@ static void apply_web_settings(struct ios_camera_source *s)
 		web_control_register(s);
 	else
 		web_control_unregister(s);
+}
+
+static void apply_web_settings(struct ios_camera_source *s)
+{
+	if (s->is_screen_source)
+		return;
+	apply_web_registration(s);
 	web_control_apply_settings(); /* also picks up port changes */
 }
 
@@ -340,8 +364,23 @@ bool ios_camera_is_armed(struct ios_camera_source *s)
 
 void ios_camera_copy_name(struct ios_camera_source *s, char *buf, size_t size)
 {
-	const char *name = obs_source_get_name(s->source);
-	snprintf(buf, size, "%s", name ? name : "LensLink");
+	pthread_mutex_lock(&s->status_mutex);
+	snprintf(buf, size, "%s", s->name[0] ? s->name : "LensLink");
+	pthread_mutex_unlock(&s->status_mutex);
+}
+
+static void set_cached_name(struct ios_camera_source *s, const char *name)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	snprintf(s->name, sizeof(s->name), "%s", name ? name : "");
+	pthread_mutex_unlock(&s->status_mutex);
+}
+
+static void source_renamed(void *data, calldata_t *cd)
+{
+	const char *name = NULL;
+	calldata_get_string(cd, "new_name", &name);
+	set_cached_name(data, name);
 }
 
 static void copy_utf8(char *buf, size_t size, const char *src)
@@ -409,9 +448,10 @@ void ios_camera_apply_global_settings(void)
 			continue;
 		s->diagnostics = lenslink_settings_diagnostics();
 		s->dump_stream = lenslink_settings_dump_stream();
-		apply_web_settings(s);
+		apply_web_registration(s);
 	}
 	pthread_mutex_unlock(&g_health_mutex);
+	web_control_apply_settings();
 }
 
 size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
@@ -424,11 +464,10 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 		if (!s)
 			continue;
 		struct lenslink_health *h = &out[n++];
-		const char *name = obs_source_get_name(s->source);
-		snprintf(h->source_name, sizeof(h->source_name), "%s",
-			 name ? name : "");
 		h->is_screen = s->is_screen_source;
 		pthread_mutex_lock(&s->status_mutex);
+		snprintf(h->source_name, sizeof(h->source_name), "%.*s",
+			 (int)sizeof(h->source_name) - 1, s->name);
 		h->connected = s->stat_connected;
 		h->standby = s->standby;
 		h->unarmed = s->unarmed;
@@ -452,6 +491,46 @@ size_t lenslink_health_enum(struct lenslink_health *out, size_t max)
 	}
 	pthread_mutex_unlock(&g_health_mutex);
 	return n;
+}
+
+static bool source_name_is(struct ios_camera_source *s, const char *name)
+{
+	pthread_mutex_lock(&s->status_mutex);
+	bool eq = !strcmp(s->name, name);
+	pthread_mutex_unlock(&s->status_mutex);
+	return eq;
+}
+
+bool lenslink_source_state(const char *name, char *buf, size_t size)
+{
+	bool found = false;
+
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES && !found; i++) {
+		struct ios_camera_source *s = g_health_sources[i];
+		if (s && !s->is_screen_source && source_name_is(s, name)) {
+			ios_camera_copy_state(s, buf, size);
+			found = true;
+		}
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+	return found;
+}
+
+bool lenslink_source_send(const char *name, const char *json)
+{
+	bool found = false;
+
+	pthread_mutex_lock(&g_health_mutex);
+	for (int i = 0; i < MAX_HEALTH_SOURCES && !found; i++) {
+		struct ios_camera_source *s = g_health_sources[i];
+		if (s && !s->is_screen_source && source_name_is(s, name)) {
+			ios_camera_enqueue_control(s, json, strlen(json));
+			found = true;
+		}
+	}
+	pthread_mutex_unlock(&g_health_mutex);
+	return found;
 }
 
 bool ios_camera_is_connected(struct ios_camera_source *s)
@@ -506,11 +585,27 @@ static void set_status(struct ios_camera_source *s,
 void ios_camera_enqueue_control(struct ios_camera_source *s, const char *json,
 				size_t len)
 {
+	pthread_mutex_lock(&s->status_mutex);
+	if (!s->stat_connected) {
+		pthread_mutex_unlock(&s->status_mutex);
+		return;
+	}
 	char *copy = bmalloc(len + 1);
 	memcpy(copy, json, len);
 	copy[len] = 0;
 
-	pthread_mutex_lock(&s->status_mutex);
+	static const char *const continuous[] = {
+		"{\"cmd\":\"zoom\"", "{\"cmd\":\"reframe\",\"zoom\""};
+	for (size_t i = 0; i < 2 && s->control_count > 0; i++) {
+		size_t n = strlen(continuous[i]);
+		char *last = s->control_queue[s->control_count - 1];
+		if (!strncmp(copy, continuous[i], n) &&
+		    !strncmp(last, continuous[i], n)) {
+			bfree(last);
+			s->control_queue[--s->control_count] = NULL;
+			break;
+		}
+	}
 	if (s->control_count >= CONTROL_QUEUE_MAX) {
 		/* Full: drop the oldest command. */
 		bfree(s->control_queue[0]);
@@ -537,7 +632,7 @@ void ios_camera_copy_state(struct ios_camera_source *s, char *buf,
 {
 	pthread_mutex_lock(&s->status_mutex);
 	snprintf(buf, size, "%s",
-		 s->device_state[0] ? s->device_state : "{}");
+		 s->device_state_len ? s->device_state : "{}");
 	pthread_mutex_unlock(&s->status_mutex);
 }
 
@@ -565,6 +660,8 @@ static void recv_buf_reserve(struct recv_buf *b, size_t size)
  * spike doesn't pin that memory for the rest of the connection. */
 static void recv_buf_consume(struct recv_buf *b, size_t size)
 {
+	if (!size)
+		return;
 	if (size >= b->len)
 		b->len = 0;
 	else {
@@ -590,6 +687,18 @@ static void recv_buf_consume(struct recv_buf *b, size_t size)
 /* Latency measurement: NTP-style clock offset between the phone's
  * capture clock and this machine, then per-frame capture→decode time. */
 
+#define STEER_MAX_NS 2000000000LL
+#define LATENCY_CLAMP_NS 60000000000LL
+
+static int64_t sat_sub_i64(int64_t a, int64_t b)
+{
+	if (b > 0 && a < INT64_MIN + b)
+		return INT64_MIN;
+	if (b < 0 && a > INT64_MAX + b)
+		return INT64_MAX;
+	return a - b;
+}
+
 struct latency_tracker {
 	bool have_offset;
 	int64_t offset_ns;   /* phone_clock - plugin_clock */
@@ -611,7 +720,7 @@ static void latency_on_timesync(struct latency_tracker *t, uint64_t t1,
 		return;
 
 	uint64_t rtt = t3 - t1;
-	int64_t offset = (int64_t)t2 - (int64_t)((t1 + t3) / 2);
+	int64_t offset = sat_sub_i64((int64_t)t2, (int64_t)((t1 + t3) / 2));
 
 	/* Prefer low-RTT samples (least asymmetry error), but refresh
 	 * periodically anyway so clock drift can't accumulate. */
@@ -631,10 +740,12 @@ static void latency_on_frame(struct latency_tracker *t, uint64_t pts_phone_ns,
 		return;
 
 	int64_t captured_local =
-		(int64_t)pts_phone_ns - t->offset_ns;
-	int64_t lat = (int64_t)now_ns - captured_local;
+		sat_sub_i64((int64_t)pts_phone_ns, t->offset_ns);
+	int64_t lat = sat_sub_i64((int64_t)now_ns, captured_local);
 	if (lat < 0)
 		lat = 0;
+	if (lat > LATENCY_CLAMP_NS)
+		lat = LATENCY_CLAMP_NS;
 
 	uint64_t l = (uint64_t)lat;
 	if (!t->count || l < t->min_ns)
@@ -700,6 +811,7 @@ struct client_state {
 	uint64_t video_bytes;
 	uint64_t keyframes_seen;
 	uint64_t frames_output;  /* frames the decoder actually produced */
+	uint64_t frames_base;    /* frames from decoders already replaced */
 	uint64_t decode_errors;
 	uint64_t audio_packets;
 	uint64_t audio_frames;
@@ -722,7 +834,11 @@ struct client_state {
 	 * (so the file joins clean, like the decoder does). */
 	FILE *dump_file;
 	bool dump_tried; /* fopen failed once — don't retry per packet */
+	uint64_t dump_bytes;
 };
+
+#define DUMP_MAX_BYTES (256ULL * 1024 * 1024)
+#define STATE_MAX_BYTES (32 * 1024)
 
 static void send_buf_free(struct send_buf *b)
 {
@@ -1024,6 +1140,9 @@ static void apply_calibrated_offset(struct ios_camera_source *s,
 				    bool video_delay, int64_t applied,
 				    bool from_lock, double conf)
 {
+	if (video_latency_ns < 0 || video_latency_ns > STEER_MAX_NS ||
+	    mic_delay_ns < -STEER_MAX_NS || mic_delay_ns > STEER_MAX_NS)
+		return;
 	int64_t offset = video_latency_ns - mic_delay_ns;
 	bool mic_slower = offset < 0;
 	int video_delay_ms =
@@ -1345,6 +1464,9 @@ static void apply_audio_sync(struct ios_camera_source *s, int64_t latency_ns)
 	pthread_mutex_unlock(&s->status_mutex);
 
 	if (!enabled || !name[0])
+		return;
+
+	if (latency_ns < 0 || latency_ns > STEER_MAX_NS)
 		return;
 
 	/* The audio device has its own capture latency; the delay we add
@@ -1672,7 +1794,8 @@ static void latency_tick(struct ios_camera_source *s, struct client_state *c)
 		 * congested link makes latency oscillate wildly, and
 		 * chasing it would yank the mic delay around. */
 		bool stable = (t->max_ns - t->min_ns) < 60000000ULL &&
-			      t->offset_rtt < 50000000ULL;
+			      t->offset_rtt < 50000000ULL &&
+			      t->sum_ns / t->count <= (uint64_t)STEER_MAX_NS;
 		if (stable) {
 			int64_t avg = (int64_t)(t->sum_ns / t->count);
 			pthread_mutex_lock(&s->status_mutex);
@@ -1787,6 +1910,7 @@ static void dump_close(struct client_state *c)
 static void dump_open(struct client_state *c)
 {
 	c->dump_tried = true;
+	c->dump_bytes = 0;
 
 	char *dir = obs_module_config_path(NULL);
 	if (!dir)
@@ -1831,7 +1955,13 @@ static void client_disconnect(struct ios_camera_source *s,
 	gpu_pipeline_clear(s);
 
 	pthread_mutex_lock(&s->status_mutex);
-	s->device_state[0] = 0;
+	bfree(s->device_state);
+	s->device_state = NULL;
+	s->device_state_len = 0;
+	for (int i = 0; i < s->control_count; i++)
+		bfree(s->control_queue[i]);
+	memset(s->control_queue, 0, sizeof(s->control_queue));
+	s->control_count = 0;
 	s->is_screen = false;
 	s->standby = false;
 	s->unarmed = false;
@@ -1887,6 +2017,24 @@ static bool extract_json_bool_n(const char *json, size_t len, const char *key)
 	return false;
 }
 
+static bool contains_n(const char *hay, size_t len, const char *needle)
+{
+	size_t n = strlen(needle);
+	for (size_t i = 0; i + n <= len; i++)
+		if (!memcmp(hay + i, needle, n))
+			return true;
+	return false;
+}
+
+static bool log_due(uint64_t *last_ns)
+{
+	uint64_t now = os_gettime_ns();
+	if (*last_ns && now - *last_ns < 5000000000ULL)
+		return false;
+	*last_ns = now;
+	return true;
+}
+
 /* Logs the H.264 stream's SPS profile/level once per decode stream — the
  * first thing to know when a GPU driver won't decode a stream software
  * handles fine (drivers gate on the advertised caps, not the content). */
@@ -1924,8 +2072,10 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		 * reads as a camera that is not in standby, keeping the name
 		 * a previous HELLO gave. */
 		struct lenslink_hello hello;
+		bool log_hello = log_due(&s->last_hello_log_ns);
 		if (!lenslink_hello_parse((const char *)payload,
-					  hdr->payload_size, &hello))
+					  hdr->payload_size, &hello) &&
+		    log_hello)
 			blog(LOG_WARNING,
 			     "[lenslink] malformed HELLO (%u bytes); treating "
 			     "it as a camera",
@@ -1942,12 +2092,14 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		s->unarmed = c->unarmed;
 		s->stat_connected = true;
 		pthread_mutex_unlock(&s->status_mutex);
-		blog(LOG_INFO, "[lenslink] client connected: %s (%s%s)",
-		     c->name[0] ? c->name : "(unnamed)",
-		     c->is_screen ? "screen" : "camera",
-		     c->unarmed   ? ", standby, not armed"
-		     : c->standby ? ", standby"
-				  : "");
+		if (log_hello)
+			blog(LOG_INFO,
+			     "[lenslink] client connected: %s (%s%s)",
+			     c->name[0] ? c->name : "(unnamed)",
+			     c->is_screen ? "screen" : "camera",
+			     c->unarmed   ? ", standby, not armed"
+			     : c->standby ? ", standby"
+					  : "");
 		send_identify(s, c);
 		/* The phone picks what it streams, not this source; each source
 		 * type accepts only its own kind. Rejecting here (rather than
@@ -2055,6 +2207,7 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			c->video_bytes = 0;
 			c->keyframes_seen = 0;
 			c->frames_output = 0;
+			c->frames_base = 0;
 			c->decode_errors = 0;
 			c->first_frame_ns = 0;
 			c->no_output_warned = false;
@@ -2107,13 +2260,22 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			if (!c->dump_file && !c->dump_tried && keyframe)
 				dump_open(c);
 			if (c->dump_file &&
-			    fwrite(payload, 1, hdr->payload_size,
-				   c->dump_file) != hdr->payload_size) {
+			    c->dump_bytes + hdr->payload_size > DUMP_MAX_BYTES) {
+				blog(LOG_INFO,
+				     "[lenslink] stream dump: size cap "
+				     "reached, stopping the dump");
+				dump_close(c);
+				c->dump_tried = true;
+			} else if (c->dump_file &&
+				   fwrite(payload, 1, hdr->payload_size,
+					  c->dump_file) != hdr->payload_size) {
 				blog(LOG_WARNING,
 				     "[lenslink] stream dump: write failed "
 				     "(disk full?), stopping the dump");
 				dump_close(c);
 				c->dump_tried = true;
+			} else if (c->dump_file) {
+				c->dump_bytes += hdr->payload_size;
 			}
 		} else if (c->dump_file) {
 			/* Toggled off mid-stream: finish the file cleanly. */
@@ -2186,6 +2348,8 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				blog(LOG_WARNING,
 				     "[lenslink] decoder error, resetting");
 			}
+			c->frames_base +=
+				h264_decoder_frames_output(c->decoder);
 			h264_decoder_destroy(c->decoder);
 			c->decoder = NULL;
 			break;
@@ -2196,7 +2360,8 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		 * works and any "black" is downstream (OBS transform/render). If
 		 * we never see it despite a keyframe going in, decode is the
 		 * problem. */
-		uint64_t out = h264_decoder_frames_output(c->decoder);
+		uint64_t out = c->frames_base +
+			       h264_decoder_frames_output(c->decoder);
 		if (out > c->frames_output) {
 			c->frames_output = out;
 			if (c->first_frame_ns == 0) {
@@ -2243,6 +2408,8 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 				     (unsigned long long)c->video_packets);
 				c->hw_retry =
 					h264_decoder_hw_index(c->decoder) + 1;
+				c->frames_base += h264_decoder_frames_output(
+					c->decoder);
 				h264_decoder_destroy(c->decoder);
 				c->decoder = NULL;
 				/* Recreated in software on the next keyframe;
@@ -2264,16 +2431,15 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 	case OBSC_PKT_PING:
 		break;
 	case OBSC_PKT_STATE: {
-		pthread_mutex_lock(&s->status_mutex);
-		size_t n = hdr->payload_size < sizeof(s->device_state) - 1
-				   ? hdr->payload_size
-				   : sizeof(s->device_state) - 1;
-		memcpy(s->device_state, payload, n);
-		s->device_state[n] = 0;
-		bool truncated = n < hdr->payload_size;
-		/* Parsed from the payload, not the copy above: the copy is
-		 * capped at sizeof(device_state) and a longer snapshot loses
-		 * its tail. */
+		if (hdr->payload_size > STATE_MAX_BYTES) {
+			if (log_due(&s->last_state_log_ns))
+				blog(LOG_WARNING,
+				     "[lenslink] ignoring oversized device "
+				     "state (%u bytes, max %d)",
+				     (unsigned)hdr->payload_size,
+				     STATE_MAX_BYTES);
+			break;
+		}
 		const char *raw = (const char *)payload;
 		size_t raw_len = hdr->payload_size;
 		bool green_screen =
@@ -2288,14 +2454,15 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		 * so a keyed filter is never added over a stream whose green
 		 * isn't chroma green. */
 		bool ten_bit = extract_json_bool_n(raw, raw_len, "hdr") ||
-			       strstr(s->device_state, "\"color\":") != NULL;
+			       contains_n(raw, raw_len, "\"color\":");
+		char *copy = bmalloc(raw_len + 1);
+		memcpy(copy, raw, raw_len);
+		copy[raw_len] = 0;
+		pthread_mutex_lock(&s->status_mutex);
+		bfree(s->device_state);
+		s->device_state = copy;
+		s->device_state_len = raw_len;
 		pthread_mutex_unlock(&s->status_mutex);
-		if (truncated)
-			blog(LOG_WARNING,
-			     "[lenslink] device state truncated at %zu bytes "
-			     "(payload %u) — /api/state will be incomplete",
-			     sizeof(s->device_state) - 1,
-			     (unsigned)hdr->payload_size);
 		bool paused_changed = s->stream_paused != paused;
 		s->stream_paused = paused;
 		s->green_screen = green_screen && !s->is_screen_source;
@@ -2330,12 +2497,14 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		if (!want || !c->lat.have_offset)
 			break;
 		int64_t plugin_time =
-			(int64_t)hdr->pts_ns - c->lat.offset_ns;
+			sat_sub_i64((int64_t)hdr->pts_ns, c->lat.offset_ns);
 		if (plugin_time < 0)
 			break;
 		/* Payload is S16LE PCM; header starts each packet 2-aligned. */
 		const int16_t *pcm = (const int16_t *)payload;
 		size_t samples = hdr->payload_size / 2;
+		if (samples > OBSC_AUDIO_SAMPLE_RATE)
+			break;
 		pthread_mutex_lock(&s->lipsync_mutex);
 		if (s->lipsync)
 			lipsync_add_reference(s->lipsync, pcm, samples,
@@ -2406,8 +2575,9 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 		break;
 	}
 	default:
-		blog(LOG_WARNING, "[lenslink] unknown packet type %d",
-		     hdr->type);
+		if (log_due(&s->last_unknown_log_ns))
+			blog(LOG_WARNING,
+			     "[lenslink] unknown packet type %d", hdr->type);
 		break;
 	}
 	return true;
@@ -2462,7 +2632,7 @@ static bool client_read(struct ios_camera_source *s, struct client_state *c)
  * Checks `stop` so destroying the source (which joins this thread) isn't
  * stuck behind the full connect wait. */
 static socket_t tcp_dial(int *out_err, const char *host, uint16_t port,
-			 volatile bool *stop)
+			 volatile bool *stop, struct dns_cache *dns)
 {
 	struct sockaddr_in addr = {0};
 	addr.sin_family = AF_INET;
@@ -2472,17 +2642,34 @@ static socket_t tcp_dial(int *out_err, const char *host, uint16_t port,
 	 * normal one — and it avoids getaddrinfo, whose DNS timeout can
 	 * block for tens of seconds with no way to interrupt it. */
 	if (inet_pton(AF_INET, host, &addr.sin_addr) != 1) {
-		char port_str[16];
-		snprintf(port_str, sizeof(port_str), "%u", (unsigned)port);
-		struct addrinfo hints = {0};
-		struct addrinfo *res = NULL;
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
-		if (getaddrinfo(host, port_str, &hints, &res) != 0 || !res)
+		uint64_t now = os_gettime_ns();
+		bool same = !strcmp(dns->host, host);
+		if (same && dns->ok && now - dns->when_ns < DNS_OK_TTL_NS) {
+			addr.sin_addr = dns->addr;
+		} else if (same && !dns->ok &&
+			   now - dns->when_ns < DNS_FAIL_TTL_NS) {
 			return OBSC_INVALID_SOCKET;
-		memcpy(&addr, res->ai_addr, sizeof(addr));
-		addr.sin_port = htons(port);
-		freeaddrinfo(res);
+		} else {
+			char port_str[16];
+			snprintf(port_str, sizeof(port_str), "%u",
+				 (unsigned)port);
+			struct addrinfo hints = {0};
+			struct addrinfo *res = NULL;
+			hints.ai_family = AF_INET;
+			hints.ai_socktype = SOCK_STREAM;
+			bool ok = getaddrinfo(host, port_str, &hints, &res) ==
+					  0 &&
+				  res;
+			snprintf(dns->host, sizeof(dns->host), "%s", host);
+			dns->ok = ok;
+			dns->when_ns = os_gettime_ns();
+			if (!ok)
+				return OBSC_INVALID_SOCKET;
+			memcpy(&addr, res->ai_addr, sizeof(addr));
+			addr.sin_port = htons(port);
+			dns->addr = addr.sin_addr;
+			freeaddrinfo(res);
+		}
 	}
 
 	socket_t s = socket(AF_INET, SOCK_STREAM, 0);
@@ -2742,7 +2929,7 @@ static void dial_loop(struct ios_camera_source *s)
 				   T_("Status.Dialing"), s->host);
 			s->last_dial_error = 0;
 			sock = tcp_dial(&s->last_dial_error, s->host,
-					OBSC_USB_PORT, &s->stop);
+					OBSC_USB_PORT, &s->stop, &s->dns);
 		}
 
 		if (sock == OBSC_INVALID_SOCKET) {
@@ -3052,6 +3239,9 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 	pthread_mutex_init(&s->frame_mutex, NULL);
 	dstr_init(&s->status);
 	s->lipsync = lipsync_create();
+	set_cached_name(s, obs_source_get_name(source));
+	signal_handler_connect(obs_source_get_signal_handler(source), "rename",
+			       source_renamed, s);
 
 	s->conn_mode = parse_mode(obs_data_get_string(settings, S_MODE));
 	extract_dial_host(obs_data_get_string(settings, S_HOST), s->host,
@@ -3099,6 +3289,8 @@ static void ios_camera_destroy(void *data)
 
 	/* First: the frontend UI must not snapshot a freeing source. */
 	health_unregister(s);
+	signal_handler_disconnect(obs_source_get_signal_handler(s->source),
+				  "rename", source_renamed, s);
 
 	/* Same for the web panel: after unregister returns, no request can
 	 * touch this source; the server itself stops with the last one. */
@@ -3128,6 +3320,7 @@ static void ios_camera_destroy(void *data)
 
 	for (int i = 0; i < s->control_count; i++)
 		bfree(s->control_queue[i]);
+	bfree(s->device_state);
 	lipsync_destroy(s->lipsync);
 	dstr_free(&s->status);
 	pthread_mutex_destroy(&s->frame_mutex);
@@ -3135,6 +3328,12 @@ static void ios_camera_destroy(void *data)
 	free(s->still);
 	pthread_mutex_destroy(&s->status_mutex);
 	bfree(s);
+}
+
+static void ios_camera_save(void *data, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(data);
+	lenslink_camera_controls_clear(settings);
 }
 
 static void ios_camera_get_defaults(obs_data_t *settings)
@@ -3360,6 +3559,11 @@ static obs_properties_t *build_properties(struct ios_camera_source *s,
 			props, S_AUDIO_LATENCY, T_("AudioLatency"), 0, 500, 1);
 		obs_property_int_set_suffix(audio_lat, " ms");
 
+		if (s && s->source) {
+			obs_data_t *current = obs_source_get_settings(s->source);
+			lenslink_camera_controls_add(props, s, current);
+			obs_data_release(current);
+		}
 	}
 
 	/* Web panel / diagnostics / stream dump moved to the plugin-wide
@@ -3831,6 +4035,7 @@ struct obs_source_info ios_camera_source_info = {
 	.create = ios_camera_create,
 	.destroy = ios_camera_destroy,
 	.update = ios_camera_update,
+	.save = ios_camera_save,
 	.get_defaults = ios_camera_get_defaults,
 	.get_properties = ios_camera_get_properties,
 	.show = ios_camera_show,
