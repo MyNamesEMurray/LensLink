@@ -137,6 +137,7 @@ struct ios_camera_source {
 	 * `showing` is maintained by the show/hide callbacks. */
 	volatile bool deactivate_hidden;
 	volatile int screen_fps;
+	void *hotkeys; /* camera-controls.c; camera sources only */
 
 	/* Tally: `active` is program (what the audience sees), `showing` is
 	 * any view at all — preview, a projector, a hidden-but-rendered
@@ -284,6 +285,13 @@ struct ios_camera_source {
 	uint64_t stat_frames;
 	uint64_t stat_bytes;
 	uint64_t stat_time_ns;
+	uint64_t stat_connected_ns; /* when this connection's HELLO arrived */
+	/* Playable-audio peak (0-32767) for the web panel's meter: the
+	 * running second and the one before it, so a reader never lands on
+	 * a window that has only just opened. */
+	int stat_audio_peak;
+	int stat_audio_peak_prev;
+	uint64_t stat_audio_window_ns;
 	char stat_device[64];
 	/* Mirrored once a second for the diagnostics report; see health.h
 	 * for why the counters travel together. */
@@ -651,6 +659,50 @@ static void sync_group_view(struct ios_camera_source *self,
 	v->mic_owner = !owner || owner == self;
 	v->mic_ns = slowest_mic ? slowest_mic : any_mic;
 	v->mic_spread_ns = mic_max - mic_min;
+}
+
+static void note_audio_peak(struct ios_camera_source *s, const int16_t *pcm,
+			    size_t n)
+{
+	int peak = 0;
+	for (size_t i = 0; i < n; i++) {
+		int v = abs((int)pcm[i]);
+		if (v > peak)
+			peak = v;
+	}
+	uint64_t now = os_gettime_ns();
+	pthread_mutex_lock(&s->status_mutex);
+	if (now - s->stat_audio_window_ns >= 1000000000ULL) {
+		s->stat_audio_peak_prev =
+			now - s->stat_audio_window_ns < 2000000000ULL
+				? s->stat_audio_peak
+				: 0;
+		s->stat_audio_peak = 0;
+		s->stat_audio_window_ns = now;
+	}
+	if (peak > s->stat_audio_peak)
+		s->stat_audio_peak = peak;
+	pthread_mutex_unlock(&s->status_mutex);
+}
+
+void ios_camera_live_stats(struct ios_camera_source *s,
+			   struct ios_camera_live *out)
+{
+	uint64_t now = os_gettime_ns();
+	pthread_mutex_lock(&s->status_mutex);
+	out->latency_ms = (int)(s->last_video_latency_ns / 1000000);
+	out->bytes = s->stat_bytes;
+	out->sample_ms = s->stat_time_ns / 1000000;
+	out->live_ms = s->stat_connected && s->stat_connected_ns &&
+				       now > s->stat_connected_ns
+			       ? (now - s->stat_connected_ns) / 1000000
+			       : 0;
+	bool fresh = now - s->stat_audio_window_ns < 2000000000ULL;
+	out->audio_peak = fresh ? (s->stat_audio_peak > s->stat_audio_peak_prev
+					   ? s->stat_audio_peak
+					   : s->stat_audio_peak_prev)
+				: -1;
+	pthread_mutex_unlock(&s->status_mutex);
 }
 
 bool ios_camera_is_connected(struct ios_camera_source *s)
@@ -2131,6 +2183,7 @@ static void stats_tick(struct ios_camera_source *s, struct client_state *c)
 
 	pthread_mutex_lock(&s->status_mutex);
 	s->stat_connected = true;
+	s->stat_connected_ns = c->connected_ns;
 	s->stat_frames = c->frames_output;
 	s->stat_bytes = c->video_bytes;
 	s->stat_time_ns = now;
@@ -2785,6 +2838,8 @@ static bool handle_packet(struct ios_camera_source *s, struct client_state *c,
 			obs_source_output_audio(s->source, &audio);
 			c->audio_packets++;
 			c->audio_frames += audio.frames;
+			note_audio_peak(s, (const int16_t *)payload,
+					hdr->payload_size / 2);
 			/* Peak level for the heartbeat: distinguishes "real
 			 * audio arriving" from "a healthy stream of silence"
 			 * (DRM apps mute themselves during broadcasts, so the
@@ -3538,6 +3593,7 @@ static void *ios_camera_create(obs_data_t *settings, obs_source_t *source)
 		if (s->audio_sync && s->auto_calibrate && s->audio_source[0])
 			hook_audio(s, s->audio_source);
 		apply_web_settings(s);
+		s->hotkeys = lenslink_camera_hotkeys_register(s, source);
 	}
 
 	start_thread(s);
@@ -3551,6 +3607,7 @@ static void ios_camera_destroy(void *data)
 
 	/* First: the frontend UI must not snapshot a freeing source. */
 	health_unregister(s);
+	lenslink_camera_hotkeys_free(s->hotkeys);
 	signal_handler_disconnect(obs_source_get_signal_handler(s->source),
 				  "rename", source_renamed, s);
 
