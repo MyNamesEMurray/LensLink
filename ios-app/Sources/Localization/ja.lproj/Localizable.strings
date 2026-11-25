@@ -743,3 +743,65 @@
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
 "**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**手ぶれ補正**は、手持ちや移動しながらの映像を安定させます。補正のために iPhone がフレームを溜めるので配信が遅れるため、デフォルトではオフです。標準は少し遅れます。シネマティックは大きく遅れ（0.5秒以上になることも多い）、画角も少し狭くなるので、ゲームや他のソースと合わせる必要のない映像で使ってください。選んだモードに対応していないフォーマットと、深度アシストの動作中はオフのままです。";
+
+/* ===== ProHUD.swift ===== */
+
+/* Options: switches the Live screen to the cinema-camera layout [also used in OptionsView.swift] */
+"Pro interface" = "プロ用インターフェイス";
+
+/* Pro interface menu: back to the standard Live screen */
+"Standard interface" = "標準インターフェイス";
+
+/* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
+"Timecode" = "タイムコード";
+
+/* Pro interface menu: the brightness above which zebra stripes are drawn */
+"Zebra level" = "ゼブラレベル";
+
+/* Pro interface: VoiceOver label for the menu of less-used actions */
+"More" = "その他";
+
+/* Pro interface value strip: the lens and zoom readout (short) */
+"Lens" = "レンズ";
+
+/* Pro interface value strip: white balance tint, green to magenta (short) */
+"Tint" = "色かぶり";
+
+/* Pro interface: VoiceOver label for the zoom slider */
+"Zoom" = "ズーム";
+
+/* Pro interface: caption over the brightness histogram */
+"Histogram" = "ヒストグラム";
+
+/* Pro interface: caption over the connection readout (transport, bitrate, battery) */
+"Link" = "接続";
+
+/* Pro interface health readout: frames per second sent, and frames dropped this stream */
+"%1$lld fps · %2$lld dropped" = "%1$lld fps · ドロップ%2$lld";
+
+/* Pro interface: caption over the phone-mic level meter */
+"Mic" = "マイク";
+
+/* Pro interface: the phone is at a normal temperature */
+"Cool" = "正常";
+
+/* Pro interface: the phone is warming up */
+"Warm" = "やや高温";
+
+/* Pro interface: the phone is hot and slowing down */
+"Hot" = "高温";
+
+/* Pro interface tool: stripes over parts of the picture close to clipping */
+"Zebra" = "ゼブラ";
+
+/* Pro interface tool: outlines what is in focus */
+"Peaking" = "ピーキング";
+
+/* Pro interface tool: paints the picture by brightness band */
+"False color" = "フォルスカラー";
+
+/* Pro interface tool: frame lines and grid over the preview */
+"Guides" = "ガイド";
+
+/* Pro interface guide: rule-of-thirds grid */
+"Grid" = "グリッド";

@@ -144,6 +144,16 @@ struct StreamingView: View {
             }
 #endif
 
+            if !dimmed {
+                MonitorOverlay(scope: streamer.scope)
+            }
+
+            if streamer.proInterface {
+                if showsControls {
+                    ProHUD(scope: streamer.scope, touched: touched)
+                        .transition(.opacity)
+                }
+            } else {
             VStack(spacing: 0) {
                 if showsControls {
                     statusBar
@@ -173,6 +183,7 @@ struct StreamingView: View {
                        value: showsControls)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.2),
                        value: trayOpen)
+            }
 
             // The focus marker, in the preview's own coordinate space (both
             // fill the screen). Not hit-testable: the next tap goes to the

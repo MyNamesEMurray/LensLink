@@ -743,3 +743,65 @@
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
 "**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "A **estabilização** suaviza uma cena com o celular na mão ou em movimento. Ela vem desativada porque o celular segura quadros para suavizá-los, o que atrasa a transmissão. Padrão adiciona um pouco de atraso. Cinemático adiciona muito, muitas vezes mais de meio segundo, e corta um pouco mais a imagem, então use-o em cenas que não precisam ficar sincronizadas com um jogo ou outras fontes. Ela fica desativada nos formatos que não oferecem o modo escolhido e enquanto a assistência de profundidade está ativa.";
+
+/* ===== ProHUD.swift ===== */
+
+/* Options: switches the Live screen to the cinema-camera layout [also used in OptionsView.swift] */
+"Pro interface" = "Interface Pro";
+
+/* Pro interface menu: back to the standard Live screen */
+"Standard interface" = "Interface padrão";
+
+/* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
+"Timecode" = "Timecode";
+
+/* Pro interface menu: the brightness above which zebra stripes are drawn */
+"Zebra level" = "Nível da zebra";
+
+/* Pro interface: VoiceOver label for the menu of less-used actions */
+"More" = "Mais";
+
+/* Pro interface value strip: the lens and zoom readout (short) */
+"Lens" = "Lente";
+
+/* Pro interface value strip: white balance tint, green to magenta (short) */
+"Tint" = "Matiz";
+
+/* Pro interface: VoiceOver label for the zoom slider */
+"Zoom" = "Zoom";
+
+/* Pro interface: caption over the brightness histogram */
+"Histogram" = "Histograma";
+
+/* Pro interface: caption over the connection readout (transport, bitrate, battery) */
+"Link" = "Conexão";
+
+/* Pro interface health readout: frames per second sent, and frames dropped this stream */
+"%1$lld fps · %2$lld dropped" = "%1$lld fps · perdidos: %2$lld";
+
+/* Pro interface: caption over the phone-mic level meter */
+"Mic" = "Microfone";
+
+/* Pro interface: the phone is at a normal temperature */
+"Cool" = "Normal";
+
+/* Pro interface: the phone is warming up */
+"Warm" = "Morno";
+
+/* Pro interface: the phone is hot and slowing down */
+"Hot" = "Quente";
+
+/* Pro interface tool: stripes over parts of the picture close to clipping */
+"Zebra" = "Zebra";
+
+/* Pro interface tool: outlines what is in focus */
+"Peaking" = "Peaking";
+
+/* Pro interface tool: paints the picture by brightness band */
+"False color" = "Falsa cor";
+
+/* Pro interface tool: frame lines and grid over the preview */
+"Guides" = "Guias";
+
+/* Pro interface guide: rule-of-thirds grid */
+"Grid" = "Grade";

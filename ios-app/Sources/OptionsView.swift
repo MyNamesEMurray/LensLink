@@ -51,6 +51,11 @@ struct OptionsView: View {
                 }
 
                 Section {
+                    Toggle(isOn: $streamer.proInterface) {
+                        SettingsRowLabel(L("Pro interface"),
+                                         systemImage: "slider.horizontal.below.rectangle",
+                                         color: Theme.accent)
+                    }
                     // What the Live screen becomes 10 seconds after you
                     // stop touching it. Inline picker: three short labels
                     // that fit one row and read as one choice, where a
