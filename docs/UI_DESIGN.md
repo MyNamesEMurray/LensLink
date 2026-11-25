@@ -620,6 +620,40 @@ usual reset. The Camera app remembers the same way. Rules:
 - Phone-local; the same properties the Live screen and `CONTROL` move,
   so the `STATE` snapshot follows for free — no protocol change.
 
+### 6.2.2 Pro interface
+
+**Options → Live screen → Pro interface** (default off) replaces the
+Live screen's controls with an operator layout (`ProHUD.swift`), for
+users who want every number at once. The picture, tally, idle views and
+gestures are unchanged; the standard layout is one menu item away.
+
+- **Top bar** (black 60 % glass): status pill, timecode (time since the
+  stream went live, `HH:MM:SS:FF` at the stream's fps), the format chip,
+  and a More menu (Pause/Resume, zebra level, Standard interface).
+- **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
+  Each cell is a label over a monospaced value; auto values show what
+  auto is doing with a yellow **A** badge. Shutter is always a fraction
+  (`1/50`). Tapping a cell selects it (accent underline) and opens its
+  dial; tapping it again closes it.
+- **Dial**: one row per value, the same stops as the tray, an **Auto**
+  chip that hands the value back, and presets where they help (WB light
+  sources, Calibrate).
+- **Scopes row**: Histogram (64 luma bins), Link (fps, dropped frames,
+  battery and heat, heat red from serious up), Mic (peak dBFS bar: green,
+  `#FFD60A` above −12, red above −3).
+- **Tool row**: Zebra, Peaking, False color, Stop, Guides, Flashlight.
+  On = accent fill.
+
+Monitoring overlays are drawn on the phone only, never into the stream,
+from a 360 px copy of the frame at most 10 times a second, skipping a
+frame rather than queueing (`MonitorScope.swift`). Zebra is black and
+white diagonal stripes above the zebra level (70–100 %, default 95);
+peaking tints edges `#63D1FF`; false color is grey except purple
+(crushed), blue (two stops under), green (middle grey), pink (skin),
+yellow (bright) and red (clipped). Guides are a thirds grid or 2.39,
+1.85 and 4:3 frame lines. The settings persist and ride STATE as
+`monitor`, so the web panel and source properties show the same state.
+
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):
 
@@ -645,7 +679,16 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    selected chip hands it back to auto, Lock freezes what auto is doing
    (Shift-click: everything). Apps without `lensFactors` in STATE get a
    lens menu instead of the buttons.
-4. All controls send `CONTROL` packets; the panel polls `/api/state` and
+4. **Pro** (header pill, shown when STATE has `monitor`; the choice is
+   remembered per browser): timecode, a link line (bitrate, latency,
+   battery, heat), a histogram computed in the browser from `/api/still`
+   every 2 s (skipped while the eyedropper or reframe pad uses it), the
+   phone mic meter (same colours as the app), toggles for Zebra, Peaking
+   and False color with a Guides select, and the focus pull (Set A, Set
+   B, Pull over a chosen number of seconds). The tray gains a Tint chip
+   and the Format row a Color select. Keyboard shortcuts work whenever
+   focus is not in a field, and the Pro section lists them.
+5. All controls send `CONTROL` packets; the panel polls `/api/state` and
    mirrors app-side changes (pausing while the operator is interacting), so
    the two stay in lock-step.
 

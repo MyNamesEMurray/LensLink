@@ -245,6 +245,13 @@ and everywhere at once rather than drifting.
 | Focus | Fokus | Enfoque | Mise au point | フォーカス | Foco | 对焦 |
 | White balance | Weißabgleich | Balance de blancos | Balance des blancs | ホワイトバランス | Equilíbrio de branco | 白平衡 |
 | Shutter | Verschluss | Obturador | Obturateur | シャッター | Obturador | 快门 |
+| Tint | Tönung | Tinte | Teinte | 色かぶり | Matiz | 色调 |
+| Pro interface | Pro-Oberfläche | Interfaz Pro | Interface Pro | プロ用インターフェイス | Interface Pro | 专业界面 |
+| Zebra | Zebra | Cebra | Zébra | ゼブラ | Zebra | 斑马纹 |
+| Peaking | Peaking | Peaking | Peaking | ピーキング | Peaking | 峰值对焦 |
+| False color | Falschfarben | Falso color | Fausses couleurs | フォルスカラー | Falsa cor | 伪色 |
+| Guides | Hilfslinien | Guías | Repères | ガイド | Guias | 参考线 |
+| Histogram | Histogramm | Histograma | Histogramme | ヒストグラム | Histograma | 直方图 |
 | Subject (green-screen distance) | Motiv | Sujeto | Sujet | 被写体 | Assunto | 主体 |
 | Dial chips, short forms (Exposure / Shutter / WB / Focus) | Belicht. / Verschl. / WA / Fokus | Expos. / Obtur. / WB / Enfoque | Expo / Vitesse / BB / MAP | 露出 / SS / WB / ピント | EV / Obtur. / WB / Foco | 曝光 / 快门 / 白平衡 / 对焦 |
 | Auto / Manual / Lock | Auto / Manuell / Sperren | Auto / Manual / Bloquear | Auto / Manuel / Verrouiller | 自動 / マニュアル / ロック | Auto / Manual / Travar | 自动 / 手动 / 锁定 |

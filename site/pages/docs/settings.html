@@ -22,6 +22,7 @@ description: Every LensLink setting in one place — the OBS source properties, 
     <tr><td>Start the phone's camera automatically when it's ready</td><td>Remote start, once the app is armed. On by default.</td></tr>
     <tr><td>Start / Stop camera on the phone</td><td>Buttons: do it now, once.</td></tr>
     <tr><td>Pause / Resume the stream</td><td>Buttons. Pause holds the stream — the phone stays connected, OBS shows a blurred still with a pause symbol — and Resume returns to live. Also on the phone's Live screen and in the web panel.</td></tr>
+    <tr><td>Camera controls</td><td>While the camera is live: lens, zoom, EV, ISO and shutter (each with its own Auto), white balance and tint, focus, color, the flashlight, and the phone's monitoring tools (zebra, peaking, false color, guides). They read the phone's current values, the same ones the app and the web panel show.</td></tr>
     <tr><td>Lip-sync audio source</td><td>Your real microphone — the one to align.</td></tr>
     <tr><td>Automatically delay that audio source…</td><td>Applies the measured camera latency to that audio source.</td></tr>
     <tr><td>Auto-calibrate</td><td>Measure the offset from the phone's mic reference. Needs <strong>Auto lip-sync reference</strong> on in the app; ignores the manual latency below.</td></tr>
@@ -29,6 +30,11 @@ description: Every LensLink setting in one place — the OBS source properties, 
     <tr><td>Audio device's own latency</td><td>Manual mode only. Subtracted from the delay.</td></tr>
   </tbody>
 </table>
+<p>
+  Each LensLink Camera source also adds hotkeys under its name in OBS's
+  <strong>Settings → Hotkeys</strong>: Pause / Resume, Lock or unlock all,
+  Next lens, Flashlight, Zebra, Peaking and False color.
+</p>
 <p>
   A <strong>LensLink Screen</strong> source has the connection, decoding and
   diagnostics properties, plus <strong>Frame rate</strong>: 60 fps, or 30 fps
@@ -63,6 +69,7 @@ description: Every LensLink setting in one place — the OBS source properties, 
     <tr><td>High-quality reframe</td><td>iOS 16 or later. Off by default. Captures one size above the stream (1080p for 720p, 4K for 1080p) so the web panel's Reframe zoom keeps real detail instead of stretching pixels. Uses more power and heat, turns green screen off, and does nothing at 4K.</td></tr>
     <tr><td>Remember camera settings</td><td>Keeps each camera's exposure, white balance, zoom and focus from one stream to the next, per lens. Off forgets what was stored. <a href="/docs/camera/#remembered">Remembered settings</a>.</td></tr>
     <tr><th colspan="2">Live screen</th></tr>
+    <tr><td>Pro interface</td><td>Off by default. Replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level, zebra, focus peaking, false color and framing guides. <a href="/docs/camera/#pro-interface">Pro interface</a>.</td></tr>
     <tr><td>Idle view</td><td>What the Live screen becomes 10 seconds after your last touch. <strong>Standard</strong> keeps the controls; <strong>Clean feed</strong> shows only the picture (turn Stats on in the status menu first to keep the health line); <strong>Dim screen</strong> blanks it, drops the brightness and shows the battery level — and alone also dims remote-start standby, a minute in. Any tap restores the controls.</td></tr>
     <tr><td>Tally light</td><td>Colors, priority order, per-status off switches, and which statuses pulse. See below.</td></tr>
     <tr><th colspan="2">Remote start</th></tr>
