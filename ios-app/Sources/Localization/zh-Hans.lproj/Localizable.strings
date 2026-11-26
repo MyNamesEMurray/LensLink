@@ -777,7 +777,10 @@
 "Link" = "连接";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"%1$lld fps · %2$lld dropped" = "%1$lld fps · 丢帧 %2$lld";
+"Bitrate" = "码率";
+"Dropped" = "丢帧";
+"Battery" = "电量";
+"Heat" = "温度";
 
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "麦克风";

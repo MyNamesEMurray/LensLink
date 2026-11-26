@@ -631,20 +631,23 @@ pill's menu has Pro interface.
 
 - **Top bar** (black 60 % glass): status pill, timecode (time since the
   stream went live, `HH:MM:SS:FF` at the stream's fps), the format chip,
-  and a More menu (Pause/Resume, zebra level, Standard interface).
+  and a More menu (Pause/Resume, Zebra, Peaking, False color, zebra
+  level, Standard interface).
 - **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
   Each cell is a label over a monospaced value; auto values show what
   auto is doing with a yellow **A** badge. Shutter is always a fraction
-  (`1/50`). Tapping a cell selects it (accent underline) and opens its
-  dial; tapping it again closes it.
+  (`1/50`). The cells share the width equally, no scrolling; a value
+  that doesn't fit shrinks. Tapping a cell selects it (accent underline)
+  and opens its dial; tapping it again closes it.
 - **Dial**: one row per value, the same stops as the tray, an **Auto**
   chip that hands the value back, and presets where they help (WB light
   sources, Calibrate).
-- **Scopes row**: Histogram (64 luma bins), Link (fps, dropped frames,
-  battery and heat, heat red from serious up), Mic (peak dBFS bar: green,
+- **Scopes row**: Histogram (64 luma bins), Link (one row per stat,
+  label left, monospaced value right: Connection, Bitrate, Frame rate,
+  Dropped, Battery, Heat, heat amber from serious up), Mic (peak dBFS bar: green,
   `#FFD60A` above −12, red above −3).
-- **Tool row**: Zebra, Peaking, False color, Stop, Guides, Flashlight.
-  On = accent fill.
+- **Tool row**: Flip, Guides, Stop, Pause, Flashlight. On = tinted.
+  Zebra, peaking and false color live in the More menu.
 
 Monitoring overlays are drawn on the phone only, never into the stream,
 from a 360 px copy of the frame at most 10 times a second, skipping a

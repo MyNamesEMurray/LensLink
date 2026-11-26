@@ -777,7 +777,10 @@
 "Link" = "接続";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"%1$lld fps · %2$lld dropped" = "%1$lld fps · ドロップ%2$lld";
+"Bitrate" = "ビットレート";
+"Dropped" = "ドロップ";
+"Battery" = "バッテリー";
+"Heat" = "温度";
 
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "マイク";

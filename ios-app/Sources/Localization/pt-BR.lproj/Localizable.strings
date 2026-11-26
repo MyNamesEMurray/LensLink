@@ -777,7 +777,10 @@
 "Link" = "Conexão";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"%1$lld fps · %2$lld dropped" = "%1$lld fps · perdidos: %2$lld";
+"Bitrate" = "Taxa de bits";
+"Dropped" = "Descartados";
+"Battery" = "Bateria";
+"Heat" = "Temperatura";
 
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "Microfone";

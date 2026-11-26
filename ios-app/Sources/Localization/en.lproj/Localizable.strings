@@ -783,8 +783,17 @@
 /* Pro interface: caption over the connection readout (transport, bitrate, battery) */
 "Link" = "Link";
 
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"%1$lld fps · %2$lld dropped" = "%1$lld fps · %2$lld dropped";
+/* Pro interface Link readout, row label: video bitrate to OBS */
+"Bitrate" = "Bitrate";
+
+/* Pro interface Link readout, row label: frames dropped this stream */
+"Dropped" = "Dropped";
+
+/* Pro interface Link readout, row label: the phone's battery percent */
+"Battery" = "Battery";
+
+/* Pro interface Link readout, row label: the phone's thermal state (Cool, Warm, Hot) */
+"Heat" = "Heat";
 
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "Mic";
