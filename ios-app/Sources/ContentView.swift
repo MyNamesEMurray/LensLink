@@ -661,7 +661,7 @@ private struct FormatSheet: View {
                 } header: {
                     HStack(spacing: Theme.Space.xs) {
                         Text("Bitrate")
-                        InfoButton(title: L("Bitrate"), text: SettingInfo.bitrate)
+                        InfoButton(title: L("Bitrate"), text: SettingInfo.bitrateTip)
                     }
                 }
 
@@ -695,7 +695,7 @@ private struct FormatSheet: View {
                         SettingsRowLabel(L("Green screen"),
                                          systemImage: "person.fill.viewfinder",
                                          color: Theme.liveGreen,
-                                         info: SettingInfo.greenScreen)
+                                         info: SettingInfo.greenScreenTip)
                     }
                 }
 
@@ -708,7 +708,7 @@ private struct FormatSheet: View {
                         SettingsRowLabel(L("Stabilization"),
                                          systemImage: "waveform.path",
                                          color: Theme.cameraYellow,
-                                         info: SettingInfo.stabilization)
+                                         info: SettingInfo.stabilizationTip)
                     }
                     if Streamer.reframeAvailable {
                         // Only the switch is disabled at 4K: a disabled
@@ -718,7 +718,7 @@ private struct FormatSheet: View {
                             SettingsRowLabel(L("High-quality reframe"),
                                              systemImage: "crop",
                                              color: Theme.cameraYellow,
-                                             info: SettingInfo.reframe)
+                                             info: SettingInfo.reframeTip)
                             Spacer(minLength: 0)
                             Toggle(L("High-quality reframe"), isOn: $streamer.reframeHQ)
                                 .labelsHidden()
@@ -729,13 +729,13 @@ private struct FormatSheet: View {
                         SettingsRowLabel(L("Allow system video effects"),
                                          systemImage: "wand.and.stars",
                                          color: Theme.idleGrey,
-                                         info: SettingInfo.videoEffects)
+                                         info: SettingInfo.videoEffectsTip)
                     }
                     Toggle(isOn: $streamer.rememberCameraSettings) {
                         SettingsRowLabel(L("Remember camera settings"),
                                          systemImage: "clock.arrow.circlepath",
                                          color: Theme.connectAmber,
-                                         info: SettingInfo.remember)
+                                         info: SettingInfo.rememberTip)
                     }
                 } header: {
                     Text("Picture")

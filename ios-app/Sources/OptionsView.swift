@@ -18,7 +18,7 @@ struct OptionsView: View {
                         SettingsRowLabel(L("Pro interface"),
                                          systemImage: "slider.horizontal.below.rectangle",
                                          color: Theme.accent,
-                                         info: SettingInfo.proInterface)
+                                         info: SettingInfo.proInterfaceTip)
                     }
                     // What the Live screen becomes 10 seconds after you
                     // stop touching it. Inline picker: three short labels
@@ -31,7 +31,7 @@ struct OptionsView: View {
                     } label: {
                         SettingsRowLabel(L("Idle view"), systemImage: "moon.fill",
                                          color: Color(hex: 0x5E5CE6),
-                                         info: SettingInfo.idleView)
+                                         info: SettingInfo.idleViewTip)
                     }
                     NavigationLink(destination: TallyLightOptionsView()) {
                         HStack {
@@ -54,7 +54,7 @@ struct OptionsView: View {
                         SettingsRowLabel(L("Arm remote start on open"),
                                          systemImage: "play.fill",
                                          color: Theme.liveGreen,
-                                         info: SettingInfo.remoteStart)
+                                         info: SettingInfo.remoteStartTip)
                     }
                 } header: {
                     Text("Remote start")
