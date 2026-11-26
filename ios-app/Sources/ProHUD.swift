@@ -597,6 +597,7 @@ struct ProHUD: View {
             .contentShape(Rectangle())
         }
         .equatable()
+        .frame(maxWidth: .infinity)
         .accessibilityLabel(L("Guides"))
     }
 
