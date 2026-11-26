@@ -149,9 +149,6 @@
 /* Format sheet: HDR color choice */
 "HDR (HLG)" = "HDR（HLG）";
 
-/* Format sheet: note under a color choice that needs the HEVC codec */
-"HEVC only" = "HEVCのみ";
-
 /* Format sheet: Apple Log color choice (Apple's name for its log profile) */
 "Apple Log" = "Apple Log";
 
@@ -448,7 +445,7 @@
 "Ready" = "準備完了";
 
 /* Status word: streaming, waiting for OBS to connect */
-"Waiting for OBS…" = "OBSを待機中…";
+"Waiting" = "待機中";
 
 /* Status word: streaming to OBS */
 "Live" = "ライブ";
@@ -728,9 +725,6 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "標準インターフェイス";
 
-/* Pro interface: caption over the phone readout (heat, connection) */
-"Phone" = "スマートフォン";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "その他";
 
@@ -743,25 +737,8 @@
 /* Pro interface: VoiceOver label for the zoom slider */
 "Zoom" = "ズーム";
 
-/* Pro interface: caption over the brightness histogram */
-"Histogram" = "ヒストグラム";
-
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Dropped" = "ドロップ";
-"Battery" = "バッテリー";
-"Heat" = "温度";
-
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "マイク";
-
-/* Pro interface: the phone is at a normal temperature */
-"Cool" = "正常";
-
-/* Pro interface: the phone is warming up */
-"Warm" = "やや高温";
-
-/* Pro interface: the phone is hot and slowing down */
-"Hot" = "高温";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "ガイド";
@@ -779,4 +756,34 @@
 "About %@" = "%@について";
 
 /* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
-"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**プロ用インターフェイス**は、ライブ画面をカメラオペレーター向けのレイアウトに切り替えます。すべての値を1列に並べ、タップした値をダイヤルで調整でき、ヒストグラム、スマートフォンのマイクレベル、構図ガイドを表示します。";
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides." = "**プロ用インターフェイス**は、ライブ画面をカメラオペレーター向けのレイアウトに切り替えます。すべての値を1列に並べ、タップした値をダイヤルで調整でき、接続のビットレートとフレームレート、スマートフォンのマイクレベル、構図ガイドを表示します。";
+
+/* Settings ⓘ: short description of a setting */
+"**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat." = "**安定**：一般的なWi-Fiでも安全なビットレート。**最高**：回線が許す限り上げます（USBでは安定の最大6倍、Wi-Fiでは4倍）。発熱が増えます。";
+
+/* Settings ⓘ: short description of a setting */
+"Paints everything except you solid green on the phone. Sets Color to Standard. The LensLink Camera source in OBS adds a filter that keys the green out." = "スマートフォン上で、あなた以外のすべてを緑一色で塗りつぶします。カラーは標準になります。OBSのLensLink Cameraソースが緑を抜くフィルタを追加します。";
+
+/* Settings ⓘ: short description of a setting */
+"Steadies moving shots but delays the stream. Standard adds a little delay. Cinematic adds often over half a second and crops more." = "動きのある映像を安定させますが、配信が遅れます。標準は少し遅れます。シネマティックは0.5秒以上遅れることが多く、画角も狭くなります。";
+
+/* Settings ⓘ: short description of a setting */
+"Captures one size up (4K for a 1080p stream) so Reframe zoom keeps real detail. Uses more power and heat and turns green screen off. Not available at 4K." = "ひとつ上のサイズ（1080pのストリームなら4K）で撮影し、リフレームのズームでも実際のディテールを保ちます。電力と発熱が増え、グリーンバックはオフになります。4Kでは使えません。";
+
+/* Settings ⓘ: short description of a setting */
+"Lets OBS start and stop the camera. Stays armed until you disarm, stop a stream on the phone, or leave the app. The phone stays awake while armed." = "OBSがカメラを開始・停止できるようにします。解除するか、スマートフォンでストリームを停止するか、アプリを離れるまで有効です。有効な間はスマートフォンがスリープしません。";
+
+/* Settings ⓘ: short description of a setting */
+"What the Live screen shows 10 seconds after your last touch. **Standard**: controls stay. **Clean feed**: the picture only. **Dim screen**: the screen goes dark to save battery. Tap to bring the controls back." = "最後に触れてから10秒後のライブ画面の表示です。**標準**：操作項目を表示したまま。**クリーン表示**：映像のみ。**画面を暗くする**：バッテリー節約のため画面を暗くします。タップすると操作項目が戻ります。";
+
+/* Settings ⓘ: short description of a setting */
+"Keeps each lens's exposure, white balance, zoom and focus from one stream to the next. Off: every camera starts on auto." = "レンズごとの露出、ホワイトバランス、ズーム、フォーカスを次の配信へ引き継ぎます。オフ：すべてのカメラが自動で始まります。";
+
+/* Settings ⓘ: short description of a setting */
+"Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "iOSがフレームレートを下げられるようにします。コントロールセンターのビデオエフェクト（ポートレート、スタジオ照明）で必要になることがあります。次にカメラが起動したときに反映されます。";
+
+/* Settings ⓘ: short description of a setting */
+"Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "ライブ画面を、すべてのカメラ値を1列に並べた表示、接続のビットレートとフレームレート、マイクレベル、構図ガイドに切り替えます。";
+
+/* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
+"drop" = "ドロップ";

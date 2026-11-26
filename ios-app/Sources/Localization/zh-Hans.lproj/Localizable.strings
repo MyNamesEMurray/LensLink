@@ -149,9 +149,6 @@
 /* Format sheet: HDR color choice */
 "HDR (HLG)" = "HDR (HLG)";
 
-/* Format sheet: note under a color choice that needs the HEVC codec */
-"HEVC only" = "仅限 HEVC";
-
 /* Format sheet: Apple Log color choice (Apple's name for its log profile) */
 "Apple Log" = "Apple Log";
 
@@ -448,7 +445,7 @@
 "Ready" = "就绪";
 
 /* Status word: streaming, waiting for OBS to connect */
-"Waiting for OBS…" = "正在等待 OBS…";
+"Waiting" = "等待中";
 
 /* Status word: streaming to OBS */
 "Live" = "直播中";
@@ -728,9 +725,6 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "标准界面";
 
-/* Pro interface: caption over the phone readout (heat, connection) */
-"Phone" = "手机";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "更多";
 
@@ -743,25 +737,8 @@
 /* Pro interface: VoiceOver label for the zoom slider */
 "Zoom" = "变焦";
 
-/* Pro interface: caption over the brightness histogram */
-"Histogram" = "直方图";
-
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Dropped" = "丢帧";
-"Battery" = "电量";
-"Heat" = "温度";
-
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "麦克风";
-
-/* Pro interface: the phone is at a normal temperature */
-"Cool" = "正常";
-
-/* Pro interface: the phone is warming up */
-"Warm" = "偏热";
-
-/* Pro interface: the phone is hot and slowing down */
-"Hot" = "过热";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "参考线";
@@ -779,4 +756,34 @@
 "About %@" = "关于%@";
 
 /* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
-"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**专业界面**会把直播界面换成为摄像操作员设计的布局：所有数值排成一行，点按的数值用转盘调节，并显示直方图、手机麦克风电平和构图参考线。";
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides." = "**专业界面**会把直播界面换成为摄像操作员设计的布局：所有数值排成一行，点按的数值用转盘调节，并显示连接的码率和帧率、手机麦克风电平和构图参考线。";
+
+/* Settings ⓘ: short description of a setting */
+"**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat." = "**稳定**：普通 Wi-Fi 下也安全的码率。**最高**：在链路允许的范围内尽量提高，USB 下最高为稳定的 6 倍，Wi-Fi 下为 4 倍。发热更大。";
+
+/* Settings ⓘ: short description of a setting */
+"Paints everything except you solid green on the phone. Sets Color to Standard. The LensLink Camera source in OBS adds a filter that keys the green out." = "在手机上把除你之外的一切涂成纯绿色。色彩会设为“标准”。OBS 中的 LensLink Camera 来源会添加抠除绿色的滤镜。";
+
+/* Settings ⓘ: short description of a setting */
+"Steadies moving shots but delays the stream. Standard adds a little delay. Cinematic adds often over half a second and crops more." = "让移动拍摄的画面更平稳，但会使推流延迟。标准只增加一点延迟。电影级常常超过半秒，并裁切更多画面。";
+
+/* Settings ⓘ: short description of a setting */
+"Captures one size up (4K for a 1080p stream) so Reframe zoom keeps real detail. Uses more power and heat and turns green screen off. Not available at 4K." = "以高一档的尺寸采集（1080p 串流用 4K），让重新取景的缩放保留真实细节。耗电和发热更多，并会关闭绿幕。4K 下不可用。";
+
+/* Settings ⓘ: short description of a setting */
+"Lets OBS start and stop the camera. Stays armed until you disarm, stop a stream on the phone, or leave the app. The phone stays awake while armed." = "让 OBS 启动和停止摄像头。开启状态会保持到你关闭它、在手机上停止推流或离开 App。开启期间手机保持唤醒。";
+
+/* Settings ⓘ: short description of a setting */
+"What the Live screen shows 10 seconds after your last touch. **Standard**: controls stay. **Clean feed**: the picture only. **Dim screen**: the screen goes dark to save battery. Tap to bring the controls back." = "最后一次触摸 10 秒后直播界面的显示方式。**标准**：保留控制项。**纯净画面**：只显示画面。**调暗屏幕**：屏幕变暗以节省电量。轻点即可恢复控制项。";
+
+/* Settings ⓘ: short description of a setting */
+"Keeps each lens's exposure, white balance, zoom and focus from one stream to the next. Off: every camera starts on auto." = "在每次推流之间按镜头保留曝光、白平衡、变焦和对焦。关闭：每个摄像头都从自动开始。";
+
+/* Settings ⓘ: short description of a setting */
+"Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "允许 iOS 降低帧率，控制中心的视频效果（人像、摄影室灯光）可能需要这样做。在摄像头下次启动时生效。";
+
+/* Settings ⓘ: short description of a setting */
+"Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "把直播界面换成一行显示所有摄像头数值的布局，并显示连接的码率和帧率、麦克风电平和构图参考线。";
+
+/* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
+"drop" = "丢帧";

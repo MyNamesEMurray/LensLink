@@ -20,7 +20,28 @@ enum SettingInfo {
     static let videoEffects = LocalizedStringKey(
         "**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
     static let proInterface = LocalizedStringKey(
-        "**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides.")
+        "**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides.")
+
+    // The ⓘ alerts: what the setting does, in a sentence or two. The
+    // paragraphs above stay the Documentation pages' fuller text.
+    static let bitrateTip = LocalizedStringKey(
+        "**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat.")
+    static let greenScreenTip = LocalizedStringKey(
+        "Paints everything except you solid green on the phone. Sets Color to Standard. The LensLink Camera source in OBS adds a filter that keys the green out.")
+    static let stabilizationTip = LocalizedStringKey(
+        "Steadies moving shots but delays the stream. Standard adds a little delay. Cinematic adds often over half a second and crops more.")
+    static let reframeTip = LocalizedStringKey(
+        "Captures one size up (4K for a 1080p stream) so Reframe zoom keeps real detail. Uses more power and heat and turns green screen off. Not available at 4K.")
+    static let remoteStartTip = LocalizedStringKey(
+        "Lets OBS start and stop the camera. Stays armed until you disarm, stop a stream on the phone, or leave the app. The phone stays awake while armed.")
+    static let idleViewTip = LocalizedStringKey(
+        "What the Live screen shows 10 seconds after your last touch. **Standard**: controls stay. **Clean feed**: the picture only. **Dim screen**: the screen goes dark to save battery. Tap to bring the controls back.")
+    static let rememberTip = LocalizedStringKey(
+        "Keeps each lens's exposure, white balance, zoom and focus from one stream to the next. Off: every camera starts on auto.")
+    static let videoEffectsTip = LocalizedStringKey(
+        "Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts.")
+    static let proInterfaceTip = LocalizedStringKey(
+        "Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides.")
 }
 
 /// A small ⓘ beside a setting: tap for its description in an alert.

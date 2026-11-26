@@ -149,9 +149,6 @@
 /* Format sheet: HDR color choice */
 "HDR (HLG)" = "HDR (HLG)";
 
-/* Format sheet: note under a color choice that needs the HEVC codec */
-"HEVC only" = "Nur HEVC";
-
 /* Format sheet: Apple Log color choice (Apple's name for its log profile) */
 "Apple Log" = "Apple Log";
 
@@ -448,7 +445,7 @@
 "Ready" = "Bereit";
 
 /* Status word: streaming, waiting for OBS to connect */
-"Waiting for OBS…" = "Warten auf OBS …";
+"Waiting" = "Wartet";
 
 /* Status word: streaming to OBS */
 "Live" = "Live";
@@ -728,9 +725,6 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "Standardoberfläche";
 
-/* Pro interface: caption over the phone readout (heat, connection) */
-"Phone" = "Telefon";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "Mehr";
 
@@ -743,25 +737,8 @@
 /* Pro interface: VoiceOver label for the zoom slider */
 "Zoom" = "Zoom";
 
-/* Pro interface: caption over the brightness histogram */
-"Histogram" = "Histogramm";
-
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Dropped" = "Verworfen";
-"Battery" = "Akku";
-"Heat" = "Wärme";
-
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "Mikro";
-
-/* Pro interface: the phone is at a normal temperature */
-"Cool" = "Kühl";
-
-/* Pro interface: the phone is warming up */
-"Warm" = "Warm";
-
-/* Pro interface: the phone is hot and slowing down */
-"Hot" = "Heiß";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "Hilfslinien";
@@ -779,4 +756,34 @@
 "About %@" = "Über %@";
 
 /* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
-"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**Pro-Oberfläche** ersetzt den Live-Bildschirm durch ein Layout für Kameraleute: alle Werte in einer Leiste, ein Regler für den angetippten Wert, ein Histogramm, der Pegel des Smartphone-Mikrofons und Bildhilfslinien.";
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides." = "**Pro-Oberfläche** ersetzt den Live-Bildschirm durch ein Layout für Kameraleute: alle Werte in einer Leiste, ein Regler für den angetippten Wert, Bitrate und Bildrate der Verbindung, der Pegel des Smartphone-Mikrofons und Bildhilfslinien.";
+
+/* Settings ⓘ: short description of a setting */
+"**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat." = "**Stabil**: eine Bitrate, die in gewöhnlichem WLAN sicher ist. **Maximal**: steigt so hoch, wie die Verbindung zulässt, bis zum 6-Fachen von Stabil über USB und zum 4-Fachen über WLAN. Mehr Wärme.";
+
+/* Settings ⓘ: short description of a setting */
+"Paints everything except you solid green on the phone. Sets Color to Standard. The LensLink Camera source in OBS adds a filter that keys the green out." = "Malt auf dem Smartphone alles außer dir einfarbig grün. Setzt Farbe auf Standard. Die Quelle LensLink Camera in OBS fügt einen Filter hinzu, der das Grün ausstanzt.";
+
+/* Settings ⓘ: short description of a setting */
+"Steadies moving shots but delays the stream. Standard adds a little delay. Cinematic adds often over half a second and crops more." = "Beruhigt bewegte Aufnahmen, verzögert aber den Stream. Standard verzögert etwas. Kinematisch verzögert oft über eine halbe Sekunde und beschneidet stärker.";
+
+/* Settings ⓘ: short description of a setting */
+"Captures one size up (4K for a 1080p stream) so Reframe zoom keeps real detail. Uses more power and heat and turns green screen off. Not available at 4K." = "Nimmt eine Größe höher auf (4K bei einem 1080p-Stream), damit der Ausschnitt-Zoom echte Details behält. Kostet mehr Strom und Wärme und schaltet Greenscreen aus. Bei 4K nicht verfügbar.";
+
+/* Settings ⓘ: short description of a setting */
+"Lets OBS start and stop the camera. Stays armed until you disarm, stop a stream on the phone, or leave the app. The phone stays awake while armed." = "Lässt OBS die Kamera starten und stoppen. Bleibt scharf, bis du unscharf schaltest, einen Stream auf dem Smartphone stoppst oder die App verlässt. Solange es scharf ist, bleibt das Smartphone wach.";
+
+/* Settings ⓘ: short description of a setting */
+"What the Live screen shows 10 seconds after your last touch. **Standard**: controls stay. **Clean feed**: the picture only. **Dim screen**: the screen goes dark to save battery. Tap to bring the controls back." = "Was der Live-Bildschirm 10 Sekunden nach deiner letzten Berührung zeigt. **Standard**: Bedienelemente bleiben. **Sauberes Bild**: nur das Bild. **Bildschirm abdunkeln**: der Bildschirm wird dunkel, um Akku zu sparen. Tippen bringt die Bedienelemente zurück.";
+
+/* Settings ⓘ: short description of a setting */
+"Keeps each lens's exposure, white balance, zoom and focus from one stream to the next. Off: every camera starts on auto." = "Behält Belichtung, Weißabgleich, Zoom und Fokus jedes Objektivs von einem Stream zum nächsten. Aus: Jede Kamera startet auf Automatik.";
+
+/* Settings ⓘ: short description of a setting */
+"Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "Lässt iOS die Bildrate senken, was die Videoeffekte im Kontrollzentrum (Porträt, Studiolicht) voraussetzen können. Greift beim nächsten Kamerastart.";
+
+/* Settings ⓘ: short description of a setting */
+"Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "Ersetzt den Live-Bildschirm durch alle Kamerawerte in einer Leiste, Bitrate und Bildrate der Verbindung, den Mikrofonpegel und Bildhilfslinien.";
+
+/* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
+"drop" = "verw.";

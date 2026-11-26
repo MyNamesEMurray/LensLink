@@ -661,7 +661,7 @@ private struct FormatSheet: View {
                 } header: {
                     HStack(spacing: Theme.Space.xs) {
                         Text("Bitrate")
-                        InfoButton(title: L("Bitrate"), text: SettingInfo.bitrate)
+                        InfoButton(title: L("Bitrate"), text: SettingInfo.bitrateTip)
                     }
                 }
 
@@ -675,12 +675,12 @@ private struct FormatSheet: View {
                                   selected: streamer.colorSetting == .sdr) {
                             streamer.colorSetting = .sdr
                         }
-                        ChoiceRow(title: L("HDR (HLG)"), detail: L("HEVC only"),
+                        ChoiceRow(title: L("HDR (HLG)"), detail: nil,
                                   selected: streamer.colorSetting == .hlg) {
                             streamer.colorSetting = .hlg
                         }
                         if CameraManager.appleLogCaptureAvailable {
-                            ChoiceRow(title: L("Apple Log"), detail: L("HEVC only"),
+                            ChoiceRow(title: L("Apple Log"), detail: nil,
                                       selected: streamer.colorSetting == .log) {
                                 streamer.colorSetting = .log
                             }
@@ -695,11 +695,7 @@ private struct FormatSheet: View {
                         SettingsRowLabel(L("Green screen"),
                                          systemImage: "person.fill.viewfinder",
                                          color: Theme.liveGreen,
-                                         subtitle: CameraManager.supportsDepth(
-                                            resolution: streamer.resolution,
-                                            fps: Int32(streamer.fps),
-                                            lens: streamer.selectedLens) ? L("Depth") : nil,
-                                         info: SettingInfo.greenScreen)
+                                         info: SettingInfo.greenScreenTip)
                     }
                 }
 
@@ -712,28 +708,34 @@ private struct FormatSheet: View {
                         SettingsRowLabel(L("Stabilization"),
                                          systemImage: "waveform.path",
                                          color: Theme.cameraYellow,
-                                         info: SettingInfo.stabilization)
+                                         info: SettingInfo.stabilizationTip)
                     }
                     if Streamer.reframeAvailable {
-                        Toggle(isOn: $streamer.reframeHQ) {
+                        // Only the switch is disabled at 4K: a disabled
+                        // row would take its ⓘ with it, and the ⓘ is
+                        // what explains why it is off.
+                        HStack {
                             SettingsRowLabel(L("High-quality reframe"),
                                              systemImage: "crop",
                                              color: Theme.cameraYellow,
-                                             info: SettingInfo.reframe)
+                                             info: SettingInfo.reframeTip)
+                            Spacer(minLength: 0)
+                            Toggle(L("High-quality reframe"), isOn: $streamer.reframeHQ)
+                                .labelsHidden()
+                                .disabled(streamer.resolution == .uhd4k)
                         }
-                        .disabled(streamer.resolution == .uhd4k)
                     }
                     Toggle(isOn: $streamer.allowVideoEffects) {
                         SettingsRowLabel(L("Allow system video effects"),
                                          systemImage: "wand.and.stars",
                                          color: Theme.idleGrey,
-                                         info: SettingInfo.videoEffects)
+                                         info: SettingInfo.videoEffectsTip)
                     }
                     Toggle(isOn: $streamer.rememberCameraSettings) {
                         SettingsRowLabel(L("Remember camera settings"),
                                          systemImage: "clock.arrow.circlepath",
                                          color: Theme.connectAmber,
-                                         info: SettingInfo.remember)
+                                         info: SettingInfo.rememberTip)
                     }
                 } header: {
                     Text("Picture")

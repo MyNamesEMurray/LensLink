@@ -149,9 +149,6 @@
 /* Format sheet: HDR color choice */
 "HDR (HLG)" = "HDR (HLG)";
 
-/* Format sheet: note under a color choice that needs the HEVC codec */
-"HEVC only" = "Solo HEVC";
-
 /* Format sheet: Apple Log color choice (Apple's name for its log profile) */
 "Apple Log" = "Apple Log";
 
@@ -448,7 +445,7 @@
 "Ready" = "Listo";
 
 /* Status word: streaming, waiting for OBS to connect */
-"Waiting for OBS…" = "Esperando a OBS…";
+"Waiting" = "Esperando";
 
 /* Status word: streaming to OBS */
 "Live" = "En vivo";
@@ -728,9 +725,6 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "Interfaz estándar";
 
-/* Pro interface: caption over the phone readout (heat, connection) */
-"Phone" = "Teléfono";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "Más";
 
@@ -743,25 +737,8 @@
 /* Pro interface: VoiceOver label for the zoom slider */
 "Zoom" = "Zoom";
 
-/* Pro interface: caption over the brightness histogram */
-"Histogram" = "Histograma";
-
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Dropped" = "Descartados";
-"Battery" = "Batería";
-"Heat" = "Temperatura";
-
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "Micro";
-
-/* Pro interface: the phone is at a normal temperature */
-"Cool" = "Fresco";
-
-/* Pro interface: the phone is warming up */
-"Warm" = "Templado";
-
-/* Pro interface: the phone is hot and slowing down */
-"Hot" = "Caliente";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "Guías";
@@ -779,4 +756,34 @@
 "About %@" = "Acerca de %@";
 
 /* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
-"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**Interfaz Pro** sustituye la pantalla En vivo por un diseño para operadores de cámara: todos los valores en una franja, un dial para el que toques, un histograma, el nivel del micrófono del teléfono y guías de encuadre.";
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides." = "**Interfaz Pro** sustituye la pantalla En vivo por un diseño para operadores de cámara: todos los valores en una franja, un dial para el que toques, la tasa de bits y la velocidad de fotogramas del enlace, el nivel del micrófono del teléfono y guías de encuadre.";
+
+/* Settings ⓘ: short description of a setting */
+"**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat." = "**Estable**: una tasa de bits segura en una red Wi-Fi normal. **Máxima**: sube tanto como permita el enlace, hasta 6 veces Estable por USB y 4 por Wi-Fi. Más calor.";
+
+/* Settings ⓘ: short description of a setting */
+"Paints everything except you solid green on the phone. Sets Color to Standard. The LensLink Camera source in OBS adds a filter that keys the green out." = "Pinta de verde sólido todo menos a ti, en el teléfono. Pone Color en Estándar. La fuente LensLink Camera en OBS añade un filtro que elimina el verde.";
+
+/* Settings ⓘ: short description of a setting */
+"Steadies moving shots but delays the stream. Standard adds a little delay. Cinematic adds often over half a second and crops more." = "Suaviza las tomas en movimiento, pero retrasa la transmisión. Estándar añade un poco de retraso. Cinemático añade a menudo más de medio segundo y recorta más.";
+
+/* Settings ⓘ: short description of a setting */
+"Captures one size up (4K for a 1080p stream) so Reframe zoom keeps real detail. Uses more power and heat and turns green screen off. Not available at 4K." = "Captura un tamaño por encima (4K para una transmisión de 1080p) para que el zoom del reencuadre conserve detalle real. Consume más energía, calienta más y desactiva la pantalla verde. No disponible en 4K.";
+
+/* Settings ⓘ: short description of a setting */
+"Lets OBS start and stop the camera. Stays armed until you disarm, stop a stream on the phone, or leave the app. The phone stays awake while armed." = "Deja que OBS inicie y detenga la cámara. Queda armado hasta que lo desarmas, detienes una transmisión en el teléfono o sales de la app. El teléfono se mantiene activo mientras está armado.";
+
+/* Settings ⓘ: short description of a setting */
+"What the Live screen shows 10 seconds after your last touch. **Standard**: controls stay. **Clean feed**: the picture only. **Dim screen**: the screen goes dark to save battery. Tap to bring the controls back." = "Lo que muestra la pantalla En vivo 10 segundos después de tu último toque. **Estándar**: los controles se quedan. **Imagen limpia**: solo la imagen. **Atenuar pantalla**: la pantalla se oscurece para ahorrar batería. Toca para recuperar los controles.";
+
+/* Settings ⓘ: short description of a setting */
+"Keeps each lens's exposure, white balance, zoom and focus from one stream to the next. Off: every camera starts on auto." = "Conserva la exposición, el balance de blancos, el zoom y el enfoque de cada lente de una transmisión a la siguiente. Desactivado: todas las cámaras empiezan en automático.";
+
+/* Settings ⓘ: short description of a setting */
+"Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "Permite que iOS baje la velocidad de fotogramas, algo que pueden requerir los efectos de video del Centro de control (Retrato, Luz de estudio). Se aplica la próxima vez que se inicia la cámara.";
+
+/* Settings ⓘ: short description of a setting */
+"Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "Sustituye la pantalla En vivo por todos los valores de la cámara en una franja, la tasa de bits y la velocidad de fotogramas del enlace, el nivel del micrófono y guías de encuadre.";
+
+/* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
+"drop" = "perd.";

@@ -395,7 +395,7 @@ struct StreamingView: View {
         if let percent = battery.percent {
             VStack(spacing: Theme.Space.xs) {
                 HStack(spacing: Theme.Space.s) {
-                    Image(systemName: batterySymbol(percent))
+                    Image(systemName: Self.batterySymbol(percent))
                         .font(.system(size: 44, weight: .regular))
                     Text(L("%lld%%", percent))
                         .font(.system(size: 44, weight: .semibold,
@@ -442,7 +442,7 @@ struct StreamingView: View {
 
     /// The system battery glyph nearest the real level, so the icon reads
     /// at a glance from across the room even before the number does.
-    private func batterySymbol(_ percent: Int) -> String {
+    static func batterySymbol(_ percent: Int) -> String {
         switch percent {
         case ..<13: return "battery.0"
         case ..<38: return "battery.25"
@@ -588,7 +588,8 @@ struct StreamingView: View {
     /// feed or Dim screen — the idle view now, instead of waiting out
     /// the fuse. The small chevron is what says it opens.
     private var statusMenu: some View {
-        Menu {
+        SteadyMenu(key: [showHealth, streamer.status.displayName,
+                         streamer.idleAppearance]) {
             Toggle(isOn: Binding(get: { showHealth },
                                  set: { on in
                                      touched()
@@ -627,6 +628,7 @@ struct StreamingView: View {
             .foregroundColor(Theme.textPrimary)
             .glassPill()
         }
+        .equatable()
         .accessibilityLabel(streamer.status.displayName)
         .accessibilityInputLabels([streamer.status.displayName, L("Status")])
         .accessibilityShowsLargeContentViewer {
