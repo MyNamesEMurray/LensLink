@@ -406,9 +406,6 @@
 "Idle view" = "空闲显示";
 
 /* Options toggle */
-"Focus on faces" = "人脸对焦";
-
-/* Options toggle */
 "Remember camera settings" = "记住摄像头设置";
 
 /* Options toggle (experimental) */
@@ -791,8 +788,6 @@
 /* Pro interface guide: rule-of-thirds grid */
 "Grid" = "网格";
 
-/* Camera sheet: header over stabilization, reframe and system video effects */
+/* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "画面";
 
-/* Camera sheet: header over motion blur, face focus and remembered camera settings */
-"Exposure & focus" = "曝光与对焦";

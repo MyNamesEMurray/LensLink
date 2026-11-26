@@ -167,7 +167,7 @@ Portuguese and Simplified Chinese have every field translated in
 > - On iPhones with a 48 MP Main camera, a 2× lens button uses the sensor's full detail.
 > - Hold the picture to pin focus and exposure to that spot of the frame: wherever you point the phone, they keep adjusting for what is there, until a tap on the picture releases them.
 > - A Lock button in the tray locks the selected setting at what auto is doing right now. Hold it to lock or unlock everything.
-> - Natural motion blur, on by default: auto exposure keeps the shutter at half the frame time or faster (1/60 at 30 fps), raising ISO in dim light instead of smearing motion. Turn it off in the Camera sheet or with the Shutter chip's button.
+> - Natural motion blur, on by default: auto exposure keeps the shutter at half the frame time or faster (1/60 at 30 fps), raising ISO in dim light instead of smearing motion. Turn it off with the Shutter chip or with the Shutter chip's button.
 > - The tray's chips are Focus, WB, EV, ISO and Shutter, and the EV, ISO and Shutter dials click between stops.
 > - Zoom moves to the lens row: tap the yellow lens button for a zoom dial, and tap it again to reset the zoom.
 > - Green screen has its own button next to the lens buttons. Hold it to turn green screen on or off; where depth assist runs, a tap opens the Subject dial.

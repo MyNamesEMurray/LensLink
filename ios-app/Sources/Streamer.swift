@@ -636,23 +636,21 @@ final class Streamer: ObservableObject {
         case auto
         case locked
     }
-    /// Faces first while focus is on auto (Options → Focus on faces):
-    /// the camera keeps focus and exposure on the faces it sees. A tap
-    /// point outranks it until the scene changes; a lock ignores it.
-    @Published var faceFocus: Bool =
-        UserDefaults.standard.object(forKey: "faceFocus") as? Bool ?? true {
+    /// Faces first while focus is on auto: the camera keeps focus and
+    /// exposure on the faces it sees. A tap point outranks it until the
+    /// scene changes; a lock ignores it. Always on at launch (no app
+    /// setting); remote surfaces can still turn it off for the session.
+    @Published var faceFocus: Bool = true {
         didSet {
-            UserDefaults.standard.set(faceFocus, forKey: "faceFocus")
             camera.setFaceDrivenFocus(faceFocus)
             scheduleStateSend()
         }
     }
-    /// Options → Natural motion blur, and the Shutter chip's button: the
-    /// 180° rule for auto exposure (`CameraManager.setNaturalBlur`).
-    @Published var naturalBlur: Bool =
-        UserDefaults.standard.object(forKey: "naturalBlur") as? Bool ?? true {
+    /// The 180° rule for auto exposure (`CameraManager.setNaturalBlur`).
+    /// Always on at launch (no app setting); the Shutter chip's button
+    /// and the web panel can still turn it off for the session.
+    @Published var naturalBlur: Bool = true {
         didSet {
-            UserDefaults.standard.set(naturalBlur, forKey: "naturalBlur")
             camera.setNaturalBlur(naturalBlur)
             scheduleStateSend()
         }

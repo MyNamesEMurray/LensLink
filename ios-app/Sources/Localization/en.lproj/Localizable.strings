@@ -408,9 +408,6 @@
 "Idle view" = "Idle view";
 
 /* Options toggle */
-"Focus on faces" = "Focus on faces";
-
-/* Options toggle */
 "Remember camera settings" = "Remember camera settings";
 
 /* Options toggle (experimental) */
@@ -799,8 +796,6 @@
 /* Pro interface guide: rule-of-thirds grid */
 "Grid" = "Grid";
 
-/* Camera sheet: header over stabilization, reframe and system video effects */
+/* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "Picture";
 
-/* Camera sheet: header over motion blur, face focus and remembered camera settings */
-"Exposure & focus" = "Exposure & focus";

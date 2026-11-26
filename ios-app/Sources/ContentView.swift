@@ -574,9 +574,9 @@ struct SettingsRowLabel: View {
 
 /// The Camera sheet behind the Setup screen's camera row: every choice
 /// that shapes the picture, top to bottom in the order they limit each
-/// other — lens, format, green screen, picture processing, exposure and
-/// focus behaviour. The lists are the Setup screen's cached capability
-/// filters, passed in so this sheet never runs a format scan of its own.
+/// other — lens, format, green screen, picture processing. The lists
+/// are the Setup screen's cached capability filters, passed in so this
+/// sheet never runs a format scan of its own.
 ///
 /// Codec and Color are drawn as check rows rather than pickers because
 /// the two constrain each other — HDR and Apple Log are HEVC only, green
@@ -715,28 +715,13 @@ private struct FormatSheet: View {
                                          systemImage: "wand.and.stars",
                                          color: Theme.idleGrey)
                     }
-                } header: {
-                    Text("Picture")
-                }
-
-                Section {
-                    Toggle(isOn: $streamer.naturalBlur) {
-                        SettingsRowLabel(L("Natural motion blur"),
-                                         systemImage: "camera.aperture",
-                                         color: Theme.cameraYellow)
-                    }
-                    Toggle(isOn: $streamer.faceFocus) {
-                        SettingsRowLabel(L("Focus on faces"),
-                                         systemImage: "face.smiling",
-                                         color: Theme.cameraYellow)
-                    }
                     Toggle(isOn: $streamer.rememberCameraSettings) {
                         SettingsRowLabel(L("Remember camera settings"),
                                          systemImage: "clock.arrow.circlepath",
                                          color: Theme.connectAmber)
                     }
                 } header: {
-                    Text("Exposure & focus")
+                    Text("Picture")
                 }
             }
             .navigationTitle("Camera")

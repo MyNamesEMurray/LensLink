@@ -406,9 +406,6 @@
 "Idle view" = "Vista en reposo";
 
 /* Options toggle */
-"Focus on faces" = "Enfoque en rostros";
-
-/* Options toggle */
 "Remember camera settings" = "Recordar ajustes de cámara";
 
 /* Options toggle (experimental) */
@@ -791,8 +788,6 @@
 /* Pro interface guide: rule-of-thirds grid */
 "Grid" = "Cuadrícula";
 
-/* Camera sheet: header over stabilization, reframe and system video effects */
+/* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "Imagen";
 
-/* Camera sheet: header over motion blur, face focus and remembered camera settings */
-"Exposure & focus" = "Exposición y enfoque";

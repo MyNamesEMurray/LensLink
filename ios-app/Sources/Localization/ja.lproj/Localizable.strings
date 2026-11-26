@@ -406,9 +406,6 @@
 "Idle view" = "アイドル表示";
 
 /* Options toggle */
-"Focus on faces" = "顔にフォーカス";
-
-/* Options toggle */
 "Remember camera settings" = "カメラ設定を記憶";
 
 /* Options toggle (experimental) */
@@ -791,8 +788,6 @@
 /* Pro interface guide: rule-of-thirds grid */
 "Grid" = "グリッド";
 
-/* Camera sheet: header over stabilization, reframe and system video effects */
+/* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "画像";
 
-/* Camera sheet: header over motion blur, face focus and remembered camera settings */
-"Exposure & focus" = "露出とフォーカス";
