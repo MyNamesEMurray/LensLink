@@ -1293,13 +1293,7 @@ final class Streamer: ObservableObject {
     @Published private(set) var status: Status = .idle {
         didSet { noteFeedbackChange(status: oldValue) }
     }
-    @Published private(set) var isStreaming = false {
-        didSet {
-            if isStreaming != oldValue { streamStartedAt = isStreaming ? Date() : nil }
-        }
-    }
-    /// When this stream started, for the Pro interface's timecode.
-    @Published private(set) var streamStartedAt: Date?
+    @Published private(set) var isStreaming = false
 
     /// Held, not ended: the connection, the camera and the encoder all
     /// stay up while video stops going out, so resuming costs a keyframe

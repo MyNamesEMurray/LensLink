@@ -728,8 +728,8 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "标准界面";
 
-/* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
-"Timecode" = "时间码";
+/* Pro interface: caption over the phone readout (heat, connection) */
+"Phone" = "手机";
 
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "更多";
@@ -745,9 +745,6 @@
 
 /* Pro interface: caption over the brightness histogram */
 "Histogram" = "直方图";
-
-/* Pro interface: caption over the connection readout (transport, bitrate, battery) */
-"Link" = "连接";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
 "Dropped" = "丢帧";

@@ -639,9 +639,10 @@ gestures are unchanged. Each layout is one menu item from the other:
 the Pro More menu has Standard interface, and the standard status
 pill's menu has Pro interface.
 
-- **Top bar** (black 60 % glass): status pill, timecode (time since the
-  stream went live, `HH:MM:SS:FF` at the stream's fps), the format chip,
-  and a More menu (Pause/Resume, Standard interface).
+- **Top bar** (black 60 % glass): status pill, a 2×2 link readout
+  (connection + bitrate, fps, dropped, battery; `–` until the first
+  reading), the format chip, and a More menu (Pause/Resume, Standard
+  interface). No timecode.
 - **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
   Each cell is a label over a monospaced value; auto values show what
   auto is doing with a yellow **A** badge. Shutter is always a fraction
@@ -651,9 +652,9 @@ pill's menu has Pro interface.
 - **Dial**: one row per value, the same stops as the tray, an **Auto**
   chip that hands the value back, and presets where they help (WB light
   sources, Calibrate).
-- **Scopes row**: Histogram (64 luma bins), Link (one row per stat,
-  label left, monospaced value right: Connection, Bitrate, Frame rate,
-  Dropped, Battery, Heat, heat amber from serious up), Mic (peak dBFS bar: green,
+- **Scopes row**: Histogram (64 luma bins), Phone (one row per stat,
+  label left, monospaced value right: Heat, amber from serious up, and
+  Connection), Mic (peak dBFS bar: green,
   `#FFD60A` above −12, red above −3).
 - **Tool row**: Flip, Guides, Stop, Pause, Flashlight. On = tinted.
 
