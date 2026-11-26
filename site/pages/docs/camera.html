@@ -18,7 +18,7 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
   <tbody>
     <tr><td>Lens</td><td>Main, Ultra Wide, Telephoto or Front. Switchable mid-stream.</td></tr>
     <tr><td>Resolution</td><td>Up to 3840×2160. Higher isn't automatically better — 1080p60 beats 4K30 for most talking-head work.</td></tr>
-    <tr><td>Frame rate</td><td>24, 25, 30, 50 or 60, where the lens, resolution and colour mode can capture it natively. Match your OBS canvas (25 or 50 for a PAL timeline). <strong>Options → High frame rate</strong> (experimental) adds 120 and 240 where the camera has them.</td></tr>
+    <tr><td>Frame rate</td><td>24, 25, 30, 50, 60, 120 or 240, where the lens, resolution and colour mode can capture it natively. Match your OBS canvas (25 or 50 for a PAL timeline). 120 and 240 (experimental) appear only where the camera has them.</td></tr>
     <tr><td>Codec</td><td>HEVC looks the same as H.264 at roughly 40% less data. Use it unless your OBS build can't decode it.</td></tr>
     <tr><td>Quality</td><td><strong>Balanced</strong> streams at a bitrate that is safe on ordinary Wi-Fi. <strong>Maximum</strong> keeps probing upward while the connection stays clean &mdash; up to about six times that over USB, four over Wi-Fi &mdash; and settles just under whatever the link carries. It also switches the encoder to quality-first settings (at 1080p and below; at 4K they would add about 50 ms of delay for no visible gain) and streams from the full sensor readout. More data and more heat; USB is the place for it.</td></tr>
   </tbody>
@@ -63,8 +63,8 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
   <tbody>
     <tr><td>Zoom</td><td>1× to the lens maximum. Pinch the Live screen, or tap the active lens button and slide along the zoom dial that opens; tap the button again to reset the zoom. The other lens buttons stay a tap away above the dial. In the panel, use the slider. On phones with a 48 MP Main camera (iOS 16 and later, in formats that offer it), an extra <strong>2</strong> lens button lands exactly on the full-detail 2× sensor crop, and pinch and the dial settle on it when they pass close by. At 4K it is noticeably sharper than other zoom levels.</td></tr>
     <tr><td>Exposure</td><td>On auto, the <strong>EV</strong> chip is a bias dial in third stops (or drag the picture on the phone). <strong>ISO</strong> and <strong>Shutter</strong> each go manual on their own: drag Shutter to fix the shutter speed and ISO keeps adjusting to hold the exposure, or drag ISO to fix it and the shutter adjusts. EV still works while one of them is on auto, and greys out once both are manual. Tap the active chip to put that one back on auto. ISO and Shutter are hidden on cameras that lack manual exposure.</td></tr>
-    <tr><td>Natural motion blur</td><td>On by default. While the shutter is on auto it stays at half the frame interval or faster (the 180° rule: 1/60 at 30 fps), so motion blurs the way film does and a dim room raises ISO instead of smearing. Turn it off in Options, or with the button on the Shutter chip in the tray or the panel, even mid-stream. The button dims while you set the shutter by hand, since there is nothing for it to limit.</td></tr>
-    <tr><td>Focus</td><td>Auto, or locked with a near-to-far dial. On auto the camera follows faces (Options → Focus on faces). Tap the preview to focus and expose there until the scene changes; hold it to pin focus and exposure to that spot of the frame, so they keep following whatever is there as you move the phone, until a tap lets it go.</td></tr>
+    <tr><td>Natural motion blur</td><td>On by default. While the shutter is on auto it stays at half the frame interval or faster (the 180° rule: 1/60 at 30 fps), so motion blurs the way film does and a dim room raises ISO instead of smearing. Turn it off in the Camera sheet, or with the button on the Shutter chip in the tray or the panel, even mid-stream. The button dims while you set the shutter by hand, since there is nothing for it to limit.</td></tr>
+    <tr><td>Focus</td><td>Auto, or locked with a near-to-far dial. On auto the camera follows faces (Camera → Focus on faces). Tap the preview to focus and expose there until the scene changes; hold it to pin focus and exposure to that spot of the frame, so they keep following whatever is there as you move the phone, until a tap lets it go.</td></tr>
     <tr><td>White balance</td><td>Auto, or locked with a 2500–8000 K dial. To calibrate, put plain white paper anywhere in the shot under your lights, tap the eyedropper on the WB chip, then tap the paper in the picture. The browser panel works the same way: click the eyedropper, then click the paper in the still of the shot it shows. White balance locks to the paper, green or magenta tint included, which fixes LED and fluorescent casts the dial can't. Tap WB again for auto.</td></tr>
     <tr><td>Lock</td><td>In the tray's bottom row on the phone. Tap it to lock the selected value (ISO, shutter, both from the EV chip, white balance, or focus) at what auto is doing right now, or to hand it back to auto. Hold it to lock every value at once, or unlock them all. The lock fills in while the selected value is locked, and turns into a stack of locks when everything is.</td></tr>
     <tr><td>Flashlight</td><td>A hard fill at close range, with a brightness from 1% to 100%. On the phone, hold the Flashlight button left of the lens buttons to turn it on or off; while it is on, tap it for a brightness dial, and tap again to go back to full. The tray's Flashlight button switches it too. In the panel, click the Flashlight button by the lenses and use the brightness slider that appears. The light comes back at the brightness you left it at, and the button only shows on a camera with a flash.</td></tr>
@@ -81,7 +81,7 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
 
 <h2 id="pro-interface">Pro interface</h2>
 <p>
-  Turn on <strong>Pro interface</strong> in Options (Live screen) and the Live
+  Turn on <strong>Pro interface</strong> in Settings (Live screen) and the Live
   screen changes to a layout for camera operators. Along the top: the status,
   a timecode counting from when the stream went live, the format, and a menu
   with Pause, the zebra level and the way back to the standard interface.
@@ -105,7 +105,7 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
 
 <h2>Color: HDR and Apple Log</h2>
 <p>
-  <strong>Color</strong> sits in the app's Format sheet and offers only what
+  <strong>Color</strong> sits in the app's Camera sheet and offers only what
   this phone can capture. Both options are HEVC-only and take effect when the
   camera next starts; the sheet marks them "HEVC only", and picking H.264
   there returns Color to Standard.
@@ -161,7 +161,7 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
   brings back an old zoom). There is nothing to name or save: the
   tray shows what came back, and tapping a chip releases it.
 </p>
-<p><strong>Options → Remember camera settings</strong> turns it off, which also forgets what was stored.</p>
+<p><strong>Camera → Remember camera settings</strong> turns it off, which also forgets what was stored.</p>
 
 <h2>Control Center video effects</h2>
 <p>
@@ -171,9 +171,9 @@ description: Lenses, resolutions, frame rates and codecs; manual exposure and wh
   many iPhones the rear cameras get none.
 </p>
 <ul>
-  <li><strong>Options → Camera diagnostics</strong> lists what your device offers, per camera and format.</li>
+  <li><strong>Settings → Camera diagnostics</strong> lists what your device offers, per camera and format.</li>
   <li>LensLink picks an effect-capable format whenever your settings allow one.</li>
-  <li>A toggle that appears but greys out means the frame rate is too high: drop it, and turn on <strong>Options → Allow system video effects</strong> so iOS can vary it.</li>
+  <li>A toggle that appears but greys out means the frame rate is too high: drop it, and turn on <strong>Camera → Allow system video effects</strong> so iOS can vary it.</li>
 </ul>
 <p>
   Apple's Camera-app filters and Photographic Styles aren't available to any

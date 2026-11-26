@@ -142,33 +142,13 @@ final class Streamer: ObservableObject {
     @Published var fps: Int {
         didSet { UserDefaults.standard.set(fps, forKey: "fps") }
     }
-    /// Experimental: offer 120 and 240 fps where the camera has them
-    /// (Options → High frame rate). Off by default because everything
-    /// downstream is sized for 60 — the bitrate budget grows, the phone
-    /// runs hotter, and an OBS canvas at 60 shows every other frame at
-    /// best. Turning it off clamps a high rate back to 60.
-    @Published var highFrameRate: Bool =
-        UserDefaults.standard.object(forKey: "highFrameRate") as? Bool ?? false {
-        didSet {
-            UserDefaults.standard.set(highFrameRate, forKey: "highFrameRate")
-            if !highFrameRate, fps > 60 {
-                fps = 60
-                clampCaptureSettings()
-                if isStreaming {
-                    reconfigureLiveCapture(formatChanged: true)
-                }
-            }
-            capabilityCache = nil
-            scheduleStateSend()
-        }
-    }
     /// The frame rates any picker may offer before the camera's own
-    /// filter: the ordinary set, or the experimental one. 24 (cinema) and
+    /// filter. 120 and 240 appear only where the camera has them. 24 (cinema) and
     /// 25/50 (PAL) are captured natively — the sensor's frame duration is
     /// set to the rate, nothing is dropped or retimed — so they match a
     /// 24 or 25 fps OBS canvas and edit timeline frame for frame.
     var candidateFrameRates: [Int] {
-        highFrameRate ? [24, 25, 30, 50, 60, 120, 240] : [24, 25, 30, 50, 60]
+        [24, 25, 30, 50, 60, 120, 240]
     }
 
     /// How hard to push the connection (Format → Quality). Balanced is the
@@ -1647,13 +1627,7 @@ final class Streamer: ObservableObject {
         resolution = CameraManager.Resolution(
             rawValue: defaults.string(forKey: "resolution") ?? "") ?? .hd720
         let storedFps = defaults.integer(forKey: "fps")
-        var loadedFps = storedFps > 0 ? storedFps : 30
-        // A high rate outlives its toggle only while the toggle is on.
-        if loadedFps > 60,
-           !(defaults.object(forKey: "highFrameRate") as? Bool ?? false) {
-            loadedFps = 60
-        }
-        fps = loadedFps
+        fps = storedFps > 0 ? storedFps : 30
         let lenses = CameraManager.availableLenses()
         let present = lenses.isEmpty ? [CameraManager.defaultLens] : lenses
         availableLenses = present

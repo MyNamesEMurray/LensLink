@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Documentation → Camera & picture: what the Format sheet's Color
+/// Documentation → Camera & picture: what the Camera sheet's Color
 /// choices mean, and green screen with its depth assist and Subject
 /// control.
 struct CameraDocumentationView: View {
@@ -9,7 +9,7 @@ struct CameraDocumentationView: View {
             Section {
                 Text("**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing.")
                 Text("**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT.")
-                Text("Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture.")
+                Text("Both are HEVC-only and take effect when the camera next starts. Color lives in the Camera sheet and only offers what this phone can capture.")
             } header: {
                 Text("Color")
             }

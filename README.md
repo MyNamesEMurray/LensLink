@@ -148,8 +148,8 @@ Slide Over and Stage Manager.
   mobile games or app demos. Works over Wi-Fi or USB, encoded in HEVC for
   bandwidth-friendly quality. Your microphone isn't sent — mic yourself in
   OBS as usual.
-- **Phone mic audio (optional).** Turn on **Send phone mic to OBS** (in
-  the app's **Options**) and the camera source carries the phone's
+- **Phone mic audio (optional).** Turn on **Send phone mic to OBS** (on
+  the app's Setup screen) and the camera source carries the phone's
   microphone as its audio — the phone doubles as a wireless mic. (Off by default; most streamers use their own
   mic and lip-sync it instead.) A Microphone row under the toggle (and a
   mic row in the web panel) picks which microphone: **Auto** is iOS's default input
@@ -181,7 +181,7 @@ Slide Over and Stage Manager.
 - **Smooth on weak Wi-Fi.** If the connection congests, the app lowers
   quality briefly and recovers, instead of piling up latency.
 - **Battery saver.** While streaming, the phone screen dims after 10
-  seconds; tap to wake it. (Turn this off in the app's **Options**, or dim
+  seconds; tap to wake it. (Turn this off in the app's **Settings**, or dim
   immediately from the Live screen's status menu.) Optionally, enable
   **Disconnect when this source isn't shown anywhere** in the source
   properties and the phone stops streaming entirely whenever the source is
@@ -198,7 +198,7 @@ phone") but the app refuses to start the camera, so opening it never
 starts a stream by itself. Arming lasts until you
 tap **Disarm Remote Start**, stop a stream on the phone, or leave the app.
 For a phone that lives on a rig, **Arm remote start on open** in the
-app's **Options** (off by default) arms it every time the app opens.
+app's **Settings** (off by default) arms it every time the app opens.
 
 - **Automatically.** The LensLink Camera source's **"Start the phone's
   camera automatically when it's ready"** option (on by default) starts
@@ -269,7 +269,7 @@ line that mic up with the video automatically:
 1. In the LensLink Camera source properties, pick your microphone under
    **Lip-sync audio source**, then enable **Automatically delay that audio
    source to match the camera latency** and **Auto-calibrate**.
-2. In the app's **Options**, turn on **Auto lip-sync reference**.
+2. On the app's Setup screen, turn on **Auto lip-sync reference**.
 
 The phone then sends its microphone purely as a *timing reference* (never
 heard on stream); the plugin compares it with your real mic to measure the
@@ -364,12 +364,12 @@ are the places to watch.
   offers them on certain cameras and capture formats, typically the
   front camera at moderate settings (nothing above 1920×1440); on many
   iPhones the rear cameras offer none at all, while newer hardware
-  extends more effects to more cameras. The app's **Options → Camera
+  extends more effects to more cameras. The app's **Settings → Camera
   diagnostics** table shows exactly what your device offers per camera
   and format, and LensLink picks an effect-capable format whenever your
   resolution/frame-rate choice allows one. If an effect toggle shows but
   greys out, drop the frame rate — effects can cap the capture rate, and
-  **Options → Allow system video effects** lets iOS vary it. (Versions
+  **Camera → Allow system video effects** lets iOS vary it. (Versions
   before 1.8.1 never showed the panel at all: iOS only populates it for
   apps that declare each effect in their Info.plist, which LensLink now
   does.)

@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// Documentation → Options: one entry per control in the Options
-/// sheet, grouped by what the control changes. Pause is here too: it
-/// has no Options toggle, but it shapes how a stream behaves.
+/// Documentation → Settings: one entry per behaviour control in the
+/// Settings and Camera sheets, grouped by what the control changes.
+/// Pause is here too: it has no toggle, but it shapes how a stream
+/// behaves.
 struct OptionsDocumentationView: View {
     var body: some View {
         Form {
@@ -40,13 +41,13 @@ struct OptionsDocumentationView: View {
             }
 
             Section {
-                Text("**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60.")
+                Text("**120 and 240 fps** are experimental and appear in the frame rate list where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with them, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB.")
                 Text("**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
             } header: {
                 Text("Experimental")
             }
         }
-        .navigationTitle("Options")
+        .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
