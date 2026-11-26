@@ -391,8 +391,13 @@ struct ProHUD: View {
                 get: { Double(Self.nearest(stops, streamer.shutterSeconds)) },
                 set: { index in
                     touched()
-                    streamer.shutterSeconds = stops[Int(index.rounded())]
-                    streamer.exposureSetting.shutterManual = true
+                    // A drag reports every move: write only a new stop, or
+                    // each report republishes and re-applies exposure.
+                    let i = min(max(Int(index.rounded()), 0), stops.count - 1)
+                    guard i != Self.nearest(stops, streamer.shutterSeconds)
+                            || !streamer.isLocked(.shutter) else { return }
+                    streamer.setLocked(.shutter, true)
+                    streamer.shutterSeconds = stops[i]
                 }), in: 0...Double(max(stops.count - 1, 1)), step: 1)
                 .accessibilityLabel(L("Shutter"))
                 .accessibilityValue(Text(verbatim: Self.shutterLabel(streamer.shutterSeconds)))
@@ -402,9 +407,9 @@ struct ProHUD: View {
                 get: { log2(Double(streamer.iso)) },
                 set: { stop in
                     touched()
+                    streamer.setLocked(.iso, true)
                     streamer.iso = min(max(Float(pow(2, stop)), range.lowerBound),
                                        range.upperBound)
-                    streamer.exposureSetting.isoManual = true
                 }), in: log2(Double(range.lowerBound))...log2(Double(max(range.upperBound, range.lowerBound + 1))))
                 .accessibilityLabel(Text(verbatim: "ISO"))
                 .accessibilityValue(Text(verbatim: value(.iso)))
@@ -440,8 +445,8 @@ struct ProHUD: View {
                 get: { Double(streamer.lensPosition) },
                 set: { position in
                     touched()
+                    if streamer.focusSetting != .locked { streamer.focusSetting = .locked }
                     streamer.lensPosition = Float(position)
-                    streamer.focusSetting = .locked
                 }), in: 0...1)
                 .accessibilityLabel(L("Focus"))
                 .accessibilityValue(Text(verbatim: value(.focus)))
@@ -499,7 +504,7 @@ struct ProHUD: View {
     }
 
     private static func nearest(_ values: [Double], _ value: Double) -> Int {
-        values.indices.min { abs(values[$0] - value) < abs(values[$1] - value) } ?? 0
+        values.indices.min { abs(log(values[$0] / value)) < abs(log(values[$1] / value)) } ?? 0
     }
 
     private func chip(_ title: String, on: Bool,
