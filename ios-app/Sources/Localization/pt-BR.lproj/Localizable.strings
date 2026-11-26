@@ -728,8 +728,8 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "Interface padrão";
 
-/* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
-"Timecode" = "Timecode";
+/* Pro interface: caption over the phone readout (heat, connection) */
+"Phone" = "Celular";
 
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "Mais";
@@ -745,9 +745,6 @@
 
 /* Pro interface: caption over the brightness histogram */
 "Histogram" = "Histograma";
-
-/* Pro interface: caption over the connection readout (transport, bitrate, battery) */
-"Link" = "Conexão";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
 "Dropped" = "Descartados";

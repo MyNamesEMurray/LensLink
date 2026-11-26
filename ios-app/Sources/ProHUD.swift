@@ -72,9 +72,7 @@ struct ProHUD: View {
             }
             .glassPill()
             .accessibilityElement(children: .combine)
-            Spacer(minLength: 0)
-            timecode
-            Spacer(minLength: 0)
+            linkGrid
             Text(formatLabel)
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                 .padding(.horizontal, 6)
@@ -85,25 +83,20 @@ struct ProHUD: View {
         }
     }
 
-    /// Hours, minutes, seconds and frames since the stream started.
-    private var timecode: some View {
-        TimelineView(.periodic(from: Date(), by: 1.0 / Double(max(streamer.fps, 1)))) { context in
-            Text(Self.timecode(since: streamer.streamStartedAt, now: context.date,
-                               fps: streamer.fps))
-                .font(.system(size: 20, weight: .semibold, design: .monospaced))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+    /// The stats an operator glances at mid-stream, where a timecode
+    /// would sit on a cinema camera.
+    private var linkGrid: some View {
+        let health = streamer.health
+        return LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.Space.s),
+                                   GridItem(.flexible())], spacing: 1) {
+            linkRow(streamer.obsTransport == "usb" ? "USB" : "Wi-Fi",
+                    health.map { String(format: "%.1f Mb/s", $0.megabitsPerSecond) } ?? "–")
+            linkRow("FPS", health.map { "\($0.fps)" } ?? "–")
+            linkRow(L("Dropped"), health.map { String($0.droppedFrames) } ?? "–")
+            linkRow(L("Battery"), battery.percent.map { L("%lld%%", $0) } ?? "–")
         }
-        .accessibilityLabel(L("Timecode"))
-    }
-
-    static func timecode(since start: Date?, now: Date, fps: Int) -> String {
-        guard let start = start else { return "00:00:00:00" }
-        let elapsed = max(0, now.timeIntervalSince(start))
-        let seconds = Int(elapsed)
-        let frames = Int((elapsed - Double(seconds)) * Double(max(fps, 1)))
-        return String(format: "%02d:%02d:%02d:%02d", seconds / 3600,
-                      seconds / 60 % 60, seconds % 60, frames)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     private var formatLabel: String {
@@ -284,6 +277,7 @@ struct ProHUD: View {
     }
 
     static func shutterLabel(_ seconds: Double) -> String {
+        guard seconds.isFinite, seconds > 0 else { return "–" }
         guard seconds < 1 else { return String(format: "%.0fs", seconds) }
         return "1/\(Int((1 / seconds).rounded()))"
     }
@@ -487,19 +481,11 @@ struct ProHUD: View {
                     .frame(height: 40)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(L("Link")).font(Self.label).foregroundColor(Theme.textSecondary)
-                linkRow(L("Connection"), streamer.obsTransport == "usb" ? "USB" : "Wi-Fi")
-                if let health = streamer.health {
-                    linkRow(L("Bitrate"), String(format: "%.1f Mb/s", health.megabitsPerSecond))
-                    linkRow(L("Frame rate"), L("%lld fps", health.fps))
-                    linkRow(L("Dropped"), String(health.droppedFrames))
-                }
-                if let percent = battery.percent {
-                    linkRow(L("Battery"), L("%lld%%", percent))
-                }
+                Text(L("Phone")).font(Self.label).foregroundColor(Theme.textSecondary)
                 linkRow(L("Heat"), heat,
                         tint: thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue
                             ? Theme.connectAmber : Theme.textPrimary)
+                linkRow(L("Connection"), streamer.obsTransport == "usb" ? "USB" : "Wi-Fi")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
