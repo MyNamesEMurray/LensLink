@@ -247,9 +247,6 @@ and everywhere at once rather than drifting.
 | Shutter | Verschluss | Obturador | Obturateur | シャッター | Obturador | 快门 |
 | Tint | Tönung | Tinte | Teinte | 色かぶり | Matiz | 色调 |
 | Pro interface | Pro-Oberfläche | Interfaz Pro | Interface Pro | プロ用インターフェイス | Interface Pro | 专业界面 |
-| Zebra | Zebra | Cebra | Zébra | ゼブラ | Zebra | 斑马纹 |
-| Peaking | Peaking | Peaking | Peaking | ピーキング | Peaking | 峰值对焦 |
-| False color | Falschfarben | Falso color | Fausses couleurs | フォルスカラー | Falsa cor | 伪色 |
 | Guides | Hilfslinien | Guías | Repères | ガイド | Guias | 参考线 |
 | Histogram | Histogramm | Histograma | Histogramme | ヒストグラム | Histograma | 直方图 |
 | Subject (green-screen distance) | Motiv | Sujeto | Sujet | 被写体 | Assunto | 主体 |

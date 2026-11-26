@@ -57,12 +57,8 @@ struct lenslink_ctl_state {
 	char colors[LL_CTL_LIST][LL_CTL_STR];
 	int color_count;
 
-	/* Monitoring tools drawn on the phone (the STATE "monitor" object). */
+	/* Frame guides drawn on the phone (the STATE "monitor" object). */
 	bool has_monitor;
-	bool zebra;
-	int zebra_level;
-	bool peaking;
-	bool false_color;
 	char guide[8];
 };
 

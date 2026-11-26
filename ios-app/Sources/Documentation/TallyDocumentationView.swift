@@ -6,7 +6,7 @@ struct TallyDocumentationView: View {
     var body: some View {
         Form {
             Section {
-                Text("The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it.")
+                Text("The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Settings → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it.")
             } header: {
                 Text("Colored border")
             }

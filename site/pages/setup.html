@@ -75,8 +75,9 @@ script: /js/setup.js
 
       <li data-os="linux">
         <h2>Install the plugin <span class="tag">Linux</span></h2>
-        <pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
-        <p>Flatpak OBS uses <code>~/.var/app/com.obsproject.Studio/config/obs-studio/plugins/</code> instead. For USB, also run <code>flatpak override --user --filesystem=/run/usbmuxd com.obsproject.Studio</code>.</p>
+        <pre><code>mkdir -p ~/.local/share/obs-studio/plugins
+tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.local/share/obs-studio/plugins/</code></pre>
+        <p>OBS 32 or older uses <code>~/.config/obs-studio/plugins/</code>. Flatpak OBS uses <code>~/.var/app/com.obsproject.Studio/data/obs-studio/plugins/</code>. For USB, also run <code>flatpak override --user --filesystem=/run/usbmuxd com.obsproject.Studio</code>.</p>
       </li>
 
       <li>

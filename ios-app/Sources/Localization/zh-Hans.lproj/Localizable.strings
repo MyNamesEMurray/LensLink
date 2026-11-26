@@ -98,9 +98,6 @@
 /* Format row summary: short name of the Apple Log color setting */
 "Log" = "Log";
 
-/* Format row summary: short name of the Maximum quality setting */
-"Max" = "最高";
-
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "启动摄像头";
 
@@ -118,9 +115,6 @@
 
 /* Setup screen toggle: send the mic only as a timing reference for lip-sync */
 "Auto lip-sync reference" = "自动音画同步参考";
-
-/* Setup screen row that opens the Options sheet; the sheet's title; Documentation index row and page title [also used in OptionsView.swift, Documentation/DocumentationView.swift, Documentation/OptionsDocumentationView.swift] */
-"Options" = "选项";
 
 /* Setup screen row that opens the in-app manual; the manual's title [also used in Documentation/DocumentationView.swift] */
 "Documentation" = "文档";
@@ -141,16 +135,13 @@
 "Codec" = "编码格式";
 
 /* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
-"Balanced" = "均衡";
+"Stable" = "稳定";
 
 /* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
 "Maximum" = "最高";
 
-/* Small tag next to a choice that is still in beta */
-"Beta" = "测试版";
-
-/* Format sheet section header: stream quality [also used in Documentation/ConnectingDocumentationView.swift] */
-"Quality" = "画质";
+/* Format sheet section header: stream quality; Pro interface Link readout row label [also used in Documentation/ConnectingDocumentationView.swift, ProHUD.swift] */
+"Bitrate" = "码率";
 
 /* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
 "Standard" = "标准";
@@ -253,7 +244,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**格式**是一行，汇总分辨率、帧率、编码格式和色彩，轻点即可进入选择。分辨率和帧率只提供所选摄像头支持的选项。编码格式和色彩相互制约：HDR 和 Apple Log 仅限 HEVC，因此选择 H.264 会把色彩恢复为“标准”，选择 HDR 或 Log 则会把编码格式切换为 HEVC。";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Quality**, in the Format sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**画质**位于“格式”面板中。**均衡**以普通 Wi-Fi 下也安全的码率推流，只会向下调整。**最高**起点更高，并在连接保持顺畅时不断向上试探（USB 下最高约为均衡码率的六倍，Wi-Fi 下约四倍），一旦出现帧排队或丢帧就立即回退，最终稳定在链路承载能力之下一点。它还会把编码器切换为画质优先的设置；除非允许了系统视频效果，还会使用传感器的完整读出而非像素合并格式推流。数据更多、发热更大；第一次使用时留意“统计”一行。";
+"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**码率**位于“摄像头”面板中。**稳定**以普通 Wi-Fi 下也安全的码率推流，只会向下调整。**最高**起点更高，并在连接保持顺畅时不断向上试探（USB 下最高约为均衡码率的六倍，Wi-Fi 下约四倍），一旦出现帧排队或丢帧就立即回退，最终稳定在链路承载能力之下一点。它还会把编码器切换为画质优先的设置；除非允许了系统视频效果，还会使用传感器的完整读出而非像素合并格式推流。数据更多、发热更大；第一次使用时留意“统计”一行。";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** 以 10 位色彩推流。OBS 会为 SDR 场景做色调映射，HDR 画布则得到真正的 HDR 画面。";
@@ -262,7 +253,7 @@
 "**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT." = "**Apple Log**（Pro 系列 iPhone，iOS 17+）推送用于调色的 10 位平淡画面：在 OBS 中为来源添加**应用 LUT** 滤镜，并载入 Apple Log LUT。";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
-"Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture." = "两者都仅限 HEVC，并在摄像头下次启动时生效。色彩位于“格式”面板中，只提供这台手机能拍摄的选项。";
+"Both are HEVC-only and take effect when the camera next starts. Color lives in the Camera sheet and only offers what this phone can capture." = "两者都仅限 HEVC，并在摄像头下次启动时生效。色彩位于“摄像头”面板中，只提供这台手机能拍摄的选项。";
 
 /* Documentation → Camera & picture, Green screen section (Markdown: keep the ** markers) */
 "**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**绿幕**会在视频离开手机之前保留画面中的你，把其他一切涂成纯绿色；开启后色彩会设为“标准”。OBS 中的 **LensLink Camera** 来源会添加一个调好参数的滤镜来抠除绿色，而且只添加一次，因此你在 OBS 中删除或重新调整它后，更改都会保留。";
@@ -365,7 +356,7 @@
 "Remembered settings" = "记住的设置";
 
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
-"**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60." = "**高帧率**为实验性功能：在摄像头支持时，为“格式”面板增加 120 和 240 fps（较新的 iPhone 上为 1080p 和 720p；240 使用传感器像素合并格式）。推流码率随之增加，手机发热更多、耗电更快，而设为 60 的 OBS 画布最多也只能每隔一帧显示一帧，因此要让画布与之匹配，并尽量使用 USB。关闭后帧率回到 60。";
+"**120 and 240 fps** are experimental and appear in the frame rate list where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with them, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB." = "**120 和 240 fps** 为实验性功能，在摄像头支持时会出现在帧率列表中（较新的 iPhone 上为 1080p 和 720p；240 使用传感器像素合并格式）。推流码率随之增加，手机发热更多、耗电更快，而设为 60 的 OBS 画布最多也只能每隔一帧显示一帧，因此要让画布与之匹配，并尽量使用 USB。";
 
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
 "**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**允许系统视频效果**为实验性功能：允许 iOS 自行降低帧率，控制中心的视频效果（人像、摄影室灯光）可能需要这样做。在摄像头下次启动时生效。";
@@ -374,7 +365,7 @@
 "Experimental" = "实验性";
 
 /* Documentation → Tally light, Colored border section (Markdown: keep the ** markers) */
-"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "推流时直播界面周围的彩色边框。颜色、优先顺序以及按状态单独关闭，都可以在“选项 → Tally 灯”中自定义。颜色旁的波形按钮会让该状态闪烁而非常亮：对于你不必盯着看、却需要注意到的情况，动态更能引起注意。";
+"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Settings → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "推流时直播界面周围的彩色边框。颜色、优先顺序以及按状态单独关闭，都可以在“设置 → Tally 灯”中自定义。颜色旁的波形按钮会让该状态闪烁而非常亮：对于你不必盯着看、却需要注意到的情况，动态更能引起注意。";
 
 /* Documentation section header on the Tally light page */
 "Colored border" = "彩色边框";
@@ -409,13 +400,7 @@
 "Idle view" = "空闲显示";
 
 /* Options toggle */
-"Focus on faces" = "人脸对焦";
-
-/* Options toggle */
 "Remember camera settings" = "记住摄像头设置";
-
-/* Options toggle (experimental 120/240 fps) */
-"High frame rate" = "高帧率";
 
 /* Options toggle (experimental) */
 "Allow system video effects" = "允许系统视频效果";
@@ -602,7 +587,6 @@
 /* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
 "%@, manual" = "%@，手动";
 
-
 /* Live screen chip: exposure */
 "Exposure" = "曝光";
 
@@ -715,19 +699,11 @@
 "Turn on the flashlight" = "打开手电筒";
 "Turn off the flashlight" = "关闭手电筒";
 
-
-
-
-
-
 /* Format sheet menu and Setup: tag under a resolution, frame rate, or the Green screen row where green screen depth assist runs */
 "Depth" = "深度";
 
 /* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
 "Depth at %@ fps" = "深度：%@ fps";
-
-/* Options sheet: header over the experiments and diagnostics */
-"Advanced" = "高级";
 
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "防抖";
@@ -755,9 +731,6 @@
 /* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
 "Timecode" = "时间码";
 
-/* Pro interface menu: the brightness above which zebra stripes are drawn */
-"Zebra level" = "斑马纹阈值";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "更多";
 
@@ -777,7 +750,9 @@
 "Link" = "连接";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"%1$lld fps · %2$lld dropped" = "%1$lld fps · 丢帧 %2$lld";
+"Dropped" = "丢帧";
+"Battery" = "电量";
+"Heat" = "温度";
 
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "麦克风";
@@ -791,17 +766,20 @@
 /* Pro interface: the phone is hot and slowing down */
 "Hot" = "过热";
 
-/* Pro interface tool: stripes over parts of the picture close to clipping */
-"Zebra" = "斑马纹";
-
-/* Pro interface tool: outlines what is in focus */
-"Peaking" = "峰值对焦";
-
-/* Pro interface tool: paints the picture by brightness band */
-"False color" = "伪色";
-
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "参考线";
 
 /* Pro interface guide: rule-of-thirds grid */
 "Grid" = "网格";
+
+/* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
+"Picture" = "画面";
+
+/* Documentation → Getting connected, Bitrate section: the default */
+"**Maximum** is the default. Pick **Stable** if the picture stutters on busy Wi-Fi." = "默认为**最高**。如果在拥挤的 Wi-Fi 上画面卡顿，请选择**稳定**。";
+
+/* Info button and accessibility label beside a setting; %@ is the setting's name */
+"About %@" = "关于%@";
+
+/* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**专业界面**会把直播界面换成为摄像操作员设计的布局：所有数值排成一行，点按的数值用转盘调节，并显示直方图、手机麦克风电平和构图参考线。";

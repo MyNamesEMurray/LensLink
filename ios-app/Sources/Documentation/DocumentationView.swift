@@ -61,7 +61,7 @@ struct DocumentationView: View {
             }
 
             Section {
-                DocumentationLink(L("Options"),
+                DocumentationLink(L("Settings"),
                                   subtitle: L("Streaming behavior and preferences"),
                                   systemImage: "gearshape.fill",
                                   color: Theme.idleGrey) {

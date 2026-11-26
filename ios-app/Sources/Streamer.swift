@@ -142,36 +142,16 @@ final class Streamer: ObservableObject {
     @Published var fps: Int {
         didSet { UserDefaults.standard.set(fps, forKey: "fps") }
     }
-    /// Experimental: offer 120 and 240 fps where the camera has them
-    /// (Options → High frame rate). Off by default because everything
-    /// downstream is sized for 60 — the bitrate budget grows, the phone
-    /// runs hotter, and an OBS canvas at 60 shows every other frame at
-    /// best. Turning it off clamps a high rate back to 60.
-    @Published var highFrameRate: Bool =
-        UserDefaults.standard.object(forKey: "highFrameRate") as? Bool ?? false {
-        didSet {
-            UserDefaults.standard.set(highFrameRate, forKey: "highFrameRate")
-            if !highFrameRate, fps > 60 {
-                fps = 60
-                clampCaptureSettings()
-                if isStreaming {
-                    reconfigureLiveCapture(formatChanged: true)
-                }
-            }
-            capabilityCache = nil
-            scheduleStateSend()
-        }
-    }
     /// The frame rates any picker may offer before the camera's own
-    /// filter: the ordinary set, or the experimental one. 24 (cinema) and
+    /// filter. 120 and 240 appear only where the camera has them. 24 (cinema) and
     /// 25/50 (PAL) are captured natively — the sensor's frame duration is
     /// set to the rate, nothing is dropped or retimed — so they match a
     /// 24 or 25 fps OBS canvas and edit timeline frame for frame.
     var candidateFrameRates: [Int] {
-        highFrameRate ? [24, 25, 30, 50, 60, 120, 240] : [24, 25, 30, 50, 60]
+        [24, 25, 30, 50, 60, 120, 240]
     }
 
-    /// How hard to push the connection (Format → Quality). Balanced is the
+    /// How hard to push the connection (Camera → Bitrate). Balanced is the
     /// table in CameraManager.Resolution.bitrate — sized to be safe on
     /// ordinary Wi-Fi — and the adaptive loop only ever backs off from it.
     /// Maximum starts above it and probes upward while the link stays
@@ -184,16 +164,18 @@ final class Streamer: ObservableObject {
         var id: String { rawValue }
         var displayName: String {
             switch self {
-            case .balanced: return L("Balanced")
+            case .balanced: return L("Stable")
             case .maximum: return L("Maximum")
             }
         }
     }
+    /// Maximum unless the user picks Balanced: the adaptive loop finds
+    /// what the link carries and backs off the moment it congests.
     @Published var quality: StreamQuality =
-        StreamQuality(rawValue: UserDefaults.standard.string(forKey: "streamQuality")
-                      ?? "") ?? .balanced {
+        StreamQuality(rawValue: UserDefaults.standard.string(forKey: Streamer.qualityChoiceKey)
+                      ?? "") ?? .maximum {
         didSet {
-            UserDefaults.standard.set(quality.rawValue, forKey: "streamQuality")
+            UserDefaults.standard.set(quality.rawValue, forKey: Self.qualityChoiceKey)
             updateSensorReadoutPreference()
             // The encoder's settings and the format choice both follow
             // the quality, so a live stream rebuilds like a format change
@@ -207,6 +189,10 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
+
+    // A new key, so every phone starts on the new Maximum default: a
+    // value stored by an earlier build predates it.
+    private static let qualityChoiceKey = "streamQualityChoice"
 
     private func updateSensorReadoutPreference() {
         CameraManager.preferFullSensorReadout =
@@ -656,23 +642,21 @@ final class Streamer: ObservableObject {
         case auto
         case locked
     }
-    /// Faces first while focus is on auto (Options → Focus on faces):
-    /// the camera keeps focus and exposure on the faces it sees. A tap
-    /// point outranks it until the scene changes; a lock ignores it.
-    @Published var faceFocus: Bool =
-        UserDefaults.standard.object(forKey: "faceFocus") as? Bool ?? true {
+    /// Faces first while focus is on auto: the camera keeps focus and
+    /// exposure on the faces it sees. A tap point outranks it until the
+    /// scene changes; a lock ignores it. Always on at launch (no app
+    /// setting); remote surfaces can still turn it off for the session.
+    @Published var faceFocus: Bool = true {
         didSet {
-            UserDefaults.standard.set(faceFocus, forKey: "faceFocus")
             camera.setFaceDrivenFocus(faceFocus)
             scheduleStateSend()
         }
     }
-    /// Options → Natural motion blur, and the Shutter chip's button: the
-    /// 180° rule for auto exposure (`CameraManager.setNaturalBlur`).
-    @Published var naturalBlur: Bool =
-        UserDefaults.standard.object(forKey: "naturalBlur") as? Bool ?? true {
+    /// The 180° rule for auto exposure (`CameraManager.setNaturalBlur`).
+    /// Always on at launch (no app setting); the Shutter chip's button
+    /// and the web panel can still turn it off for the session.
+    @Published var naturalBlur: Bool = true {
         didSet {
-            UserDefaults.standard.set(naturalBlur, forKey: "naturalBlur")
             camera.setNaturalBlur(naturalBlur)
             scheduleStateSend()
         }
@@ -802,11 +786,6 @@ final class Streamer: ObservableObject {
     /// What the phone draws over its own preview (docs/PROTOCOL.md
     /// `monitor`). Never part of the stream; remembered across launches.
     struct MonitorSettings: Codable, Equatable {
-        var zebra = false
-        /// Percent of full scale, 70 to 100.
-        var zebraLevel = 95
-        var peaking = false
-        var falseColor = false
         var guide = Guide.off
     }
 
@@ -845,18 +824,12 @@ final class Streamer: ObservableObject {
         }
     }
 
-    /// Histogram, zebra, peaking, false colour and the mic meter.
+    /// Histogram and the mic meter.
     let scope = MonitorScope()
 
     private func updateScopeTools() {
-        let settings = monitor
         let metering = proInterface
-        scope.updateTools {
-            $0.zebraLevel = settings.zebra ? Double(settings.zebraLevel) / 100 : nil
-            $0.peaking = settings.peaking
-            $0.falseColor = settings.falseColor
-            $0.metering = metering
-        }
+        scope.updateTools { $0.metering = metering }
     }
 
     /// Colour pipelines this phone can stream, for `set_format`'s `color`.
@@ -1255,10 +1228,6 @@ final class Streamer: ObservableObject {
         }
         state["thermal"] = Self.thermalName(ProcessInfo.processInfo.thermalState)
         state["monitor"] = [
-            "zebra": monitor.zebra,
-            "zebraLevel": monitor.zebraLevel,
-            "peaking": monitor.peaking,
-            "falseColor": monitor.falseColor,
             "guide": monitor.guide.rawValue,
         ] as [String: Any]
         if sendMicAudio, audioReference != nil {
@@ -1647,13 +1616,7 @@ final class Streamer: ObservableObject {
         resolution = CameraManager.Resolution(
             rawValue: defaults.string(forKey: "resolution") ?? "") ?? .hd720
         let storedFps = defaults.integer(forKey: "fps")
-        var loadedFps = storedFps > 0 ? storedFps : 30
-        // A high rate outlives its toggle only while the toggle is on.
-        if loadedFps > 60,
-           !(defaults.object(forKey: "highFrameRate") as? Bool ?? false) {
-            loadedFps = 60
-        }
-        fps = loadedFps
+        fps = storedFps > 0 ? storedFps : 30
         let lenses = CameraManager.availableLenses()
         let present = lenses.isEmpty ? [CameraManager.defaultLens] : lenses
         availableLenses = present
@@ -2110,12 +2073,6 @@ final class Streamer: ObservableObject {
             applyRemoteFormat(command)
         case "monitor":
             var next = monitor
-            if let on = command["zebra"] as? Bool { next.zebra = on }
-            if let level = (command["zebraLevel"] as? NSNumber)?.intValue {
-                next.zebraLevel = min(max(level, 70), 100)
-            }
-            if let on = command["peaking"] as? Bool { next.peaking = on }
-            if let on = command["falseColor"] as? Bool { next.falseColor = on }
             if let raw = command["guide"] as? String,
                let guide = Guide(rawValue: raw) { next.guide = guide }
             if next != monitor { monitor = next }

@@ -14,11 +14,9 @@ struct ContentView: View {
     // the form stays compact after the user has read them.
     @AppStorage("showConnectionHelp") private var showConnectionHelp = true
 
-    // The behaviour toggles live in a sheet (OptionsView) so the main
-    // screen stays short — see that file for why. The explanations live
-    // in a second sheet (DocumentationView) so the sections themselves
-    // are pure controls. Format (resolution · frame rate · codec) is a
-    // third sheet behind one row, the Camera app's own pattern.
+    // Two sheets keep the main screen short: Camera (everything that
+    // shapes the picture, behind one summary row) and Settings
+    // (OptionsView: how the app behaves, plus Help and Documentation).
 #if DEBUG
     @State private var showOptions = ScreenshotStage.shot == .options
     @State private var showFormat = ScreenshotStage.shot == .format
@@ -26,7 +24,6 @@ struct ContentView: View {
     @State private var showOptions = false
     @State private var showFormat = false
 #endif
-    @State private var showDocs = false
 
     // Armed standby keeps the phone awake (see Streamer.updateIdleTimer)
     // so remote start stays reachable; this dim overlay is what makes that
@@ -78,18 +75,6 @@ struct ContentView: View {
                 OptionsView()
                     .environmentObject(streamer)
             }
-            .sheet(isPresented: $showDocs) {
-                NavigationView {
-                    DocumentationView()
-                        .toolbar {
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Done") { showDocs = false }
-                            }
-                        }
-                }
-                .navigationViewStyle(.stack)
-                .tint(Theme.accent)
-            }
             .sheet(isPresented: $showFormat) {
                 FormatSheet(availableResolutions: availableResolutions,
                             availableFrameRates: availableFrameRates)
@@ -97,7 +82,6 @@ struct ContentView: View {
             }
             // Opening or closing a sheet is activity too.
             .onChange(of: showOptions) { _ in lastInteraction = Date() }
-            .onChange(of: showDocs) { _ in lastInteraction = Date() }
             .onChange(of: showFormat) { _ in lastInteraction = Date() }
 
             if dimmed {
@@ -118,7 +102,6 @@ struct ContentView: View {
             streamer.clampCaptureSettings()
             refreshCapabilities()
         }
-        .onChange(of: streamer.highFrameRate) { _ in refreshCapabilities() }
         // Any settings change or connection event counts as activity;
         // scrolling alone doesn't, which the long fuse absorbs.
         .onReceive(streamer.objectWillChange) { _ in
@@ -138,7 +121,7 @@ struct ContentView: View {
                 if streamer.awaitingRemoteStart
                     && streamer.idleAppearance == .dim &&
                     !assistive.suspendsIdle &&
-                    !showOptions && !showDocs && !showFormat && !dimmed &&
+                    !showOptions && !showFormat && !dimmed &&
                     Date().timeIntervalSince(lastInteraction) > Self.dimAfterSeconds {
                     dim()
                 } else if !streamer.awaitingRemoteStart && dimmed {
@@ -372,32 +355,21 @@ struct ContentView: View {
 
     // MARK: - Camera
 
+    /// One row for every camera choice: the lens as its title, the
+    /// format (and green screen) under it, the Camera sheet behind it.
+    /// Choices that limit each other (depth and format, reframe and 4K)
+    /// then sit on one screen.
     private var cameraSection: some View {
         Section {
-            Picker(selection: $streamer.selectedLens) {
-                ForEach(streamer.availableLenses) { lens in
-                    Text(lens.displayLabel).tag(lens)
-                }
-            } label: {
-                SettingsRowLabel(L("Camera"), systemImage: "camera.fill",
-                                 color: Theme.connectAmber)
-            }
-
-            // One row for resolution · frame rate · codec, with the
-            // pickers behind it: three rows of pickers said the same
-            // thing three times.
             Button {
                 showFormat = true
             } label: {
                 HStack {
-                    SettingsRowLabel(L("Format"), systemImage: "rectangle.stack",
-                                     color: Theme.accent)
-                        .layoutPriority(1)
+                    SettingsRowLabel(streamer.selectedLens.displayLabel,
+                                     systemImage: "camera.fill",
+                                     color: Theme.connectAmber,
+                                     subtitle: cameraSummary)
                     Spacer()
-                    Text(formatSummary)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
-                        .minimumScaleFactor(0.7)
-                        .foregroundColor(.secondary)
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
                         .foregroundColor(.secondary)
@@ -407,16 +379,6 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
 
-            Toggle(isOn: $streamer.greenScreenEnabled) {
-                SettingsRowLabel(L("Green screen"),
-                                 systemImage: "person.fill.viewfinder",
-                                 color: Theme.liveGreen,
-                                 subtitle: CameraManager.supportsDepth(
-                                    resolution: streamer.resolution,
-                                    fps: Int32(streamer.fps),
-                                    lens: streamer.selectedLens) ? L("Depth") : nil)
-            }
-
             if streamer.cameraPermissionDenied || streamer.micPermissionDenied {
                 Button("Camera access denied — open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -424,7 +386,15 @@ struct ContentView: View {
                     }
                 }
             }
+        } header: {
+            Text("Camera")
         }
+    }
+
+    private var cameraSummary: String {
+        streamer.greenScreenEnabled
+            ? formatSummary + " · " + L("Green screen")
+            : formatSummary
     }
 
     /// "4K · 60 fps · HEVC", plus "· HDR" or "· Log" when the colour
@@ -437,7 +407,7 @@ struct ContentView: View {
         case .hlg: parts.append("HDR")
         case .log: parts.append(L("Log"))
         }
-        if streamer.quality == .maximum { parts.append(L("Max")) }
+        if streamer.quality == .balanced { parts.append(L("Stable")) }
         return parts.joined(separator: " · ")
     }
 
@@ -535,96 +505,29 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Tail (Options / About)
+    // MARK: - Tail
 
-    /// Rows that close the form: the Options sheet (remote start, dim,
-    /// effects, tally, diagnostics — each explained in the Documentation
-    /// sheet, not in a footer here), the Documentation sheet, and the
-    /// links. TestFlight testers otherwise have no pointer to the
-    /// plugin/docs/issues; the version line gives bug reports a build to
-    /// cite.
+    /// The Settings sheet: how the app behaves, plus Help (documentation,
+    /// diagnostics, bug report, the version line).
     private var tailSection: some View {
         Section {
             Button {
                 showOptions = true
             } label: {
-                disclosureRow(L("Options"), systemImage: "gearshape.fill",
-                              color: Theme.idleGrey)
+                HStack {
+                    SettingsRowLabel(L("Settings"), systemImage: "gearshape.fill",
+                                     color: Theme.idleGrey)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(.secondary)
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            Button {
-                showDocs = true
-            } label: {
-                disclosureRow(L("Documentation"), systemImage: "book.fill",
-                              color: Theme.accent)
-            }
-            .buttonStyle(.plain)
-            Link(destination: Self.reportProblemURL) {
-                SettingsRowLabel(L("Report a problem"), systemImage: "ladybug.fill",
-                                 color: Theme.errorRed)
-            }
-            Link(destination: URL(string: "https://github.com/MyNamesEMurray/LensLink")!) {
-                SettingsRowLabel(L("LensLink on GitHub"), systemImage: "link",
-                                 color: Theme.idleGrey)
-            }
-        } footer: {
-            // The one surviving footer: bug reports need a build to cite,
-            // and the version has no control it could live beside.
-            Text(Self.versionLine)
         }
     }
-
-    private func disclosureRow(_ title: String, systemImage: String,
-                               color: Color) -> some View {
-        HStack {
-            SettingsRowLabel(title, systemImage: systemImage, color: color)
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundColor(.secondary)
-                .accessibilityHidden(true)
-        }
-        .contentShape(Rectangle())
-    }
-
-    /// The GitHub bug-report form with the phone-side facts prefilled
-    /// through the form's field ids (template query parameters) — testers
-    /// shouldn't have to transcribe build numbers and device names.
-    private static let reportProblemURL: URL = {
-        var sys = utsname()
-        uname(&sys)
-        let model = withUnsafePointer(to: &sys.machine) {
-            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
-                String(validatingUTF8: $0) ?? "unknown"
-            }
-        }
-        var url = URLComponents(
-            string: "https://github.com/MyNamesEMurray/LensLink/issues/new")!
-        var items = [
-            URLQueryItem(name: "template", value: "bug-report.yml"),
-            URLQueryItem(name: "versions", value:
-                "\(versionLine), \(model), iOS \(UIDevice.current.systemVersion)"),
-        ]
-        // TestFlight builds carry a sandbox receipt and App Store builds a
-        // production one; prefill the install dropdown so reports say
-        // which distribution they came from.
-        if let receipt = Bundle.main.appStoreReceiptURL {
-            if receipt.lastPathComponent == "sandboxReceipt" {
-                items.append(URLQueryItem(name: "install", value: "TestFlight"))
-            } else if FileManager.default.fileExists(atPath: receipt.path) {
-                items.append(URLQueryItem(name: "install", value: "App Store"))
-            }
-        }
-        url.queryItems = items
-        return url.url!
-    }()
-
-    private static let versionLine: String = {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "LensLink v\(version) (\(build))"
-    }()
 }
 
 /// The Settings app's row anatomy: a coloured rounded tile with a white
@@ -636,26 +539,33 @@ struct SettingsRowLabel: View {
     let systemImage: String
     let color: Color
     let subtitle: String?
+    let info: LocalizedStringKey?
 
     init(_ title: String, systemImage: String, color: Color,
-         subtitle: String? = nil) {
+         subtitle: String? = nil, info: LocalizedStringKey? = nil) {
         self.title = title
         self.systemImage = systemImage
         self.color = color
         self.subtitle = subtitle
+        self.info = info
     }
 
     var body: some View {
         Label {
-            if let subtitle = subtitle {
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: Theme.Space.xs + 2) {
+                if let subtitle = subtitle {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                        Text(subtitle)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
                     Text(title)
-                    Text(subtitle)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
                 }
-            } else {
-                Text(title)
+                if let info = info {
+                    InfoButton(title: title, text: info)
+                }
             }
         } icon: {
             Image(systemName: systemImage)
@@ -669,9 +579,11 @@ struct SettingsRowLabel: View {
     }
 }
 
-/// Resolution · frame rate · codec · color behind the Format row. The
-/// lists are the Setup screen's cached capability filters, passed in so
-/// this sheet never runs a format scan of its own.
+/// The Camera sheet behind the Setup screen's camera row: every choice
+/// that shapes the picture, top to bottom in the order they limit each
+/// other — lens, format, green screen, picture processing. The lists
+/// are the Setup screen's cached capability filters, passed in so this
+/// sheet never runs a format scan of its own.
 ///
 /// Codec and Color are drawn as check rows rather than pickers because
 /// the two constrain each other — HDR and Apple Log are HEVC only, green
@@ -689,6 +601,17 @@ private struct FormatSheet: View {
     var body: some View {
         NavigationView {
             Form {
+                Section {
+                    Picker(selection: $streamer.selectedLens) {
+                        ForEach(streamer.availableLenses) { lens in
+                            Text(lens.displayLabel).tag(lens)
+                        }
+                    } label: {
+                        SettingsRowLabel(L("Camera"), systemImage: "camera.fill",
+                                         color: Theme.connectAmber)
+                    }
+                }
+
                 Section {
                     formatMenu("Resolution", value: streamer.resolution.rawValue) {
                         Picker("Resolution", selection: $streamer.resolution) {
@@ -727,16 +650,19 @@ private struct FormatSheet: View {
                 }
 
                 Section {
-                    ChoiceRow(title: L("Balanced"), detail: nil,
+                    ChoiceRow(title: L("Stable"), detail: nil,
                               selected: streamer.quality == .balanced) {
                         streamer.quality = .balanced
                     }
-                    ChoiceRow(title: L("Maximum"), detail: nil, tag: L("Beta"),
+                    ChoiceRow(title: L("Maximum"), detail: nil,
                               selected: streamer.quality == .maximum) {
                         streamer.quality = .maximum
                     }
                 } header: {
-                    Text("Quality")
+                    HStack(spacing: Theme.Space.xs) {
+                        Text("Bitrate")
+                        InfoButton(title: L("Bitrate"), text: SettingInfo.bitrate)
+                    }
                 }
 
                 // Hidden on devices that can't encode Main10 — a choice
@@ -763,8 +689,57 @@ private struct FormatSheet: View {
                         Text("Color")
                     }
                 }
+
+                Section {
+                    Toggle(isOn: $streamer.greenScreenEnabled) {
+                        SettingsRowLabel(L("Green screen"),
+                                         systemImage: "person.fill.viewfinder",
+                                         color: Theme.liveGreen,
+                                         subtitle: CameraManager.supportsDepth(
+                                            resolution: streamer.resolution,
+                                            fps: Int32(streamer.fps),
+                                            lens: streamer.selectedLens) ? L("Depth") : nil,
+                                         info: SettingInfo.greenScreen)
+                    }
+                }
+
+                Section {
+                    Picker(selection: $streamer.stabilization) {
+                        ForEach(Streamer.Stabilization.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    } label: {
+                        SettingsRowLabel(L("Stabilization"),
+                                         systemImage: "waveform.path",
+                                         color: Theme.cameraYellow,
+                                         info: SettingInfo.stabilization)
+                    }
+                    if Streamer.reframeAvailable {
+                        Toggle(isOn: $streamer.reframeHQ) {
+                            SettingsRowLabel(L("High-quality reframe"),
+                                             systemImage: "crop",
+                                             color: Theme.cameraYellow,
+                                             info: SettingInfo.reframe)
+                        }
+                        .disabled(streamer.resolution == .uhd4k)
+                    }
+                    Toggle(isOn: $streamer.allowVideoEffects) {
+                        SettingsRowLabel(L("Allow system video effects"),
+                                         systemImage: "wand.and.stars",
+                                         color: Theme.idleGrey,
+                                         info: SettingInfo.videoEffects)
+                    }
+                    Toggle(isOn: $streamer.rememberCameraSettings) {
+                        SettingsRowLabel(L("Remember camera settings"),
+                                         systemImage: "clock.arrow.circlepath",
+                                         color: Theme.connectAmber,
+                                         info: SettingInfo.remember)
+                    }
+                } header: {
+                    Text("Picture")
+                }
             }
-            .navigationTitle("Format")
+            .navigationTitle("Camera")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

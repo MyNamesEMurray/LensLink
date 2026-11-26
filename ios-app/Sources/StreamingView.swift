@@ -145,7 +145,7 @@ struct StreamingView: View {
 #endif
 
             if !dimmed {
-                MonitorOverlay(scope: streamer.scope)
+                MonitorOverlay()
             }
 
             if streamer.proInterface {
@@ -595,6 +595,12 @@ struct StreamingView: View {
                                      showHealth = on
                                  })) {
                 Label("Stats", systemImage: "gauge")
+            }
+            Button {
+                touched()
+                streamer.proInterface = true
+            } label: {
+                Label(L("Pro interface"), systemImage: "slider.horizontal.3")
             }
             if streamer.idleAppearance != .standard {
                 Button {

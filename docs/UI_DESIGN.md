@@ -87,7 +87,7 @@ amber of Connecting — "linked or ready, not yet live" — and the word
 says which. Arming lasts until **Disarm Remote Start**, a Stop on the
 phone (the Live screen, Siri, `lenslink://stop`), or the app leaving
 the screen; a stop sent from OBS (`stop_stream`) keeps it armed, so
-hide/show in OBS can start and stop the camera repeatedly. **Options →
+hide/show in OBS can start and stop the camera repeatedly. **Settings →
 Arm remote start on open** (off by default) arms it each time the app
 comes on screen, for a phone mounted out of reach.
 
@@ -122,7 +122,7 @@ green before settling on standby.
 ### Tally (screen border)
 
 A border around the whole Live screen, driven by a **user-ordered
-priority list** of statuses (Options → Tally light): the highest status
+priority list** of statuses (Settings → Tally light): the highest status
 in the list that is currently true and has a colour lights the border.
 "Off" removes a status from consideration — lower ones show through.
 
@@ -295,8 +295,8 @@ surfaces.
 |-------------|-------------------------------------------|---------|
 | Zoom        | web: a slider under the lens buttons; app: the lens row | Slider 1×…max, readout in true magnification (`2.4×`, web: `cameraYellow`). On the phone, pinch, or tap the active lens button for the lens row's zoom dial (the Camera app's); the lens buttons (`.5` · `1×` · `2`) switch physical lenses, and a 48 MP Main camera gets a `2` button for its full-detail sensor crop |
 | Exposure    | the **EV** chip (web and app); app also: or a one-finger vertical drag on the picture | Slider −range…+range, readout `±N.N EV`. Drag on the phone: six stops per screen height, readout in `cameraYellow` while the finger is down, inert in manual exposure |
-| Focus       | the **Focus** chip | Lens position 0=near … 1=far. The chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (Options → Focus on faces, default on; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
-| Exposure mode | the **ISO** and **Shutter** chips | Readouts `ISO 200`, `1/125`. Each is on auto or by hand on its own (`isoMode`, `shutterMode` in STATE): dragging ISO fixes ISO and leaves the shutter on auto, and the other way round; tapping the active chip returns that one to auto. Both on auto is iOS's auto exposure; one by hand runs the other from the meter, with EV still working; EV greys out only while both are by hand. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): an automatic shutter stays at 1/(2 × fps) or faster, the 180° rule. Toggled in Options, by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the same button in the web panel's tray; the button dims while the shutter is by hand, where it has nothing to cap |
+| Focus       | the **Focus** chip | Lens position 0=near … 1=far. The chip wears an **A** badge on auto; dragging the dial locks, tapping the active chip again unlocks. Auto is **faces first** (always on at launch, no app setting; `faceFocus` in STATE): the camera tracks faces for focus and exposure, the Camera app's behaviour |
+| Exposure mode | the **ISO** and **Shutter** chips | Readouts `ISO 200`, `1/125`. Each is on auto or by hand on its own (`isoMode`, `shutterMode` in STATE): dragging ISO fixes ISO and leaves the shutter on auto, and the other way round; tapping the active chip returns that one to auto. Both on auto is iOS's auto exposure; one by hand runs the other from the meter, with EV still working; EV greys out only while both are by hand. Hidden if unsupported. **Natural motion blur** (`naturalBlur` in STATE, default on): an automatic shutter stays at 1/(2 × fps) or faster, the 180° rule. Always on at launch (no app setting). Toggled for the session by the Shutter chip's `camera.aperture` button in the tray's bottom row (`glassChipOn` when on), or the same button in the web panel's tray; the button dims while the shutter is by hand, where it has nothing to cap |
 | White balance | the **WB** chip | 2500–8000 K, readout `5600 K`. **Calibrate** (`eyedropper`) locks to white paper at a tapped spot: in the app on the picture, in the web panel on a still of the current shot the plugin grabs for it (keyboard: the centre). Temperature and tint. Hidden if unsupported |
 | Lock | `lock.open` / `lock.fill` / `lock.rectangle.stack.fill` | In the tray's bottom row. Tap = lock or unlock the selected chip's value at what auto is doing right now (ISO and Shutter lock on their own; on EV it locks the pair). Long press (web: Shift-click) = lock every value, or unlock them all when all are locked. `lock.open` while the selected value is on auto, `lock.fill` with `glassChipOn` while it is locked, `lock.rectangle.stack.fill` while every value is. It drives the same STATE fields as the chips |
 | Flashlight  | `bolt.fill` (toggle; hidden on the web, dimmed in the app, if unavailable) | Chip, `glassChipOn` when on. **Always labelled "Flashlight," never "Torch."** (Voice Control also accepts "Torch" as a spoken alias, §8; it is never shown.) In the app, in the tray's bottom row, and on the lens row's left (the **Flashlight dial**, §6). Brightness 1–100 % (`flashlightLevel` in STATE), remembered |
@@ -305,7 +305,7 @@ surfaces.
 | Stop        | `stop.fill`                                | Red chip; the only destructive control |
 | Pause       | `pause.fill` / `play.fill`                 | Amber `glassChipOn` while paused; between the status pill and Stop |
 | Idle (app)  | `moon.fill` (Dim screen) / `eye.slash` (Clean feed) | App-only, an item in the status pill's menu; engages the chosen idle view now instead of waiting out the 10 s fuse. Absent in Standard |
-| Pulse (app) | `waveform.path`                            | App-only, in Options → Tally light: one glyph, `accent` when that status pulses and secondary when steady — the active-chip language, not a swapped icon |
+| Pulse (app) | `waveform.path`                            | App-only, in Settings → Tally light: one glyph, `accent` when that status pulses and secondary when steady — the active-chip language, not a swapped icon |
 | Stats (app) | `gauge`, checked while on                  | App-only, a toggle in the status pill's menu (the menu's own checkmark, so VoiceOver hears the state); shows a health pill (`60 fps · 11.9 Mb/s · 0 dropped`, monospaced) under the status bar |
 | Green screen | `person.fill.viewfinder`                  | **Always "Green screen"** (never "chroma key", "background removal", or "matte" in UI copy). Armed from the Setup screen, or while live by a long press on the app's lens-row button or the web panel's chip. While live **with depth assist**, a subject-distance control appears: the app's **Subject dial** (a tap on the lit button) and a slider row on the web panel. Both run 0.5–5.0 m, then **All** (no cutoff) past the far end; **Auto** (the default) keeps the cutoff about 0.6 m behind the person, and is a second tap on the app's button or a click on the web readout. Readout `1.8 m` (app, the button's A badge marks Auto) / `Auto`, `2.5 m`, `All` (web), monospaced |
 
@@ -382,30 +382,43 @@ Symbol) and a title — top to bottom:
    tap. Below, the Local Network warning when Bonjour
    was denied, and the "How to connect" disclosure with the two setup
    steps — collapsible, and it stays collapsed once read.
-3. **Camera** — **Camera** (the lens picker), **Format** — one row whose
-   value reads `4K · 60 fps · HEVC` (`· HDR` or `· Log` appended when the
-   colour isn't Standard) and opens the Format sheet — and the **Green
-   screen** toggle, whose title gains a gray `Depth` subtitle when the
-   chosen lens and format run depth assist. A contextual "Open Settings" button appears only if
-   a permission was denied.
+3. **Camera** — one row: the lens's name as its title, under it the
+   format (`4K · 60 fps · HEVC`, `· HDR` or `· Log` appended when the
+   colour isn't Standard, `· Max` for Maximum quality, `· Green screen`
+   while it is on). It opens the Camera sheet. A contextual "Open
+   Settings" button appears only if a permission was denied.
 
-   **The Format sheet**: Resolution and Frame rate pickers (each filtered
-   to what the selected lens supports). The rows show only the value
-   (`1080p`, `60 fps`). While green screen is on, the menu items with
+   **The Camera sheet** holds every choice that shapes the picture, in
+   the order they limit each other, so a setting always sits beside
+   what constrains it. **Camera** (the lens picker), then Resolution
+   and Frame rate pickers (each filtered to what the selected lens
+   supports; 120 and 240 fps are listed wherever the camera has them,
+   with no separate switch). The rows show only the value (`1080p`,
+   `60 fps`). While green screen is on, the menu items with
    depth assist carry a tag: the layers icon (`square.3.layers.3d`) and a
    `Depth` subtitle on a frame rate the chosen resolution has depth at, or
    on a resolution with depth at the chosen frame rate; a resolution with
    depth only at other rates gets the subtitle `Depth at 30, 60 fps`
-   and no icon. Then **Quality** (**Balanced** or
-   **Maximum**, the latter with a small accent **Beta** tag and no
-   caption; the Format row's value gains `· Max`), then **Codec** and
-   **Color** as check-row lists rather than pickers, because the two constrain each
+   and no icon. Then **Codec**, **Bitrate** (**Stable** or
+   **Maximum**, no captions; Maximum is the default and the row's
+   summary gains `· Stable` only when Stable is picked; the wire value
+   stays `balanced`) and **Color** as check-row lists rather than pickers, because the two constrain each
    other (HDR and Apple Log are HEVC only; green screen is Standard
    only) and a picker that hides H.264 reads as a bug. Every choice stays
    visible; the captions stay short — HDR and Apple Log read "HEVC only",
    nothing else carries one — and the model does the switching when a
    choice needs it (picking H.264 returns Color to Standard, picking a
    10-bit colour switches the codec to HEVC and turns green screen off).
+   Then the **Green screen** toggle, whose title gains a gray `Depth`
+   subtitle when the chosen lens and format run depth assist.
+   **Picture**: **Stabilization**, **High-quality reframe** (greyed at
+   4K), **Allow system video effects**, **Remember camera settings**
+   (default on; see §6.2.1). No footers: where a row needs explaining, an `info.circle` button
+   beside its title (`InfoButton`, borderless, secondary) opens an alert
+   with the same paragraph its Documentation page shows (`SettingInfo`).
+   Focus on faces and Natural
+   motion blur have no row: both are on at every launch (§5); a tap,
+   a lock or a manual shutter overrides them.
 4. **Start** — three stacked full-width buttons: **Start Camera** in the
    accent, then **Arm Remote Start** (`dot.radiowaves.left.and.right`;
    **Disarm Remote Start** with `xmark.circle` while armed) and **Mirror
@@ -414,12 +427,10 @@ Symbol) and a title — top to bottom:
    won't start a broadcast any other way). A broken broadcast extension
    warns above them.
 5. **Microphone** — see below.
-6. **Tail** — **Options** and **Documentation** rows that present their
-   sheets, **Report a problem**, the GitHub link, and the version line in
-   the footer.
+6. **Tail** — one **Settings** row that presents the Settings sheet.
 
-Long explanations don't belong on this screen: the only footer is the
-version line, so the form stays close to one screenful.
+Long explanations don't belong on this screen: there are no footers,
+so the form stays close to one screenful.
 
 **Microphone module** (between Camera and Screen mirror): **Send phone
 mic to OBS**, then — only while that is on — a **Microphone** picker of
@@ -429,17 +440,16 @@ lives here and not on the Live screen because which mic is a set-once
 decision made before Start; the web panel keeps its own mic row for
 switching mid-stream.
 
-**Options sheet.** The behaviour toggles live in a sheet (`OptionsView`)
-so the main screen stays short, in the same icon-tile rows as Setup.
-Four headed groups, by what each row acts on. **Camera**: **Focus on
-faces** (default on), **Natural motion blur** (default on; §5),
-**Remember camera settings** (default on; see §6.2.1). **Live screen**:
-**Idle view** (Standard / Clean feed / Dim screen) and the pushed screen
-**Tally light** (no row value, except `Off` when no status lights it).
-**Remote start**: **Arm remote start on open** (default off; see §2).
-**Advanced**, the experiments and the diagnostics: **High frame rate**
-(adds 120 / 240 fps to the Format sheet where the camera has them; off
-by default), **Allow system video effects**, **Camera diagnostics**. Pure
+**Settings sheet.** How the app behaves lives in a sheet (`OptionsView`)
+so the main screen stays short, in the same icon-tile rows as Setup;
+nothing that shapes the picture is here (that is the Camera sheet).
+Three headed groups. **Live screen**: **Pro interface** (default off;
+§6.3), **Idle view** (Standard / Clean feed / Dim screen) and the pushed
+screen **Tally light** (no row value, except `Off` when no status lights
+it). **Remote start**: **Arm remote start on open** (default off; see
+§2). **Help**: the pushed **Documentation** and **Camera diagnostics**
+screens, **Report a problem**, the GitHub link, and the version line as
+the sheet's only footer. Pure
 controls, no footers: every explanation lives in the Documentation screen (§3), which
 is also why the pushed screens carry none.
 
@@ -570,9 +580,9 @@ under the lens row; 200 ms):
 
 Set-once choices are not on this screen at all: the microphone picker is
 on Setup (Microphone module), lens defaults come from Setup's Lens
-picker, idle appearance from Options.
+picker, idle appearance from Settings.
 - **Idle view:** what the screen becomes 10 s after the last touch, the
-  user's choice in Options → Idle view. Any tap brings the controls back
+  user's choice in Settings → Idle view. Any tap brings the controls back
   and restarts the fuse.
   - **Standard** — nothing happens; the controls stay up all stream.
   - **Clean feed** — the preview alone: status pill, notice row, lens
@@ -615,44 +625,45 @@ usual reset. The Camera app remembers the same way. Rules:
 - A live lens switch brings back everything but zoom: picking a lens
   means its own 1×, as in the Camera app. Zoom comes back at stream
   start only.
-- **Options → Remember camera settings** (default on) is the whole UI.
+- **Camera → Remember camera settings** (default on) is the whole UI.
   Off forgets what is stored and every camera starts on auto.
 - Phone-local; the same properties the Live screen and `CONTROL` move,
   so the `STATE` snapshot follows for free — no protocol change.
 
 ### 6.2.2 Pro interface
 
-**Options → Live screen → Pro interface** (default off) replaces the
+**Settings → Live screen → Pro interface** (default off) replaces the
 Live screen's controls with an operator layout (`ProHUD.swift`), for
 users who want every number at once. The picture, tally, idle views and
-gestures are unchanged; the standard layout is one menu item away.
+gestures are unchanged. Each layout is one menu item from the other:
+the Pro More menu has Standard interface, and the standard status
+pill's menu has Pro interface.
 
 - **Top bar** (black 60 % glass): status pill, timecode (time since the
   stream went live, `HH:MM:SS:FF` at the stream's fps), the format chip,
-  and a More menu (Pause/Resume, zebra level, Standard interface).
+  and a More menu (Pause/Resume, Standard interface).
 - **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
   Each cell is a label over a monospaced value; auto values show what
   auto is doing with a yellow **A** badge. Shutter is always a fraction
-  (`1/50`). Tapping a cell selects it (accent underline) and opens its
-  dial; tapping it again closes it.
+  (`1/50`). The cells share the width equally, no scrolling; a value
+  that doesn't fit shrinks. Tapping a cell selects it (accent underline)
+  and opens its dial; tapping it again closes it.
 - **Dial**: one row per value, the same stops as the tray, an **Auto**
   chip that hands the value back, and presets where they help (WB light
   sources, Calibrate).
-- **Scopes row**: Histogram (64 luma bins), Link (fps, dropped frames,
-  battery and heat, heat red from serious up), Mic (peak dBFS bar: green,
+- **Scopes row**: Histogram (64 luma bins), Link (one row per stat,
+  label left, monospaced value right: Connection, Bitrate, Frame rate,
+  Dropped, Battery, Heat, heat amber from serious up), Mic (peak dBFS bar: green,
   `#FFD60A` above −12, red above −3).
-- **Tool row**: Zebra, Peaking, False color, Stop, Guides, Flashlight.
-  On = accent fill.
+- **Tool row**: Flip, Guides, Stop, Pause, Flashlight. On = tinted.
 
-Monitoring overlays are drawn on the phone only, never into the stream,
-from a 360 px copy of the frame at most 10 times a second, skipping a
-frame rather than queueing (`MonitorScope.swift`). Zebra is black and
-white diagonal stripes above the zebra level (70–100 %, default 95);
-peaking tints edges `#63D1FF`; false color is grey except purple
-(crushed), blue (two stops under), green (middle grey), pink (skin),
-yellow (bright) and red (clipped). Guides are a thirds grid or 2.39,
-1.85 and 4:3 frame lines. The settings persist and ride STATE as
-`monitor`, so the web panel and source properties show the same state.
+The histogram reads a 360 px copy of the frame at most 10 times a
+second, skipping a frame rather than queueing (`MonitorScope.swift`).
+Guides (a thirds grid or 2.39, 1.85 and 4:3 frame lines) are drawn on
+the phone only, never into the stream. The choice persists and rides
+STATE as `monitor`, so the web panel and source properties show the
+same state. Zebra, peaking and false color were tried in the first
+beta and removed to keep the screen simple.
 
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):
@@ -683,8 +694,8 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    remembered per browser): timecode, a link line (bitrate, latency,
    battery, heat), a histogram computed in the browser from `/api/still`
    every 2 s (skipped while the eyedropper or reframe pad uses it), the
-   phone mic meter (same colours as the app), toggles for Zebra, Peaking
-   and False color with a Guides select, and the focus pull (Set A, Set
+   phone mic meter (same colours as the app), a Guides select, and the
+   focus pull (Set A, Set
    B, Pull over a chosen number of seconds). The tray gains a Tint chip
    and the Format row a Color select. Keyboard shortcuts work whenever
    focus is not in a field, and the Pro section lists them.
@@ -856,7 +867,7 @@ more` and `prefers-reduced-transparency: reduce`.
 
 ### Larger Text
 
-Native forms (Setup, Options, Format, Tally light, Documentation)
+Native forms (Setup, Camera, Settings, Tally light, Documentation)
 follow Dynamic Type all the way. At accessibility sizes the Setup
 card stacks Start or the phone's address under the computer's name
 instead of squeezing both into one row. The Live screen is an overlay

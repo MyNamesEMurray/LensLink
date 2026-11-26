@@ -47,8 +47,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <li>Under the dial: <strong>Calibrate</strong> on WB (click it, then click the white paper in the still of the shot that appears), <strong>Natural motion blur</strong> on Shutter, then <strong>Lock</strong>, which freezes what auto is doing right now (Shift-click locks or unlocks everything), <strong>Flashlight</strong> and <strong>Flip</strong>. See <a href="/docs/camera/#live-camera-controls">Live camera controls</a>.</li>
   <li><strong>Reframe</strong>: digital zoom (1 to 4×) and pan, applied on the phone before encoding. Drag the box on the picture to move the frame (the picture is a still taken at 1×, and refreshes when you return to 1×); click the readout to reset. The <strong>High-quality reframe</strong> button captures at a higher resolution so zoom keeps real detail; it uses more heat and turns green screen off. The window is not saved and resets when the app restarts.</li>
   <li><strong>Format changes mid-stream</strong>: resolution, frame rate, codec, color (SDR, HDR or Log, where the phone offers them), microphone, and <strong>Stabilization</strong> (off while depth assist runs).</li>
-  <li><strong>Pro</strong>, the pill in the header (apps with the Pro interface): a timecode since the stream went live, a link line (bitrate, latency, the phone's battery and heat), a histogram of the picture (from a still every 2 seconds), the phone mic's level, the phone's monitoring tools (<strong>Zebra</strong>, <strong>Peaking</strong>, <strong>False color</strong>, <strong>Guides</strong>), and a <strong>focus pull</strong>: set A, set B, then pull between them over the seconds you pick. The monitoring tools are drawn on the phone's screen only, never into the stream.</li>
-  <li><strong>Keyboard shortcuts</strong>, whenever focus is not in a field: <kbd>Space</kbd> pause, <kbd>1</kbd>–<kbd>9</kbd> lens, <kbd>L</kbd> lock everything, <kbd>A</kbd> everything back to auto, <kbd>Z</kbd> zebra, <kbd>P</kbd> peaking, <kbd>F</kbd> false color, <kbd>G</kbd> next guide, <kbd>[</kbd> <kbd>]</kbd> focus, <kbd>-</kbd> <kbd>+</kbd> EV in third stops.</li>
+  <li><strong>Pro</strong>, the pill in the header (apps with the Pro interface): a timecode since the stream went live, a link line (bitrate, latency, the phone's battery and heat), a histogram of the picture (from a still every 2 seconds), the phone mic's level, the phone's frame <strong>Guides</strong> (drawn on the phone's screen only, never into the stream), and a <strong>focus pull</strong>: set A, set B, then pull between them over the seconds you pick.</li>
+  <li><strong>Keyboard shortcuts</strong>, whenever focus is not in a field: <kbd>Space</kbd> pause, <kbd>1</kbd>–<kbd>9</kbd> lens, <kbd>L</kbd> lock everything, <kbd>A</kbd> everything back to auto, <kbd>G</kbd> next guide, <kbd>[</kbd> <kbd>]</kbd> focus, <kbd>-</kbd> <kbd>+</kbd> EV in third stops.</li>
   <li><strong>Subject distance</strong>, while the green screen runs with depth assist: drag the slider for 0.5–5.0 m, or past 5 m for <strong>All</strong>, and click the readout to go back to <strong>Auto</strong>.</li>
   <li><strong>Start camera</strong> while idle (a reminder to arm the phone instead, when remote start isn't armed), red <strong>Stop camera</strong> while live, each with an <strong>Auto-start</strong> toggle.</li>
   <li><strong>Pause</strong> holds the stream without ending it: the phone stays connected with its camera running, OBS keeps the source and shows a dimmed, blurred still with a pause symbol, and <strong>Resume</strong> picks it straight back up. Audio keeps flowing, so a phone doubling as the microphone doesn't cut out.</li>
@@ -119,7 +119,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
     <tr><td><code>quality</code></td><td><code>"balanced"</code> or <code>"maximum"</code>, as set by <code>set_quality</code>.</td></tr>
     <tr><td><code>hdr</code>, <code>color</code>, <code>colors</code></td><td><code>"hdr": true</code> for HLG, <code>"color": "log"</code> for Apple Log; both absent for standard color. <code>colors</code> lists what <code>set_format</code>'s <code>color</code> accepts on this phone.</td></tr>
     <tr><td><code>battery</code>, <code>thermal</code></td><td>The phone's battery percent, and its heat: <code>"nominal"</code>, <code>"fair"</code>, <code>"serious"</code> or <code>"critical"</code>.</td></tr>
-    <tr><td><code>monitor</code></td><td>The phone's monitoring tools: <code>zebra</code>, <code>zebraLevel</code> (70 to 100), <code>peaking</code>, <code>falseColor</code> and <code>guide</code> (<code>"off"</code>, <code>"grid"</code>, <code>"2.39"</code>, <code>"1.85"</code> or <code>"4:3"</code>).</td></tr>
+    <tr><td><code>monitor</code></td><td>The phone's frame guide: <code>guide</code> (<code>"off"</code>, <code>"grid"</code>, <code>"2.39"</code>, <code>"1.85"</code> or <code>"4:3"</code>).</td></tr>
     <tr><td><code>supportsGreenScreen</code>, <code>greenScreen</code>, <code>greenScreenDepth</code>, <code>greenScreenMaxDistance</code></td><td>Green screen support, whether it is on, whether depth assist is running, and the subject-distance cutoff in meters (<code>-1</code> while it is on Auto).</td></tr>
     <tr><td><code>micEnabled</code>, <code>mic</code>, <code>mics</code></td><td>Present only while the phone mic is the source's audio: the selected mic's id, and every choice as <code>[{"id": "...", "name": "..."}]</code>. Send an <code>id</code> back with the <code>mic</code> command; <code>name</code> is for display.</td></tr>
   </tbody>
@@ -159,7 +159,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 { "cmd": "resume_stream" }
 { "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
 { "cmd": "set_format",    "color": "hlg" }
-{ "cmd": "monitor",       "zebra": true, "zebraLevel": 95, "guide": "2.39" }
+{ "cmd": "monitor",       "guide": "2.39" }
 { "cmd": "set_quality",   "quality": "maximum" }
 { "cmd": "mic",           "id": "builtin:2" }
 { "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
@@ -169,10 +169,10 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <li><code>green_screen</code>'s <code>maxDistance</code> is in meters: <code>0</code> for no cutoff (All), <code>-1</code> for Auto, otherwise 0.5–5.0. Either field can be sent alone.</li>
   <li><code>selectLens</code> switches to the lens whose <code>label</code> matches one in the state's <code>lenses</code>. The phone ignores a label it doesn't have, or a lens that can't do the current resolution and frame rate.</li>
   <li><code>pause_stream</code> and <code>resume_stream</code> are the panel's <strong>Pause</strong> and <strong>Resume</strong>. They need no arming, since they can only hold a stream that is already running; the state's <code>paused</code> follows them.</li>
-  <li><code>set_quality</code> takes <code>"balanced"</code> or <code>"maximum"</code>, the app's Quality setting, and applies to a live stream straight away.</li>
+  <li><code>set_quality</code> takes <code>"balanced"</code> or <code>"maximum"</code>, the app's Bitrate setting, and applies to a live stream straight away.</li>
   <li><code>mic</code> takes an <code>id</code> from the state's <code>mics</code>; a stale id is ignored.</li>
   <li><code>focus</code> with <code>rampSeconds</code> (up to 10) pulls focus smoothly instead of jumping. <code>white_balance</code>'s <code>tint</code> runs from -150 (green) to 150 (magenta).</li>
-  <li><code>monitor</code> turns the phone's zebra, peaking, false color and guides on or off; any subset of its fields can be sent.</li>
+  <li><code>monitor</code> sets the phone's frame guide.</li>
   <li>Camera commands apply only while the phone is streaming; sent while it is idle, they are dropped.</li>
 </ul>
 <table>

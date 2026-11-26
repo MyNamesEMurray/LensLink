@@ -98,9 +98,6 @@
 /* Format row summary: short name of the Apple Log color setting */
 "Log" = "Log";
 
-/* Format row summary: short name of the Maximum quality setting */
-"Max" = "Max";
-
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "Démarrer la caméra";
 
@@ -118,9 +115,6 @@
 
 /* Setup screen toggle: send the mic only as a timing reference for lip-sync */
 "Auto lip-sync reference" = "Référence de synchro labiale auto";
-
-/* Setup screen row that opens the Options sheet; the sheet's title; Documentation index row and page title [also used in OptionsView.swift, Documentation/DocumentationView.swift, Documentation/OptionsDocumentationView.swift] */
-"Options" = "Options";
 
 /* Setup screen row that opens the in-app manual; the manual's title [also used in Documentation/DocumentationView.swift] */
 "Documentation" = "Documentation";
@@ -141,16 +135,13 @@
 "Codec" = "Codec";
 
 /* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
-"Balanced" = "Équilibrée";
+"Stable" = "Stable";
 
 /* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
 "Maximum" = "Maximale";
 
-/* Small tag next to a choice that is still in beta */
-"Beta" = "Bêta";
-
-/* Format sheet section header: stream quality [also used in Documentation/ConnectingDocumentationView.swift] */
-"Quality" = "Qualité";
+/* Format sheet section header: stream quality; Pro interface Link readout row label [also used in Documentation/ConnectingDocumentationView.swift, ProHUD.swift] */
+"Bitrate" = "Débit";
 
 /* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
 "Standard" = "Standard";
@@ -253,7 +244,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**Format** tient en une ligne – résolution, fréquence d’images, codec et couleur – avec les choix derrière. La résolution et la fréquence d’images ne proposent que ce que la caméra choisie prend en charge. Codec et Couleur dépendent l’un de l’autre : HDR et Apple Log sont réservés au HEVC, donc choisir H.264 ramène Couleur sur Standard, et choisir HDR ou Log passe le codec en HEVC.";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Quality**, in the Format sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Qualité**, dans le panneau Format. **Équilibrée** diffuse à un débit sans risque sur un Wi-Fi ordinaire et ne fait que le réduire si besoin. **Maximale** part plus haut et continue de monter tant que la connexion reste propre – jusqu’à environ six fois le débit équilibré en USB, quatre fois en Wi-Fi – puis recule dès que des images s’accumulent ou sont perdues, et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité et, sauf si les effets vidéo du système sont autorisés, diffuse à partir de la lecture complète du capteur plutôt que du format binné. Plus de données et plus de chaleur : surveillez la ligne Statistiques la première fois.";
+"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Débit**, dans le panneau Caméra. **Stable** diffuse à un débit sans risque sur un Wi-Fi ordinaire et ne fait que le réduire si besoin. **Maximale** part plus haut et continue de monter tant que la connexion reste propre – jusqu’à environ six fois le débit équilibré en USB, quatre fois en Wi-Fi – puis recule dès que des images s’accumulent ou sont perdues, et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité et, sauf si les effets vidéo du système sont autorisés, diffuse à partir de la lecture complète du capteur plutôt que du format binné. Plus de données et plus de chaleur : surveillez la ligne Statistiques la première fois.";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** diffuse une couleur 10 bits. OBS applique un mappage tonal pour les scènes SDR, et les canevas HDR en profitent pleinement.";
@@ -262,7 +253,7 @@
 "**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT." = "**Apple Log** (iPhone Pro, iOS 17+) diffuse une image plate en 10 bits destinée à l’étalonnage – ajoutez un filtre **Appliquer un LUT** à la source dans OBS et chargez un LUT Apple Log.";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
-"Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture." = "Les deux sont réservés au HEVC et prennent effet au prochain démarrage de la caméra. Couleur se trouve dans le panneau Format et ne propose que ce que ce téléphone peut capturer.";
+"Both are HEVC-only and take effect when the camera next starts. Color lives in the Camera sheet and only offers what this phone can capture." = "Les deux sont réservés au HEVC et prennent effet au prochain démarrage de la caméra. Couleur se trouve dans le panneau Caméra et ne propose que ce que ce téléphone peut capturer.";
 
 /* Documentation → Camera & picture, Green screen section (Markdown: keep the ** markers) */
 "**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**Écran vert** vous garde dans l’image et peint tout le reste en vert uni avant que la vidéo quitte le téléphone – l’activer règle Couleur sur Standard. La source **LensLink Camera** ajoute dans OBS un filtre déjà réglé qui retire le vert ; il n’est ajouté qu’une fois, donc si vous le supprimez ou le réglez autrement dans OBS, votre choix est conservé.";
@@ -365,7 +356,7 @@
 "Remembered settings" = "Réglages mémorisés";
 
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
-"**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60." = "**Fréquence d’images élevée** (expérimental) ajoute 120 et 240 fps au panneau Format quand cette caméra les propose (1080p et 720p sur les iPhone récents ; 240 utilise un format binné du capteur). Le débit du flux augmente d’autant, le téléphone chauffe davantage et se décharge plus vite, et un canevas OBS réglé sur 60 affiche au mieux une image sur deux – réglez le canevas en conséquence, et privilégiez l’USB. La désactiver ramène la fréquence à 60.";
+"**120 and 240 fps** are experimental and appear in the frame rate list where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with them, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB." = "**120 et 240 fps** sont expérimentaux et figurent dans la liste des fréquences d’images quand cette caméra les propose (1080p et 720p sur les iPhone récents ; 240 utilise un format à binning du capteur). Le débit du flux augmente avec, le téléphone chauffe davantage et se décharge plus vite, et une scène OBS réglée à 60 n’affiche au mieux qu’une image sur deux – réglez la scène en conséquence et préférez l’USB.";
 
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
 "**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**Autoriser les effets vidéo du système** (expérimental) permet à iOS de baisser lui-même la fréquence d’images, ce que les effets vidéo du Centre de contrôle (Portrait, Éclairage de studio) peuvent exiger. S’applique au prochain démarrage de la caméra.";
@@ -374,7 +365,7 @@
 "Experimental" = "Expérimental";
 
 /* Documentation → Tally light, Colored border section (Markdown: keep the ** markers) */
-"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "La bordure colorée autour de l’écran de direct pendant la diffusion. Couleurs, ordre de priorité et désactivation état par état se règlent dans Options → Voyant tally. Le bouton en forme d’onde à côté d’une couleur fait pulser cet état au lieu de le laisser fixe – le mouvement attire l’œil sur ce que vous devez remarquer sans le guetter.";
+"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Settings → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "La bordure colorée autour de l’écran de direct pendant la diffusion. Couleurs, ordre de priorité et désactivation état par état se règlent dans Réglages → Voyant tally. Le bouton en forme d’onde à côté d’une couleur fait pulser cet état au lieu de le laisser fixe – le mouvement attire l’œil sur ce que vous devez remarquer sans le guetter.";
 
 /* Documentation section header on the Tally light page */
 "Colored border" = "Bordure colorée";
@@ -409,13 +400,7 @@
 "Idle view" = "Vue au repos";
 
 /* Options toggle */
-"Focus on faces" = "Mise au point sur les visages";
-
-/* Options toggle */
 "Remember camera settings" = "Mémoriser les réglages de la caméra";
-
-/* Options toggle (experimental 120/240 fps) */
-"High frame rate" = "Fréquence d’images élevée";
 
 /* Options toggle (experimental) */
 "Allow system video effects" = "Autoriser les effets vidéo du système";
@@ -602,7 +587,6 @@
 /* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
 "%@, manual" = "%@, manuel";
 
-
 /* Live screen chip: exposure */
 "Exposure" = "Expo";
 
@@ -715,19 +699,11 @@
 "Turn on the flashlight" = "Allumer la lampe torche";
 "Turn off the flashlight" = "Éteindre la lampe torche";
 
-
-
-
-
-
 /* Format sheet menu and Setup: tag under a resolution, frame rate, or the Green screen row where green screen depth assist runs */
 "Depth" = "Profondeur";
 
 /* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
 "Depth at %@ fps" = "Profondeur à %@ fps";
-
-/* Options sheet: header over the experiments and diagnostics */
-"Advanced" = "Avancé";
 
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "Stabilisation";
@@ -755,9 +731,6 @@
 /* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
 "Timecode" = "Timecode";
 
-/* Pro interface menu: the brightness above which zebra stripes are drawn */
-"Zebra level" = "Seuil du zébra";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "Plus";
 
@@ -777,7 +750,9 @@
 "Link" = "Liaison";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"%1$lld fps · %2$lld dropped" = "%1$lld fps · pertes : %2$lld";
+"Dropped" = "Perdues";
+"Battery" = "Batterie";
+"Heat" = "Chaleur";
 
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "Micro";
@@ -791,17 +766,20 @@
 /* Pro interface: the phone is hot and slowing down */
 "Hot" = "Chaud";
 
-/* Pro interface tool: stripes over parts of the picture close to clipping */
-"Zebra" = "Zébra";
-
-/* Pro interface tool: outlines what is in focus */
-"Peaking" = "Peaking";
-
-/* Pro interface tool: paints the picture by brightness band */
-"False color" = "Fausses couleurs";
-
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "Repères";
 
 /* Pro interface guide: rule-of-thirds grid */
 "Grid" = "Grille";
+
+/* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
+"Picture" = "Image";
+
+/* Documentation → Getting connected, Bitrate section: the default */
+"**Maximum** is the default. Pick **Stable** if the picture stutters on busy Wi-Fi." = "**Maximale** est le réglage par défaut. Choisissez **Stable** si l’image saccade sur un Wi-Fi chargé.";
+
+/* Info button and accessibility label beside a setting; %@ is the setting's name */
+"About %@" = "À propos de %@";
+
+/* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**Interface Pro** remplace l’écran de direct par une disposition pour opérateurs caméra : toutes les valeurs sur une bande, une molette pour celle que vous touchez, un histogramme, le niveau du micro du téléphone et des repères de cadrage.";

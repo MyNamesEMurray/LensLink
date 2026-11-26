@@ -127,11 +127,6 @@ struct ProHUD: View {
                           systemImage: streamer.isPaused ? "play.fill" : "pause.fill")
                 }
             }
-            Picker(L("Zebra level"), selection: zebraLevel) {
-                ForEach([70, 80, 90, 95, 100], id: \.self) { level in
-                    Text(L("%lld%%", level)).tag(level)
-                }
-            }
             Button {
                 streamer.proInterface = false
             } label: {
@@ -144,11 +139,6 @@ struct ProHUD: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(L("More"))
-    }
-
-    private var zebraLevel: Binding<Int> {
-        Binding(get: { streamer.monitor.zebraLevel },
-                set: { streamer.monitor.zebraLevel = $0 })
     }
 
     // MARK: - Value strip
@@ -164,11 +154,9 @@ struct ProHUD: View {
     }
 
     private var strip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Theme.Space.xs) {
-                ForEach(params, id: \.self) { param in
-                    cell(param)
-                }
+        HStack(spacing: 0) {
+            ForEach(params, id: \.self) { param in
+                cell(param)
             }
         }
     }
@@ -184,15 +172,18 @@ struct ProHUD: View {
                     Text(title(param))
                         .font(Self.label)
                         .foregroundColor(Theme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     badge(param)
                 }
                 Text(value(param))
                     .font(Self.mono)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 3)
             .padding(.vertical, 4)
-            .frame(minWidth: 44, minHeight: Theme.controlButton, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: Theme.controlButton, alignment: .leading)
             .background(selected ? Theme.glassChip : Color.clear)
             .overlay(alignment: .bottom) {
                 if selected {
@@ -497,17 +488,18 @@ struct ProHUD: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(L("Link")).font(Self.label).foregroundColor(Theme.textSecondary)
-                Group {
-                    Text(linkLine)
-                    if let health = streamer.health {
-                        Text(L("%1$lld fps · %2$lld dropped", health.fps, health.droppedFrames))
-                    }
-                    Text(deviceLine)
-                        .foregroundColor(thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue
-                                         ? Theme.connectAmber : Theme.textPrimary)
+                linkRow(L("Connection"), streamer.obsTransport == "usb" ? "USB" : "Wi-Fi")
+                if let health = streamer.health {
+                    linkRow(L("Bitrate"), String(format: "%.1f Mb/s", health.megabitsPerSecond))
+                    linkRow(L("Frame rate"), L("%lld fps", health.fps))
+                    linkRow(L("Dropped"), String(health.droppedFrames))
                 }
-                .font(.system(size: 10, design: .monospaced))
-                .lineLimit(1)
+                if let percent = battery.percent {
+                    linkRow(L("Battery"), L("%lld%%", percent))
+                }
+                linkRow(L("Heat"), heat,
+                        tint: thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue
+                            ? Theme.connectAmber : Theme.textPrimary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
@@ -526,33 +518,35 @@ struct ProHUD: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var linkLine: String {
-        let transport = streamer.obsTransport == "usb" ? "USB" : "Wi-Fi"
-        guard let health = streamer.health else { return transport }
-        return String(format: "%@ %.1f Mb/s", transport, health.megabitsPerSecond)
+    private func linkRow(_ name: String, _ value: String,
+                         tint: Color = Theme.textPrimary) -> some View {
+        HStack(spacing: Theme.Space.xs) {
+            Text(name)
+                .font(.system(size: 10))
+                .foregroundColor(Theme.textSecondary)
+            Spacer(minLength: 0)
+            Text(value)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(tint)
+        }
+        .lineLimit(1)
     }
 
-    private var deviceLine: String {
-        let heat: String
+    private var heat: String {
         switch thermal {
-        case .fair: heat = L("Warm")
-        case .serious, .critical: heat = L("Hot")
-        default: heat = L("Cool")
+        case .fair: return L("Warm")
+        case .serious, .critical: return L("Hot")
+        default: return L("Cool")
         }
-        guard let percent = battery.percent else { return heat }
-        return L("%lld%%", percent) + " · " + heat
     }
 
     // MARK: - Tools
 
     private var toolRow: some View {
         HStack(spacing: 0) {
-            tool(L("Zebra"), "line.diagonal", on: streamer.monitor.zebra,
-                 tint: Theme.cameraYellow) { streamer.monitor.zebra.toggle() }
-            tool(L("Peaking"), "viewfinder", on: streamer.monitor.peaking,
-                 tint: Color(red: 0.39, green: 0.82, blue: 1)) { streamer.monitor.peaking.toggle() }
-            tool(L("False color"), "circle.lefthalf.filled", on: streamer.monitor.falseColor,
-                 tint: Theme.tallyPurple) { streamer.monitor.falseColor.toggle() }
+            tool(L("Flip"), "arrow.triangle.2.circlepath.camera", on: false,
+                 tint: Theme.textPrimary) { streamer.flipCamera() }
+            guidesMenu
             Button {
                 streamer.stop()
             } label: {
@@ -566,7 +560,12 @@ struct ProHUD: View {
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
             .accessibilityLabel(L("Stop camera"))
-            guidesMenu
+            tool(streamer.isPaused ? L("Resume") : L("Pause"),
+                 streamer.isPaused ? "play.fill" : "pause.fill",
+                 on: streamer.isPaused, tint: Theme.connectAmber) {
+                streamer.setPaused(!streamer.isPaused, reason: .user)
+            }
+            .disabled(streamer.isPaused && streamer.pauseReason != .user)
             tool(L("Flashlight"), "flashlight.on.fill", on: streamer.flashlightOn,
                  tint: Theme.cameraYellow) { streamer.flashlightOn.toggle() }
                 .disabled(!streamer.camera.hasFlashlight)
@@ -670,39 +669,19 @@ private struct MicMeter: View {
     }
 }
 
-/// Zebra, peaking and false colour over the preview, plus the frame
-/// guides. Drawn in both interfaces: the tools can be switched on from
-/// OBS or the web panel whichever one the phone shows.
+/// The frame guides over the preview. Drawn in both interfaces: they
+/// can be switched on from OBS or the web panel whichever one the phone
+/// shows.
 struct MonitorOverlay: View {
     @EnvironmentObject private var streamer: Streamer
-    @ObservedObject var scope: MonitorScope
 
     var body: some View {
         GeometryReader { proxy in
-            ZStack {
-                if let image = scope.overlay {
-                    Image(decorative: image, scale: 1)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                }
-                guides(in: Self.pictureRect(in: proxy.size))
-            }
-            .onAppear { syncOrientation() }
-            .onChange(of: proxy.size) { _ in syncOrientation() }
-            .onChange(of: streamer.selectedLens) { _ in syncOrientation() }
+            guides(in: Self.pictureRect(in: proxy.size))
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-
-    private func syncOrientation() {
-        let interface = ActiveScreen.scene?.interfaceOrientation ?? .portrait
-        let front = streamer.selectedLens.position == .front
-        scope.updateTools {
-            $0.orientation = MonitorScope.orientation(for: interface, front: front)
-        }
     }
 
     /// Where the 16:9 picture lands in the preview (aspect fit).

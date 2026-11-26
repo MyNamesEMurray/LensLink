@@ -294,7 +294,7 @@ and — per the `systemPressureState` docs — thermal/power mitigation:
 at `.serious` the bitrate is halved, at `.critical` it's quartered and
 the frame rate halves (60→30, 30→15), restored when pressure abates.
 
-**Quality → Maximum** (Format sheet) relaxes three of those on purpose,
+**Bitrate → Maximum** (Camera sheet, the default) relaxes three of those on purpose,
 and only there: speed-over-quality off (1080p and below only; above it
 quality mode costs ~47 ms per frame for no measurable gain, see the
 measured results above), the peak cap at 2×, keyframes
@@ -314,13 +314,13 @@ Deliberate divergences (don't "fix" these without reading this):
   OBS timing, and the lip-sync/latency math; we hold cadence and let the
   image get noisier instead. Two sanctioned exceptions: the thermal
   throttle above, and the opt-in **Allow system video effects** toggle
-  (Options), which leaves the max duration at the format default —
+  (Camera sheet), which leaves the max duration at the format default —
   the Control Center effects appear to require that downward
   flexibility, and the toggle exists to prove or disprove exactly that.
   The thermal path keeps max unlocked too while the toggle is on.
 - **Video stabilization is off by default** (the AVCaptureVideoDataOutput
   default). Every stabilization mode adds frames of latency; this is a
-  latency-first product, so it exists only as the opt-in Options →
+  latency-first product, so it exists only as the opt-in Camera →
   Stabilization (Standard or Cinematic), never switched on by the app.
 - **The wire defaults to 8-bit 4:2:0 video-range** (`420v`). The
   opt-in colour modes switch the camera path to 10-bit end-to-end —

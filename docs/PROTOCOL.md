@@ -156,8 +156,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "resume_stream" }
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
 { "cmd": "set_format", "color": "hlg" }
-{ "cmd": "monitor", "zebra": true, "zebraLevel": 95, "peaking": false,
-  "falseColor": false, "guide": "2.39" }
+{ "cmd": "monitor", "guide": "2.39" }
 { "cmd": "set_quality", "quality": "maximum" }
 { "cmd": "mic", "id": "builtin:2" }
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
@@ -185,14 +184,14 @@ many seconds on an ease-in-out curve instead of jumping: the web panel's
 focus pull from A to B. A new `focus` command cancels a pull in flight.
 Older apps ignore the field and jump.
 
-`monitor` sets the phone's monitoring tools: `zebra` (on/off) with
-`zebraLevel` (70–100, percent of full scale), `peaking`, `falseColor`,
-and `guide` (`"off"`, `"grid"`, or a frame line: `"2.39"`, `"1.85"`,
-`"4:3"`). Any subset may be present. They are drawn on the phone's
-screen only, never into the stream; the command exists so an operator
-at OBS can turn on what the person at the phone needs to see. STATE
-reports them as `monitor`. Older apps ignore it, and remote UIs hide
-the controls while STATE has no `monitor` object.
+`monitor` sets the phone's frame guides: `guide` is `"off"`, `"grid"`,
+or a frame line: `"2.39"`, `"1.85"`, `"4:3"`. They are drawn on the
+phone's screen only, never into the stream; the command exists so an
+operator at OBS can turn on what the person at the phone needs to see.
+STATE reports it as `monitor`. Older apps ignore it, and remote UIs
+hide the control while STATE has no `monitor` object. (Beta builds of
+1.18 also took `zebra`, `zebraLevel`, `peaking` and `falseColor`; those
+tools were removed, and current apps ignore the fields.)
 
 `lock` is the app's tray Lock button: `on: true` freezes what auto is
 doing right now for `target` — `"focus"`, `"whiteBalance"`,
@@ -253,7 +252,7 @@ rate in the next VIDEO_CONFIG. An older app ignores it and sends 60.
 safe on ordinary Wi-Fi, the adaptive loop only backs off from it) or
 `"maximum"` (starts higher and probes upward while the link is clean, to
 a transport-set ceiling, with the encoder's quality-first settings). The
-STATE snapshot reports it as `quality`. A live stream rebuilds its
+STATE snapshot reports it as `quality`. The app defaults to `"maximum"` until the user picks one (in the app or by `set_quality`). A live stream rebuilds its
 encoder on the change, like a format change.
 
 `selectLens` switches to the lens whose `label` matches one of the STATE
@@ -435,9 +434,9 @@ Phones with a 10-bit pipeline list the colour modes they offer in
 `colors` (`["sdr","hlg","log"]`, `log` only where Apple Log exists), for
 `set_format`'s `color`. Every snapshot carries `thermal` (iOS's thermal
 state: `"nominal"`, `"fair"`, `"serious"` or `"critical"`), `battery`
-(percent, absent when iOS doesn't report it) and the monitoring tools:
-`"monitor": { "zebra", "zebraLevel", "peaking", "falseColor", "guide" }`,
-as set by the `monitor` command or on the phone.
+(percent, absent when iOS doesn't report it) and the frame guide:
+`"monitor": { "guide" }`, as set by the `monitor` command or on the
+phone.
 
 Pause rides the snapshot too, so surfaces can say *why* a picture is
 held rather than only show it: `"paused": true` while video is held, with

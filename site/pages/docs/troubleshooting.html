@@ -5,7 +5,7 @@ description: Symptom-by-symptom fixes for LensLink — the plugin not loading, U
 <p class="lede">
   Find your symptom. Two attachments make almost any report solvable: the OBS
   log (<strong>Help → Log Files → View Current Log</strong>) and
-  <strong>Options → Camera diagnostics</strong> from the app.
+  <strong>Settings → Camera diagnostics</strong> from the app.
 </p>
 
 <h2>The sources do not appear in OBS</h2>
@@ -72,9 +72,9 @@ data\obs-plugins\ios-camera-source\</code></pre>
   none.
 </p>
 <ul>
-  <li><strong>Options → Camera diagnostics</strong> shows what your device offers, per camera and format.</li>
+  <li><strong>Settings → Camera diagnostics</strong> shows what your device offers, per camera and format.</li>
   <li>LensLink already picks an effect-capable format when your settings allow one.</li>
-  <li>A toggle that greys out means the frame rate is too high: drop it, and turn on <strong>Options → Allow system video effects</strong>.</li>
+  <li>A toggle that greys out means the frame rate is too high: drop it, and turn on <strong>Camera → Allow system video effects</strong>.</li>
   <li>Before 1.8.1 the panel never appeared at all — iOS populates it only for apps that declare each effect in <code>Info.plist</code>, which LensLink now does.</li>
 </ul>
 <p>
@@ -114,7 +114,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
   <strong>Natural motion blur</strong> is on by default: auto exposure keeps the
   shutter at half the frame interval or faster (1/60 at 30 fps) and raises ISO
   instead, and high ISO means grain. More light is the real fix. Turning it off
-  in <strong>Options</strong>, on the tray's Shutter chip or in the browser
+  on the tray's Shutter chip or in the browser
   panel lets the shutter stay open longer, which trades the grain for smeared
   motion.
 </p>
@@ -204,7 +204,7 @@ data\obs-plugins\ios-camera-source\</code></pre>
   carries it.
 </p>
 <p>
-  Worth adding: <strong>Options → Camera diagnostics</strong> from the app, and
+  Worth adding: <strong>Settings → Camera diagnostics</strong> from the app, and
   the OBS log with <strong>Verbose diagnostics</strong> on while you reproduce
   the problem once.
 </p>
