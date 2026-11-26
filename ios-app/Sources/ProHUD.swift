@@ -58,7 +58,12 @@ struct ProHUD: View {
         .foregroundColor(Theme.textPrimary)
         .task {
             while !Task.isCancelled {
-                live = streamer.camera.liveValues
+                // Device reads on the session queue: on the main thread
+                // they wait on the capture pipeline, worst at high fps.
+                let camera = streamer.camera
+                live = await withCheckedContinuation { done in
+                    camera.sessionQueue.async { done.resume(returning: camera.liveValues) }
+                }
                 try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
@@ -285,31 +290,45 @@ struct ProHUD: View {
         lockTarget(param).map { !streamer.isLocked($0) }
     }
 
+    /// What each value is right now: auto's live reading while on auto,
+    /// the set value otherwise. Boxes and dials both show this.
+    private var shownShutter: Double {
+        isAuto(.shutter) == true ? live?.shutterSeconds ?? streamer.shutterSeconds
+                                 : streamer.shutterSeconds
+    }
+    private var shownISO: Float {
+        isAuto(.iso) == true ? live?.iso ?? streamer.iso : streamer.iso
+    }
+    private var shownTemperature: Float {
+        isAuto(.whiteBalance) == true ? live?.temperature ?? streamer.whiteBalanceTemperature
+                                      : streamer.whiteBalanceTemperature
+    }
+    private var shownTint: Float {
+        isAuto(.tint) == true ? live?.tint ?? 0 : streamer.whiteBalanceTint
+    }
+    private var shownFocus: Float {
+        isAuto(.focus) == true ? live?.lensPosition ?? streamer.lensPosition
+                               : streamer.lensPosition
+    }
+
     private func value(_ param: Param) -> String {
-        let auto = isAuto(param) == true
         switch param {
         case .lens:
             return Self.factorLabel(lensFactor * Double(streamer.zoom)) + "×"
         case .fps:
             return "\(streamer.fps)"
         case .shutter:
-            return Self.shutterLabel(auto ? live?.shutterSeconds ?? streamer.shutterSeconds
-                                          : streamer.shutterSeconds)
+            return Self.shutterLabel(shownShutter)
         case .iso:
-            return "\(Int((auto ? live?.iso ?? streamer.iso : streamer.iso).rounded()))"
+            return "\(Int(shownISO.rounded()))"
         case .whiteBalance:
-            let kelvin = auto ? live?.temperature ?? streamer.whiteBalanceTemperature
-                              : streamer.whiteBalanceTemperature
-            return "\(Int((kelvin / 10).rounded()) * 10)K"
+            return "\(Int((shownTemperature / 10).rounded()) * 10)K"
         case .tint:
-            let tint = auto ? live?.tint ?? 0 : streamer.whiteBalanceTint
-            return String(format: "%+.0f", tint)
+            return String(format: "%+.0f", shownTint)
         case .exposure:
             return String(format: "%+.1f", streamer.exposureBias)
         case .focus:
-            let position = auto ? live?.lensPosition ?? streamer.lensPosition
-                                : streamer.lensPosition
-            return String(format: "%.2f", position)
+            return String(format: "%.2f", shownFocus)
         }
     }
 
@@ -390,7 +409,7 @@ struct ProHUD: View {
         case .shutter:
             let stops = shutterStops
             Slider(value: Binding(
-                get: { Double(Self.nearest(stops, streamer.shutterSeconds)) },
+                get: { Double(Self.nearest(stops, shownShutter)) },
                 set: { index in
                     touched()
                     // A drag reports every move: write only a new stop, or
@@ -406,7 +425,7 @@ struct ProHUD: View {
         case .iso:
             let range = streamer.camera.isoRange
             Slider(value: Binding(
-                get: { log2(Double(streamer.iso)) },
+                get: { log2(Double(shownISO)) },
                 set: { stop in
                     touched()
                     streamer.setLocked(.iso, true)
@@ -417,14 +436,14 @@ struct ProHUD: View {
                 .accessibilityValue(Text(verbatim: value(.iso)))
         case .whiteBalance:
             Slider(value: Binding(
-                get: { Double(streamer.whiteBalanceTemperature) },
+                get: { Double(shownTemperature) },
                 set: { lockWhiteBalance(temperature: Float($0)) }),
                    in: 2500...8000, step: 50)
                 .accessibilityLabel(L("WB"))
                 .accessibilityValue(Text(verbatim: value(.whiteBalance)))
         case .tint:
             Slider(value: Binding(
-                get: { Double(streamer.whiteBalanceTint) },
+                get: { Double(shownTint) },
                 set: { tint in
                     lockWhiteBalance(temperature: streamer.whiteBalanceSetting == .locked
                         ? streamer.whiteBalanceTemperature
@@ -444,7 +463,7 @@ struct ProHUD: View {
                 .disabled(streamer.exposureSetting == .manual)
         case .focus:
             Slider(value: Binding(
-                get: { Double(streamer.lensPosition) },
+                get: { Double(shownFocus) },
                 set: { position in
                     touched()
                     if streamer.focusSetting != .locked { streamer.focusSetting = .locked }
