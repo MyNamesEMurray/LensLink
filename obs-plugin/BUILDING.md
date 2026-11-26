@@ -20,11 +20,14 @@ If OBS was installed from the distro repos, you may need
 Alternatively install per-user by copying manually:
 
 ```bash
-mkdir -p ~/.config/obs-studio/plugins/ios-camera-source/bin/64bit \
-         ~/.config/obs-studio/plugins/ios-camera-source/data
-cp build/ios-camera-source.so ~/.config/obs-studio/plugins/ios-camera-source/bin/64bit/
-cp -r data/* ~/.config/obs-studio/plugins/ios-camera-source/data/
+mkdir -p ~/.local/share/obs-studio/plugins/lenslink/data
+cp build/lenslink.so ~/.local/share/obs-studio/plugins/lenslink/
+cp -r data/* ~/.local/share/obs-studio/plugins/lenslink/data/
 ```
+
+That is the OBS 33+ layout. OBS 32 and older only load
+`~/.config/obs-studio/plugins/lenslink/bin/64bit/lenslink.so` (with `data/`
+beside `bin/`); OBS 33 still loads that path but marks the plugin Legacy.
 
 ## macOS
 
@@ -39,13 +42,17 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release \
 cmake --build build
 ```
 
-Then copy into the app bundle / user plugin dir:
+Then wrap it in a `.plugin` bundle in the user plugin dir (the only
+layout Apple Silicon OBS loads; the release packaging in
+`.github/actions/plugin-macos` does the same):
 
 ```bash
-mkdir -p ~/Library/Application\ Support/obs-studio/plugins/ios-camera-source/bin
-cp build/ios-camera-source.so ~/Library/Application\ Support/obs-studio/plugins/ios-camera-source/bin/
-mkdir -p ~/Library/Application\ Support/obs-studio/plugins/ios-camera-source/data
-cp -r data/* ~/Library/Application\ Support/obs-studio/plugins/ios-camera-source/data/
+p=~/Library/Application\ Support/obs-studio/plugins/lenslink.plugin/Contents
+mkdir -p "$p/MacOS" "$p/Resources"
+cp build/lenslink.so "$p/MacOS/lenslink"
+sed "s/@VERSION@/0.0.0/" ../installer/macos/Info.plist > "$p/Info.plist"
+cp -R data/ "$p/Resources/"
+codesign --force --sign - --deep "$p/.."
 ```
 
 ## Windows
@@ -62,9 +69,12 @@ cmake -B build -G "Visual Studio 17 2022" -A x64 `
 cmake --build build --config Release
 ```
 
-Copy `build\Release\ios-camera-source.dll` to
-`C:\Program Files\obs-studio\obs-plugins\64bit\` and the `data\` folder to
-`C:\Program Files\obs-studio\data\obs-plugins\ios-camera-source\`.
+Copy `build\Release\lenslink.dll` to
+`C:\ProgramData\obs-studio\plugins\lenslink\` and the `data\` folder to
+`C:\ProgramData\obs-studio\plugins\lenslink\data\` (OBS 33+). OBS 32 needs
+the DLL in `C:\ProgramData\obs-studio\plugins\lenslink\bin\64bit\` too.
+`C:\Program Files\obs-studio\obs-plugins\64bit\` is Legacy in OBS 33 and
+stops loading in OBS 34.
 
 ## Unit tests
 

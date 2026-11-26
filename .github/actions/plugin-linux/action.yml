@@ -95,10 +95,15 @@ runs:
           exit 1
         fi
 
-    - name: Package (extract into ~/.config/obs-studio/plugins)
+    # OBS 33+ loads ~/.local/share/obs-studio/plugins/lenslink/lenslink.so;
+    # OBS 32 only looks in ~/.config/obs-studio/plugins/lenslink/bin/64bit/
+    # (Legacy in 33, dropped later). Both share data/, so one tarball works
+    # extracted into either folder.
+    - name: Package (extract into ~/.local/share/obs-studio/plugins)
       shell: bash
       run: |
         mkdir -p stage/lenslink/bin/64bit stage/lenslink/data
+        cp obs-plugin/build/lenslink.so stage/lenslink/
         cp obs-plugin/build/lenslink.so stage/lenslink/bin/64bit/
         cp -r obs-plugin/data/* stage/lenslink/data/
         tar czf lenslink-linux-x86_64.tar.gz -C stage lenslink
