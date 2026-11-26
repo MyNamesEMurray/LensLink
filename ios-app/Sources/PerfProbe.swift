@@ -1,4 +1,5 @@
 import SwiftUI
+import Darwin
 
 /// TestFlight-only performance probe (Settings → Help → Performance
 /// debug): switches that turn parts of the Live screen off, and a log of
@@ -86,6 +87,12 @@ final class PerfProbe: ObservableObject, @unchecked Sendable {
     func startWatchdog() {
         guard Self.available, !watching else { return }
         watching = true
+        mainThread = pthread_self()
+        _ = sampleFrames
+        signal(SIGUSR2) { _ in
+            sampleCount = backtrace(sampleFrames, 64)
+            sampleReady = 1
+        }
         log("probe started: \(Self.device), iOS \(UIDevice.current.systemVersion)")
         let thread = Thread { [weak self] in
             var lastReport = CACurrentMediaTime()
@@ -95,7 +102,20 @@ final class PerfProbe: ObservableObject, @unchecked Sendable {
                 DispatchQueue.main.async { answered.signal() }
                 if answered.wait(timeout: .now() + 0.2) == .timedOut {
                     self.log("HANG main thread not answering")
-                    answered.wait()
+                    var samples = 0
+                    var previous: [String] = []
+                    repeat {
+                        if samples < 6 {
+                            samples += 1
+                            let stack = self.sampleMain()
+                            if stack == previous {
+                                self.log("HANG sample \(samples): same stack")
+                            } else {
+                                self.log("HANG sample \(samples):\n" + stack.joined(separator: "\n"))
+                                previous = stack
+                            }
+                        }
+                    } while answered.wait(timeout: .now() + 1) == .timedOut
                     let ms = (CACurrentMediaTime() - sent) * 1000
                     self.log(String(format: "HANG ended after %.0f ms", ms))
                 }
@@ -118,6 +138,25 @@ final class PerfProbe: ObservableObject, @unchecked Sendable {
     }
 
     private var watching = false
+    private var mainThread: pthread_t?
+
+    /// The main thread's call stack right now: SIGUSR2 makes main run
+    /// backtrace() in its handler. Watchdog thread only.
+    private func sampleMain() -> [String] {
+        guard let main = mainThread else { return [] }
+        sampleReady = 0
+        pthread_kill(main, SIGUSR2)
+        let deadline = CACurrentMediaTime() + 0.5
+        while sampleReady == 0, CACurrentMediaTime() < deadline { usleep(1000) }
+        guard sampleReady == 1, sampleCount > 0,
+              let symbols = backtrace_symbols(sampleFrames, sampleCount) else {
+            return ["  (no sample)"]
+        }
+        defer { free(symbols) }
+        return (0..<Int(sampleCount)).dropFirst(2).prefix(40).map {
+            "  " + (symbols[$0].map { String(cString: $0) } ?? "?")
+        }
+    }
 
     private static let device: String = {
         var sys = utsname()
@@ -174,3 +213,9 @@ struct PerfProbeView: View {
         }
     }
 }
+
+/// Written by the SIGUSR2 handler, so plain globals set up before the
+/// handler is installed.
+private let sampleFrames = UnsafeMutablePointer<UnsafeMutableRawPointer?>.allocate(capacity: 64)
+private var sampleCount: Int32 = 0
+private var sampleReady: Int32 = 0
