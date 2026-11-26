@@ -149,9 +149,6 @@
 /* Format sheet: HDR color choice */
 "HDR (HLG)" = "HDR (HLG)";
 
-/* Format sheet: note under a color choice that needs the HEVC codec */
-"HEVC only" = "HEVC only";
-
 /* Format sheet: Apple Log color choice (Apple's name for its log profile) */
 "Apple Log" = "Apple Log";
 

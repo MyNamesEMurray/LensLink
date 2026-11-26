@@ -675,12 +675,12 @@ private struct FormatSheet: View {
                                   selected: streamer.colorSetting == .sdr) {
                             streamer.colorSetting = .sdr
                         }
-                        ChoiceRow(title: L("HDR (HLG)"), detail: L("HEVC only"),
+                        ChoiceRow(title: L("HDR (HLG)"), detail: nil,
                                   selected: streamer.colorSetting == .hlg) {
                             streamer.colorSetting = .hlg
                         }
                         if CameraManager.appleLogCaptureAvailable {
-                            ChoiceRow(title: L("Apple Log"), detail: L("HEVC only"),
+                            ChoiceRow(title: L("Apple Log"), detail: nil,
                                       selected: streamer.colorSetting == .log) {
                                 streamer.colorSetting = .log
                             }
@@ -695,10 +695,6 @@ private struct FormatSheet: View {
                         SettingsRowLabel(L("Green screen"),
                                          systemImage: "person.fill.viewfinder",
                                          color: Theme.liveGreen,
-                                         subtitle: CameraManager.supportsDepth(
-                                            resolution: streamer.resolution,
-                                            fps: Int32(streamer.fps),
-                                            lens: streamer.selectedLens) ? L("Depth") : nil,
                                          info: SettingInfo.greenScreen)
                     }
                 }
