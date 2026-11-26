@@ -98,9 +98,6 @@
 /* Format row summary: short name of the Apple Log color setting */
 "Log" = "Log";
 
-/* Format row summary: short name of the Maximum quality setting */
-"Max" = "Máx.";
-
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "Iniciar câmera";
 
@@ -143,11 +140,8 @@
 /* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
 "Maximum" = "Máxima";
 
-/* Small tag next to a choice that is still in beta */
-"Beta" = "Beta";
-
 /* Format sheet section header: stream quality [also used in Documentation/ConnectingDocumentationView.swift] */
-"Quality" = "Qualidade";
+"Bitrate" = "Taxa de bits";
 
 /* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
 "Standard" = "Padrão";
@@ -250,7 +244,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**Formato** é uma única linha (resolução, taxa de quadros, codec e cor) com as opções por trás dela. Resolução e taxa de quadros só oferecem o que a câmera escolhida suporta. Codec e Cor se limitam mutuamente: HDR e Apple Log são somente HEVC, então escolher H.264 volta a Cor para Padrão, e escolher HDR ou Log muda o codec para HEVC.";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Quality**, in the Camera sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Qualidade**, na janela Câmera. **Equilibrada** transmite com uma taxa de bits segura em um Wi-Fi comum e só reduz a partir dela. **Máxima** começa mais alto e continua testando taxas maiores enquanto a conexão se mantém limpa (até cerca de seis vezes a taxa equilibrada por USB, quatro por Wi-Fi), recuando no instante em que quadros se acumulam ou são perdidos e se estabilizando logo abaixo do que o link aguenta. Ela também passa o codificador para ajustes que priorizam a qualidade e, a menos que os efeitos de vídeo do sistema estejam permitidos, transmite a leitura completa do sensor em vez do formato com binning. Mais dados e mais calor; acompanhe a linha de Estatísticas na primeira vez.";
+"**Bitrate**, in the Camera sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Taxa de bits**, na janela Câmera. **Equilibrada** transmite com uma taxa de bits segura em um Wi-Fi comum e só reduz a partir dela. **Máxima** começa mais alto e continua testando taxas maiores enquanto a conexão se mantém limpa (até cerca de seis vezes a taxa equilibrada por USB, quatro por Wi-Fi), recuando no instante em que quadros se acumulam ou são perdidos e se estabilizando logo abaixo do que o link aguenta. Ela também passa o codificador para ajustes que priorizam a qualidade e, a menos que os efeitos de vídeo do sistema estejam permitidos, transmite a leitura completa do sensor em vez do formato com binning. Mais dados e mais calor; acompanhe a linha de Estatísticas na primeira vez.";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** transmite cor de 10 bits. O OBS faz o mapeamento de tons para cenas SDR, e um canvas HDR recebe a imagem real.";
@@ -791,6 +785,5 @@
 /* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "Imagem";
 
-
-/* Documentation → Getting connected, Quality section: the default before the user picks */
-"Until you pick one, the app uses Maximum over USB and Balanced over Wi-Fi." = "Até você escolher, o app usa Máxima por USB e Equilibrada por Wi-Fi.";
+/* Documentation → Getting connected, Bitrate section: the default */
+"**Maximum** is the default. Pick **Balanced** if the picture stutters on busy Wi-Fi." = "**Máxima** é o padrão. Escolha **Equilibrada** se a imagem travar em um Wi-Fi congestionado.";

@@ -294,7 +294,7 @@ and — per the `systemPressureState` docs — thermal/power mitigation:
 at `.serious` the bitrate is halved, at `.critical` it's quartered and
 the frame rate halves (60→30, 30→15), restored when pressure abates.
 
-**Quality → Maximum** (Camera sheet) relaxes three of those on purpose,
+**Bitrate → Maximum** (Camera sheet, the default) relaxes three of those on purpose,
 and only there: speed-over-quality off (1080p and below only; above it
 quality mode costs ~47 ms per frame for no measurable gain, see the
 measured results above), the peak cap at 2×, keyframes

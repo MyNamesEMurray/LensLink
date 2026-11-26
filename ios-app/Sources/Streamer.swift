@@ -151,7 +151,7 @@ final class Streamer: ObservableObject {
         [24, 25, 30, 50, 60, 120, 240]
     }
 
-    /// How hard to push the connection (Format → Quality). Balanced is the
+    /// How hard to push the connection (Camera → Bitrate). Balanced is the
     /// table in CameraManager.Resolution.bitrate — sized to be safe on
     /// ordinary Wi-Fi — and the adaptive loop only ever backs off from it.
     /// Maximum starts above it and probes upward while the link stays
@@ -169,15 +169,13 @@ final class Streamer: ObservableObject {
             }
         }
     }
-    /// Until the user picks one, the quality follows the transport:
-    /// Maximum over USB (bandwidth to spare), Balanced over Wi-Fi.
+    /// Maximum unless the user picks Balanced: the adaptive loop finds
+    /// what the link carries and backs off the moment it congests.
     @Published var quality: StreamQuality =
         StreamQuality(rawValue: UserDefaults.standard.string(forKey: Streamer.qualityChoiceKey)
-                      ?? "") ?? .balanced {
+                      ?? "") ?? .maximum {
         didSet {
-            if !applyingTransportQuality {
-                UserDefaults.standard.set(quality.rawValue, forKey: Self.qualityChoiceKey)
-            }
+            UserDefaults.standard.set(quality.rawValue, forKey: Self.qualityChoiceKey)
             updateSensorReadoutPreference()
             // The encoder's settings and the format choice both follow
             // the quality, so a live stream rebuilds like a format change
@@ -192,20 +190,9 @@ final class Streamer: ObservableObject {
         }
     }
 
-    // A new key, so every phone starts on the transport default: a value
-    // stored by an earlier build predates USB defaulting to Maximum.
+    // A new key, so every phone starts on the new Maximum default: a
+    // value stored by an earlier build predates it.
     private static let qualityChoiceKey = "streamQualityChoice"
-    private var applyingTransportQuality = false
-
-    private func applyTransportDefaultQuality() {
-        guard let transport = obsTransport,
-              UserDefaults.standard.string(forKey: Self.qualityChoiceKey) == nil else { return }
-        let target: StreamQuality = transport == "usb" ? .maximum : .balanced
-        guard quality != target else { return }
-        applyingTransportQuality = true
-        quality = target
-        applyingTransportQuality = false
-    }
 
     private func updateSensorReadoutPreference() {
         CameraManager.preferFullSensorReadout =
@@ -1449,9 +1436,7 @@ final class Streamer: ObservableObject {
     /// connection, so a stale name never outlives the OBS it named.
     @Published private(set) var obsHost: String?
     @Published private(set) var obsVersion: String?
-    @Published private(set) var obsTransport: String? {
-        didSet { applyTransportDefaultQuality() }
-    }
+    @Published private(set) var obsTransport: String?
     @Published private(set) var syncState: SyncState = .off {
         didSet { noteFeedbackChange(sync: oldValue) }
     }

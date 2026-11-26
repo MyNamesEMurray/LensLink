@@ -407,7 +407,7 @@ struct ContentView: View {
         case .hlg: parts.append("HDR")
         case .log: parts.append(L("Log"))
         }
-        if streamer.quality == .maximum { parts.append(L("Max")) }
+        if streamer.quality == .balanced { parts.append(L("Balanced")) }
         return parts.joined(separator: " · ")
     }
 
@@ -647,12 +647,12 @@ private struct FormatSheet: View {
                               selected: streamer.quality == .balanced) {
                         streamer.quality = .balanced
                     }
-                    ChoiceRow(title: L("Maximum"), detail: nil, tag: L("Beta"),
+                    ChoiceRow(title: L("Maximum"), detail: nil,
                               selected: streamer.quality == .maximum) {
                         streamer.quality = .maximum
                     }
                 } header: {
-                    Text("Quality")
+                    Text("Bitrate")
                 }
 
                 // Hidden on devices that can't encode Main10 — a choice

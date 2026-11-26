@@ -98,9 +98,6 @@
 /* Format row summary: short name of the Apple Log color setting */
 "Log" = "Log";
 
-/* Format row summary: short name of the Maximum quality setting */
-"Max" = "最高";
-
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "启动摄像头";
 
@@ -143,11 +140,8 @@
 /* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
 "Maximum" = "最高";
 
-/* Small tag next to a choice that is still in beta */
-"Beta" = "测试版";
-
 /* Format sheet section header: stream quality [also used in Documentation/ConnectingDocumentationView.swift] */
-"Quality" = "画质";
+"Bitrate" = "码率";
 
 /* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
 "Standard" = "标准";
@@ -250,7 +244,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**格式**是一行，汇总分辨率、帧率、编码格式和色彩，轻点即可进入选择。分辨率和帧率只提供所选摄像头支持的选项。编码格式和色彩相互制约：HDR 和 Apple Log 仅限 HEVC，因此选择 H.264 会把色彩恢复为“标准”，选择 HDR 或 Log 则会把编码格式切换为 HEVC。";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Quality**, in the Camera sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**画质**位于“摄像头”面板中。**均衡**以普通 Wi-Fi 下也安全的码率推流，只会向下调整。**最高**起点更高，并在连接保持顺畅时不断向上试探（USB 下最高约为均衡码率的六倍，Wi-Fi 下约四倍），一旦出现帧排队或丢帧就立即回退，最终稳定在链路承载能力之下一点。它还会把编码器切换为画质优先的设置；除非允许了系统视频效果，还会使用传感器的完整读出而非像素合并格式推流。数据更多、发热更大；第一次使用时留意“统计”一行。";
+"**Bitrate**, in the Camera sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**码率**位于“摄像头”面板中。**均衡**以普通 Wi-Fi 下也安全的码率推流，只会向下调整。**最高**起点更高，并在连接保持顺畅时不断向上试探（USB 下最高约为均衡码率的六倍，Wi-Fi 下约四倍），一旦出现帧排队或丢帧就立即回退，最终稳定在链路承载能力之下一点。它还会把编码器切换为画质优先的设置；除非允许了系统视频效果，还会使用传感器的完整读出而非像素合并格式推流。数据更多、发热更大；第一次使用时留意“统计”一行。";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** 以 10 位色彩推流。OBS 会为 SDR 场景做色调映射，HDR 画布则得到真正的 HDR 画面。";
@@ -791,6 +785,5 @@
 /* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "画面";
 
-
-/* Documentation → Getting connected, Quality section: the default before the user picks */
-"Until you pick one, the app uses Maximum over USB and Balanced over Wi-Fi." = "在你自行选择之前，USB 下使用“最高”，Wi-Fi 下使用“均衡”。";
+/* Documentation → Getting connected, Bitrate section: the default */
+"**Maximum** is the default. Pick **Balanced** if the picture stutters on busy Wi-Fi." = "默认为**最高**。如果在拥挤的 Wi-Fi 上画面卡顿，请选择**均衡**。";

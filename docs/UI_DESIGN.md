@@ -399,10 +399,9 @@ Symbol) and a title — top to bottom:
    `Depth` subtitle on a frame rate the chosen resolution has depth at, or
    on a resolution with depth at the chosen frame rate; a resolution with
    depth only at other rates gets the subtitle `Depth at 30, 60 fps`
-   and no icon. Then **Codec**, **Quality** (**Balanced** or
-   **Maximum**, the latter with a small accent **Beta** tag and no
-   caption; until the user picks one it follows the transport, Maximum
-   over USB and Balanced over Wi-Fi) and **Color** as check-row lists rather than pickers, because the two constrain each
+   and no icon. Then **Codec**, **Bitrate** (**Balanced** or
+   **Maximum**, no captions; Maximum is the default and the row's
+   summary gains `· Balanced` only when Balanced is picked) and **Color** as check-row lists rather than pickers, because the two constrain each
    other (HDR and Apple Log are HEVC only; green screen is Standard
    only) and a picker that hides H.264 reads as a bug. Every choice stays
    visible; the captions stay short — HDR and Apple Log read "HEVC only",
