@@ -625,7 +625,9 @@ usual reset. The Camera app remembers the same way. Rules:
 **Options → Live screen → Pro interface** (default off) replaces the
 Live screen's controls with an operator layout (`ProHUD.swift`), for
 users who want every number at once. The picture, tally, idle views and
-gestures are unchanged; the standard layout is one menu item away.
+gestures are unchanged. Each layout is one menu item from the other:
+the Pro More menu has Standard interface, and the standard status
+pill's menu has Pro interface.
 
 - **Top bar** (black 60 % glass): status pill, timecode (time since the
   stream went live, `HH:MM:SS:FF` at the stream's fps), the format chip,

@@ -596,6 +596,12 @@ struct StreamingView: View {
                                  })) {
                 Label("Stats", systemImage: "gauge")
             }
+            Button {
+                touched()
+                streamer.proInterface = true
+            } label: {
+                Label(L("Pro interface"), systemImage: "slider.horizontal.3")
+            }
             if streamer.idleAppearance != .standard {
                 Button {
                     goIdle()
