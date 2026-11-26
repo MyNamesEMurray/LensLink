@@ -284,6 +284,7 @@ struct ProHUD: View {
     }
 
     static func shutterLabel(_ seconds: Double) -> String {
+        guard seconds.isFinite, seconds > 0 else { return "–" }
         guard seconds < 1 else { return String(format: "%.0fs", seconds) }
         return "1/\(Int((1 / seconds).rounded()))"
     }

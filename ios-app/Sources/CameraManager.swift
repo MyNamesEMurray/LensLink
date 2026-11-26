@@ -1246,13 +1246,20 @@ final class CameraManager: NSObject {
         var tint: Float
     }
 
+    /// nil until the running device reports sane values: while the
+    /// session starts, the gains can be zero (out of range, which makes
+    /// the conversion raise) and the duration invalid (NaN).
     var liveValues: LiveValues? {
-        guard let device = activeDevice else { return nil }
+        guard let device = activeDevice, session.isRunning else { return nil }
+        let shutter = device.exposureDuration.seconds
+        guard shutter.isFinite, shutter > 0, device.iso.isFinite, device.iso > 0
+        else { return nil }
         let wb = device.temperatureAndTintValues(
-            for: device.deviceWhiteBalanceGains)
+            for: Self.legal(device.deviceWhiteBalanceGains, device))
+        guard wb.temperature.isFinite, wb.tint.isFinite else { return nil }
         return LiveValues(
             iso: device.iso,
-            shutterSeconds: device.exposureDuration.seconds,
+            shutterSeconds: shutter,
             lensPosition: device.isLockingFocusWithCustomLensPositionSupported
                 ? device.lensPosition : nil,
             temperature: wb.temperature,
