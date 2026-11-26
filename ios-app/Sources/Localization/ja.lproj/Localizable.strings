@@ -135,7 +135,7 @@
 "Codec" = "コーデック";
 
 /* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
-"Balanced" = "バランス";
+"Stable" = "安定";
 
 /* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
 "Maximum" = "最高";
@@ -244,7 +244,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**フォーマット**は、解像度、フレームレート、コーデック、カラーをまとめた1つの行で、タップすると選択肢が表示されます。解像度とフレームレートには、選択中のカメラが対応しているものだけが表示されます。コーデックとカラーは互いに制約し合います。HDRとApple LogはHEVCのみなので、H.264を選ぶとカラーは標準に戻り、HDRまたはLogを選ぶとコーデックはHEVCに切り替わります。";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Bitrate**, in the Camera sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**ビットレート**は「カメラ」シートにあります。**バランス**は一般的なWi-Fiでも安全なビットレートで配信し、そこから下げることはあっても上げることはありません。**最高**はより高いビットレートで始まり、接続が安定している間は上限を探り続けます（USBではバランスの約6倍、Wi-Fiでは約4倍まで）。フレームが滞留したりドロップしたりした瞬間に下げ、回線が運べる上限のすぐ下で落ち着きます。さらに、エンコーダを画質優先の設定に切り替え、システムのビデオエフェクトを許可していなければ、ビニングされたフォーマットではなくセンサーの全画素読み出しで配信します。データ量も発熱も増えるので、初回は統計の行を確認してください。";
+"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**ビットレート**は「カメラ」シートにあります。**安定**は一般的なWi-Fiでも安全なビットレートで配信し、そこから下げることはあっても上げることはありません。**最高**はより高いビットレートで始まり、接続が安定している間は上限を探り続けます（USBではバランスの約6倍、Wi-Fiでは約4倍まで）。フレームが滞留したりドロップしたりした瞬間に下げ、回線が運べる上限のすぐ下で落ち着きます。さらに、エンコーダを画質優先の設定に切り替え、システムのビデオエフェクトを許可していなければ、ビニングされたフォーマットではなくセンサーの全画素読み出しで配信します。データ量も発熱も増えるので、初回は統計の行を確認してください。";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR（HLG）**は10ビットカラーで配信します。SDRのシーンではOBSがトーンマッピングし、HDRキャンバスでは本来のHDRのまま扱われます。";
@@ -786,4 +786,10 @@
 "Picture" = "画像";
 
 /* Documentation → Getting connected, Bitrate section: the default */
-"**Maximum** is the default. Pick **Balanced** if the picture stutters on busy Wi-Fi." = "既定は**最高**です。混雑したWi-Fiで映像がカクつく場合は**バランス**を選んでください。";
+"**Maximum** is the default. Pick **Stable** if the picture stutters on busy Wi-Fi." = "既定は**最高**です。混雑したWi-Fiで映像がカクつく場合は**安定**を選んでください。";
+
+/* Info button and accessibility label beside a setting; %@ is the setting's name */
+"About %@" = "%@について";
+
+/* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**プロ用インターフェイス**は、ライブ画面をカメラオペレーター向けのレイアウトに切り替えます。すべての値を1列に並べ、タップした値をダイヤルで調整でき、ヒストグラム、スマートフォンのマイクレベル、構図ガイドを表示します。";

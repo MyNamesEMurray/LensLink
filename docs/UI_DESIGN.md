@@ -399,9 +399,10 @@ Symbol) and a title — top to bottom:
    `Depth` subtitle on a frame rate the chosen resolution has depth at, or
    on a resolution with depth at the chosen frame rate; a resolution with
    depth only at other rates gets the subtitle `Depth at 30, 60 fps`
-   and no icon. Then **Codec**, **Bitrate** (**Balanced** or
+   and no icon. Then **Codec**, **Bitrate** (**Stable** or
    **Maximum**, no captions; Maximum is the default and the row's
-   summary gains `· Balanced` only when Balanced is picked) and **Color** as check-row lists rather than pickers, because the two constrain each
+   summary gains `· Stable` only when Stable is picked; the wire value
+   stays `balanced`) and **Color** as check-row lists rather than pickers, because the two constrain each
    other (HDR and Apple Log are HEVC only; green screen is Standard
    only) and a picker that hides H.264 reads as a bug. Every choice stays
    visible; the captions stay short — HDR and Apple Log read "HEVC only",
@@ -412,7 +413,10 @@ Symbol) and a title — top to bottom:
    subtitle when the chosen lens and format run depth assist.
    **Picture**: **Stabilization**, **High-quality reframe** (greyed at
    4K), **Allow system video effects**, **Remember camera settings**
-   (default on; see §6.2.1). No footers. Focus on faces and Natural
+   (default on; see §6.2.1). No footers: where a row needs explaining, an `info.circle` button
+   beside its title (`InfoButton`, borderless, secondary) opens an alert
+   with the same paragraph its Documentation page shows (`SettingInfo`).
+   Focus on faces and Natural
    motion blur have no row: both are on at every launch (§5); a tap,
    a lock or a manual shutter overrides them.
 4. **Start** — three stacked full-width buttons: **Start Camera** in the

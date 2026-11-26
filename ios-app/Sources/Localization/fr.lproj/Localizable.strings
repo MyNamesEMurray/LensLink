@@ -135,7 +135,7 @@
 "Codec" = "Codec";
 
 /* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
-"Balanced" = "Équilibrée";
+"Stable" = "Stable";
 
 /* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
 "Maximum" = "Maximale";
@@ -244,7 +244,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**Format** tient en une ligne – résolution, fréquence d’images, codec et couleur – avec les choix derrière. La résolution et la fréquence d’images ne proposent que ce que la caméra choisie prend en charge. Codec et Couleur dépendent l’un de l’autre : HDR et Apple Log sont réservés au HEVC, donc choisir H.264 ramène Couleur sur Standard, et choisir HDR ou Log passe le codec en HEVC.";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Bitrate**, in the Camera sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Débit**, dans le panneau Caméra. **Équilibrée** diffuse à un débit sans risque sur un Wi-Fi ordinaire et ne fait que le réduire si besoin. **Maximale** part plus haut et continue de monter tant que la connexion reste propre – jusqu’à environ six fois le débit équilibré en USB, quatre fois en Wi-Fi – puis recule dès que des images s’accumulent ou sont perdues, et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité et, sauf si les effets vidéo du système sont autorisés, diffuse à partir de la lecture complète du capteur plutôt que du format binné. Plus de données et plus de chaleur : surveillez la ligne Statistiques la première fois.";
+"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Débit**, dans le panneau Caméra. **Stable** diffuse à un débit sans risque sur un Wi-Fi ordinaire et ne fait que le réduire si besoin. **Maximale** part plus haut et continue de monter tant que la connexion reste propre – jusqu’à environ six fois le débit équilibré en USB, quatre fois en Wi-Fi – puis recule dès que des images s’accumulent ou sont perdues, et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité et, sauf si les effets vidéo du système sont autorisés, diffuse à partir de la lecture complète du capteur plutôt que du format binné. Plus de données et plus de chaleur : surveillez la ligne Statistiques la première fois.";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** diffuse une couleur 10 bits. OBS applique un mappage tonal pour les scènes SDR, et les canevas HDR en profitent pleinement.";
@@ -786,4 +786,10 @@
 "Picture" = "Image";
 
 /* Documentation → Getting connected, Bitrate section: the default */
-"**Maximum** is the default. Pick **Balanced** if the picture stutters on busy Wi-Fi." = "**Maximale** est le réglage par défaut. Choisissez **Équilibrée** si l’image saccade sur un Wi-Fi chargé.";
+"**Maximum** is the default. Pick **Stable** if the picture stutters on busy Wi-Fi." = "**Maximale** est le réglage par défaut. Choisissez **Stable** si l’image saccade sur un Wi-Fi chargé.";
+
+/* Info button and accessibility label beside a setting; %@ is the setting's name */
+"About %@" = "À propos de %@";
+
+/* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**Interface Pro** remplace l’écran de direct par une disposition pour opérateurs caméra : toutes les valeurs sur une bande, une molette pour celle que vous touchez, un histogramme, le niveau du micro du téléphone et des repères de cadrage.";

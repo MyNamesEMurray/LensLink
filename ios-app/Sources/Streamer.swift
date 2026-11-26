@@ -164,7 +164,7 @@ final class Streamer: ObservableObject {
         var id: String { rawValue }
         var displayName: String {
             switch self {
-            case .balanced: return L("Balanced")
+            case .balanced: return L("Stable")
             case .maximum: return L("Maximum")
             }
         }

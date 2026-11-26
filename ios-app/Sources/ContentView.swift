@@ -407,7 +407,7 @@ struct ContentView: View {
         case .hlg: parts.append("HDR")
         case .log: parts.append(L("Log"))
         }
-        if streamer.quality == .balanced { parts.append(L("Balanced")) }
+        if streamer.quality == .balanced { parts.append(L("Stable")) }
         return parts.joined(separator: " · ")
     }
 
@@ -539,26 +539,33 @@ struct SettingsRowLabel: View {
     let systemImage: String
     let color: Color
     let subtitle: String?
+    let info: LocalizedStringKey?
 
     init(_ title: String, systemImage: String, color: Color,
-         subtitle: String? = nil) {
+         subtitle: String? = nil, info: LocalizedStringKey? = nil) {
         self.title = title
         self.systemImage = systemImage
         self.color = color
         self.subtitle = subtitle
+        self.info = info
     }
 
     var body: some View {
         Label {
-            if let subtitle = subtitle {
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: Theme.Space.xs + 2) {
+                if let subtitle = subtitle {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                        Text(subtitle)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
                     Text(title)
-                    Text(subtitle)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
                 }
-            } else {
-                Text(title)
+                if let info = info {
+                    InfoButton(title: title, text: info)
+                }
             }
         } icon: {
             Image(systemName: systemImage)
@@ -643,7 +650,7 @@ private struct FormatSheet: View {
                 }
 
                 Section {
-                    ChoiceRow(title: L("Balanced"), detail: nil,
+                    ChoiceRow(title: L("Stable"), detail: nil,
                               selected: streamer.quality == .balanced) {
                         streamer.quality = .balanced
                     }
@@ -652,7 +659,10 @@ private struct FormatSheet: View {
                         streamer.quality = .maximum
                     }
                 } header: {
-                    Text("Bitrate")
+                    HStack(spacing: Theme.Space.xs) {
+                        Text("Bitrate")
+                        InfoButton(title: L("Bitrate"), text: SettingInfo.bitrate)
+                    }
                 }
 
                 // Hidden on devices that can't encode Main10 — a choice
@@ -688,7 +698,8 @@ private struct FormatSheet: View {
                                          subtitle: CameraManager.supportsDepth(
                                             resolution: streamer.resolution,
                                             fps: Int32(streamer.fps),
-                                            lens: streamer.selectedLens) ? L("Depth") : nil)
+                                            lens: streamer.selectedLens) ? L("Depth") : nil,
+                                         info: SettingInfo.greenScreen)
                     }
                 }
 
@@ -700,25 +711,29 @@ private struct FormatSheet: View {
                     } label: {
                         SettingsRowLabel(L("Stabilization"),
                                          systemImage: "waveform.path",
-                                         color: Theme.cameraYellow)
+                                         color: Theme.cameraYellow,
+                                         info: SettingInfo.stabilization)
                     }
                     if Streamer.reframeAvailable {
                         Toggle(isOn: $streamer.reframeHQ) {
                             SettingsRowLabel(L("High-quality reframe"),
                                              systemImage: "crop",
-                                             color: Theme.cameraYellow)
+                                             color: Theme.cameraYellow,
+                                             info: SettingInfo.reframe)
                         }
                         .disabled(streamer.resolution == .uhd4k)
                     }
                     Toggle(isOn: $streamer.allowVideoEffects) {
                         SettingsRowLabel(L("Allow system video effects"),
                                          systemImage: "wand.and.stars",
-                                         color: Theme.idleGrey)
+                                         color: Theme.idleGrey,
+                                         info: SettingInfo.videoEffects)
                     }
                     Toggle(isOn: $streamer.rememberCameraSettings) {
                         SettingsRowLabel(L("Remember camera settings"),
                                          systemImage: "clock.arrow.circlepath",
-                                         color: Theme.connectAmber)
+                                         color: Theme.connectAmber,
+                                         info: SettingInfo.remember)
                     }
                 } header: {
                     Text("Picture")

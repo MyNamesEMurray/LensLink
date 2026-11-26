@@ -15,7 +15,7 @@ struct CameraDocumentationView: View {
             }
 
             Section {
-                Text("**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks.")
+                Text(SettingInfo.greenScreen)
                 Text("Mid-stream, **hold** the green screen button beside the lens buttons to turn it on or off; it lights up yellow while it's on. Switching restarts the camera for a moment.")
             } header: {
                 Text("Green screen")
