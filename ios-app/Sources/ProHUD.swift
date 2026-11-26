@@ -9,7 +9,9 @@ import SwiftUI
 /// tally border and the idle view are StreamingView's, unchanged.
 struct ProHUD: View {
     @EnvironmentObject private var streamer: Streamer
-    @ObservedObject var scope: MonitorScope
+    /// Not observed here: the mic level changes many times a second,
+    /// and only MicRow should redraw for it.
+    let scope: MonitorScope
     @ObservedObject private var battery = BatteryMonitor.shared
     /// Restarts StreamingView's idle fuse.
     let touched: () -> Void
@@ -391,8 +393,13 @@ struct ProHUD: View {
                 get: { Double(Self.nearest(stops, streamer.shutterSeconds)) },
                 set: { index in
                     touched()
-                    streamer.shutterSeconds = stops[Int(index.rounded())]
-                    streamer.exposureSetting.shutterManual = true
+                    // A drag reports every move: write only a new stop, or
+                    // each report republishes and re-applies exposure.
+                    let i = min(max(Int(index.rounded()), 0), stops.count - 1)
+                    guard i != Self.nearest(stops, streamer.shutterSeconds)
+                            || !streamer.isLocked(.shutter) else { return }
+                    streamer.setLocked(.shutter, true)
+                    streamer.shutterSeconds = stops[i]
                 }), in: 0...Double(max(stops.count - 1, 1)), step: 1)
                 .accessibilityLabel(L("Shutter"))
                 .accessibilityValue(Text(verbatim: Self.shutterLabel(streamer.shutterSeconds)))
@@ -402,9 +409,9 @@ struct ProHUD: View {
                 get: { log2(Double(streamer.iso)) },
                 set: { stop in
                     touched()
+                    streamer.setLocked(.iso, true)
                     streamer.iso = min(max(Float(pow(2, stop)), range.lowerBound),
                                        range.upperBound)
-                    streamer.exposureSetting.isoManual = true
                 }), in: log2(Double(range.lowerBound))...log2(Double(max(range.upperBound, range.lowerBound + 1))))
                 .accessibilityLabel(Text(verbatim: "ISO"))
                 .accessibilityValue(Text(verbatim: value(.iso)))
@@ -440,8 +447,8 @@ struct ProHUD: View {
                 get: { Double(streamer.lensPosition) },
                 set: { position in
                     touched()
+                    if streamer.focusSetting != .locked { streamer.focusSetting = .locked }
                     streamer.lensPosition = Float(position)
-                    streamer.focusSetting = .locked
                 }), in: 0...1)
                 .accessibilityLabel(L("Focus"))
                 .accessibilityValue(Text(verbatim: value(.focus)))
@@ -478,11 +485,19 @@ struct ProHUD: View {
                                fps: Int32(streamer.fps), lens: lens)
     }
 
+    /// Walking a lens's format table takes milliseconds; the dial
+    /// redraws several times a second, so each answer is kept.
+    private static var frameRateCache: [String: [Int]] = [:]
+
     private var frameRates: [Int] {
-        streamer.candidateFrameRates.filter {
+        let key = "\(streamer.resolution.rawValue)-\(streamer.selectedLens.id)"
+        if let rates = Self.frameRateCache[key] { return rates }
+        let rates = streamer.candidateFrameRates.filter {
             CameraManager.supports(resolution: streamer.resolution, fps: Int32($0),
                                    lens: streamer.selectedLens)
         }
+        Self.frameRateCache[key] = rates
+        return rates
     }
 
     private static let shutterDenominators: [Double] = [
@@ -499,7 +514,7 @@ struct ProHUD: View {
     }
 
     private static func nearest(_ values: [Double], _ value: Double) -> Int {
-        values.indices.min { abs(values[$0] - value) < abs(values[$1] - value) } ?? 0
+        values.indices.min { abs(log(values[$0] / value)) < abs(log(values[$1] / value)) } ?? 0
     }
 
     private func chip(_ title: String, on: Bool,
@@ -538,20 +553,7 @@ struct ProHUD: View {
                     ? L("Battery %lld percent, charging", percent)
                     : L("Battery %lld percent", percent))
             }
-            HStack(spacing: Theme.Space.s) {
-                Text(L("Mic")).font(Self.label).foregroundColor(Theme.textSecondary)
-                if let level = scope.micLevel {
-                    MicMeter(dbfs: level).frame(height: 8)
-                    Text(String(format: "%.0f dBFS", level))
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .lineLimit(1)
-                        .fixedSize()
-                } else {
-                    Text(L("Off")).font(Self.label).foregroundColor(Theme.textSecondary)
-                    Spacer(minLength: 0)
-                }
-            }
-            .accessibilityElement(children: .combine)
+            MicRow(scope: scope)
         }
     }
 
@@ -704,6 +706,29 @@ struct SteadyMenu<Content: View, MenuLabel: View>: View, Equatable {
 }
 
 /// Peak meter from -48 to 0 dBFS: green, yellow from -12, red from -3.
+private struct MicRow: View {
+    @ObservedObject var scope: MonitorScope
+
+    var body: some View {
+        HStack(spacing: Theme.Space.s) {
+            Text(L("Mic")).font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.textSecondary)
+            if let level = scope.micLevel {
+                MicMeter(dbfs: level).frame(height: 8)
+                Text(String(format: "%.0f dBFS", level))
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .lineLimit(1)
+                    .fixedSize()
+            } else {
+                Text(L("Off")).font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Theme.textSecondary)
+                Spacer(minLength: 0)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct MicMeter: View {
     let dbfs: Float
 
