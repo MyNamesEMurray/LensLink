@@ -20,7 +20,7 @@ enum SettingInfo {
     static let videoEffects = LocalizedStringKey(
         "**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts.")
     static let proInterface = LocalizedStringKey(
-        "**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides.")
+        "**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides.")
 
     // The ⓘ alerts: what the setting does, in a sentence or two. The
     // paragraphs above stay the Documentation pages' fuller text.
@@ -41,7 +41,7 @@ enum SettingInfo {
     static let videoEffectsTip = LocalizedStringKey(
         "Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts.")
     static let proInterfaceTip = LocalizedStringKey(
-        "Replaces the Live screen with every camera value in one strip, a histogram, the mic level and framing guides.")
+        "Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides.")
 }
 
 /// A small ⓘ beside a setting: tap for its description in an alert.

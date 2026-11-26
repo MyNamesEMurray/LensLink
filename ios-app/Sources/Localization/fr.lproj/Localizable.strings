@@ -445,7 +445,7 @@
 "Ready" = "Prêt";
 
 /* Status word: streaming, waiting for OBS to connect */
-"Waiting for OBS…" = "En attente d’OBS…";
+"Waiting" = "En attente";
 
 /* Status word: streaming to OBS */
 "Live" = "En direct";
@@ -725,9 +725,6 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "Interface standard";
 
-/* Pro interface: caption over the phone readout (heat, connection) */
-"Phone" = "Téléphone";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "Plus";
 
@@ -740,25 +737,8 @@
 /* Pro interface: VoiceOver label for the zoom slider */
 "Zoom" = "Zoom";
 
-/* Pro interface: caption over the brightness histogram */
-"Histogram" = "Histogramme";
-
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Dropped" = "Perdues";
-"Battery" = "Batterie";
-"Heat" = "Chaleur";
-
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "Micro";
-
-/* Pro interface: the phone is at a normal temperature */
-"Cool" = "Froid";
-
-/* Pro interface: the phone is warming up */
-"Warm" = "Tiède";
-
-/* Pro interface: the phone is hot and slowing down */
-"Hot" = "Chaud";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "Repères";
@@ -776,7 +756,7 @@
 "About %@" = "À propos de %@";
 
 /* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
-"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**Interface Pro** remplace l’écran de direct par une disposition pour opérateurs caméra : toutes les valeurs sur une bande, une molette pour celle que vous touchez, un histogramme, le niveau du micro du téléphone et des repères de cadrage.";
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides." = "**Interface Pro** remplace l’écran de direct par une disposition pour opérateurs caméra : toutes les valeurs sur une bande, une molette pour celle que vous touchez, le débit et la fréquence d’images de la liaison, le niveau du micro du téléphone et des repères de cadrage.";
 
 /* Settings ⓘ: short description of a setting */
 "**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat." = "**Stable** : un débit sans risque sur un Wi-Fi ordinaire. **Maximale** : monte aussi haut que la liaison le permet, jusqu’à 6 fois Stable en USB et 4 fois en Wi-Fi. Plus de chaleur.";
@@ -803,4 +783,7 @@
 "Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "Permet à iOS de baisser la fréquence d’images, ce que les effets vidéo du Centre de contrôle (Portrait, Éclairage de studio) peuvent exiger. S’applique au prochain démarrage de la caméra.";
 
 /* Settings ⓘ: short description of a setting */
-"Replaces the Live screen with every camera value in one strip, a histogram, the mic level and framing guides." = "Remplace l’écran de direct par toutes les valeurs de la caméra sur une bande, un histogramme, le niveau du micro et des repères de cadrage.";
+"Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "Remplace l’écran de direct par toutes les valeurs de la caméra sur une bande, le débit et la fréquence d’images de la liaison, le niveau du micro et des repères de cadrage.";
+
+/* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
+"drop" = "perdues";

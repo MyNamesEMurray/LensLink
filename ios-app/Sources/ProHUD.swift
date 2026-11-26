@@ -21,7 +21,6 @@ struct ProHUD: View {
     @State private var open: Param?
     /// What auto is doing right now, polled while this view is up.
     @State private var live: CameraManager.LiveValues?
-    @State private var thermal = ProcessInfo.processInfo.thermalState
 
     private static let mono = Font.system(.subheadline, design: .monospaced)
         .weight(.semibold)
@@ -44,7 +43,7 @@ struct ProHUD: View {
             .background(Color.black.opacity(0.6).ignoresSafeArea(edges: .top))
             Spacer()
             VStack(spacing: Theme.Space.s) {
-                scopes
+                meters
                 toolRow
             }
             .padding(Theme.Space.s)
@@ -54,7 +53,6 @@ struct ProHUD: View {
         .task {
             while !Task.isCancelled {
                 live = streamer.camera.liveValues
-                thermal = ProcessInfo.processInfo.thermalState
                 try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
@@ -62,41 +60,86 @@ struct ProHUD: View {
 
     // MARK: - Top bar
 
+    /// Weights of the top bar's boxes: status, link, frames, format.
+    /// Fixed shares, so a longer status word never moves the others.
+    private static let topWeights: [CGFloat] = [1.3, 1.5, 1.1, 1.3]
+    private static let boxHeight: CGFloat = 40
+    private static let moreWidth: CGFloat = 36
+    private static let gap: CGFloat = 3
+
     private var topBar: some View {
-        HStack(spacing: Theme.Space.s) {
-            HStack(spacing: Theme.Space.xs) {
-                Circle().fill(streamer.status.tint).frame(width: 8, height: 8)
-                Text(streamer.status.displayName)
-                    .font(.caption.bold())
+        GeometryReader { proxy in
+            let spare = proxy.size.width - Self.moreWidth
+                - Self.gap * CGFloat(Self.topWeights.count)
+            let unit = max(spare, 0) / Self.topWeights.reduce(0, +)
+            HStack(spacing: Self.gap) {
+                statusBox.frame(width: unit * Self.topWeights[0])
+                linkBox.frame(width: unit * Self.topWeights[1])
+                framesBox.frame(width: unit * Self.topWeights[2])
+                Text(formatLabel)
+                    .font(Self.mono)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .proBox()
+                    .frame(width: unit * Self.topWeights[3])
+                moreMenu
             }
-            .glassPill()
-            .accessibilityElement(children: .combine)
-            linkGrid
-            Text(formatLabel)
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .overlay(RoundedRectangle(cornerRadius: 5)
-                    .strokeBorder(Theme.textSecondary, lineWidth: 1))
-            moreMenu
         }
+        .frame(height: Self.boxHeight)
     }
 
-    /// The stats an operator glances at mid-stream, where a timecode
-    /// would sit on a cinema camera.
-    private var linkGrid: some View {
-        let health = streamer.health
-        return LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.Space.s),
-                                   GridItem(.flexible())], spacing: 1) {
-            linkRow(streamer.obsTransport == "usb" ? "USB" : "Wi-Fi",
-                    health.map { String(format: "%.1f Mb/s", $0.megabitsPerSecond) } ?? "–")
-            linkRow("FPS", health.map { "\($0.fps)" } ?? "–")
-            linkRow(L("Dropped"), health.map { String($0.droppedFrames) } ?? "–")
-            linkRow(L("Battery"), battery.percent.map { L("%lld%%", $0) } ?? "–")
+    private var statusBox: some View {
+        HStack(spacing: Theme.Space.xs) {
+            Circle().fill(streamer.status.tint).frame(width: 7, height: 7)
+            Text(streamer.status.displayName)
+                .font(Self.mono)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         }
-        .frame(maxWidth: .infinity)
+        .proBox()
         .accessibilityElement(children: .combine)
+    }
+
+    /// The connection, once, over what it is carrying.
+    private var linkBox: some View {
+        VStack(spacing: 1) {
+            Text(verbatim: streamer.obsTransport == "usb" ? "USB" : "Wi-Fi")
+                .font(Self.label)
+                .foregroundColor(Theme.textSecondary)
+            Text(verbatim: streamer.health.map { String(format: "%.1f Mb/s", $0.megabitsPerSecond) } ?? "–")
+                .font(Self.mono)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+        }
+        .proBox()
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Frame rate over dropped frames: numbers left, units right, so the
+    /// units never move however wide the numbers get.
+    private var framesBox: some View {
+        let health = streamer.health
+        return VStack(spacing: 1) {
+            unitRow(health.map { "\($0.fps)" } ?? "–", "fps")
+            unitRow(health.map { String($0.droppedFrames) } ?? "–", L("drop"))
+        }
+        .proBox()
+        .accessibilityElement(children: .combine)
+    }
+
+    private func unitRow(_ value: String, _ unit: String) -> some View {
+        HStack(spacing: 2) {
+            Text(value)
+                .font(Self.mono)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            Spacer(minLength: 0)
+            Text(unit)
+                .font(Self.label)
+                .foregroundColor(Theme.textSecondary)
+                .lineLimit(1)
+                .fixedSize()
+        }
     }
 
     private var formatLabel: String {
@@ -126,9 +169,11 @@ struct ProHUD: View {
                 Label(L("Standard interface"), systemImage: "rectangle.on.rectangle")
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
-                .font(.title3)
-                .frame(width: Theme.controlButton, height: Theme.controlButton)
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .frame(width: Self.moreWidth, height: Self.boxHeight)
+                .background(Self.boxFill)
+                .clipShape(RoundedRectangle(cornerRadius: Self.boxRadius, style: .continuous))
                 .contentShape(Rectangle())
         }
         .equatable()
@@ -147,8 +192,11 @@ struct ProHUD: View {
         }
     }
 
+    /// Equal boxes, one per value: a long value shrinks inside its box
+    /// rather than pushing its neighbours.
     private var strip: some View {
-        HStack(spacing: 0) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Self.gap),
+                                 count: params.count), spacing: Self.gap) {
             ForEach(params, id: \.self) { param in
                 cell(param)
             }
@@ -161,27 +209,24 @@ struct ProHUD: View {
             touched()
             open = selected ? nil : param
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 3) {
-                    Text(title(param))
-                        .font(Self.label)
-                        .foregroundColor(Theme.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    badge(param)
-                }
+            VStack(spacing: 2) {
+                Text(title(param))
+                    .font(Self.label)
+                    .foregroundColor(Theme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text(value(param))
                     .font(Self.mono)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(0.5)
             }
-            .padding(.horizontal, 3)
-            .padding(.vertical, 4)
-            .frame(maxWidth: .infinity, minHeight: Theme.controlButton, alignment: .leading)
-            .background(selected ? Theme.glassChip : Color.clear)
+            .proBox(selected: selected)
+            .frame(height: Theme.controlButton)
+            .overlay(alignment: .topTrailing) { badge(param) }
             .overlay(alignment: .bottom) {
                 if selected {
                     Rectangle().fill(Theme.accent).frame(height: 2)
+                        .padding(.horizontal, 4)
                 }
             }
         }
@@ -197,12 +242,10 @@ struct ProHUD: View {
 
     @ViewBuilder private func badge(_ param: Param) -> some View {
         if isAuto(param) == true {
-            Text("A")
-                .font(.system(size: 8, weight: .heavy))
-                .foregroundColor(.white)
-                .padding(.horizontal, 3)
-                .background(Theme.accent)
-                .clipShape(RoundedRectangle(cornerRadius: 3))
+            Circle()
+                .fill(Theme.accent)
+                .frame(width: 6, height: 6)
+                .padding(3)
                 .accessibilityHidden(true)
         }
     }
@@ -472,59 +515,47 @@ struct ProHUD: View {
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
-    // MARK: - Scopes
+    // MARK: - Battery and mic
 
-    private var scopes: some View {
-        HStack(alignment: .top, spacing: Theme.Space.m) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L("Histogram")).font(Self.label).foregroundColor(Theme.textSecondary)
-                Histogram(bins: scope.histogram)
-                    .frame(height: 40)
+    private var meters: some View {
+        HStack(spacing: Theme.Space.l) {
+            if let percent = battery.percent {
+                HStack(spacing: Theme.Space.xs) {
+                    Image(systemName: StreamingView.batterySymbol(percent))
+                    if battery.isCharging {
+                        Image(systemName: "bolt.fill").font(.caption2)
+                    }
+                    Text(L("%lld%%", percent)).font(Self.mono)
+                }
+                .foregroundColor(batteryTint(percent))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(battery.isCharging
+                    ? L("Battery %lld percent, charging", percent)
+                    : L("Battery %lld percent", percent))
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L("Phone")).font(Self.label).foregroundColor(Theme.textSecondary)
-                linkRow(L("Heat"), heat,
-                        tint: thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue
-                            ? Theme.connectAmber : Theme.textPrimary)
-                linkRow(L("Connection"), streamer.obsTransport == "usb" ? "USB" : "Wi-Fi")
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: Theme.Space.s) {
                 Text(L("Mic")).font(Self.label).foregroundColor(Theme.textSecondary)
                 if let level = scope.micLevel {
                     MicMeter(dbfs: level).frame(height: 8)
                     Text(String(format: "%.0f dBFS", level))
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .lineLimit(1)
+                        .fixedSize()
                 } else {
-                    Text(L("Off")).font(.system(size: 10))
-                        .foregroundColor(Theme.textSecondary)
+                    Text(L("Off")).font(Self.label).foregroundColor(Theme.textSecondary)
+                    Spacer(minLength: 0)
                 }
             }
-            .frame(width: 90, alignment: .leading)
+            .accessibilityElement(children: .combine)
         }
-        .accessibilityElement(children: .combine)
     }
 
-    private func linkRow(_ name: String, _ value: String,
-                         tint: Color = Theme.textPrimary) -> some View {
-        HStack(spacing: Theme.Space.xs) {
-            Text(name)
-                .font(.system(size: 10))
-                .foregroundColor(Theme.textSecondary)
-            Spacer(minLength: 0)
-            Text(value)
-                .font(.system(size: 10, design: .monospaced))
-                .foregroundColor(tint)
-        }
-        .lineLimit(1)
-    }
-
-    private var heat: String {
-        switch thermal {
-        case .fair: return L("Warm")
-        case .serious, .critical: return L("Hot")
-        default: return L("Cool")
-        }
+    /// The idle screen's rule: red at 20% or below, amber in Low Power
+    /// Mode, plain while charging or fine.
+    private func batteryTint(_ percent: Int) -> Color {
+        guard !battery.isCharging else { return Theme.textPrimary }
+        if percent <= 20 { return Theme.errorRed }
+        return battery.lowPowerMode ? Theme.connectAmber : Theme.textPrimary
     }
 
     // MARK: - Tools
@@ -592,7 +623,7 @@ struct ProHUD: View {
                 Text(L("Guides")).font(.system(size: 9, weight: .semibold)).lineLimit(1)
             }
             .foregroundColor(streamer.monitor.guide == .off ? Theme.textSecondary
-                                                            : Theme.textPrimary)
+                                                            : Theme.accent)
             .frame(maxWidth: .infinity, minHeight: Theme.controlButton)
             .contentShape(Rectangle())
         }
@@ -615,6 +646,24 @@ struct ProHUD: View {
     }
 }
 
+extension ProHUD {
+    static let boxFill = Color.white.opacity(0.08)
+    static let boxRadius: CGFloat = 6
+}
+
+private extension View {
+    /// One of the Pro interface's boxes: it fills the frame it is given
+    /// and centres what it holds.
+    func proBox(selected: Bool = false) -> some View {
+        padding(.horizontal, 3)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(selected ? Theme.glassChip : ProHUD.boxFill)
+            .clipShape(RoundedRectangle(cornerRadius: ProHUD.boxRadius,
+                                        style: .continuous))
+    }
+}
+
 /// A Menu that is rebuilt only when `key` changes. The views around it
 /// redraw several times a second (live values, mic level, stats), and a
 /// Menu rebuilt while open flashes and stops taking taps on its items.
@@ -627,29 +676,6 @@ struct SteadyMenu<Content: View, MenuLabel: View>: View, Equatable {
 
     var body: some View {
         Menu(content: content, label: label)
-    }
-}
-
-/// Luma histogram, 64 bins, shadows on the left.
-private struct Histogram: View {
-    let bins: [Float]
-
-    var body: some View {
-        Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)),
-                         with: .color(.white.opacity(0.06)))
-            guard bins.count > 1 else { return }
-            var path = Path()
-            path.move(to: CGPoint(x: 0, y: size.height))
-            for (index, bin) in bins.enumerated() {
-                let x = size.width * CGFloat(index) / CGFloat(bins.count - 1)
-                path.addLine(to: CGPoint(x: x, y: size.height * (1 - CGFloat(bin))))
-            }
-            path.addLine(to: CGPoint(x: size.width, y: size.height))
-            path.closeSubpath()
-            context.fill(path, with: .color(.white.opacity(0.7)))
-        }
-        .accessibilityHidden(true)
     }
 }
 

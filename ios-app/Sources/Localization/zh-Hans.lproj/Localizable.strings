@@ -445,7 +445,7 @@
 "Ready" = "就绪";
 
 /* Status word: streaming, waiting for OBS to connect */
-"Waiting for OBS…" = "正在等待 OBS…";
+"Waiting" = "等待中";
 
 /* Status word: streaming to OBS */
 "Live" = "直播中";
@@ -725,9 +725,6 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "标准界面";
 
-/* Pro interface: caption over the phone readout (heat, connection) */
-"Phone" = "手机";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "更多";
 
@@ -740,25 +737,8 @@
 /* Pro interface: VoiceOver label for the zoom slider */
 "Zoom" = "变焦";
 
-/* Pro interface: caption over the brightness histogram */
-"Histogram" = "直方图";
-
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Dropped" = "丢帧";
-"Battery" = "电量";
-"Heat" = "温度";
-
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "麦克风";
-
-/* Pro interface: the phone is at a normal temperature */
-"Cool" = "正常";
-
-/* Pro interface: the phone is warming up */
-"Warm" = "偏热";
-
-/* Pro interface: the phone is hot and slowing down */
-"Hot" = "过热";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "参考线";
@@ -776,7 +756,7 @@
 "About %@" = "关于%@";
 
 /* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
-"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**专业界面**会把直播界面换成为摄像操作员设计的布局：所有数值排成一行，点按的数值用转盘调节，并显示直方图、手机麦克风电平和构图参考线。";
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides." = "**专业界面**会把直播界面换成为摄像操作员设计的布局：所有数值排成一行，点按的数值用转盘调节，并显示连接的码率和帧率、手机麦克风电平和构图参考线。";
 
 /* Settings ⓘ: short description of a setting */
 "**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat." = "**稳定**：普通 Wi-Fi 下也安全的码率。**最高**：在链路允许的范围内尽量提高，USB 下最高为稳定的 6 倍，Wi-Fi 下为 4 倍。发热更大。";
@@ -803,4 +783,7 @@
 "Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "允许 iOS 降低帧率，控制中心的视频效果（人像、摄影室灯光）可能需要这样做。在摄像头下次启动时生效。";
 
 /* Settings ⓘ: short description of a setting */
-"Replaces the Live screen with every camera value in one strip, a histogram, the mic level and framing guides." = "把直播界面换成一行显示所有摄像头数值的布局，并显示直方图、麦克风电平和构图参考线。";
+"Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "把直播界面换成一行显示所有摄像头数值的布局，并显示连接的码率和帧率、麦克风电平和构图参考线。";
+
+/* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
+"drop" = "丢帧";

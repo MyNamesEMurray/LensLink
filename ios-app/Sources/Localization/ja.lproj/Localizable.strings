@@ -445,7 +445,7 @@
 "Ready" = "準備完了";
 
 /* Status word: streaming, waiting for OBS to connect */
-"Waiting for OBS…" = "OBSを待機中…";
+"Waiting" = "待機中";
 
 /* Status word: streaming to OBS */
 "Live" = "ライブ";
@@ -725,9 +725,6 @@
 /* Pro interface menu: back to the standard Live screen */
 "Standard interface" = "標準インターフェイス";
 
-/* Pro interface: caption over the phone readout (heat, connection) */
-"Phone" = "スマートフォン";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "その他";
 
@@ -740,25 +737,8 @@
 /* Pro interface: VoiceOver label for the zoom slider */
 "Zoom" = "ズーム";
 
-/* Pro interface: caption over the brightness histogram */
-"Histogram" = "ヒストグラム";
-
-/* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Dropped" = "ドロップ";
-"Battery" = "バッテリー";
-"Heat" = "温度";
-
 /* Pro interface: caption over the phone-mic level meter */
 "Mic" = "マイク";
-
-/* Pro interface: the phone is at a normal temperature */
-"Cool" = "正常";
-
-/* Pro interface: the phone is warming up */
-"Warm" = "やや高温";
-
-/* Pro interface: the phone is hot and slowing down */
-"Hot" = "高温";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "ガイド";
@@ -776,7 +756,7 @@
 "About %@" = "%@について";
 
 /* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
-"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**プロ用インターフェイス**は、ライブ画面をカメラオペレーター向けのレイアウトに切り替えます。すべての値を1列に並べ、タップした値をダイヤルで調整でき、ヒストグラム、スマートフォンのマイクレベル、構図ガイドを表示します。";
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, the link's bitrate and frame rate, the phone mic's level and framing guides." = "**プロ用インターフェイス**は、ライブ画面をカメラオペレーター向けのレイアウトに切り替えます。すべての値を1列に並べ、タップした値をダイヤルで調整でき、接続のビットレートとフレームレート、スマートフォンのマイクレベル、構図ガイドを表示します。";
 
 /* Settings ⓘ: short description of a setting */
 "**Stable**: a bitrate safe on ordinary Wi-Fi. **Maximum**: climbs as high as the link allows, up to 6× Stable over USB and 4× over Wi-Fi. More heat." = "**安定**：一般的なWi-Fiでも安全なビットレート。**最高**：回線が許す限り上げます（USBでは安定の最大6倍、Wi-Fiでは4倍）。発熱が増えます。";
@@ -803,4 +783,7 @@
 "Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "iOSがフレームレートを下げられるようにします。コントロールセンターのビデオエフェクト（ポートレート、スタジオ照明）で必要になることがあります。次にカメラが起動したときに反映されます。";
 
 /* Settings ⓘ: short description of a setting */
-"Replaces the Live screen with every camera value in one strip, a histogram, the mic level and framing guides." = "ライブ画面を、すべてのカメラ値を1列に並べた表示、ヒストグラム、マイクレベル、構図ガイドに切り替えます。";
+"Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "ライブ画面を、すべてのカメラ値を1列に並べた表示、接続のビットレートとフレームレート、マイクレベル、構図ガイドに切り替えます。";
+
+/* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
+"drop" = "ドロップ";

@@ -42,7 +42,7 @@ final class Streamer: ObservableObject {
             case .armed: return L("Armed")
             case .unarmedStandby: return L("OBS connected")
             case .standby: return L("Ready")
-            case .connecting: return L("Waiting for OBS…")
+            case .connecting: return L("Waiting")
             case .streaming: return L("Live")
             case .paused: return L("Paused")
             case .error(let message): return message
@@ -362,8 +362,7 @@ final class Streamer: ObservableObject {
         if let compositor {
             camera.onSampleBuffer = { [weak encoder, compositor, reframe,
                                        still = pausedStill,
-                                       gate = pauseGate, scope] sampleBuffer in
-                scope.note(sampleBuffer)
+                                       gate = pauseGate] sampleBuffer in
                 guard !gate.value else {
                     still.note(sampleBuffer)
                     return
@@ -391,8 +390,7 @@ final class Streamer: ObservableObject {
         } else {
             camera.onSampleBuffer = { [weak encoder, reframe,
                                        still = pausedStill,
-                                       gate = pauseGate, scope] captured in
-                scope.note(captured)
+                                       gate = pauseGate] captured in
                 // The gate sits here, at the encoder's input: while a
                 // stream is held the camera's frames simply aren't
                 // encoded, which leaves the send path free to carry the
@@ -824,7 +822,7 @@ final class Streamer: ObservableObject {
         }
     }
 
-    /// Histogram and the mic meter.
+    /// The Pro interface's mic meter.
     let scope = MonitorScope()
 
     private func updateScopeTools() {

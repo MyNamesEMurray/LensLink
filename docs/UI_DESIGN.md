@@ -59,7 +59,7 @@ colours so it also looks native on the phone.
 | Armed        | `connectAmber`| `#FF9F0A` | "Armed" |
 | Not armed    | `connectAmber`| `#FF9F0A` | "OBS connected" |
 | Standby      | `connectAmber`| `#FF9F0A` | "Ready" |
-| Connecting   | `connectAmber`| `#FF9F0A` | "Waiting for OBS…" |
+| Connecting   | `connectAmber`| `#FF9F0A` | "Waiting" |
 | Live         | `liveGreen`   | `#30D158` | "Live"           |
 | Paused       | `connectAmber`| `#FF9F0A` | "Paused"         |
 | Error        | `errorRed`    | `#FF453A` | *(the message)*  |
@@ -639,27 +639,36 @@ gestures are unchanged. Each layout is one menu item from the other:
 the Pro More menu has Standard interface, and the standard status
 pill's menu has Pro interface.
 
-- **Top bar** (black 60 % glass): status pill, a 2×2 link readout
-  (connection + bitrate, fps, dropped, battery; `–` until the first
-  reading), the format chip, and a More menu (Pause/Resume, Standard
-  interface). No timecode.
+Both bars are rows of **boxes** (white 8 % fill, 6 pt corners, 3 pt
+gaps). A box's width is a fixed share of the row, never sized by what
+it holds: a value that doesn't fit shrinks inside it. Values are all
+monospaced semibold; labels are small grey system text, centred, and
+only where the value needs one.
+
+- **Top bar** (black 60 % glass): status (dot + status word, no label),
+  link (connection, `USB` or `Wi-Fi`, over the bitrate), frames (fps
+  over dropped: numbers left, units right in fixed places), the format
+  (`4K HEVC LOG`), and the More menu (Pause/Resume, Standard
+  interface). Widths 1.3 : 1.5 : 1.1 : 1.3, More fixed. `–` until the
+  first reading. No timecode.
 - **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
-  Each cell is a label over a monospaced value; auto values show what
-  auto is doing with a yellow **A** badge. Shutter is always a fraction
-  (`1/50`). The cells share the width equally, no scrolling; a value
-  that doesn't fit shrinks. Tapping a cell selects it (accent underline)
-  and opens its dial; tapping it again closes it.
+  Equal boxes, label over value, centred; auto values show what auto is
+  doing with an accent dot in the box's corner. Shutter is always a
+  fraction (`1/50`). Tapping a box selects it (accent underline) and
+  opens its dial; tapping it again closes it.
 - **Dial**: one row per value, the same stops as the tray, an **Auto**
   chip that hands the value back, and presets where they help (WB light
   sources, Calibrate).
-- **Scopes row**: Histogram (64 luma bins), Phone (one row per stat,
-  label left, monospaced value right: Heat, amber from serious up, and
-  Connection), Mic (peak dBFS bar: green,
-  `#FFD60A` above −12, red above −3).
-- **Tool row**: Flip, Guides, Stop, Pause, Flashlight. On = tinted.
+- **Meter row**: battery (glyph + %, the idle screen's colours: red at
+  20 % or below, amber in Low Power Mode, a bolt while charging), then
+  Mic (peak dBFS bar: green, `#FFD60A` above −12, red above −3).
+- **Tool row**: Flip, Guides, Stop, Pause, Flashlight in five equal
+  slots, so Stop is centred. On = tinted (Guides: accent).
 
-The histogram reads a 360 px copy of the frame at most 10 times a
-second, skipping a frame rather than queueing (`MonitorScope.swift`).
+Menus in the Pro interface and the standard status pill are
+`SteadyMenu`s: rebuilt only when what they show changes, since the
+screen redraws several times a second and an open Menu rebuilt under a
+finger flashes and drops taps. No histogram: it was tried and removed.
 Guides (a thirds grid or 2.39, 1.85 and 4:3 frame lines) are drawn on
 the phone only, never into the stream. The choice persists and rides
 STATE as `monitor`, so the web panel and source properties show the

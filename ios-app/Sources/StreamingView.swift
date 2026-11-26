@@ -395,7 +395,7 @@ struct StreamingView: View {
         if let percent = battery.percent {
             VStack(spacing: Theme.Space.xs) {
                 HStack(spacing: Theme.Space.s) {
-                    Image(systemName: batterySymbol(percent))
+                    Image(systemName: Self.batterySymbol(percent))
                         .font(.system(size: 44, weight: .regular))
                     Text(L("%lld%%", percent))
                         .font(.system(size: 44, weight: .semibold,
@@ -442,7 +442,7 @@ struct StreamingView: View {
 
     /// The system battery glyph nearest the real level, so the icon reads
     /// at a glance from across the room even before the number does.
-    private func batterySymbol(_ percent: Int) -> String {
+    static func batterySymbol(_ percent: Int) -> String {
         switch percent {
         case ..<13: return "battery.0"
         case ..<38: return "battery.25"

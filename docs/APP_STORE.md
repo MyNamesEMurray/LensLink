@@ -52,7 +52,7 @@ each submission.
 > A demo video showing the full flow: DEMO_VIDEO_URL
 >
 > If testing with OBS isn't practical, the app can be exercised alone:
-> Start Camera runs the camera and shows "Waiting for OBS…", every
+> Start Camera runs the camera and shows "Waiting", every
 > camera control works against the live preview, and Stop ends it.
 >
 > **Screen mirroring.** "Mirror Screen" starts a ReplayKit broadcast
