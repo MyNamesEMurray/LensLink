@@ -9,7 +9,9 @@ import SwiftUI
 /// tally border and the idle view are StreamingView's, unchanged.
 struct ProHUD: View {
     @EnvironmentObject private var streamer: Streamer
-    @ObservedObject var scope: MonitorScope
+    /// Not observed here: the mic level changes many times a second,
+    /// and only MicRow should redraw for it.
+    let scope: MonitorScope
     @ObservedObject private var battery = BatteryMonitor.shared
     /// Restarts StreamingView's idle fuse.
     let touched: () -> Void
@@ -483,11 +485,19 @@ struct ProHUD: View {
                                fps: Int32(streamer.fps), lens: lens)
     }
 
+    /// Walking a lens's format table takes milliseconds; the dial
+    /// redraws several times a second, so each answer is kept.
+    private static var frameRateCache: [String: [Int]] = [:]
+
     private var frameRates: [Int] {
-        streamer.candidateFrameRates.filter {
+        let key = "\(streamer.resolution.rawValue)-\(streamer.selectedLens.id)"
+        if let rates = Self.frameRateCache[key] { return rates }
+        let rates = streamer.candidateFrameRates.filter {
             CameraManager.supports(resolution: streamer.resolution, fps: Int32($0),
                                    lens: streamer.selectedLens)
         }
+        Self.frameRateCache[key] = rates
+        return rates
     }
 
     private static let shutterDenominators: [Double] = [
@@ -543,20 +553,7 @@ struct ProHUD: View {
                     ? L("Battery %lld percent, charging", percent)
                     : L("Battery %lld percent", percent))
             }
-            HStack(spacing: Theme.Space.s) {
-                Text(L("Mic")).font(Self.label).foregroundColor(Theme.textSecondary)
-                if let level = scope.micLevel {
-                    MicMeter(dbfs: level).frame(height: 8)
-                    Text(String(format: "%.0f dBFS", level))
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .lineLimit(1)
-                        .fixedSize()
-                } else {
-                    Text(L("Off")).font(Self.label).foregroundColor(Theme.textSecondary)
-                    Spacer(minLength: 0)
-                }
-            }
-            .accessibilityElement(children: .combine)
+            MicRow(scope: scope)
         }
     }
 
@@ -709,6 +706,29 @@ struct SteadyMenu<Content: View, MenuLabel: View>: View, Equatable {
 }
 
 /// Peak meter from -48 to 0 dBFS: green, yellow from -12, red from -3.
+private struct MicRow: View {
+    @ObservedObject var scope: MonitorScope
+
+    var body: some View {
+        HStack(spacing: Theme.Space.s) {
+            Text(L("Mic")).font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.textSecondary)
+            if let level = scope.micLevel {
+                MicMeter(dbfs: level).frame(height: 8)
+                Text(String(format: "%.0f dBFS", level))
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .lineLimit(1)
+                    .fixedSize()
+            } else {
+                Text(L("Off")).font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Theme.textSecondary)
+                Spacer(minLength: 0)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct MicMeter: View {
     let dbfs: Float
 
