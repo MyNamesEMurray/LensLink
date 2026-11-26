@@ -13,6 +13,9 @@ struct ProHUD: View {
     @ObservedObject private var battery = BatteryMonitor.shared
     /// Restarts StreamingView's idle fuse.
     let touched: () -> Void
+    /// Portrait: the picture sits in an inset frame under the status bar
+    /// and the bottom rows sit on plain black below it.
+    var frame: EdgeInsets?
 
     enum Param: CaseIterable {
         case lens, fps, shutter, iso, whiteBalance, tint, exposure, focus
@@ -40,14 +43,15 @@ struct ProHUD: View {
                 }
             }
             .padding(Theme.Space.s)
-            .background(Color.black.opacity(0.6).ignoresSafeArea(edges: .top))
+            .padding(.horizontal, frame?.leading ?? 0)
             Spacer()
             VStack(spacing: Theme.Space.s) {
                 meters
                 toolRow
             }
             .padding(Theme.Space.s)
-            .background(Color.black.opacity(0.6).ignoresSafeArea(edges: .bottom))
+            .padding(.horizontal, frame?.leading ?? 0)
+            .background(Color.black.opacity(frame == nil ? 0.6 : 0).ignoresSafeArea(edges: .bottom))
         }
         .foregroundColor(Theme.textPrimary)
         .task {
@@ -115,8 +119,8 @@ struct ProHUD: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Frame rate over dropped frames: numbers left, units right, so the
-    /// units never move however wide the numbers get.
+    /// Frame rate over dropped frames: numbers left, units in a fixed
+    /// column beside them, the pair centred in the box.
     private var framesBox: some View {
         let health = streamer.health
         return VStack(spacing: 1) {
@@ -128,18 +132,19 @@ struct ProHUD: View {
     }
 
     private func unitRow(_ value: String, _ unit: String) -> some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 4) {
             Text(value)
                 .font(Self.mono)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-            Spacer(minLength: 0)
             Text(unit)
                 .font(Self.label)
                 .foregroundColor(Theme.textSecondary)
                 .lineLimit(1)
                 .fixedSize()
+                .frame(width: 26, alignment: .leading)
         }
+        .frame(maxWidth: 64, alignment: .leading)
     }
 
     private var formatLabel: String {
@@ -647,8 +652,27 @@ struct ProHUD: View {
 }
 
 extension ProHUD {
-    static let boxFill = Color.white.opacity(0.08)
+    /// Dark see-through boxes: they float on the picture with no panel.
+    static let boxFill = Color.black.opacity(0.5)
+    static let boxSelected = Color.black.opacity(0.75)
     static let boxRadius: CGFloat = 6
+    /// The picture frame's margin from the screen edges, in portrait.
+    static let frameInset: CGFloat = 12
+    static let frameRadius: CGFloat = 12
+    /// Height kept below the frame for the meter and tool rows.
+    static let bottomReserve: CGFloat = 110
+
+    /// The insets that put the 9:16 picture in a rounded frame under the
+    /// status bar, leaving bottomReserve for the controls. Nil in
+    /// landscape, where the picture keeps the whole screen.
+    static func frameInsets(screen: CGSize, safe: EdgeInsets) -> EdgeInsets? {
+        guard screen.width < screen.height else { return nil }
+        let room = screen.height - safe.top - safe.bottom - bottomReserve
+        let height = max(min((screen.width - 2 * frameInset) * 16 / 9, room), 0)
+        let side = (screen.width - height * 9 / 16) / 2
+        return EdgeInsets(top: safe.top, leading: side,
+                          bottom: screen.height - safe.top - height, trailing: side)
+    }
 }
 
 private extension View {
@@ -658,7 +682,7 @@ private extension View {
         padding(.horizontal, 3)
             .padding(.vertical, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(selected ? Theme.glassChip : ProHUD.boxFill)
+            .background(selected ? ProHUD.boxSelected : ProHUD.boxFill)
             .clipShape(RoundedRectangle(cornerRadius: ProHUD.boxRadius,
                                         style: .continuous))
     }
@@ -704,11 +728,14 @@ private struct MicMeter: View {
 /// shows.
 struct MonitorOverlay: View {
     @EnvironmentObject private var streamer: Streamer
+    /// The picture frame's insets from the screen edges, when framed.
+    var insets = EdgeInsets()
 
     var body: some View {
         GeometryReader { proxy in
             guides(in: Self.pictureRect(in: proxy.size))
         }
+        .padding(insets)
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)

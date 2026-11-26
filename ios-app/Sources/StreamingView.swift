@@ -35,6 +35,9 @@ struct StreamingView: View {
     /// is gone again after a moment; a long press's stays while the point
     /// is pinned. Either goes the instant the camera lets the point go.
     @State private var focusMark: FocusMark?
+    /// The screen and its safe area, for the Pro interface's picture frame.
+    @State private var screen = CGSize.zero
+    @State private var safe = EdgeInsets()
     @State private var pickingWhite = false
 
     private struct FocusMark: Equatable {
@@ -132,6 +135,9 @@ struct StreamingView: View {
                     verticalDrag(phase, travel: travel)
                 }
             )
+            .clipShape(RoundedRectangle(cornerRadius: proFrame == nil ? 0 : ProHUD.frameRadius,
+                                        style: .continuous))
+            .padding(pictureInsets)
             .ignoresSafeArea()
 
 #if DEBUG
@@ -139,18 +145,19 @@ struct StreamingView: View {
                 Image(uiImage: scene)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .padding(pictureInsets)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             }
 #endif
 
             if !dimmed {
-                MonitorOverlay()
+                MonitorOverlay(insets: pictureInsets)
             }
 
             if streamer.proInterface {
                 if showsControls {
-                    ProHUD(scope: streamer.scope, touched: touched)
+                    ProHUD(scope: streamer.scope, touched: touched, frame: proFrame)
                         .transition(.opacity)
                 }
             } else {
@@ -194,6 +201,7 @@ struct StreamingView: View {
                     FocusIndicator(locked: mark.locked)
                         .position(mark.point)
                 }
+                .padding(pictureInsets)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
@@ -252,6 +260,11 @@ struct StreamingView: View {
             tallyBorder
             tallyBadge
         }
+        .background(GeometryReader { proxy in
+            Color.clear
+                .onAppear { measure(proxy) }
+                .onChange(of: proxy.size) { _ in measure(proxy) }
+        })
         .statusBar(hidden: true)
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .task {
@@ -293,6 +306,20 @@ struct StreamingView: View {
             streamer.camera.onTapPointReset = nil
         }
     }
+
+    private func measure(_ proxy: GeometryProxy) {
+        let insets = proxy.safeAreaInsets
+        safe = insets
+        screen = CGSize(width: proxy.size.width + insets.leading + insets.trailing,
+                        height: proxy.size.height + insets.top + insets.bottom)
+    }
+
+    /// The Pro interface's picture frame in portrait; nil otherwise.
+    private var proFrame: EdgeInsets? {
+        streamer.proInterface ? ProHUD.frameInsets(screen: screen, safe: safe) : nil
+    }
+
+    private var pictureInsets: EdgeInsets { proFrame ?? EdgeInsets() }
 
     /// True while the controls are on screen: always in Standard, and in
     /// the other modes until the fuse burns down.

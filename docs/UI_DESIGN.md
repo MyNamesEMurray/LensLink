@@ -639,15 +639,24 @@ gestures are unchanged. Each layout is one menu item from the other:
 the Pro More menu has Standard interface, and the standard status
 pill's menu has Pro interface.
 
-Both bars are rows of **boxes** (white 8 % fill, 6 pt corners, 3 pt
-gaps). A box's width is a fixed share of the row, never sized by what
+In portrait the picture sits in a **frame**: 9:16, 12 pt corners,
+12 pt from the sides, its top at the safe-area top, with 110 pt kept
+below it for the meter and tool rows (the frame shrinks on shorter
+screens). The guides, focus marks and taps follow the frame. Landscape
+keeps the full-screen picture.
+
+Both bars are rows of **boxes** (black 50 % fill, 75 % when selected,
+6 pt corners, 3 pt gaps). They float on the picture with no panel
+behind them, so there is no seam where a panel would cross the
+letterbox. A box's width is a fixed share of the row, never sized by what
 it holds: a value that doesn't fit shrinks inside it. Values are all
 monospaced semibold; labels are small grey system text, centred, and
 only where the value needs one.
 
-- **Top bar** (black 60 % glass): status (dot + status word, no label),
+- **Top bar**: status (dot + status word, no label),
   link (connection, `USB` or `Wi-Fi`, over the bitrate), frames (fps
-  over dropped: numbers left, units right in fixed places), the format
+  over dropped: numbers left, units in a fixed column beside them, the
+  pair centred), the format
   (`4K HEVC LOG`), and the More menu (Pause/Resume, Standard
   interface). Widths 1.3 : 1.5 : 1.1 : 1.3, More fixed. `–` until the
   first reading. No timecode.
@@ -659,7 +668,8 @@ only where the value needs one.
 - **Dial**: one row per value, the same stops as the tray, an **Auto**
   chip that hands the value back, and presets where they help (WB light
   sources, Calibrate).
-- **Meter row**: battery (glyph + %, the idle screen's colours: red at
+- **Meter row** (on plain black under the frame; in landscape, on a
+  black 60 % panel): battery (glyph + %, the idle screen's colours: red at
   20 % or below, amber in Low Power Mode, a bolt while charging), then
   Mic (peak dBFS bar: green, `#FFD60A` above −12, red above −3).
 - **Tool row**: Flip, Guides, Stop, Pause, Flashlight in five equal
