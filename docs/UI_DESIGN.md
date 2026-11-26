@@ -631,8 +631,8 @@ pill's menu has Pro interface.
 
 - **Top bar** (black 60 % glass): status pill, timecode (time since the
   stream went live, `HH:MM:SS:FF` at the stream's fps), the format chip,
-  and a More menu (Pause/Resume, Zebra, Peaking, False color, zebra
-  level, Standard interface).
+  and a More menu (Pause/Resume, Zebra, Peaking, False color, a Zebra
+  level submenu while zebra is on, Standard interface).
 - **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
   Each cell is a label over a monospaced value; auto values show what
   auto is doing with a yellow **A** badge. Shutter is always a fraction

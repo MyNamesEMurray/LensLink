@@ -130,9 +130,13 @@ struct ProHUD: View {
             Toggle(L("Zebra"), isOn: monitorBinding(\.zebra))
             Toggle(L("Peaking"), isOn: monitorBinding(\.peaking))
             Toggle(L("False color"), isOn: monitorBinding(\.falseColor))
-            Picker(L("Zebra level"), selection: zebraLevel) {
-                ForEach([70, 80, 90, 95, 100], id: \.self) { level in
-                    Text(L("%lld%%", level)).tag(level)
+            if streamer.monitor.zebra {
+                Menu(L("Zebra level")) {
+                    Picker(L("Zebra level"), selection: zebraLevel) {
+                        ForEach([70, 80, 90, 95, 100], id: \.self) { level in
+                            Text(L("%lld%%", level)).tag(level)
+                        }
+                    }
                 }
             }
             Button {
