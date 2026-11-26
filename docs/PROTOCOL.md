@@ -253,7 +253,7 @@ rate in the next VIDEO_CONFIG. An older app ignores it and sends 60.
 safe on ordinary Wi-Fi, the adaptive loop only backs off from it) or
 `"maximum"` (starts higher and probes upward while the link is clean, to
 a transport-set ceiling, with the encoder's quality-first settings). The
-STATE snapshot reports it as `quality`. A live stream rebuilds its
+STATE snapshot reports it as `quality`. Until the user picks one (in the app or by `set_quality`), the app follows the transport: Maximum over USB, Balanced over Wi-Fi. A live stream rebuilds its
 encoder on the change, like a format change.
 
 `selectLens` switches to the lens whose `label` matches one of the STATE

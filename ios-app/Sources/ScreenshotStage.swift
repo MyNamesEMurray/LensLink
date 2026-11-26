@@ -78,7 +78,7 @@ enum ScreenshotStage {
             "fps": 60,
             "videoCodec": VideoCodec.hevc.rawValue,
             "streamColor": StreamColor.hlg.rawValue,
-            "streamQuality": Streamer.StreamQuality.maximum.rawValue,
+            "streamQualityChoice": Streamer.StreamQuality.maximum.rawValue,
             "idleAppearance": Streamer.IdleAppearance.standard.rawValue,
             "sendAudioReference": true,
             "showConnectionHelp": false,

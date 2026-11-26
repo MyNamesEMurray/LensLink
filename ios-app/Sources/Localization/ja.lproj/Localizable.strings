@@ -791,3 +791,6 @@
 /* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "画像";
 
+
+/* Documentation → Getting connected, Quality section: the default before the user picks */
+"Until you pick one, the app uses Maximum over USB and Balanced over Wi-Fi." = "自分で選ぶまでは、USBでは最高、Wi-Fiではバランスが使われます。";

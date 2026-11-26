@@ -791,3 +791,6 @@
 /* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
 "Picture" = "Imagem";
 
+
+/* Documentation → Getting connected, Quality section: the default before the user picks */
+"Until you pick one, the app uses Maximum over USB and Balanced over Wi-Fi." = "Até você escolher, o app usa Máxima por USB e Equilibrada por Wi-Fi.";
