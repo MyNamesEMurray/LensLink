@@ -259,7 +259,7 @@ jobs:
             |----------|----------|------|
             | **Windows** | [Installer](${{ env.DL }}/LensLink-installer-windows-x64.exe) | Run it, restart OBS. |
             | **macOS** | [Installer](${{ env.DL }}/LensLink-installer-macos-universal.pkg) | Right-click → **Open** (not notarized), restart OBS. |
-            | **Linux** | [Plugin tarball](${{ env.DL }}/lenslink-linux-x86_64.tar.gz) | Extract into `~/.config/obs-studio/plugins/`. |
+            | **Linux** | [Plugin tarball](${{ env.DL }}/lenslink-linux-x86_64.tar.gz) | Extract into `~/.local/share/obs-studio/plugins/` (OBS 32: `~/.config/obs-studio/plugins/`). |
             | **Stream Deck** | [Plugin](${{ env.DL }}/cam.lenslink.streamdeck.streamDeckPlugin) | Double-click it; Stream Deck installs it. Needs the OBS plugin's browser control panel (on by default). |
             | **iPhone / iPad** | [App Store](https://apps.apple.com/app/lenslink-camera/id6790673163) | Free, updates automatically. Want builds before App Review? [TestFlight beta](https://testflight.apple.com/join/N7Rth6m3). |
 

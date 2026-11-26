@@ -44,13 +44,19 @@ quarantine flag, or OBS will refuse to load it:</p>
   ~/Library/Application\ Support/obs-studio/plugins/lenslink.plugin</code></pre>
 
 <h3>Linux</h3>
-<pre><code>tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.config/obs-studio/plugins/</code></pre>
+<pre><code>mkdir -p ~/.local/share/obs-studio/plugins
+tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.local/share/obs-studio/plugins/</code></pre>
+<p>
+  On OBS 32 or older, extract into <code>~/.config/obs-studio/plugins/</code>
+  instead. OBS 33 still loads that folder but marks the plugin
+  <strong>Legacy</strong>, so move it once you update OBS.
+</p>
 <p>
   <strong>Flatpak OBS</strong> reads plugins from its own folder instead, and
   its sandbox hides the USB daemon's socket until you share it:
 </p>
-<pre><code>mkdir -p ~/.var/app/com.obsproject.Studio/config/obs-studio/plugins
-tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.var/app/com.obsproject.Studio/config/obs-studio/plugins/
+<pre><code>mkdir -p ~/.var/app/com.obsproject.Studio/data/obs-studio/plugins
+tar -xzf lenslink-linux-x86_64.tar.gz -C ~/.var/app/com.obsproject.Studio/data/obs-studio/plugins/
 flatpak override --user --filesystem=/run/usbmuxd com.obsproject.Studio</code></pre>
 <p>
   If Flatpak OBS logs <code>libobs.so.0: cannot open shared object file</code>,
@@ -172,6 +178,6 @@ cd ios-app && xcodegen generate && open LensLink.xcodeproj</code></pre>
 <ul>
   <li><strong>Windows:</strong> the installer's uninstall entry, or delete <code>C:\ProgramData\obs-studio\plugins\lenslink\</code>.</li>
   <li><strong>macOS:</strong> delete <code>~/Library/Application Support/obs-studio/plugins/lenslink.plugin</code>.</li>
-  <li><strong>Linux:</strong> delete the extracted files from <code>~/.config/obs-studio/plugins/</code>.</li>
+  <li><strong>Linux:</strong> delete <code>lenslink/</code> from <code>~/.local/share/obs-studio/plugins/</code> (and from <code>~/.config/obs-studio/plugins/</code>, if an older install left one).</li>
   <li><strong>App:</strong> delete it as usual. Nothing is left on the computer.</li>
 </ul>

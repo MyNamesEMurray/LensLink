@@ -41,7 +41,8 @@ phone.
 - **macOS** — open `LensLink-installer-macos-universal.pkg` (right-click →
   Open the first time; the package isn't notarized). Restart OBS.
 - **Linux** — extract `lenslink-linux-x86_64.tar.gz` into
-  `~/.config/obs-studio/plugins/`.
+  `~/.local/share/obs-studio/plugins/` (OBS 32 and older:
+  `~/.config/obs-studio/plugins/`).
 - Or build it yourself: [`obs-plugin/BUILDING.md`](obs-plugin/BUILDING.md).
 
 **2. The LensLink app** — pick whichever suits you:
