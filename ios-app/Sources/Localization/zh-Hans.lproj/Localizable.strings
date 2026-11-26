@@ -743,3 +743,65 @@
 
 /* Documentation → Options, Camera behavior section: the Stabilization menu (Markdown: keep the ** markers) */
 "**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs." = "**防抖**让手持或移动拍摄的画面更平稳。它默认关闭，因为手机需要缓存若干帧来平滑画面，会让推流产生延迟。标准只增加一点延迟。电影级延迟很大，常常超过半秒，并且画面会再裁切一些，所以请把它留给不需要与游戏或其他来源同步的画面。在不支持所选模式的格式下，以及深度辅助运行时，它保持关闭。";
+
+/* ===== ProHUD.swift ===== */
+
+/* Options: switches the Live screen to the cinema-camera layout [also used in OptionsView.swift] */
+"Pro interface" = "专业界面";
+
+/* Pro interface menu: back to the standard Live screen */
+"Standard interface" = "标准界面";
+
+/* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
+"Timecode" = "时间码";
+
+/* Pro interface menu: the brightness above which zebra stripes are drawn */
+"Zebra level" = "斑马纹阈值";
+
+/* Pro interface: VoiceOver label for the menu of less-used actions */
+"More" = "更多";
+
+/* Pro interface value strip: the lens and zoom readout (short) */
+"Lens" = "镜头";
+
+/* Pro interface value strip: white balance tint, green to magenta (short) */
+"Tint" = "色调";
+
+/* Pro interface: VoiceOver label for the zoom slider */
+"Zoom" = "变焦";
+
+/* Pro interface: caption over the brightness histogram */
+"Histogram" = "直方图";
+
+/* Pro interface: caption over the connection readout (transport, bitrate, battery) */
+"Link" = "连接";
+
+/* Pro interface health readout: frames per second sent, and frames dropped this stream */
+"%1$lld fps · %2$lld dropped" = "%1$lld fps · 丢帧 %2$lld";
+
+/* Pro interface: caption over the phone-mic level meter */
+"Mic" = "麦克风";
+
+/* Pro interface: the phone is at a normal temperature */
+"Cool" = "正常";
+
+/* Pro interface: the phone is warming up */
+"Warm" = "偏热";
+
+/* Pro interface: the phone is hot and slowing down */
+"Hot" = "过热";
+
+/* Pro interface tool: stripes over parts of the picture close to clipping */
+"Zebra" = "斑马纹";
+
+/* Pro interface tool: outlines what is in focus */
+"Peaking" = "峰值对焦";
+
+/* Pro interface tool: paints the picture by brightness band */
+"False color" = "伪色";
+
+/* Pro interface tool: frame lines and grid over the preview */
+"Guides" = "参考线";
+
+/* Pro interface guide: rule-of-thirds grid */
+"Grid" = "网格";

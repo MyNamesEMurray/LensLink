@@ -41,6 +41,16 @@ const char *ios_camera_sync_state(struct ios_camera_source *s);
 /* Requests a fresh lip-sync calibration (drops the locked mic figure).
  * Safe from any thread; the dial loop performs the reset. */
 void ios_camera_recalibrate(struct ios_camera_source *s);
+/* Live readouts for the web panel's Pro section. */
+struct ios_camera_live {
+	int latency_ms;     /* capture to decode; 0 until measured */
+	uint64_t bytes;     /* wire video bytes, cumulative */
+	uint64_t sample_ms; /* when `bytes` was sampled (OBS clock) */
+	uint64_t live_ms;   /* since this connection's HELLO; 0 when none */
+	int audio_peak;     /* playable audio, 0-32767; -1 when none */
+};
+void ios_camera_live_stats(struct ios_camera_source *s,
+			   struct ios_camera_live *out);
 void ios_camera_request_still(struct ios_camera_source *s);
 uint8_t *ios_camera_take_still(struct ios_camera_source *s, size_t *len);
 void ios_camera_set_auto_start(struct ios_camera_source *s, bool on);

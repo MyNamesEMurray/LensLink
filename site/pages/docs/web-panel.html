@@ -43,10 +43,12 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <li><strong>Lens buttons</strong> (<code>.5 · 1× · 2 · 3</code>, the active one yellow with the live zoom) and a <strong>zoom</strong> slider under them. Click another lens to switch, the active one to reset its zoom; <code>2</code> is a 48 MP Main camera's full-detail crop.</li>
   <li><strong>Flashlight</strong>, left of the lenses on a camera with a flash. While it is on, a brightness slider appears under the lenses; click its readout to go back to full brightness.</li>
   <li><strong>Green screen</strong>, beside the lenses, when it was on at stream start or has been turned on since.</li>
-  <li>The adjust tray: <strong>Focus · WB · EV · ISO · Shutter</strong> chips and one dial. A yellow <strong>A</strong> marks what is on auto; moving the dial takes that setting manual, and clicking the selected chip again hands it back to auto (on EV, back to 0).</li>
+  <li>The adjust tray: <strong>Focus · WB · Tint · EV · ISO · Shutter</strong> chips (Tint on apps with the Pro interface) and one dial. A yellow <strong>A</strong> marks what is on auto; moving the dial takes that setting manual, and clicking the selected chip again hands it back to auto (on EV, back to 0).</li>
   <li>Under the dial: <strong>Calibrate</strong> on WB (click it, then click the white paper in the still of the shot that appears), <strong>Natural motion blur</strong> on Shutter, then <strong>Lock</strong>, which freezes what auto is doing right now (Shift-click locks or unlocks everything), <strong>Flashlight</strong> and <strong>Flip</strong>. See <a href="/docs/camera/#live-camera-controls">Live camera controls</a>.</li>
   <li><strong>Reframe</strong>: digital zoom (1 to 4×) and pan, applied on the phone before encoding. Drag the box on the picture to move the frame (the picture is a still taken at 1×, and refreshes when you return to 1×); click the readout to reset. The <strong>High-quality reframe</strong> button captures at a higher resolution so zoom keeps real detail; it uses more heat and turns green screen off. The window is not saved and resets when the app restarts.</li>
-  <li><strong>Format changes mid-stream</strong>: resolution, frame rate, codec, microphone, and <strong>Stabilization</strong> (off while depth assist runs).</li>
+  <li><strong>Format changes mid-stream</strong>: resolution, frame rate, codec, color (SDR, HDR or Log, where the phone offers them), microphone, and <strong>Stabilization</strong> (off while depth assist runs).</li>
+  <li><strong>Pro</strong>, the pill in the header (apps with the Pro interface): a timecode since the stream went live, a link line (bitrate, latency, the phone's battery and heat), a histogram of the picture (from a still every 2 seconds), the phone mic's level, the phone's monitoring tools (<strong>Zebra</strong>, <strong>Peaking</strong>, <strong>False color</strong>, <strong>Guides</strong>), and a <strong>focus pull</strong>: set A, set B, then pull between them over the seconds you pick. The monitoring tools are drawn on the phone's screen only, never into the stream.</li>
+  <li><strong>Keyboard shortcuts</strong>, whenever focus is not in a field: <kbd>Space</kbd> pause, <kbd>1</kbd>–<kbd>9</kbd> lens, <kbd>L</kbd> lock everything, <kbd>A</kbd> everything back to auto, <kbd>Z</kbd> zebra, <kbd>P</kbd> peaking, <kbd>F</kbd> false color, <kbd>G</kbd> next guide, <kbd>[</kbd> <kbd>]</kbd> focus, <kbd>-</kbd> <kbd>+</kbd> EV in third stops.</li>
   <li><strong>Subject distance</strong>, while the green screen runs with depth assist: drag the slider for 0.5–5.0 m, or past 5 m for <strong>All</strong>, and click the readout to go back to <strong>Auto</strong>.</li>
   <li><strong>Start camera</strong> while idle (a reminder to arm the phone instead, when remote start isn't armed), red <strong>Stop camera</strong> while live, each with an <strong>Auto-start</strong> toggle.</li>
   <li><strong>Pause</strong> holds the stream without ending it: the phone stays connected with its camera running, OBS keeps the source and shows a dimmed, blurred still with a pause symbol, and <strong>Resume</strong> picks it straight back up. Audio keeps flowing, so a phone doubling as the microphone doesn't cut out.</li>
@@ -86,7 +88,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <thead><tr><th>Request</th><th>Returns</th></tr></thead>
   <tbody>
     <tr><td><code>GET /api/sources</code></td><td>Every source: <code>id</code>, <code>name</code>, <code>connected</code>, <code>standby</code>, <code>armed</code> (in standby and accepting <code>start_stream</code>), <code>screen</code>.</td></tr>
-    <tr><td><code>GET /api/status</code></td><td><code>status</code> text (in OBS's language), its <code>tone</code> (<code>idle</code>, <code>wait</code>, <code>ready</code>, <code>live</code> or <code>error</code>, for coloring it without reading the text), plus <code>screen</code>, <code>standby</code>, <code>armed</code>, <code>connected</code>, <code>autoStart</code> and the lip-sync <code>sync</code> stage.</td></tr>
+    <tr><td><code>GET /api/status</code></td><td><code>status</code> text (in OBS's language), its <code>tone</code> (<code>idle</code>, <code>wait</code>, <code>ready</code>, <code>live</code> or <code>error</code>, for coloring it without reading the text), plus <code>screen</code>, <code>standby</code>, <code>armed</code>, <code>connected</code>, <code>autoStart</code> and the lip-sync <code>sync</code> stage. While a camera is connected it also has <code>latencyMs</code>, <code>bytes</code> (video received since connecting) and <code>sampleMs</code> (when that was counted, for working out a bitrate), <code>liveMs</code> (time since the stream connected, for a timecode) and <code>audioPeak</code> (the phone mic's peak over the last tenth of a second, 0 to 32767, or <code>-1</code> without phone audio).</td></tr>
     <tr><td><code>GET /api/diagnostics</code></td><td>The whole diagnostics report as plain text — versions, hardware, settings and per-source state. Same content as the button in Tools → LensLink Settings.</td></tr>
     <tr><td><code>GET /api/state</code></td><td>The phone's last camera-state snapshot (keys below), or <code>{}</code> before the phone has sent one. The same cache the source properties read, which is how the three surfaces stay in step.</td></tr>
   </tbody>
@@ -115,7 +117,9 @@ description: The LensLink control panel at localhost:9980 — the same camera co
     <tr><td><code>stabilization</code></td><td><code>"off"</code>, <code>"standard"</code> or <code>"cinematic"</code>, as set by <code>stabilization</code>.</td></tr>
     <tr><td><code>resolution</code>, <code>fps</code>, <code>codec</code>, <code>resolutions</code>, <code>frameRates</code>, <code>codecs</code></td><td>The current format, and the choices <code>set_format</code> accepts for the current lens.</td></tr>
     <tr><td><code>quality</code></td><td><code>"balanced"</code> or <code>"maximum"</code>, as set by <code>set_quality</code>.</td></tr>
-    <tr><td><code>hdr</code>, <code>color</code></td><td><code>"hdr": true</code> for HLG, <code>"color": "log"</code> for Apple Log; both absent for standard color.</td></tr>
+    <tr><td><code>hdr</code>, <code>color</code>, <code>colors</code></td><td><code>"hdr": true</code> for HLG, <code>"color": "log"</code> for Apple Log; both absent for standard color. <code>colors</code> lists what <code>set_format</code>'s <code>color</code> accepts on this phone.</td></tr>
+    <tr><td><code>battery</code>, <code>thermal</code></td><td>The phone's battery percent, and its heat: <code>"nominal"</code>, <code>"fair"</code>, <code>"serious"</code> or <code>"critical"</code>.</td></tr>
+    <tr><td><code>monitor</code></td><td>The phone's monitoring tools: <code>zebra</code>, <code>zebraLevel</code> (70 to 100), <code>peaking</code>, <code>falseColor</code> and <code>guide</code> (<code>"off"</code>, <code>"grid"</code>, <code>"2.39"</code>, <code>"1.85"</code> or <code>"4:3"</code>).</td></tr>
     <tr><td><code>supportsGreenScreen</code>, <code>greenScreen</code>, <code>greenScreenDepth</code>, <code>greenScreenMaxDistance</code></td><td>Green screen support, whether it is on, whether depth assist is running, and the subject-distance cutoff in meters (<code>-1</code> while it is on Auto).</td></tr>
     <tr><td><code>micEnabled</code>, <code>mic</code>, <code>mics</code></td><td>Present only while the phone mic is the source's audio: the selected mic's id, and every choice as <code>[{"id": "...", "name": "..."}]</code>. Send an <code>id</code> back with the <code>mic</code> command; <code>name</code> is for display.</td></tr>
   </tbody>
@@ -136,7 +140,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 { "cmd": "focus",         "mode": "locked", "lensPosition": 0.42 }
 { "cmd": "focus",         "mode": "auto" }
 { "cmd": "focus",         "faces": true }
-{ "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "focus",         "mode": "locked", "lensPosition": 0.8, "rampSeconds": 3 }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600, "tint": 12 }
 { "cmd": "white_balance", "mode": "auto" }
 { "cmd": "white_balance", "mode": "calibrate" }
 { "cmd": "white_balance", "mode": "calibrate", "x": 0.31, "y": 0.62 }
@@ -153,6 +158,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
 { "cmd": "pause_stream" }
 { "cmd": "resume_stream" }
 { "cmd": "set_format",    "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "set_format",    "color": "hlg" }
+{ "cmd": "monitor",       "zebra": true, "zebraLevel": 95, "guide": "2.39" }
 { "cmd": "set_quality",   "quality": "maximum" }
 { "cmd": "mic",           "id": "builtin:2" }
 { "cmd": "green_screen",  "on": true, "maxDistance": 2.5 }</code></pre>
@@ -164,6 +171,8 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <li><code>pause_stream</code> and <code>resume_stream</code> are the panel's <strong>Pause</strong> and <strong>Resume</strong>. They need no arming, since they can only hold a stream that is already running; the state's <code>paused</code> follows them.</li>
   <li><code>set_quality</code> takes <code>"balanced"</code> or <code>"maximum"</code>, the app's Quality setting, and applies to a live stream straight away.</li>
   <li><code>mic</code> takes an <code>id</code> from the state's <code>mics</code>; a stale id is ignored.</li>
+  <li><code>focus</code> with <code>rampSeconds</code> (up to 10) pulls focus smoothly instead of jumping. <code>white_balance</code>'s <code>tint</code> runs from -150 (green) to 150 (magenta).</li>
+  <li><code>monitor</code> turns the phone's zebra, peaking, false color and guides on or off; any subset of its fields can be sent.</li>
   <li>Camera commands apply only while the phone is streaming; sent while it is idle, they are dropped.</li>
 </ul>
 <table>

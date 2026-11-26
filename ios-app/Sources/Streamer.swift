@@ -11,6 +11,8 @@ enum StreamerDefaults {
     /// via `@AppStorage`; the streamer reads it to decide whether sampling
     /// health is worth waking SwiftUI for.
     static let showHealth = "showStreamHealth"
+    /// Options → Pro interface: the Live screen's cinema-camera layout.
+    static let proInterface = "proInterface"
 }
 
 /// Glues camera → encoder → network together and exposes state for SwiftUI.
@@ -374,7 +376,8 @@ final class Streamer: ObservableObject {
         if let compositor {
             camera.onSampleBuffer = { [weak encoder, compositor, reframe,
                                        still = pausedStill,
-                                       gate = pauseGate] sampleBuffer in
+                                       gate = pauseGate, scope] sampleBuffer in
+                scope.note(sampleBuffer)
                 guard !gate.value else {
                     still.note(sampleBuffer)
                     return
@@ -402,7 +405,8 @@ final class Streamer: ObservableObject {
         } else {
             camera.onSampleBuffer = { [weak encoder, reframe,
                                        still = pausedStill,
-                                       gate = pauseGate] captured in
+                                       gate = pauseGate, scope] captured in
+                scope.note(captured)
                 // The gate sits here, at the encoder's input: while a
                 // stream is held the camera's frames simply aren't
                 // encoded, which leaves the send path free to carry the
@@ -784,6 +788,120 @@ final class Streamer: ObservableObject {
         }
     }
 
+    // MARK: - Pro interface
+
+    /// The Live screen's cinema-camera layout (Options → Pro interface).
+    @Published var proInterface: Bool =
+        UserDefaults.standard.bool(forKey: StreamerDefaults.proInterface) {
+        didSet {
+            UserDefaults.standard.set(proInterface, forKey: StreamerDefaults.proInterface)
+            updateScopeTools()
+        }
+    }
+
+    /// What the phone draws over its own preview (docs/PROTOCOL.md
+    /// `monitor`). Never part of the stream; remembered across launches.
+    struct MonitorSettings: Codable, Equatable {
+        var zebra = false
+        /// Percent of full scale, 70 to 100.
+        var zebraLevel = 95
+        var peaking = false
+        var falseColor = false
+        var guide = Guide.off
+    }
+
+    enum Guide: String, Codable, CaseIterable, Identifiable {
+        case off
+        case grid
+        case wide = "2.39"
+        case flat = "1.85"
+        case academy = "4:3"
+        var id: String { rawValue }
+        /// Picture width over height, for the frame-line guides.
+        var aspect: CGFloat? {
+            switch self {
+            case .wide: return 2.39
+            case .flat: return 1.85
+            case .academy: return 4.0 / 3.0
+            case .off, .grid: return nil
+            }
+        }
+    }
+
+    private static let monitorKey = "monitorSettings"
+
+    @Published var monitor: MonitorSettings = {
+        guard let data = UserDefaults.standard.data(forKey: Streamer.monitorKey),
+              let stored = try? JSONDecoder().decode(MonitorSettings.self, from: data)
+        else { return MonitorSettings() }
+        return stored
+    }() {
+        didSet {
+            if let data = try? JSONEncoder().encode(monitor) {
+                UserDefaults.standard.set(data, forKey: Self.monitorKey)
+            }
+            updateScopeTools()
+            scheduleStateSend()
+        }
+    }
+
+    /// Histogram, zebra, peaking, false colour and the mic meter.
+    let scope = MonitorScope()
+
+    private func updateScopeTools() {
+        let settings = monitor
+        let metering = proInterface
+        scope.updateTools {
+            $0.zebraLevel = settings.zebra ? Double(settings.zebraLevel) / 100 : nil
+            $0.peaking = settings.peaking
+            $0.falseColor = settings.falseColor
+            $0.metering = metering
+        }
+    }
+
+    /// Colour pipelines this phone can stream, for `set_format`'s `color`.
+    var colorOptions: [StreamColor] {
+        guard VideoEncoder.hdrSupported else { return [.sdr] }
+        return CameraManager.appleLogCaptureAvailable ? [.sdr, .hlg, .log] : [.sdr, .hlg]
+    }
+
+    /// A remote focus pull in flight (`focus` with `rampSeconds`).
+    private var focusRamp: Task<Void, Never>?
+
+    /// Moves focus to `target` over `seconds`, locking it as it goes.
+    func pullFocus(to target: Float, over seconds: Double) {
+        focusRamp?.cancel()
+        let start = lensPosition
+        focusSetting = .locked
+        guard seconds > 0 else {
+            lensPosition = target
+            return
+        }
+        focusRamp = Task { @MainActor [weak self] in
+            let begun = Date()
+            while !Task.isCancelled {
+                let t = min(Date().timeIntervalSince(begun) / seconds, 1)
+                // Ease in and out: a pull that starts and lands softly.
+                let eased = Float(t * t * (3 - 2 * t))
+                self?.lensPosition = start + (target - start) * eased
+                if t >= 1 { break }
+                try? await Task.sleep(nanoseconds: 33_000_000)
+            }
+        }
+    }
+
+    private var batterySink: AnyCancellable?
+    private var thermalObserver: NSObjectProtocol?
+
+    private static func thermalName(_ state: ProcessInfo.ThermalState) -> String {
+        switch state {
+        case .fair: return "fair"
+        case .serious: return "serious"
+        case .critical: return "critical"
+        default: return "nominal"
+        }
+    }
+
     // MARK: - Remembered camera settings
 
     /// What a camera was last set to — exposure, white balance, zoom and
@@ -1129,6 +1247,20 @@ final class Streamer: ObservableObject {
         // Mic picker (docs/PROTOCOL.md §8): only while the phone mic is
         // live as the source's audio — remote UIs key their row off
         // micEnabled, and the list is only meaningful with capture up.
+        if VideoEncoder.hdrSupported {
+            state["colors"] = colorOptions.map { $0.rawValue }
+        }
+        if let percent = BatteryMonitor.shared.percent {
+            state["battery"] = percent
+        }
+        state["thermal"] = Self.thermalName(ProcessInfo.processInfo.thermalState)
+        state["monitor"] = [
+            "zebra": monitor.zebra,
+            "zebraLevel": monitor.zebraLevel,
+            "peaking": monitor.peaking,
+            "falseColor": monitor.falseColor,
+            "guide": monitor.guide.rawValue,
+        ] as [String: Any]
         if sendMicAudio, audioReference != nil {
             state["micEnabled"] = true
             state["mic"] = selectedMicID
@@ -1192,7 +1324,13 @@ final class Streamer: ObservableObject {
     @Published private(set) var status: Status = .idle {
         didSet { noteFeedbackChange(status: oldValue) }
     }
-    @Published private(set) var isStreaming = false
+    @Published private(set) var isStreaming = false {
+        didSet {
+            if isStreaming != oldValue { streamStartedAt = isStreaming ? Date() : nil }
+        }
+    }
+    /// When this stream started, for the Pro interface's timecode.
+    @Published private(set) var streamStartedAt: Date?
 
     /// Held, not ended: the connection, the camera and the encoder all
     /// stay up while video stops going out, so resuming costs a keyframe
@@ -1579,6 +1717,16 @@ final class Streamer: ObservableObject {
                 self?.handleClientState(state)
             }
         }
+        // Battery and heat ride the STATE snapshot (docs/PROTOCOL.md §8).
+        batterySink = BatteryMonitor.shared.$percent.removeDuplicates()
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in self?.scheduleStateSend() }
+            }
+        thermalObserver = NotificationCenter.default.addObserver(
+            forName: ProcessInfo.thermalStateDidChangeNotification,
+            object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.scheduleStateSend() }
+        }
         camera.onSystemPressure = { [weak self] level in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -1876,7 +2024,13 @@ final class Streamer: ObservableObject {
             }
         case "focus":
             if let position = command["lensPosition"] as? Double {
-                lensPosition = min(max(Float(position), 0), 1)
+                let target = min(max(Float(position), 0), 1)
+                if let ramp = (command["rampSeconds"] as? NSNumber)?.doubleValue {
+                    pullFocus(to: target, over: min(max(ramp, 0), 10))
+                } else {
+                    focusRamp?.cancel()
+                    lensPosition = target
+                }
             }
             if let faces = command["faces"] as? Bool {
                 faceFocus = faces
@@ -1925,6 +2079,9 @@ final class Streamer: ObservableObject {
             if let value = (command["temperature"] as? NSNumber)?.floatValue {
                 whiteBalanceTemperature = min(max(value, 2500), 8000)
             }
+            if let value = (command["tint"] as? NSNumber)?.floatValue {
+                whiteBalanceTint = min(max(value, -150), 150)
+            }
             whiteBalanceSetting =
                 (command["mode"] as? String) == "locked" ? .locked : .auto
         case "exposure":
@@ -1951,6 +2108,17 @@ final class Streamer: ObservableObject {
             }
         case "set_format":
             applyRemoteFormat(command)
+        case "monitor":
+            var next = monitor
+            if let on = command["zebra"] as? Bool { next.zebra = on }
+            if let level = (command["zebraLevel"] as? NSNumber)?.intValue {
+                next.zebraLevel = min(max(level, 70), 100)
+            }
+            if let on = command["peaking"] as? Bool { next.peaking = on }
+            if let on = command["falseColor"] as? Bool { next.falseColor = on }
+            if let raw = command["guide"] as? String,
+               let guide = Guide(rawValue: raw) { next.guide = guide }
+            if next != monitor { monitor = next }
         case "mic":
             // Validate against the live list: a stale remote UI can name a
             // mic that just left (Bluetooth), and the id must not stick.
@@ -1998,7 +2166,16 @@ final class Streamer: ObservableObject {
     /// is validated against the current lens and ignored if unsupported —
     /// the STATE snapshot advertises what's valid, so a remote UI only
     /// offers combos that work.
-    private func applyRemoteFormat(_ command: [String: Any]) {
+    func applyRemoteFormat(_ command: [String: Any]) {
+        // The colour pipeline first: its didSet forces HEVC and rebuilds
+        // a live stream, and the codec check below must see the new one.
+        if let raw = command["color"] as? String,
+           let parsed = StreamColor(rawValue: raw),
+           colorOptions.contains(parsed), parsed != colorSetting {
+            colorSetting = parsed
+        }
+        guard command.keys.contains(where: { ["resolution", "fps", "codec"].contains($0) })
+        else { return }
         var newResolution = resolution
         var newFps = fps
         var newCodec = codec
@@ -2117,6 +2294,7 @@ final class Streamer: ObservableObject {
         isStreaming = true
         status = .connecting
         updateIdleTimer()
+        updateScopeTools()
 
         camera.start()
         resetCameraControls()
@@ -2161,7 +2339,8 @@ final class Streamer: ObservableObject {
         guard isStreaming, audioReference == nil else { return }
         let capture = AudioReference(purpose: purpose)
         capture.preferredMicID = selectedMicID
-        capture.onPCM = { [weak self] pcm, pts in
+        capture.onPCM = { [weak self, scope] pcm, pts in
+            scope.noteAudio(pcm)
             switch purpose {
             case .lipSyncReference:
                 self?.client.sendAudio(pcm, ptsNanoseconds: pts)
@@ -2185,6 +2364,7 @@ final class Streamer: ObservableObject {
         audioReference?.stop()
         audioReference = nil
         micCapturePurpose = nil
+        scope.micStopped()
         scheduleStateSend()
     }
 
@@ -2247,6 +2427,7 @@ final class Streamer: ObservableObject {
                     - previousStatsAt.uptimeNanoseconds) / 1_000_000_000
                 let healthVisible = UserDefaults.standard.bool(
                     forKey: StreamerDefaults.showHealth)
+                    || UserDefaults.standard.bool(forKey: StreamerDefaults.proInterface)
                 var sentPerSecond: Double?
                 if let previous = previousStats, elapsed > 0.2 {
                     sentPerSecond = Double(max(0, stats.framesSent

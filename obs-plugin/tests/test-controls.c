@@ -78,10 +78,52 @@ static void test_clamps(void)
 	CHECK_NEAR(s.zoom, 2);
 }
 
+static void test_pro_fields(void)
+{
+	const char *json =
+		"{\"exposureBias\":-0.5,\"supportsManualExposure\":true,"
+		"\"exposureMode\":\"manual\",\"isoMode\":\"manual\","
+		"\"shutterMode\":\"auto\",\"iso\":400,\"minISO\":50,"
+		"\"maxISO\":3200,\"shutterSeconds\":0.01,"
+		"\"supportsWhiteBalanceLock\":true,"
+		"\"whiteBalanceMode\":\"locked\","
+		"\"whiteBalanceTemperature\":5600,\"whiteBalanceTint\":999,"
+		"\"focusMode\":\"locked\",\"lensPosition\":0.42,"
+		"\"hdr\":true,\"colors\":[\"sdr\",\"hlg\",\"log\"],"
+		"\"monitor\":{\"zebra\":true,\"zebraLevel\":20,"
+		"\"peaking\":true,\"falseColor\":false,\"guide\":\"2.39\"}}";
+	struct lenslink_ctl_state s;
+
+	CHECK(lenslink_ctl_parse(json, strlen(json), &s));
+	CHECK_NEAR(s.exposure_bias, -0.5);
+	CHECK(s.supports_manual_exposure && s.iso_manual && !s.shutter_manual);
+	CHECK_NEAR(s.iso, 400);
+	CHECK_NEAR(s.max_iso, 3200);
+	CHECK_NEAR(s.shutter, 0.01);
+	CHECK(s.supports_wb_lock && s.wb_locked);
+	CHECK_NEAR(s.wb_temperature, 5600);
+	CHECK_NEAR(s.wb_tint, 150);
+	CHECK(s.focus_locked);
+	CHECK_NEAR(s.lens_position, 0.42);
+	CHECK_STR(s.color, "hlg");
+	CHECK(s.color_count == 3);
+	CHECK(s.has_monitor && s.zebra && s.peaking && !s.false_color);
+	CHECK(s.zebra_level == 70);
+	CHECK_STR(s.guide, "2.39");
+
+	const char *old = "{\"exposureMode\":\"manual\",\"color\":\"log\"}";
+	CHECK(lenslink_ctl_parse(old, strlen(old), &s));
+	CHECK(s.iso_manual && s.shutter_manual);
+	CHECK_STR(s.color, "log");
+	CHECK(!s.has_monitor && s.zebra_level == 95);
+	CHECK_STR(s.guide, "off");
+}
+
 int main(void)
 {
 	test_full_state();
 	test_defaults_and_bad_input();
 	test_clamps();
+	test_pro_fields();
 	TEST_MAIN_END();
 }

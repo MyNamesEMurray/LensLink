@@ -132,12 +132,14 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "focus", "mode": "auto" }
 { "cmd": "focus", "mode": "locked", "lensPosition": 0.42 }
 { "cmd": "focus", "faces": true }
+{ "cmd": "focus", "mode": "locked", "lensPosition": 0.8, "rampSeconds": 3 }
 { "cmd": "flashlight", "on": true }
 { "cmd": "flashlight", "on": true, "level": 0.6 }
 { "cmd": "natural_blur", "on": true }
 { "cmd": "flip" }
 { "cmd": "selectLens", "label": "Ultra Wide (0.5×)" }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
+{ "cmd": "white_balance", "mode": "locked", "temperature": 5600, "tint": 12 }
 { "cmd": "white_balance", "mode": "auto" }
 { "cmd": "white_balance", "mode": "calibrate" }
 { "cmd": "white_balance", "mode": "calibrate", "x": 0.31, "y": 0.62 }
@@ -153,6 +155,9 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "pause_stream" }
 { "cmd": "resume_stream" }
 { "cmd": "set_format", "resolution": "1080p", "fps": 60, "codec": "hevc" }
+{ "cmd": "set_format", "color": "hlg" }
+{ "cmd": "monitor", "zebra": true, "zebraLevel": 95, "peaking": false,
+  "falseColor": false, "guide": "2.39" }
 { "cmd": "set_quality", "quality": "maximum" }
 { "cmd": "mic", "id": "builtin:2" }
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
@@ -170,6 +175,24 @@ panel's eyedropper picks it on a still from `GET /api/still`). Apps
 older than the point fields ignore them and use the centre. The result arrives in STATE as `"locked"` with the measured
 `whiteBalanceTemperature` and `whiteBalanceTint`. An app older than this
 command treats it as `"auto"`.
+
+`white_balance` also takes `tint`, −150 (green) to 150 (magenta), the
+same scale `whiteBalanceTint` reports. It applies with `"mode": "locked"`;
+apps that predate it ignore the field and keep their measured tint.
+
+`focus` with `rampSeconds` (0–10) pulls focus to `lensPosition` over that
+many seconds on an ease-in-out curve instead of jumping: the web panel's
+focus pull from A to B. A new `focus` command cancels a pull in flight.
+Older apps ignore the field and jump.
+
+`monitor` sets the phone's monitoring tools: `zebra` (on/off) with
+`zebraLevel` (70–100, percent of full scale), `peaking`, `falseColor`,
+and `guide` (`"off"`, `"grid"`, or a frame line: `"2.39"`, `"1.85"`,
+`"4:3"`). Any subset may be present. They are drawn on the phone's
+screen only, never into the stream; the command exists so an operator
+at OBS can turn on what the person at the phone needs to see. STATE
+reports them as `monitor`. Older apps ignore it, and remote UIs hide
+the controls while STATE has no `monitor` object.
 
 `lock` is the app's tray Lock button: `on: true` freezes what auto is
 doing right now for `target` — `"focus"`, `"whiteBalance"`,
@@ -212,6 +235,11 @@ active lens (the STATE snapshot advertises the valid choices in
 `fps` / `codec`) and ignores unsupported requests. A format change flows
 through the normal live-reconfigure path: new VIDEO_CONFIG, fresh
 keyframe, decoder reset on a codec change.
+
+`set_format` also takes `color`, one of the STATE `colors` list (`"sdr"`,
+`"hlg"`, `"log"`). It is applied before the other fields, because HLG and
+Log force HEVC. Apps without `colors` in STATE have no colour choice and
+ignore it.
 
 Screen-mirror connections honour only `set_format`'s `fps`, 60 or 30. The
 plugin's LensLink Screen source sends `{ "cmd": "set_format", "fps": 30 }`
@@ -402,6 +430,14 @@ While a 10-bit colour pipeline is active the snapshot says so —
 H.264 through the ordinary `set_format` validation. Both fields are
 absent on SDR streams, whose snapshots are unchanged from before
 colour modes existed.
+
+Phones with a 10-bit pipeline list the colour modes they offer in
+`colors` (`["sdr","hlg","log"]`, `log` only where Apple Log exists), for
+`set_format`'s `color`. Every snapshot carries `thermal` (iOS's thermal
+state: `"nominal"`, `"fair"`, `"serious"` or `"critical"`), `battery`
+(percent, absent when iOS doesn't report it) and the monitoring tools:
+`"monitor": { "zebra", "zebraLevel", "peaking", "falseColor", "guide" }`,
+as set by the `monitor` command or on the phone.
 
 Pause rides the snapshot too, so surfaces can say *why* a picture is
 held rather than only show it: `"paused": true` while video is held, with

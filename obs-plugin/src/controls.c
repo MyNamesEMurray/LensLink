@@ -2,6 +2,7 @@
 #include "json-reader.h"
 
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -67,6 +68,49 @@ static void read_reframe(struct json_reader *r, struct lenslink_ctl_state *s)
 	}
 }
 
+static void read_str(struct json_reader *r, char *out, size_t size);
+
+static void read_monitor(struct json_reader *r, struct lenslink_ctl_state *s)
+{
+	char key[24];
+	bool truncated, flag;
+	double num;
+	if (!lenslink_json_object_begin(r)) {
+		lenslink_json_skip(r);
+		return;
+	}
+	s->has_monitor = true;
+	while (lenslink_json_object_next(r, key, sizeof(key), &truncated)) {
+		bool *target = NULL;
+		if (truncated) {
+			lenslink_json_skip(r);
+			continue;
+		}
+		if (!strcmp(key, "zebraLevel")) {
+			if (lenslink_json_read_number(r, &num) &&
+			    clamp_num(num, 70, 100, &num))
+				s->zebra_level = (int)num;
+			else
+				lenslink_json_skip(r);
+			continue;
+		}
+		if (!strcmp(key, "guide")) {
+			read_str(r, s->guide, sizeof(s->guide));
+			continue;
+		}
+		if (!strcmp(key, "zebra"))
+			target = &s->zebra;
+		else if (!strcmp(key, "peaking"))
+			target = &s->peaking;
+		else if (!strcmp(key, "falseColor"))
+			target = &s->false_color;
+		if (!target || !lenslink_json_read_bool(r, &flag))
+			lenslink_json_skip(r);
+		else
+			*target = flag;
+	}
+}
+
 static void read_str(struct json_reader *r, char *out, size_t size)
 {
 	bool truncated = false;
@@ -83,6 +127,15 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 	s->reframe_zoom = 1;
 	s->reframe_x = 0.5;
 	s->reframe_y = 0.5;
+	s->lens_position = 0.5;
+	s->wb_temperature = 5000;
+	s->zebra_level = 95;
+	snprintf(s->color, sizeof(s->color), "sdr");
+	snprintf(s->guide, sizeof(s->guide), "off");
+
+	/* Apps before isoMode/shutterMode report one exposureMode for both. */
+	char mode[16];
+	bool exposure_manual = false, split_modes = false;
 
 	struct json_reader r;
 	lenslink_json_reader_init(&r, json, len);
@@ -141,6 +194,92 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 			}
 		} else if (!strcmp(key, "reframe")) {
 			read_reframe(&r, s);
+		} else if (!strcmp(key, "monitor")) {
+			read_monitor(&r, s);
+		} else if (!strcmp(key, "colors")) {
+			read_strings(&r, s->colors, LL_CTL_STR, &s->color_count);
+		} else if (!strcmp(key, "color")) {
+			read_str(&r, s->color, sizeof(s->color));
+			if (!s->color[0])
+				snprintf(s->color, sizeof(s->color), "sdr");
+		} else if (!strcmp(key, "hdr")) {
+			if (lenslink_json_read_bool(&r, &flag) && flag)
+				snprintf(s->color, sizeof(s->color), "hlg");
+		} else if (!strcmp(key, "exposureMode") ||
+			   !strcmp(key, "isoMode") ||
+			   !strcmp(key, "shutterMode") ||
+			   !strcmp(key, "whiteBalanceMode") ||
+			   !strcmp(key, "focusMode")) {
+			read_str(&r, mode, sizeof(mode));
+			bool manual = !strcmp(mode, "manual") ||
+				      !strcmp(mode, "locked");
+			if (!strcmp(key, "exposureMode")) {
+				exposure_manual = manual;
+			} else if (!strcmp(key, "isoMode")) {
+				s->iso_manual = manual;
+				split_modes = true;
+			} else if (!strcmp(key, "shutterMode")) {
+				s->shutter_manual = manual;
+				split_modes = true;
+			} else if (!strcmp(key, "whiteBalanceMode")) {
+				s->wb_locked = manual;
+			} else {
+				s->focus_locked = manual;
+			}
+		} else if (!strcmp(key, "exposureBias") || !strcmp(key, "iso") ||
+			   !strcmp(key, "minISO") || !strcmp(key, "maxISO") ||
+			   !strcmp(key, "shutterSeconds") ||
+			   !strcmp(key, "minShutterSeconds") ||
+			   !strcmp(key, "maxShutterSeconds") ||
+			   !strcmp(key, "whiteBalanceTemperature") ||
+			   !strcmp(key, "whiteBalanceTint") ||
+			   !strcmp(key, "lensPosition")) {
+			static const struct {
+				const char *key;
+				size_t offset;
+				double lo, hi;
+			} nums[] = {
+				{"exposureBias",
+				 offsetof(struct lenslink_ctl_state, exposure_bias),
+				 -8, 8},
+				{"iso", offsetof(struct lenslink_ctl_state, iso), 0,
+				 1e6},
+				{"minISO",
+				 offsetof(struct lenslink_ctl_state, min_iso), 0,
+				 1e6},
+				{"maxISO",
+				 offsetof(struct lenslink_ctl_state, max_iso), 0,
+				 1e6},
+				{"shutterSeconds",
+				 offsetof(struct lenslink_ctl_state, shutter), 0,
+				 60},
+				{"minShutterSeconds",
+				 offsetof(struct lenslink_ctl_state, min_shutter),
+				 0, 60},
+				{"maxShutterSeconds",
+				 offsetof(struct lenslink_ctl_state, max_shutter),
+				 0, 60},
+				{"whiteBalanceTemperature",
+				 offsetof(struct lenslink_ctl_state,
+					  wb_temperature),
+				 1000, 20000},
+				{"whiteBalanceTint",
+				 offsetof(struct lenslink_ctl_state, wb_tint),
+				 -150, 150},
+				{"lensPosition",
+				 offsetof(struct lenslink_ctl_state,
+					  lens_position),
+				 0, 1},
+			};
+			size_t i = 0;
+			while (strcmp(nums[i].key, key))
+				i++;
+			if (lenslink_json_read_number(&r, &num))
+				clamp_num(num, nums[i].lo, nums[i].hi,
+					  (double *)((char *)s +
+						     nums[i].offset));
+			else
+				lenslink_json_skip(&r);
 		} else {
 			bool *target = NULL;
 			if (!strcmp(key, "paused"))
@@ -159,6 +298,10 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 				target = &s->supports_green_screen;
 			else if (!strcmp(key, "greenScreen"))
 				target = &s->green_screen;
+			else if (!strcmp(key, "supportsManualExposure"))
+				target = &s->supports_manual_exposure;
+			else if (!strcmp(key, "supportsWhiteBalanceLock"))
+				target = &s->supports_wb_lock;
 			if (!target || !lenslink_json_read_bool(&r, &flag))
 				lenslink_json_skip(&r);
 			else
@@ -167,6 +310,8 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 	}
 	if (s->zoom > s->max_zoom)
 		s->zoom = s->max_zoom;
+	if (!split_modes)
+		s->iso_manual = s->shutter_manual = exposure_manual;
 	s->valid = !r.error;
 	return s->valid;
 }

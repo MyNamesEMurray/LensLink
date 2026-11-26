@@ -85,6 +85,28 @@ static const char *const web_text_keys[] = {
 	"Web.Lens.MainWide",
 	"Web.Lens.UltraWide",
 	"Web.Lens.Telephoto",
+	"Web.Tint",
+	"Web.Color",
+	"Web.Color.SDR",
+	"Web.Color.HLG",
+	"Web.Color.Log",
+	"Web.Zebra",
+	"Web.Peaking",
+	"Web.FalseColor",
+	"Web.Guides",
+	"Web.Guides.Off",
+	"Web.Guides.Grid",
+	"Web.Pro",
+	"Web.Pro.Tip",
+	"Web.Latency",
+	"Web.Battery",
+	"Web.Heat.Cool",
+	"Web.Heat.Warm",
+	"Web.Heat.Hot",
+	"Web.FocusA",
+	"Web.FocusB",
+	"Web.FocusPull",
+	"Web.Shortcuts",
 };
 
 #define WEB_KEY_PREFIX "Web."
@@ -192,6 +214,13 @@ static const char control_page[] =
 	"[role=button]:focus-visible{outline:2px solid var(--accent);"
 	"outline-offset:2px}"
 	"#gsdv{cursor:pointer}"
+	"button.pill{color:var(--txt);cursor:pointer}.pill.on{background:var(--accent)}"
+	".tcode{font-family:ui-monospace,monospace;font-size:20px;font-weight:600;"
+	"font-variant-numeric:tabular-nums}"
+	".meter{height:8px;border-radius:2px;background:rgba(255,255,255,.12);"
+	"overflow:hidden;margin:6px 0}#meterfill{height:100%;width:0}"
+	"#hist{flex:1;min-width:0;height:60px;background:rgba(255,255,255,.06);"
+	"border-radius:8px}"
 	".sr{position:absolute;width:1px;height:1px;overflow:hidden;"
 	"clip:rect(0 0 0 0);white-space:nowrap}"
 	"@media(prefers-contrast:more){:root{--txt2:rgba(255,255,255,.9);"
@@ -204,6 +233,10 @@ static const char control_page[] =
 	"<div class='pill'><span class='dot' id='dot'></span>"
 	"<span id='status' data-t='Connecting'></span></div>"
 	"<span class='sr' id='statusann' role='status' aria-live='polite'></span>"
+	/* Pro section switch: shown with the live controls, remembered per
+	 * browser. */
+	"<button class='pill' id='probtn' style='display:none' data-t='Pro' "
+	"data-t-title='Pro.Tip'></button>"
 	/* Lip-sync calibration stage — hidden unless auto-calibrate is on
 	 * AND a phone is connected: the plugin keeps its lock across
 	 * reconnects (by design), but claiming "locked" beside a "trying to
@@ -328,12 +361,37 @@ static const char control_page[] =
 	"<select id='fmtres' data-t-title='Resolution'></select>"
 	"<select id='fmtfps' data-t-title='FrameRate'></select>"
 	"<select id='fmtcodec' data-t-title='Codec'></select>"
+	"<select id='fmtcolor' data-t-title='Color' style='display:none'></select>"
 	"</div>"
 	"<div class='row' id='stabrow' style='display:none'>"
 	"<span class='lbl' id='stabl' data-t='Stabilization'></span>"
 	"<select id='stab' aria-labelledby='stabl'></select></div>"
 	/* Remote stop: mirrors the app's red Stop. The phone drops back to
 	 * standby, so this panel swaps to the Start button afterwards. */
+	/* Pro section: timecode, link, histogram (from the still), the
+	 * phone-mic meter, the phone's monitoring tools and a focus pull. */
+	"<div id='pro' style='display:none'><div class='sep'></div>"
+	"<div class='row'><span class='tcode' id='protc'>00:00:00:00</span>"
+	"<span class='hint' id='prolink' aria-live='off'></span></div>"
+	"<div class='row'><canvas id='hist' width='256' height='60' aria-hidden='true'></canvas>"
+	"<div style='width:96px;flex:none'><div class='lbl' data-t='Mic'></div>"
+	"<div class='meter' aria-hidden='true'><div id='meterfill'></div></div>"
+	"<div class='hint' id='meterv'></div></div></div>"
+	"<div class='btnrow' id='monrow' style='display:none'>"
+	"<button class='primary toggle' id='mzebra' data-t='Zebra'></button>"
+	"<button class='primary toggle' id='mpeak' data-t='Peaking'></button>"
+	"<button class='primary toggle' id='mfalse' data-t='FalseColor'></button></div>"
+	"<div class='row' id='guiderow' style='display:none'>"
+	"<span class='lbl' id='mguidel' data-t='Guides'></span>"
+	"<select id='mguide' aria-labelledby='mguidel'></select></div>"
+	"<div class='btnrow' id='pullrow' style='display:none'>"
+	"<button class='primary toggle' id='fa' data-t='FocusA'></button>"
+	"<button class='primary toggle' id='fb' data-t='FocusB'></button>"
+	"<button class='primary' id='fpull' data-t='FocusPull' disabled></button>"
+	"<select id='fsec' data-t-title='FocusPull' style='flex:none;width:80px'>"
+	"<option value='1'>1 s</option><option value='2' selected>2 s</option>"
+	"<option value='3'>3 s</option><option value='5'>5 s</option></select></div>"
+	"<div class='hint' style='margin-top:14px' data-t='Shortcuts'></div></div>"
 	"<div class='btnrow'>"
 	/* Hold the stream without ending it: the phone keeps the connection
 	 * and the camera, OBS keeps the source, and resuming is a keyframe
@@ -455,12 +513,12 @@ static const char control_page[] =
 	"const nearest=(a,v)=>a.reduce((b,x,i)=>Math.abs(x-v)<Math.abs(a[b]-v)?i:b,0);"
 	"const shLabel=s=>s>=1?Math.round(s)+'s':'1/'+Math.round(1/s);"
 	"const NAME={focus:()=>t('Focus'),wb:()=>t('WB'),ev:()=>'EV',iso:()=>'ISO',"
-	"sh:()=>t('Shutter')};"
+	"sh:()=>t('Shutter'),tint:()=>t('Tint')};"
 	/* ISO and shutter lock one at a time on an app that reports
 	 * isoMode/shutterMode; older apps hold them as one exposure pair. */
 	"const split=()=>typeof S.isoMode==='string';"
-	"const GRP={focus:'focus',wb:'whiteBalance',ev:'exposure',iso:'exposure',"
-	"sh:'exposure'};"
+	"const GRP={focus:'focus',wb:'whiteBalance',tint:'whiteBalance',ev:'exposure',"
+	"iso:'exposure',sh:'exposure'};"
 	"const grp=k=>split()&&k==='iso'?'iso':split()&&k==='sh'?'shutter':GRP[k];"
 	"const isoMan=()=>split()?S.isoMode==='manual':S.exposureMode==='manual';"
 	"const shMan=()=>split()?S.shutterMode==='manual':S.exposureMode==='manual';"
@@ -471,12 +529,16 @@ static const char control_page[] =
 	"const isAuto=k=>k==='ev'?null:!locked(grp(k));"
 	"let tgt='ev';"
 	"function targets(){const a=['focus'];if(S.supportsWhiteBalanceLock)a.push('wb');"
+	/* Tint takes a value only on apps that also report "monitor". */
+	"if(S.supportsWhiteBalanceLock&&S.monitor)a.push('tint');"
 	"a.push('ev');if(S.supportsManualExposure)a.push('iso','sh');return a}"
 	"function readout(k){switch(k){"
 	"case 'ev':{const b=+S.exposureBias||0;return(b>=0?'+':'')+b.toFixed(1)+' EV'}"
 	"case 'iso':return isoMan()?'ISO '+Math.round(S.iso):t('Auto');"
 	"case 'sh':return shMan()?shLabel(S.shutterSeconds):t('Auto');"
 	"case 'wb':return isAuto('wb')?t('Auto'):Math.round(S.whiteBalanceTemperature)+' K';"
+	"case 'tint':{if(isAuto('tint'))return t('Auto');const n=Math.round(+S.whiteBalanceTint||0);"
+	"return(n>=0?'+':'')+n}"
 	"default:return isAuto('focus')?t('Auto'):(+S.lensPosition||0).toFixed(2)}}"
 	"function trayUI(){const ts=targets();if(!ts.includes(tgt))tgt='ev';"
 	"const k=ts.map(x=>x+(x===tgt?'*':'')+isAuto(x)).join();"
@@ -498,6 +560,8 @@ static const char control_page[] =
 	"dialEl.value=nearest(stops,v)}"
 	"else if(tgt==='wb'){dialEl.min=2500;dialEl.max=8000;dialEl.step=10;"
 	"dialEl.value=+S.whiteBalanceTemperature||5000}"
+	"else if(tgt==='tint'){dialEl.min=-150;dialEl.max=150;dialEl.step=1;"
+	"dialEl.value=+S.whiteBalanceTint||0}"
 	"else{dialEl.min=0;dialEl.max=1;dialEl.step=0.01;dialEl.value=+S.lensPosition||0.5}"
 	"dialEl.disabled=tgt==='ev'&&eman();"
 	"setText(readoutEl,readout(tgt));dialEl.setAttribute('aria-label',NAME[tgt]());"
@@ -525,8 +589,8 @@ static const char control_page[] =
 	"case 'sh':send(split()?{cmd:'exposure',shutterMode:'manual',"
 	"shutterSeconds:S.shutterSeconds}"
 	":{cmd:'exposure',mode:'manual',shutterSeconds:S.shutterSeconds});break;"
-	"case 'wb':send({cmd:'white_balance',mode:'locked',"
-	"temperature:S.whiteBalanceTemperature});break;"
+	"case 'wb':case 'tint':send({cmd:'white_balance',mode:'locked',"
+	"temperature:S.whiteBalanceTemperature,tint:+S.whiteBalanceTint||0});break;"
 	"default:send({cmd:'focus',mode:'locked',lensPosition:S.lensPosition})}},60);"
 	"dialEl.oninput=()=>{touch();const v=+dialEl.value;"
 	"if(tgt!=='ev'&&isAuto(tgt)&&newApp())"
@@ -535,6 +599,7 @@ static const char control_page[] =
 	"else if(tgt==='iso')S.iso=isoStops()[v];"
 	"else if(tgt==='sh')S.shutterSeconds=shStops()[v];"
 	"else if(tgt==='wb')S.whiteBalanceTemperature=v;"
+	"else if(tgt==='tint')S.whiteBalanceTint=v;"
 	"else S.lensPosition=v;"
 	"if(tgt!=='ev')setLocal(grp(tgt),true);"
 	"trayUI();sendDial()};"
@@ -640,6 +705,9 @@ static const char control_page[] =
 	"fmtresEl.onchange=()=>send({cmd:'set_format',resolution:fmtresEl.value});"
 	"fmtfpsEl.onchange=()=>send({cmd:'set_format',fps:+fmtfpsEl.value});"
 	"fmtcodecEl.onchange=()=>send({cmd:'set_format',codec:fmtcodecEl.value});"
+	"const fmtcolorEl=$('fmtcolor');"
+	"const COLORS={sdr:t('Color.SDR'),hlg:t('Color.HLG'),log:t('Color.Log')};"
+	"fmtcolorEl.onchange=()=>send({cmd:'set_format',color:fmtcolorEl.value});"
 	"const STAB={off:t('Stabilization.Off'),standard:t('Stabilization.Standard'),"
 	"cinematic:t('Stabilization.Cinematic')};"
 	"stabEl.onchange=()=>send({cmd:'stabilization',mode:stabEl.value});"
@@ -701,6 +769,100 @@ static const char control_page[] =
 	"syncEl.textContent=t('Sync.Relocking');"
 	"syncdotEl.style.background=COL.amber;"
 	"fetch('/api/recalibrate'+q(),{method:'POST'}).then(gone)};"
+	/* Pro section. */
+	"const proEl=$('pro'),probtnEl=$('probtn'),histEl=$('hist');"
+	"let pro=false;try{pro=localStorage.getItem('lenslinkPro')==='1'}catch(e){}"
+	"function proUI(){probtnEl.className=pro?'pill on':'pill';pressed(probtnEl,pro);"
+	"show(proEl,pro)}"
+	"probtnEl.onclick=()=>{pro=!pro;try{localStorage.setItem('lenslinkPro',pro?'1':'0')}"
+	"catch(e){}proUI();if(pro)histStill()};"
+	"let live={ms:0,at:0},prevB=null;"
+	"const p2=n=>String(n).padStart(2,'0');"
+	"setInterval(()=>{if(!pro||!live.at)return;const ms=live.ms+Date.now()-live.at;"
+	"const sec=Math.floor(ms/1000),f=Math.floor(ms%1000*(+S.fps||30)/1000);"
+	"setText($('protc'),p2(Math.floor(sec/3600))+':'+p2(Math.floor(sec/60)%60)+':'"
+	"+p2(sec%60)+':'+p2(f))},100);"
+	"const HEAT={nominal:t('Heat.Cool'),fair:t('Heat.Warm'),serious:t('Heat.Hot'),critical:t('Heat.Hot')};"
+	"function proLive(s){live={ms:+s.liveMs||0,at:s.liveMs?Date.now():0};"
+	"const parts=[];"
+	"if(prevB&&s.sampleMs>prevB.ms&&s.bytes>=prevB.b)"
+	"parts.push(((s.bytes-prevB.b)*8/(s.sampleMs-prevB.ms)/1000).toFixed(1)+' Mb/s');"
+	"prevB={b:+s.bytes||0,ms:+s.sampleMs||0};"
+	"if(s.latencyMs>0)parts.push(t('Latency')+' '+s.latencyMs+' ms');"
+	"if(typeof S.battery==='number')parts.push(t('Battery')+' '+S.battery+'%');"
+	"if(HEAT[S.thermal])parts.push(HEAT[S.thermal]);"
+	"setText($('prolink'),parts.join(' · '));"
+	"const fill=$('meterfill');"
+	"if(s.audioPeak>=0){const db=s.audioPeak>0?20*Math.log10(s.audioPeak/32767):-90;"
+	"fill.style.width=Math.min(Math.max((db+48)/48,0),1)*100+'%';"
+	"fill.style.background=db>-3?COL.red:db>-12?'#FFD60A':COL.live;"
+	"setText($('meterv'),db.toFixed(0)+' dBFS')}"
+	"else{fill.style.width='0';setText($('meterv'),'')}}"
+	"let hBusy=false,hLast=0;"
+	"async function histStill(){if(hBusy||!pro||picking||rfBusy)return;hBusy=true;"
+	"hLast=Date.now();try{"
+	"if(gone(await fetch('/api/still'+q(),{method:'POST'})))return;"
+	"for(let i=0;i<20;i++){await new Promise(r=>setTimeout(r,150));"
+	"const r=await fetch('/api/still'+q());if(gone(r))return;"
+	"if(r.status===200){const u=URL.createObjectURL(await r.blob()),im=new Image();"
+	"im.onload=()=>{drawHist(im);URL.revokeObjectURL(u)};im.src=u;return}}}"
+	"catch(e){}finally{hBusy=false}}"
+	"function drawHist(im){const c=document.createElement('canvas');c.width=160;c.height=90;"
+	"const g=c.getContext('2d');g.drawImage(im,0,0,160,90);"
+	"const d=g.getImageData(0,0,160,90).data,b=new Array(64).fill(0);"
+	"for(let i=0;i<d.length;i+=4)"
+	"b[Math.min(63,(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2])>>2)]++;"
+	"const m=Math.max(...b)||1,x=histEl.getContext('2d'),W=histEl.width,H=histEl.height;"
+	"x.clearRect(0,0,W,H);x.fillStyle='rgba(255,255,255,.7)';x.beginPath();x.moveTo(0,H);"
+	"b.forEach((v,i)=>x.lineTo(i*W/63,H-v/m*H));x.lineTo(W,H);x.closePath();x.fill()}"
+	"const GUIDES=['off','grid','2.39','1.85','4:3'];"
+	"const MON=[['mzebra','zebra'],['mpeak','peaking'],['mfalse','falseColor']];"
+	"function monUI(){const m=S.monitor;show($('monrow'),!!m);show($('guiderow'),!!m);"
+	"show($('pullrow'),!!m);if(!m)return;"
+	"MON.forEach(([id,k])=>{const e=$(id);e.className=m[k]?'primary toggle on':'primary toggle';"
+	"pressed(e,!!m[k])});"
+	"fillSel($('mguide'),GUIDES,m.guide||'off',"
+	"g=>g==='off'?t('Guides.Off'):g==='grid'?t('Guides.Grid'):g)}"
+	"const monSend=o=>{touch();if(!S.monitor)return;Object.assign(S.monitor,o);"
+	"send(Object.assign({cmd:'monitor'},o));monUI()};"
+	"const monToggle=k=>{if(S.monitor)monSend({[k]:!S.monitor[k]})};"
+	"MON.forEach(([id,k])=>$(id).onclick=()=>monToggle(k));"
+	"$('mguide').onchange=()=>monSend({guide:$('mguide').value});"
+	"let FA=null,FB=null,toB=true;"
+	"function pullUI(){$('fa').className=FA!=null?'primary toggle on':'primary toggle';"
+	"$('fb').className=FB!=null?'primary toggle on':'primary toggle';"
+	"$('fpull').disabled=FA==null||FB==null}"
+	"$('fa').onclick=()=>{FA=+S.lensPosition||0;toB=true;pullUI()};"
+	"$('fb').onclick=()=>{FB=+S.lensPosition||0;pullUI()};"
+	"$('fpull').onclick=()=>{touch();const v=toB?FB:FA;toB=!toB;"
+	"S.lensPosition=v;S.focusMode='locked';"
+	"send({cmd:'focus',mode:'locked',lensPosition:v,rampSeconds:+$('fsec').value});trayUI()};"
+	/* Keyboard shortcuts: never while typing in a field, and Space
+	 * stays a button press on a focused button. */
+	"document.addEventListener('keydown',e=>{"
+	"if(e.metaKey||e.ctrlKey||e.altKey||panelEl.style.display==='none')return;"
+	"const tg=e.target.tagName||'',k=e.key;"
+	"if(/^(INPUT|SELECT|TEXTAREA)$/.test(tg)||(k===' '&&tg==='BUTTON'))return;"
+	"let done=true;"
+	"if(k===' ')pausebtnEl.click();"
+	"else if(/^[1-9]$/.test(k)){const b=lensbtnsEl.children[+k-1];if(b)b.click();else done=false}"
+	"else if(k==='l'||k==='L')lockEl.dispatchEvent(new MouseEvent('click',{shiftKey:true}));"
+	"else if((k==='a'||k==='A')&&newApp()){touch();send({cmd:'lock',target:'all',on:false})}"
+	"else if(k==='z'||k==='Z')monToggle('zebra');"
+	"else if(k==='p'||k==='P')monToggle('peaking');"
+	"else if(k==='f'||k==='F')monToggle('falseColor');"
+	"else if((k==='g'||k==='G')&&S.monitor)"
+	"monSend({guide:GUIDES[(GUIDES.indexOf(S.monitor.guide)+1)%GUIDES.length]});"
+	"else if(k==='['||k===']'){touch();"
+	"const v=Math.min(Math.max((+S.lensPosition||0)+(k===']'?.02:-.02),0),1);"
+	"S.lensPosition=v;S.focusMode='locked';"
+	"send({cmd:'focus',mode:'locked',lensPosition:v});trayUI()}"
+	"else if(k==='-'||k==='='||k==='+'){if(eman())return;touch();"
+	"const v=Math.round(((+S.exposureBias||0)+(k==='-'?-1/3:1/3))*3)/3;"
+	"S.exposureBias=Math.min(Math.max(v,-2),2);"
+	"send({cmd:'exposure_bias',value:S.exposureBias});trayUI()}"
+	"else done=false;"
+	"if(done)e.preventDefault()});"
 	"async function poll(){try{"
 	/* Source list first: pick/keep a selection, tabs when >1. */
 	"const sj=await(await fetch('/api/sources')).json();"
@@ -737,6 +899,7 @@ static const char control_page[] =
 	 * standby gets the Start panel; screen mirror gets the note; not
 	 * connected shows just the status pill. */
 	"panelEl.style.display=(s.connected&&!s.screen&&!s.standby)?'':'none';"
+	"show(probtnEl,s.connected&&!s.screen&&!s.standby);"
 	"screennoteEl.style.display=s.screen?'':'none';"
 	"startpanelEl.style.display=(s.standby&&!s.screen)?'':'none';"
 	"const unarmed=s.standby&&s.armed===false;"
@@ -748,6 +911,7 @@ static const char control_page[] =
 	"if(s.screen||s.standby||!s.connected)return;"
 	"const str=await fetch('/api/state'+q());if(gone(str))return;"
 	"const st=await str.json();"
+	"if(pro){proLive(s);if(Date.now()-hLast>2000)histStill()}"
 	/* Don't fight the operator's hand: only mirror app state when the panel
 	 * hasn't been touched for a couple of seconds. */
 	"if(Date.now()-lastTouch>2000&&typeof st.zoom==='number'){S=st;"
@@ -777,7 +941,10 @@ static const char control_page[] =
 	"fillSel(fmtfpsEl,S.frameRates.map(String),String(S.fps),f=>f+' fps');"
 	"const codecs=Array.isArray(S.codecs)?S.codecs:[];"
 	"show(fmtcodecEl,codecs.length>1);"
-	"fillSel(fmtcodecEl,codecs,S.codec,c=>CODEC_NAMES[c]||c)}"
+	"fillSel(fmtcodecEl,codecs,S.codec,c=>CODEC_NAMES[c]||c);"
+	"const cols=Array.isArray(S.colors)?S.colors:[];show(fmtcolorEl,cols.length>1);"
+	"if(cols.length>1)fillSel(fmtcolorEl,cols,S.color||(S.hdr?'hlg':'sdr'),c=>COLORS[c]||c)}"
+	"monUI();"
 	"show(rfrowEl,!!S.supportsReframe);show(rfpadEl,!!S.supportsReframe);"
 	"if(S.supportsReframe){const r=S.reframe;"
 	"RF=r?{zoom:+r.zoom||1,x:+r.x||.5,y:+r.y||.5}:{zoom:1,x:.5,y:.5};rfUI();"
@@ -789,7 +956,7 @@ static const char control_page[] =
 	"stabEl.disabled=!!S.greenScreenDepth}}"
 	"}catch(e){setText(statusEl,t('Unreachable'));say('unreachable',t('Unreachable'));"
 	"dotEl.style.background=COL.grey}}"
-	"gsUI(false);asUI(false);trayUI();"
+	"gsUI(false);asUI(false);trayUI();proUI();pullUI();"
 	"setInterval(poll,1000);poll();"
 	"</script></body></html>";
 
@@ -1271,8 +1438,9 @@ static void handle_client(socket_t client, bool peer_loopback, bool lan)
 	if (strncmp(request, "GET /api/status", 15) == 0) {
 		char status[1024] = {0};
 		char escaped[2048] = {0};
-		char json[2304];
+		char json[2560];
 		enum ios_camera_status_tone tone = STATUS_TONE_IDLE;
+		struct ios_camera_live live = {.audio_peak = -1};
 		bool screen = false, standby = false, connected = false;
 		bool armed = false, auto_start = false;
 		const char *sync = "off";
@@ -1289,6 +1457,7 @@ static void handle_client(socket_t client, bool peer_loopback, bool lan)
 			connected = ios_camera_is_connected(s);
 			auto_start = ios_camera_auto_start(s);
 			sync = ios_camera_sync_state(s);
+			ios_camera_live_stats(s, &live);
 		}
 		pthread_mutex_unlock(&g_reg.mutex);
 		if (!s) {
@@ -1299,11 +1468,16 @@ static void handle_client(socket_t client, bool peer_loopback, bool lan)
 		snprintf(json, sizeof(json),
 			 "{\"status\":\"%s\",\"tone\":\"%s\",\"screen\":%s,"
 			 "\"standby\":%s,\"armed\":%s,\"connected\":%s,"
-			 "\"autoStart\":%s,\"sync\":\"%s\"}",
+			 "\"autoStart\":%s,\"sync\":\"%s\",\"latencyMs\":%d,"
+			 "\"bytes\":%llu,\"sampleMs\":%llu,\"liveMs\":%llu,"
+			 "\"audioPeak\":%d}",
 			 escaped, tone_name(tone), screen ? "true" : "false",
 			 standby ? "true" : "false", armed ? "true" : "false",
 			 connected ? "true" : "false",
-			 auto_start ? "true" : "false", sync);
+			 auto_start ? "true" : "false", sync, live.latency_ms,
+			 (unsigned long long)live.bytes,
+			 (unsigned long long)live.sample_ms,
+			 (unsigned long long)live.live_ms, live.audio_peak);
 		respond(client, "200 OK", "application/json", json);
 		return;
 	}
