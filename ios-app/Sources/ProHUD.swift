@@ -110,7 +110,7 @@ struct ProHUD: View {
     }
 
     private var moreMenu: some View {
-        Menu {
+        SteadyMenu(key: [streamer.isPaused, streamer.pauseReason == .user]) {
             if !streamer.isPaused || streamer.pauseReason == .user {
                 Button {
                     touched()
@@ -131,6 +131,7 @@ struct ProHUD: View {
                 .frame(width: Theme.controlButton, height: Theme.controlButton)
                 .contentShape(Rectangle())
         }
+        .equatable()
         .accessibilityLabel(L("More"))
     }
 
@@ -579,7 +580,7 @@ struct ProHUD: View {
     }
 
     private var guidesMenu: some View {
-        Menu {
+        SteadyMenu(key: [streamer.monitor.guide]) {
             Picker(L("Guides"), selection: guideBinding) {
                 ForEach(Streamer.Guide.allCases) { guide in
                     Text(Self.guideName(guide)).tag(guide)
@@ -595,6 +596,7 @@ struct ProHUD: View {
             .frame(maxWidth: .infinity, minHeight: Theme.controlButton)
             .contentShape(Rectangle())
         }
+        .equatable()
         .accessibilityLabel(L("Guides"))
     }
 
@@ -609,6 +611,21 @@ struct ProHUD: View {
     private var guideBinding: Binding<Streamer.Guide> {
         Binding(get: { streamer.monitor.guide },
                 set: { touched(); streamer.monitor.guide = $0 })
+    }
+}
+
+/// A Menu that is rebuilt only when `key` changes. The views around it
+/// redraw several times a second (live values, mic level, stats), and a
+/// Menu rebuilt while open flashes and stops taking taps on its items.
+struct SteadyMenu<Content: View, MenuLabel: View>: View, Equatable {
+    let key: [AnyHashable]
+    @ViewBuilder let content: () -> Content
+    @ViewBuilder let label: () -> MenuLabel
+
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.key == rhs.key }
+
+    var body: some View {
+        Menu(content: content, label: label)
     }
 }
 

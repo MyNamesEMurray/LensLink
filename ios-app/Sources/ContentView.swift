@@ -715,13 +715,19 @@ private struct FormatSheet: View {
                                          info: SettingInfo.stabilization)
                     }
                     if Streamer.reframeAvailable {
-                        Toggle(isOn: $streamer.reframeHQ) {
+                        // Only the switch is disabled at 4K: a disabled
+                        // row would take its ⓘ with it, and the ⓘ is
+                        // what explains why it is off.
+                        HStack {
                             SettingsRowLabel(L("High-quality reframe"),
                                              systemImage: "crop",
                                              color: Theme.cameraYellow,
                                              info: SettingInfo.reframe)
+                            Spacer(minLength: 0)
+                            Toggle(L("High-quality reframe"), isOn: $streamer.reframeHQ)
+                                .labelsHidden()
+                                .disabled(streamer.resolution == .uhd4k)
                         }
-                        .disabled(streamer.resolution == .uhd4k)
                     }
                     Toggle(isOn: $streamer.allowVideoEffects) {
                         SettingsRowLabel(L("Allow system video effects"),

@@ -588,7 +588,8 @@ struct StreamingView: View {
     /// feed or Dim screen — the idle view now, instead of waiting out
     /// the fuse. The small chevron is what says it opens.
     private var statusMenu: some View {
-        Menu {
+        SteadyMenu(key: [showHealth, streamer.status.displayName,
+                         streamer.idleAppearance]) {
             Toggle(isOn: Binding(get: { showHealth },
                                  set: { on in
                                      touched()
@@ -627,6 +628,7 @@ struct StreamingView: View {
             .foregroundColor(Theme.textPrimary)
             .glassPill()
         }
+        .equatable()
         .accessibilityLabel(streamer.status.displayName)
         .accessibilityInputLabels([streamer.status.displayName, L("Status")])
         .accessibilityShowsLargeContentViewer {
