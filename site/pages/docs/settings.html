@@ -1,5 +1,5 @@
 title: Settings reference
-description: Every LensLink setting in one place — the OBS source properties, the plugin-wide settings dialog, and the app's options.
+description: Every LensLink setting in one place — the OBS source properties, the plugin-wide settings dialog, and the app's settings.
 ---
 <h1>Settings reference</h1>
 <p class="lede">
@@ -57,27 +57,29 @@ description: Every LensLink setting in one place — the OBS source properties, 
   </tbody>
 </table>
 
-<h2>App options</h2>
-<p>The <strong>Options</strong> row at the bottom of the Setup screen, grouped into Camera, Live screen, Remote start and Advanced. The microphone switches, <strong>Send phone mic to OBS</strong> and <strong>Auto lip-sync reference</strong>, sit on the Setup screen itself: see <a href="/docs/audio/">Audio</a>.</p>
+<h2>App settings</h2>
+<p>Two sheets on the Setup screen. The <strong>Camera</strong> row opens everything that shapes the picture; the <strong>Settings</strong> row at the bottom opens how the app behaves, plus Help. The microphone switches, <strong>Send phone mic to OBS</strong> and <strong>Auto lip-sync reference</strong>, sit on the Setup screen itself: see <a href="/docs/audio/">Audio</a>.</p>
 <table>
-  <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+  <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><th colspan="2">Camera</th></tr>
-    <tr><td>Focus on faces</td><td>On by default. While focus and exposure are on auto, the camera keeps them on the faces it sees.</td></tr>
-    <tr><td>Natural motion blur</td><td>On by default. Auto exposure keeps the shutter at half the frame interval or faster (1/60 at 30 fps), so motion blurs the way film does, and a dim room raises ISO instead. Also on the Shutter chip in the Live screen's tray, and in the browser panel. <a href="/docs/camera/#live-camera-controls">Live camera controls</a>.</td></tr>
+    <tr><th colspan="2">Camera sheet</th></tr>
+    <tr><td>Camera, resolution, frame rate, codec, quality, color</td><td>The lens and the stream's format. Only what the chosen camera supports is offered; 120 and 240 fps (experimental) appear where it has them, and an OBS canvas at 60 shows every other frame at best, so match the canvas and prefer USB. <a href="/docs/camera/">Camera</a>.</td></tr>
+    <tr><td>Green screen</td><td>Paints everything but you green before the video leaves the phone. Shows <strong>Depth</strong> when the chosen lens and format run depth assist. <a href="/docs/camera/">Camera</a>.</td></tr>
     <tr><td>Stabilization</td><td>Off by default. <strong>Standard</strong> takes the edge off a handheld shot; <strong>Cinematic</strong> is smooth like a gimbal and crops the picture a little more. Both make the phone hold frames back, so the stream runs later in OBS. Standard adds a little; Cinematic adds a lot, often more than half a second (about 0.6 s at 4K 30 fps on an iPhone 15 Pro), so keep it for shots that don't need to line up with a game or other sources. Stays off in formats that don't offer the mode, and while depth assist runs.</td></tr>
     <tr><td>High-quality reframe</td><td>iOS 16 or later. Off by default. Captures one size above the stream (1080p for 720p, 4K for 1080p) so the web panel's Reframe zoom keeps real detail instead of stretching pixels. Uses more power and heat, turns green screen off, and does nothing at 4K.</td></tr>
+    <tr><td>Allow system video effects</td><td>Experimental: lets iOS lower the capture frame rate, which Control Center's effects may require. Applies when the camera next starts.</td></tr>
     <tr><td>Remember camera settings</td><td>Keeps each camera's exposure, white balance, zoom and focus from one stream to the next, per lens. Off forgets what was stored. <a href="/docs/camera/#remembered">Remembered settings</a>.</td></tr>
-    <tr><th colspan="2">Live screen</th></tr>
+    <tr><td>Focus on faces, natural motion blur</td><td>No setting: both are on whenever the app opens. A tap on the preview or a focus lock outranks face focus; a manual shutter, or the Shutter chip's blur button, outranks the 180° rule.</td></tr>
+    <tr><th colspan="2">Settings: Live screen</th></tr>
     <tr><td>Pro interface</td><td>Off by default. Replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides. <a href="/docs/camera/#pro-interface">Pro interface</a>.</td></tr>
     <tr><td>Idle view</td><td>What the Live screen becomes 10 seconds after your last touch. <strong>Standard</strong> keeps the controls; <strong>Clean feed</strong> shows only the picture (turn Stats on in the status menu first to keep the health line); <strong>Dim screen</strong> blanks it, drops the brightness and shows the battery level — and alone also dims remote-start standby, a minute in. Any tap restores the controls.</td></tr>
     <tr><td>Tally light</td><td>Colors, priority order, per-status off switches, and which statuses pulse. See below.</td></tr>
-    <tr><th colspan="2">Remote start</th></tr>
+    <tr><th colspan="2">Settings: Remote start</th></tr>
     <tr><td>Arm remote start on open</td><td>Arms <a href="/docs/remote-start/">remote start</a> every time the app opens, so OBS can start the camera without a tap. Off by default: otherwise tap <strong>Arm Remote Start</strong> on the Setup screen. The phone stays awake while armed; locking it or leaving the app disarms it.</td></tr>
-    <tr><th colspan="2">Advanced</th></tr>
-    <tr><td>High frame rate</td><td>Experimental: adds 120 and 240 fps to the Format sheet where the camera has them (1080p and 720p on recent iPhones). The bitrate grows with it, the phone runs hotter, and an OBS canvas at 60 shows every other frame at best — match the canvas, prefer USB. Off drops the rate back to 60.</td></tr>
-    <tr><td>Allow system video effects</td><td>Experimental: lets iOS lower the capture frame rate, which Control Center's effects may require. Applies when the camera next starts.</td></tr>
+    <tr><th colspan="2">Settings: Help</th></tr>
+    <tr><td>Documentation</td><td>The in-app manual.</td></tr>
     <tr><td>Camera diagnostics</td><td>The phone model, each camera's optics and exposure ranges, where the multi-camera zoom switches lenses, and every format this device has, with which support Control Center effects, 10-bit HDR or Apple Log. Paste it into a bug report.</td></tr>
+    <tr><td>Report a problem</td><td>Opens the bug-report form with the app version, phone model and iOS version filled in.</td></tr>
   </tbody>
 </table>
 

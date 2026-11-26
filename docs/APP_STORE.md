@@ -81,7 +81,7 @@ each submission.
 >
 > **Remote start.** OBS can start the camera only after the user taps
 > "Arm Remote Start" on the Setup screen (or turns on "Arm remote start
-> on open" in Options). While the app is open and idle it listens on
+> on open" in Settings). While the app is open and idle it listens on
 > TCP port 9979 so OBS can find it, but refuses to start the camera
 > until armed. While armed it also keeps the screen awake, dimming
 > after a minute; arming ends on
@@ -167,7 +167,7 @@ Portuguese and Simplified Chinese have every field translated in
 > - On iPhones with a 48 MP Main camera, a 2× lens button uses the sensor's full detail.
 > - Hold the picture to pin focus and exposure to that spot of the frame: wherever you point the phone, they keep adjusting for what is there, until a tap on the picture releases them.
 > - A Lock button in the tray locks the selected setting at what auto is doing right now. Hold it to lock or unlock everything.
-> - Natural motion blur, on by default: auto exposure keeps the shutter at half the frame time or faster (1/60 at 30 fps), raising ISO in dim light instead of smearing motion. Turn it off in Options or with the Shutter chip's button.
+> - Natural motion blur, on by default: auto exposure keeps the shutter at half the frame time or faster (1/60 at 30 fps), raising ISO in dim light instead of smearing motion. Turn it off with the Shutter chip or with the Shutter chip's button.
 > - The tray's chips are Focus, WB, EV, ISO and Shutter, and the EV, ISO and Shutter dials click between stops.
 > - Zoom moves to the lens row: tap the yellow lens button for a zoom dial, and tap it again to reset the zoom.
 > - Green screen has its own button next to the lens buttons. Hold it to turn green screen on or off; where depth assist runs, a tap opens the Subject dial.
@@ -193,7 +193,7 @@ separator fix: a v1.16.1 tag already existed, so that fix released as
 > You now decide when OBS can start your camera, and 4K on Maximum quality has much lower latency.
 >
 > - Arm Remote Start: opening LensLink no longer lets OBS start the camera on its own. Set up your shot, then tap Arm Remote Start, under Start Camera. Until then, OBS can see your phone but can't start the camera. It stays armed until you tap Disarm Remote Start, stop the stream on the phone, or leave the app.
-> - For a phone mounted out of reach, turn on "Arm remote start on open" in Options.
+> - For a phone mounted out of reach, turn on "Arm remote start on open" in Settings.
 > - Lower latency at 4K with Maximum quality: at 4K30 on an iPhone 15 Pro it drops from about 107 ms to 60 ms, with no visible change in picture quality.
 > - The in-app Documentation is reorganized by topic, from getting connected to accessibility, with a link to the full guide online.
 > - Update the OBS plugin to 1.16.0 too: it shows when remote start isn't armed, and starts the camera the moment you arm it.
@@ -249,7 +249,7 @@ when the raw captures are gone.
 2. `live-glance`: the picture, status pill, Pause, Stop, lens buttons,
    tally border on air. Point the camera at something worth looking at.
 3. `live-tray`: the adjust tray open on EV, same scene.
-4. `format`: the Format sheet with Quality and Color visible.
+4. `format`: the Camera sheet with Quality and Color visible.
 5. `options`.
 6. `obs`: the phone's Live screen with the Mac visible behind it, or the
    web control panel on the phone. A Mac screenshot in the store's
@@ -277,7 +277,7 @@ device before declaring a label, and again after any release that
 touches the Live screen or the Setup screen. "Common tasks" for this app
 are: connect to OBS, start the camera, adjust it while live (zoom,
 exposure, focus, white balance, flashlight, flip, lens, green screen),
-pause, stop, and change Options.
+pause, stop, and change Settings.
 
 | Label | Declare | Why |
 |---|---|---|
@@ -296,7 +296,7 @@ pause, stop, and change Options.
 **VoiceOver** (Settings → Accessibility → VoiceOver):
 
 - [ ] Setup: every row, the Start camera and Mirror Screen buttons (one
-      element each, not two), Options and Documentation read sensibly.
+      element each, not two), Settings and Documentation read sensibly.
 - [ ] Start the camera. "Live" is spoken when OBS connects; a success
       haptic on the way.
 - [ ] Live screen: swipe through the status pill (its word), Pause,
@@ -335,7 +335,7 @@ pause, stop, and change Options.
 Larger Text, at the largest size):
 
 - [ ] Setup: the computer card stacks the name, status and Start or
-      address without clipping; every row, the Format sheet, Options,
+      address without clipping; every row, the Camera sheet, Settings,
       Tally light and Documentation stay usable.
 - [ ] Live screen: the status and sync pills and the dial readout are
       larger and nothing overlaps the top bar.

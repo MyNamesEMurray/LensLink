@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// The Options sheet: the set-and-forget behaviour toggles plus the
-/// diagnostics. They live off the main screen so the Setup form stays
-/// focused on per-stream decisions (camera, color, mic role). No footer
-/// text anywhere — every explanation lives in DocumentationView, so
-/// both surfaces stay pure controls.
+/// The Settings sheet: how the app behaves (Live screen, remote start)
+/// and Help. Everything that shapes the picture is in the Camera sheet
+/// instead, so a setting sits beside the choices that limit it. No
+/// footer text anywhere — every explanation lives in DocumentationView,
+/// so both surfaces stay pure controls.
 struct OptionsView: View {
     @EnvironmentObject private var streamer: Streamer
     @Environment(\.dismiss) private var dismiss
@@ -14,47 +14,11 @@ struct OptionsView: View {
         NavigationView {
             Form {
                 Section {
-                    Toggle(isOn: $streamer.faceFocus) {
-                        SettingsRowLabel(L("Focus on faces"),
-                                         systemImage: "face.smiling",
-                                         color: Theme.cameraYellow)
-                    }
-                    Toggle(isOn: $streamer.naturalBlur) {
-                        SettingsRowLabel(L("Natural motion blur"),
-                                         systemImage: "camera.aperture",
-                                         color: Theme.cameraYellow)
-                    }
-                    Picker(selection: $streamer.stabilization) {
-                        ForEach(Streamer.Stabilization.allCases) { mode in
-                            Text(mode.displayName).tag(mode)
-                        }
-                    } label: {
-                        SettingsRowLabel(L("Stabilization"),
-                                         systemImage: "waveform.path",
-                                         color: Theme.cameraYellow)
-                    }
-                    if Streamer.reframeAvailable {
-                        Toggle(isOn: $streamer.reframeHQ) {
-                            SettingsRowLabel(L("High-quality reframe"),
-                                             systemImage: "crop",
-                                             color: Theme.cameraYellow)
-                        }
-                        .disabled(streamer.resolution == .uhd4k)
-                    }
-                    Toggle(isOn: $streamer.rememberCameraSettings) {
-                        SettingsRowLabel(L("Remember camera settings"),
-                                         systemImage: "clock.arrow.circlepath",
-                                         color: Theme.connectAmber)
-                    }
-                } header: {
-                    Text("Camera")
-                }
-
-                Section {
                     Toggle(isOn: $streamer.proInterface) {
                         SettingsRowLabel(L("Pro interface"),
                                          systemImage: "slider.horizontal.below.rectangle",
-                                         color: Theme.accent)
+                                         color: Theme.accent,
+                                         info: SettingInfo.proInterface)
                     }
                     // What the Live screen becomes 10 seconds after you
                     // stop touching it. Inline picker: three short labels
@@ -66,7 +30,8 @@ struct OptionsView: View {
                         }
                     } label: {
                         SettingsRowLabel(L("Idle view"), systemImage: "moon.fill",
-                                         color: Color(hex: 0x5E5CE6))
+                                         color: Color(hex: 0x5E5CE6),
+                                         info: SettingInfo.idleView)
                     }
                     NavigationLink(destination: TallyLightOptionsView()) {
                         HStack {
@@ -88,33 +53,39 @@ struct OptionsView: View {
                     Toggle(isOn: $streamer.armOnOpen) {
                         SettingsRowLabel(L("Arm remote start on open"),
                                          systemImage: "play.fill",
-                                         color: Theme.liveGreen)
+                                         color: Theme.liveGreen,
+                                         info: SettingInfo.remoteStart)
                     }
                 } header: {
                     Text("Remote start")
                 }
 
                 Section {
-                    Toggle(isOn: $streamer.highFrameRate) {
-                        SettingsRowLabel(L("High frame rate"),
-                                         systemImage: "speedometer",
-                                         color: Theme.idleGrey)
-                    }
-                    Toggle(isOn: $streamer.allowVideoEffects) {
-                        SettingsRowLabel(L("Allow system video effects"),
-                                         systemImage: "wand.and.stars",
-                                         color: Theme.idleGrey)
+                    NavigationLink(destination: DocumentationView()) {
+                        SettingsRowLabel(L("Documentation"), systemImage: "book.fill",
+                                         color: Theme.accent)
                     }
                     NavigationLink(destination: CameraDiagnosticsView()) {
                         SettingsRowLabel(L("Camera diagnostics"),
                                          systemImage: "list.bullet.rectangle",
                                          color: Theme.idleGrey)
                     }
+                    Link(destination: Self.reportProblemURL) {
+                        SettingsRowLabel(L("Report a problem"), systemImage: "ladybug.fill",
+                                         color: Theme.errorRed)
+                    }
+                    Link(destination: URL(string: "https://github.com/MyNamesEMurray/LensLink")!) {
+                        SettingsRowLabel(L("LensLink on GitHub"), systemImage: "link",
+                                         color: Theme.idleGrey)
+                    }
                 } header: {
-                    Text("Advanced")
+                    Text("Help")
+                } footer: {
+                    // Bug reports need a build to cite.
+                    Text(Self.versionLine)
                 }
             }
-            .navigationTitle("Options")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -131,6 +102,41 @@ extension OptionsView {
     fileprivate var tallyOff: Bool {
         tallySettings.entries.allSatisfy { $0.color == TallyColor.none }
     }
+
+    private static let reportProblemURL: URL = {
+        var sys = utsname()
+        uname(&sys)
+        let model = withUnsafePointer(to: &sys.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                String(validatingUTF8: $0) ?? "unknown"
+            }
+        }
+        var url = URLComponents(
+            string: "https://github.com/MyNamesEMurray/LensLink/issues/new")!
+        var items = [
+            URLQueryItem(name: "template", value: "bug-report.yml"),
+            URLQueryItem(name: "versions", value:
+                "\(versionLine), \(model), iOS \(UIDevice.current.systemVersion)"),
+        ]
+        // TestFlight builds carry a sandbox receipt and App Store builds a
+        // production one; prefill the install dropdown so reports say
+        // which distribution they came from.
+        if let receipt = Bundle.main.appStoreReceiptURL {
+            if receipt.lastPathComponent == "sandboxReceipt" {
+                items.append(URLQueryItem(name: "install", value: "TestFlight"))
+            } else if FileManager.default.fileExists(atPath: receipt.path) {
+                items.append(URLQueryItem(name: "install", value: "App Store"))
+            }
+        }
+        url.queryItems = items
+        return url.url!
+    }()
+    private static let versionLine: String = {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        return "LensLink v\(version) (\(build))"
+    }()
 }
 
 /// The camera's format table with the system video-effect flags, built

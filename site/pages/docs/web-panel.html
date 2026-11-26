@@ -169,7 +169,7 @@ description: The LensLink control panel at localhost:9980 — the same camera co
   <li><code>green_screen</code>'s <code>maxDistance</code> is in meters: <code>0</code> for no cutoff (All), <code>-1</code> for Auto, otherwise 0.5–5.0. Either field can be sent alone.</li>
   <li><code>selectLens</code> switches to the lens whose <code>label</code> matches one in the state's <code>lenses</code>. The phone ignores a label it doesn't have, or a lens that can't do the current resolution and frame rate.</li>
   <li><code>pause_stream</code> and <code>resume_stream</code> are the panel's <strong>Pause</strong> and <strong>Resume</strong>. They need no arming, since they can only hold a stream that is already running; the state's <code>paused</code> follows them.</li>
-  <li><code>set_quality</code> takes <code>"balanced"</code> or <code>"maximum"</code>, the app's Quality setting, and applies to a live stream straight away.</li>
+  <li><code>set_quality</code> takes <code>"balanced"</code> or <code>"maximum"</code>, the app's Bitrate setting, and applies to a live stream straight away.</li>
   <li><code>mic</code> takes an <code>id</code> from the state's <code>mics</code>; a stale id is ignored.</li>
   <li><code>focus</code> with <code>rampSeconds</code> (up to 10) pulls focus smoothly instead of jumping. <code>white_balance</code>'s <code>tint</code> runs from -150 (green) to 150 (magenta).</li>
   <li><code>monitor</code> sets the phone's frame guide.</li>

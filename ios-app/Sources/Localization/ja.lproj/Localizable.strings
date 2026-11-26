@@ -98,9 +98,6 @@
 /* Format row summary: short name of the Apple Log color setting */
 "Log" = "Log";
 
-/* Format row summary: short name of the Maximum quality setting */
-"Max" = "最高";
-
 /* Setup screen: main button that starts the camera stream */
 "Start Camera" = "カメラを開始";
 
@@ -118,9 +115,6 @@
 
 /* Setup screen toggle: send the mic only as a timing reference for lip-sync */
 "Auto lip-sync reference" = "自動リップシンク用リファレンス";
-
-/* Setup screen row that opens the Options sheet; the sheet's title; Documentation index row and page title [also used in OptionsView.swift, Documentation/DocumentationView.swift, Documentation/OptionsDocumentationView.swift] */
-"Options" = "オプション";
 
 /* Setup screen row that opens the in-app manual; the manual's title [also used in Documentation/DocumentationView.swift] */
 "Documentation" = "ドキュメント";
@@ -141,16 +135,13 @@
 "Codec" = "コーデック";
 
 /* Stream quality choice (the default, safe on ordinary Wi-Fi) [also used in Streamer.swift] */
-"Balanced" = "バランス";
+"Stable" = "安定";
 
 /* Stream quality choice that pushes the bitrate as high as the link allows [also used in Streamer.swift] */
 "Maximum" = "最高";
 
-/* Small tag next to a choice that is still in beta */
-"Beta" = "ベータ";
-
-/* Format sheet section header: stream quality [also used in Documentation/ConnectingDocumentationView.swift] */
-"Quality" = "画質";
+/* Format sheet section header: stream quality; Pro interface Link readout row label [also used in Documentation/ConnectingDocumentationView.swift, ProHUD.swift] */
+"Bitrate" = "ビットレート";
 
 /* Standard (SDR) color choice in the Format sheet; also the idle view that keeps the controls up [also used in Streamer.swift] */
 "Standard" = "標準";
@@ -253,7 +244,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**フォーマット**は、解像度、フレームレート、コーデック、カラーをまとめた1つの行で、タップすると選択肢が表示されます。解像度とフレームレートには、選択中のカメラが対応しているものだけが表示されます。コーデックとカラーは互いに制約し合います。HDRとApple LogはHEVCのみなので、H.264を選ぶとカラーは標準に戻り、HDRまたはLogを選ぶとコーデックはHEVCに切り替わります。";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Quality**, in the Format sheet. **Balanced** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the balanced rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**画質**は「フォーマット」シートにあります。**バランス**は一般的なWi-Fiでも安全なビットレートで配信し、そこから下げることはあっても上げることはありません。**最高**はより高いビットレートで始まり、接続が安定している間は上限を探り続けます（USBではバランスの約6倍、Wi-Fiでは約4倍まで）。フレームが滞留したりドロップしたりした瞬間に下げ、回線が運べる上限のすぐ下で落ち着きます。さらに、エンコーダを画質優先の設定に切り替え、システムのビデオエフェクトを許可していなければ、ビニングされたフォーマットではなくセンサーの全画素読み出しで配信します。データ量も発熱も増えるので、初回は統計の行を確認してください。";
+"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**ビットレート**は「カメラ」シートにあります。**安定**は一般的なWi-Fiでも安全なビットレートで配信し、そこから下げることはあっても上げることはありません。**最高**はより高いビットレートで始まり、接続が安定している間は上限を探り続けます（USBではバランスの約6倍、Wi-Fiでは約4倍まで）。フレームが滞留したりドロップしたりした瞬間に下げ、回線が運べる上限のすぐ下で落ち着きます。さらに、エンコーダを画質優先の設定に切り替え、システムのビデオエフェクトを許可していなければ、ビニングされたフォーマットではなくセンサーの全画素読み出しで配信します。データ量も発熱も増えるので、初回は統計の行を確認してください。";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR（HLG）**は10ビットカラーで配信します。SDRのシーンではOBSがトーンマッピングし、HDRキャンバスでは本来のHDRのまま扱われます。";
@@ -262,7 +253,7 @@
 "**Apple Log** (Pro iPhones, iOS 17+) streams a flat 10-bit image made for grading — add an **Apply LUT** filter to the source in OBS and load an Apple Log LUT." = "**Apple Log**（ProモデルのiPhone、iOS 17以降）は、グレーディング用のフラットな10ビット映像を配信します。OBSでソースに**LUT を適用**フィルタを追加し、Apple Log用のLUTを読み込んでください。";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
-"Both are HEVC-only and take effect when the camera next starts. Color lives in the Format sheet and only offers what this phone can capture." = "どちらもHEVCのみで、次にカメラが起動したときに反映されます。カラーは「フォーマット」シートにあり、このスマートフォンで撮影できるものだけが表示されます。";
+"Both are HEVC-only and take effect when the camera next starts. Color lives in the Camera sheet and only offers what this phone can capture." = "どちらもHEVCのみで、次にカメラが起動したときに反映されます。カラーは「カメラ」シートにあり、このスマートフォンで撮影できるものだけが表示されます。";
 
 /* Documentation → Camera & picture, Green screen section (Markdown: keep the ** markers) */
 "**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks." = "**グリーンバック**は、映像がスマートフォンから送り出される前に、あなた以外のすべてを緑一色で塗りつぶします。オンにするとカラーは標準になります。OBSの**LensLink Camera**ソースは、緑を抜く調整済みのフィルタを追加します。追加は一度だけなので、OBSで削除したり調整し直したりした結果はそのまま保たれます。";
@@ -365,7 +356,7 @@
 "Remembered settings" = "記憶される設定";
 
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
-"**High frame rate** is experimental: it adds 120 and 240 fps to the Format sheet where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with it, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB. Turning it off drops the rate back to 60." = "**高フレームレート**は試験的機能です。このカメラが対応していれば、「フォーマット」シートに120 fpsと240 fpsを追加します（最近のiPhoneでは1080pと720p。240はセンサーのビニングを使うフォーマットです）。ストリームのビットレートはそれに応じて増え、スマートフォンの発熱とバッテリー消費も増えます。60に設定したOBSキャンバスでは、よくても1フレームおきにしか表示されません。キャンバスを合わせ、できればUSBを使ってください。オフにするとフレームレートは60に戻ります。";
+"**120 and 240 fps** are experimental and appear in the frame rate list where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with them, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB." = "**120 fpsと240 fps**は試験的な機能で、このカメラが対応している場合にフレームレートの一覧に表示されます（最近のiPhoneでは1080pと720p。240はセンサーのビニングを使うフォーマットです）。ストリームのビットレートが上がり、スマートフォンの発熱と電池の消耗も増えます。60に設定したOBSのキャンバスでは良くても1フレームおきにしか表示されないため、キャンバスを合わせ、できればUSBを使ってください。";
 
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
 "**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**システムのビデオエフェクトを許可**は試験的機能です。iOSが自らフレームレートを下げられるようにします。コントロールセンターのビデオエフェクト（ポートレート、スタジオ照明）ではこれが必要になることがあります。次にカメラが起動したときに反映されます。";
@@ -374,7 +365,7 @@
 "Experimental" = "実験的";
 
 /* Documentation → Tally light, Colored border section (Markdown: keep the ** markers) */
-"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Options → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "ストリーミング中にライブ画面の周囲に表示される色付きの枠です。色、優先順位、ステータスごとのオフ設定は、オプション → タリーランプで変更できます。色の横にある波のボタンをオンにすると、そのステータスは点灯し続ける代わりに点滅します。見張っていなくても気づくべきことには、動きが目を引きます。";
+"The colored border around the Live screen while streaming. Colors, priority order, and per-status off switches are customizable in Settings → Tally light. The wave button beside a color makes that status pulse instead of holding steady — motion catches the eye for something you're meant to notice without watching for it." = "ストリーミング中にライブ画面の周囲に表示される色付きの枠です。色、優先順位、ステータスごとのオフ設定は、設定 → タリーランプで変更できます。色の横にある波のボタンをオンにすると、そのステータスは点灯し続ける代わりに点滅します。見張っていなくても気づくべきことには、動きが目を引きます。";
 
 /* Documentation section header on the Tally light page */
 "Colored border" = "色付きの枠";
@@ -409,13 +400,7 @@
 "Idle view" = "アイドル表示";
 
 /* Options toggle */
-"Focus on faces" = "顔にフォーカス";
-
-/* Options toggle */
 "Remember camera settings" = "カメラ設定を記憶";
-
-/* Options toggle (experimental 120/240 fps) */
-"High frame rate" = "高フレームレート";
 
 /* Options toggle (experimental) */
 "Allow system video effects" = "システムのビデオエフェクトを許可";
@@ -602,7 +587,6 @@
 /* VoiceOver: a camera setting chip that is set by hand; %@ = chip name */
 "%@, manual" = "%@、マニュアル";
 
-
 /* Live screen chip: exposure */
 "Exposure" = "露出";
 
@@ -715,19 +699,11 @@
 "Turn on the flashlight" = "フラッシュライトをオン";
 "Turn off the flashlight" = "フラッシュライトをオフ";
 
-
-
-
-
-
 /* Format sheet menu and Setup: tag under a resolution, frame rate, or the Green screen row where green screen depth assist runs */
 "Depth" = "深度";
 
 /* Format sheet menu: under a resolution with depth assist only at other frame rates; %@ is a list of frame rates, e.g. "Depth at 30, 60 fps" */
 "Depth at %@ fps" = "深度は%@ fps";
-
-/* Options sheet: header over the experiments and diagnostics */
-"Advanced" = "詳細";
 
 /* Options sheet row: the camera's video stabilization mode (Off, Standard, Cinematic) */
 "Stabilization" = "手ぶれ補正";
@@ -774,7 +750,6 @@
 "Link" = "接続";
 
 /* Pro interface health readout: frames per second sent, and frames dropped this stream */
-"Bitrate" = "ビットレート";
 "Dropped" = "ドロップ";
 "Battery" = "バッテリー";
 "Heat" = "温度";
@@ -796,3 +771,15 @@
 
 /* Pro interface guide: rule-of-thirds grid */
 "Grid" = "グリッド";
+
+/* Camera sheet: header over stabilization, reframe, system video effects and remembered settings */
+"Picture" = "画像";
+
+/* Documentation → Getting connected, Bitrate section: the default */
+"**Maximum** is the default. Pick **Stable** if the picture stutters on busy Wi-Fi." = "既定は**最高**です。混雑したWi-Fiで映像がカクつく場合は**安定**を選んでください。";
+
+/* Info button and accessibility label beside a setting; %@ is the setting's name */
+"About %@" = "%@について";
+
+/* Settings sheet: the Pro interface row's info text (Markdown: keep the ** markers) */
+"**Pro interface** replaces the Live screen with a layout for camera operators: every value in one strip, a dial for the one you tap, a histogram, the phone mic's level and framing guides." = "**プロ用インターフェイス**は、ライブ画面をカメラオペレーター向けのレイアウトに切り替えます。すべての値を1列に並べ、タップした値をダイヤルで調整でき、ヒストグラム、スマートフォンのマイクレベル、構図ガイドを表示します。";
