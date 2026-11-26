@@ -1136,6 +1136,33 @@ final class CameraManager: NSObject {
         device.unlockForConfiguration()
     }
 
+    /// A control change from the UI: locked and applied on the session
+    /// queue, never the main thread (at high frame rates locking the
+    /// device waits on the pipeline, and a slider drag stalled the UI).
+    /// A change that supersedes the one still waiting, from the same
+    /// setter, replaces it, so a drag never builds a backlog.
+    private func deviceWrite(_ key: String = #function,
+                             _ block: @escaping (AVCaptureDevice) -> Void) {
+        writeLock.lock()
+        if let last = pendingWrites.last, last.key == key {
+            pendingWrites[pendingWrites.count - 1].block = block
+            writeLock.unlock()
+            return
+        }
+        pendingWrites.append((key, block))
+        writeLock.unlock()
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.writeLock.lock()
+            let next = self.pendingWrites.isEmpty ? nil : self.pendingWrites.removeFirst()
+            self.writeLock.unlock()
+            if let next { self.withLockedDevice(next.block) }
+        }
+    }
+
+    private let writeLock = NSLock()
+    private var pendingWrites: [(key: String, block: (AVCaptureDevice) -> Void)] = []
+
     var maxZoomFactor: CGFloat {
         guard let device = activeDevice, !depthAssistActive else { return 1 }
         // Beyond ~10x the digital zoom is mush; keep the slider useful.
@@ -1143,9 +1170,9 @@ final class CameraManager: NSObject {
     }
 
     func setZoom(_ factor: CGFloat) {
-        withLockedDevice { device in
+        deviceWrite { device in
             let clamped = max(device.minAvailableVideoZoomFactor,
-                              min(factor, maxZoomFactor))
+                              min(factor, self.maxZoomFactor))
             device.videoZoomFactor = clamped
         }
     }
@@ -1158,7 +1185,7 @@ final class CameraManager: NSObject {
     }
 
     func setExposureBias(_ bias: Float) {
-        withLockedDevice { device in
+        deviceWrite { device in
             let clamped = max(device.minExposureTargetBias,
                               min(bias, device.maxExposureTargetBias))
             device.setExposureTargetBias(clamped)
@@ -1171,7 +1198,7 @@ final class CameraManager: NSObject {
         tapPointActive = false
         releasePin()
         applyFaceDriven(faceDrivenFocus)
-        withLockedDevice { device in
+        deviceWrite { device in
             if device.isFocusModeSupported(.continuousAutoFocus) {
                 device.focusMode = .continuousAutoFocus
             }
@@ -1186,7 +1213,7 @@ final class CameraManager: NSObject {
     /// 1 = infinity). Without a position, freezes focus where it is.
     func lockFocus(lensPosition: Float?) {
         releasePin()
-        withLockedDevice { device in
+        deviceWrite { device in
             if let lensPosition,
                device.isLockingFocusWithCustomLensPositionSupported {
                 device.setFocusModeLocked(
@@ -1210,7 +1237,7 @@ final class CameraManager: NSObject {
         tapPointActive = true
         tapPointPinned = pinned
         applyFaceDriven(false)
-        withLockedDevice { device in
+        deviceWrite { device in
             if device.isFocusPointOfInterestSupported,
                device.isFocusModeSupported(.continuousAutoFocus) {
                 device.focusPointOfInterest = devicePoint
@@ -1267,7 +1294,7 @@ final class CameraManager: NSObject {
     }
 
     func setAutoWhiteBalance() {
-        withLockedDevice { device in
+        deviceWrite { device in
             if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
                 device.whiteBalanceMode = .continuousAutoWhiteBalance
             }
@@ -1276,7 +1303,7 @@ final class CameraManager: NSObject {
 
     /// Locks white balance at a colour temperature (Kelvin) and tint.
     func lockWhiteBalance(temperature: Float, tint: Float) {
-        withLockedDevice { device in
+        deviceWrite { device in
             guard device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
             else { return }
             let values = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(
@@ -1657,7 +1684,7 @@ final class CameraManager: NSObject {
     /// bright as allowed right now", and a level iOS refuses while the
     /// phone is hot falls back to that.
     func setFlashlight(_ level: Float) {
-        withLockedDevice { device in
+        deviceWrite { device in
             guard device.hasTorch else { return }
             guard level > 0 else {
                 device.torchMode = .off
