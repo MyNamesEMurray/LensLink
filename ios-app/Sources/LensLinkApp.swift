@@ -20,6 +20,7 @@ struct LensLinkApp: App {
                 .onOpenURL { url in
                     handle(url)
                 }
+                .onAppear { PerfProbe.shared.startWatchdog() }
         }
         .onChange(of: scenePhase) { phase in
             switch phase {

@@ -13,6 +13,7 @@ struct ProHUD: View {
     /// and only MicRow should redraw for it.
     let scope: MonitorScope
     @ObservedObject private var battery = BatteryMonitor.shared
+    @ObservedObject private var probe = PerfProbe.shared
     /// Restarts StreamingView's idle fuse.
     let touched: () -> Void
     /// Portrait: the picture sits in an inset frame under the status bar
@@ -32,6 +33,7 @@ struct ProHUD: View {
     private static let label = Font.system(size: 10, weight: .semibold)
 
     var body: some View {
+        let _ = PerfProbe.shared.redraw("ProHUD")
         VStack(spacing: 0) {
             VStack(spacing: Theme.Space.s) {
                 topBar
@@ -58,6 +60,11 @@ struct ProHUD: View {
         .foregroundColor(Theme.textPrimary)
         .task {
             while !Task.isCancelled {
+                guard probe.liveValues else {
+                    live = nil
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                    continue
+                }
                 // Device reads on the session queue: on the main thread
                 // they wait on the capture pipeline, worst at high fps.
                 let camera = streamer.camera
@@ -117,7 +124,7 @@ struct ProHUD: View {
             Text(verbatim: streamer.obsTransport == "usb" ? "USB" : "Wi-Fi")
                 .font(Self.label)
                 .foregroundColor(Theme.textSecondary)
-            Text(verbatim: streamer.health.map { String(format: "%.1f Mb/s", $0.megabitsPerSecond) } ?? "–")
+            Text(verbatim: probe.linkStats ? streamer.health.map { String(format: "%.1f Mb/s", $0.megabitsPerSecond) } ?? "–" : "–")
                 .font(Self.mono)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -129,7 +136,7 @@ struct ProHUD: View {
     /// Frame rate over dropped frames: numbers left, units in a fixed
     /// column beside them, the pair centred in the box.
     private var framesBox: some View {
-        let health = streamer.health
+        let health = probe.linkStats ? streamer.health : nil
         return VStack(spacing: 1) {
             unitRow(health.map { "\($0.fps)" } ?? "–", "fps")
             unitRow(health.map { String($0.droppedFrames) } ?? "–", L("drop"))
@@ -572,7 +579,7 @@ struct ProHUD: View {
                     ? L("Battery %lld percent, charging", percent)
                     : L("Battery %lld percent", percent))
             }
-            MicRow(scope: scope)
+            if probe.micMeter { MicRow(scope: scope) } else { Spacer(minLength: 0) }
         }
     }
 
@@ -729,6 +736,7 @@ private struct MicRow: View {
     @ObservedObject var scope: MonitorScope
 
     var body: some View {
+        let _ = PerfProbe.shared.redraw("MicRow")
         HStack(spacing: Theme.Space.s) {
             Text(L("Mic")).font(.system(size: 10, weight: .semibold))
                 .foregroundColor(Theme.textSecondary)

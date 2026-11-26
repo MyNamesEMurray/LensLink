@@ -250,12 +250,14 @@ final class Streamer: ObservableObject {
         // VIDEO_CONFIG, STATE) keys off configure's return, not the ask.
         let color: StreamColor
         do {
-            color = try camera.configure(lens: selectedLens,
-                                         resolution: captureResolution,
-                                         fps: Int32(fps),
-                                         lockFrameRate: !allowVideoEffects,
-                                         color: activeColor,
-                                         wantsDepth: greenScreenEnabled)
+            color = try PerfProbe.shared.timed("reconfigure \(captureResolution.rawValue) \(fps) fps") {
+                try camera.configure(lens: selectedLens,
+                                     resolution: captureResolution,
+                                     fps: Int32(fps),
+                                     lockFrameRate: !allowVideoEffects,
+                                     color: activeColor,
+                                     wantsDepth: greenScreenEnabled)
+            }
         } catch {
             // Never swallow this: a failed reconfigure leaves the session
             // without input/output — a black stream labelled "Live".
@@ -2189,6 +2191,8 @@ final class Streamer: ObservableObject {
 
     func start() async {
         guard !isStreaming, !isStarting else { return }
+        PerfProbe.shared.log("start camera")
+        defer { PerfProbe.shared.log("start camera returned") }
         isStarting = true
         defer { isStarting = false }
         greenScreenOffered = greenScreenEnabled
@@ -2209,12 +2213,23 @@ final class Streamer: ObservableObject {
         let size = resolution.size
         let encoder: VideoEncoder
         do {
-            let color = try camera.configure(lens: selectedLens,
-                                             resolution: captureResolution,
-                                             fps: Int32(fps),
-                                             lockFrameRate: !allowVideoEffects,
-                                             color: activeColor,
-                                             wantsDepth: greenScreenEnabled)
+            // Off the main thread: configuring a 4K or 120 fps format
+            // takes long enough to freeze the Live screen as it opens.
+            let camera = camera, lens = selectedLens, capture = captureResolution
+            let rate = Int32(fps), lock = !allowVideoEffects
+            let ask = activeColor, depth = greenScreenEnabled
+            let begun = CACurrentMediaTime()
+            let color = try await withCheckedThrowingContinuation { done in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    done.resume(with: Result {
+                        try camera.configure(lens: lens, resolution: capture, fps: rate,
+                                             lockFrameRate: lock, color: ask,
+                                             wantsDepth: depth)
+                    })
+                }
+            }
+            PerfProbe.shared.log(String(format: "start configure took %.0f ms",
+                                        (CACurrentMediaTime() - begun) * 1000))
             encoder = VideoEncoder(codec: activeCodec,
                                    width: size.width, height: size.height,
                                    fps: Int32(fps),
