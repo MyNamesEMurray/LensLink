@@ -70,6 +70,13 @@ struct OptionsView: View {
                                          systemImage: "list.bullet.rectangle",
                                          color: Theme.idleGrey)
                     }
+                    if PerfProbe.available {
+                        NavigationLink(destination: PerfProbeView()) {
+                            SettingsRowLabel("Performance debug",
+                                             systemImage: "gauge",
+                                             color: Theme.idleGrey)
+                        }
+                    }
                     Link(destination: Self.reportProblemURL) {
                         SettingsRowLabel(L("Report a problem"), systemImage: "ladybug.fill",
                                          color: Theme.errorRed)

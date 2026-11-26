@@ -35,6 +35,7 @@ struct StreamingView: View {
     /// is gone again after a moment; a long press's stays while the point
     /// is pinned. Either goes the instant the camera lets the point go.
     @State private var focusMark: FocusMark?
+    @ObservedObject private var probe = PerfProbe.shared
     /// The screen and its safe area, for the Pro interface's picture frame.
     @State private var screen = CGSize.zero
     @State private var safe = EdgeInsets()
@@ -89,6 +90,7 @@ struct StreamingView: View {
     private static let dragStopsPerScreen: Float = 6
 
     var body: some View {
+        let _ = PerfProbe.shared.redraw("StreamingView")
         ZStack {
             Color.black.ignoresSafeArea()
 
@@ -151,7 +153,7 @@ struct StreamingView: View {
             }
 #endif
 
-            if !dimmed {
+            if !dimmed, probe.guides {
                 MonitorOverlay(insets: pictureInsets)
             }
 
@@ -290,6 +292,7 @@ struct StreamingView: View {
         // Battery monitoring is a device-wide flag, so it is held only
         // while this screen exists — the Setup screen has nothing to show.
         .onAppear {
+            PerfProbe.shared.log("Live screen appeared, pro \(streamer.proInterface), \(streamer.resolution.rawValue) \(streamer.fps) fps")
             battery.retain()
             refreshLensFactors()
             // The camera let the tap point go (the scene changed): the
@@ -316,7 +319,8 @@ struct StreamingView: View {
 
     /// The Pro interface's picture frame in portrait; nil otherwise.
     private var proFrame: EdgeInsets? {
-        streamer.proInterface ? ProHUD.frameInsets(screen: screen, safe: safe) : nil
+        streamer.proInterface && probe.pictureFrame
+            ? ProHUD.frameInsets(screen: screen, safe: safe) : nil
     }
 
     private var pictureInsets: EdgeInsets { proFrame ?? EdgeInsets() }

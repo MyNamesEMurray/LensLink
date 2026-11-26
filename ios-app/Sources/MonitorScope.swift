@@ -31,7 +31,7 @@ final class MonitorScope: ObservableObject, @unchecked Sendable {
     }
     /// Audio thread: 16-bit PCM from the phone mic.
     func noteAudio(_ pcm: Data) {
-        guard tools.value.metering else { return }
+        guard tools.value.metering, PerfProbe.shared.micMeterOn.value else { return }
         var peak = 0
         pcm.withUnsafeBytes { raw in
             for sample in raw.bindMemory(to: Int16.self) {

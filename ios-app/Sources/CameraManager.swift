@@ -1706,7 +1706,7 @@ final class CameraManager: NSObject {
         sessionQueue.async { [session] in
             self.wantsRunning = true
             if !session.isRunning {
-                session.startRunning()
+                PerfProbe.shared.timed("session startRunning") { session.startRunning() }
             }
         }
     }
