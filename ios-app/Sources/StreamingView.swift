@@ -145,7 +145,7 @@ struct StreamingView: View {
 #endif
 
             if !dimmed {
-                MonitorOverlay(scope: streamer.scope)
+                MonitorOverlay()
             }
 
             if streamer.proInterface {

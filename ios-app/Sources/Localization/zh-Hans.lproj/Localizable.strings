@@ -755,9 +755,6 @@
 /* Pro interface: VoiceOver label for the elapsed-time readout (hours:minutes:seconds:frames) */
 "Timecode" = "时间码";
 
-/* Pro interface menu: the brightness above which zebra stripes are drawn */
-"Zebra level" = "斑马纹阈值";
-
 /* Pro interface: VoiceOver label for the menu of less-used actions */
 "More" = "更多";
 
@@ -793,15 +790,6 @@
 
 /* Pro interface: the phone is hot and slowing down */
 "Hot" = "过热";
-
-/* Pro interface tool: stripes over parts of the picture close to clipping */
-"Zebra" = "斑马纹";
-
-/* Pro interface tool: outlines what is in focus */
-"Peaking" = "峰值对焦";
-
-/* Pro interface tool: paints the picture by brightness band */
-"False color" = "伪色";
 
 /* Pro interface tool: frame lines and grid over the preview */
 "Guides" = "参考线";

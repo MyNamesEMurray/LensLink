@@ -127,18 +127,6 @@ struct ProHUD: View {
                           systemImage: streamer.isPaused ? "play.fill" : "pause.fill")
                 }
             }
-            Toggle(L("Zebra"), isOn: monitorBinding(\.zebra))
-            Toggle(L("Peaking"), isOn: monitorBinding(\.peaking))
-            Toggle(L("False color"), isOn: monitorBinding(\.falseColor))
-            if streamer.monitor.zebra {
-                Menu(L("Zebra level")) {
-                    Picker(L("Zebra level"), selection: zebraLevel) {
-                        ForEach([70, 80, 90, 95, 100], id: \.self) { level in
-                            Text(L("%lld%%", level)).tag(level)
-                        }
-                    }
-                }
-            }
             Button {
                 streamer.proInterface = false
             } label: {
@@ -151,16 +139,6 @@ struct ProHUD: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(L("More"))
-    }
-
-    private func monitorBinding(_ key: WritableKeyPath<Streamer.MonitorSettings, Bool>) -> Binding<Bool> {
-        Binding(get: { streamer.monitor[keyPath: key] },
-                set: { touched(); streamer.monitor[keyPath: key] = $0 })
-    }
-
-    private var zebraLevel: Binding<Int> {
-        Binding(get: { streamer.monitor.zebraLevel },
-                set: { streamer.monitor.zebraLevel = $0 })
     }
 
     // MARK: - Value strip
@@ -691,39 +669,19 @@ private struct MicMeter: View {
     }
 }
 
-/// Zebra, peaking and false colour over the preview, plus the frame
-/// guides. Drawn in both interfaces: the tools can be switched on from
-/// OBS or the web panel whichever one the phone shows.
+/// The frame guides over the preview. Drawn in both interfaces: they
+/// can be switched on from OBS or the web panel whichever one the phone
+/// shows.
 struct MonitorOverlay: View {
     @EnvironmentObject private var streamer: Streamer
-    @ObservedObject var scope: MonitorScope
 
     var body: some View {
         GeometryReader { proxy in
-            ZStack {
-                if let image = scope.overlay {
-                    Image(decorative: image, scale: 1)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                }
-                guides(in: Self.pictureRect(in: proxy.size))
-            }
-            .onAppear { syncOrientation() }
-            .onChange(of: proxy.size) { _ in syncOrientation() }
-            .onChange(of: streamer.selectedLens) { _ in syncOrientation() }
+            guides(in: Self.pictureRect(in: proxy.size))
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-
-    private func syncOrientation() {
-        let interface = ActiveScreen.scene?.interfaceOrientation ?? .portrait
-        let front = streamer.selectedLens.position == .front
-        scope.updateTools {
-            $0.orientation = MonitorScope.orientation(for: interface, front: front)
-        }
     }
 
     /// Where the 16:9 picture lands in the preview (aspect fit).

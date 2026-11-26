@@ -90,9 +90,6 @@ static const char *const web_text_keys[] = {
 	"Web.Color.SDR",
 	"Web.Color.HLG",
 	"Web.Color.Log",
-	"Web.Zebra",
-	"Web.Peaking",
-	"Web.FalseColor",
 	"Web.Guides",
 	"Web.Guides.Off",
 	"Web.Guides.Grid",
@@ -369,7 +366,7 @@ static const char control_page[] =
 	/* Remote stop: mirrors the app's red Stop. The phone drops back to
 	 * standby, so this panel swaps to the Start button afterwards. */
 	/* Pro section: timecode, link, histogram (from the still), the
-	 * phone-mic meter, the phone's monitoring tools and a focus pull. */
+	 * phone-mic meter, the phone's frame guides and a focus pull. */
 	"<div id='pro' style='display:none'><div class='sep'></div>"
 	"<div class='row'><span class='tcode' id='protc'>00:00:00:00</span>"
 	"<span class='hint' id='prolink' aria-live='off'></span></div>"
@@ -377,10 +374,6 @@ static const char control_page[] =
 	"<div style='width:96px;flex:none'><div class='lbl' data-t='Mic'></div>"
 	"<div class='meter' aria-hidden='true'><div id='meterfill'></div></div>"
 	"<div class='hint' id='meterv'></div></div></div>"
-	"<div class='btnrow' id='monrow' style='display:none'>"
-	"<button class='primary toggle' id='mzebra' data-t='Zebra'></button>"
-	"<button class='primary toggle' id='mpeak' data-t='Peaking'></button>"
-	"<button class='primary toggle' id='mfalse' data-t='FalseColor'></button></div>"
 	"<div class='row' id='guiderow' style='display:none'>"
 	"<span class='lbl' id='mguidel' data-t='Guides'></span>"
 	"<select id='mguide' aria-labelledby='mguidel'></select></div>"
@@ -816,17 +809,12 @@ static const char control_page[] =
 	"x.clearRect(0,0,W,H);x.fillStyle='rgba(255,255,255,.7)';x.beginPath();x.moveTo(0,H);"
 	"b.forEach((v,i)=>x.lineTo(i*W/63,H-v/m*H));x.lineTo(W,H);x.closePath();x.fill()}"
 	"const GUIDES=['off','grid','2.39','1.85','4:3'];"
-	"const MON=[['mzebra','zebra'],['mpeak','peaking'],['mfalse','falseColor']];"
-	"function monUI(){const m=S.monitor;show($('monrow'),!!m);show($('guiderow'),!!m);"
+	"function monUI(){const m=S.monitor;show($('guiderow'),!!m);"
 	"show($('pullrow'),!!m);if(!m)return;"
-	"MON.forEach(([id,k])=>{const e=$(id);e.className=m[k]?'primary toggle on':'primary toggle';"
-	"pressed(e,!!m[k])});"
 	"fillSel($('mguide'),GUIDES,m.guide||'off',"
 	"g=>g==='off'?t('Guides.Off'):g==='grid'?t('Guides.Grid'):g)}"
 	"const monSend=o=>{touch();if(!S.monitor)return;Object.assign(S.monitor,o);"
 	"send(Object.assign({cmd:'monitor'},o));monUI()};"
-	"const monToggle=k=>{if(S.monitor)monSend({[k]:!S.monitor[k]})};"
-	"MON.forEach(([id,k])=>$(id).onclick=()=>monToggle(k));"
 	"$('mguide').onchange=()=>monSend({guide:$('mguide').value});"
 	"let FA=null,FB=null,toB=true;"
 	"function pullUI(){$('fa').className=FA!=null?'primary toggle on':'primary toggle';"
@@ -848,9 +836,6 @@ static const char control_page[] =
 	"else if(/^[1-9]$/.test(k)){const b=lensbtnsEl.children[+k-1];if(b)b.click();else done=false}"
 	"else if(k==='l'||k==='L')lockEl.dispatchEvent(new MouseEvent('click',{shiftKey:true}));"
 	"else if((k==='a'||k==='A')&&newApp()){touch();send({cmd:'lock',target:'all',on:false})}"
-	"else if(k==='z'||k==='Z')monToggle('zebra');"
-	"else if(k==='p'||k==='P')monToggle('peaking');"
-	"else if(k==='f'||k==='F')monToggle('falseColor');"
 	"else if((k==='g'||k==='G')&&S.monitor)"
 	"monSend({guide:GUIDES[(GUIDES.indexOf(S.monitor.guide)+1)%GUIDES.length]});"
 	"else if(k==='['||k===']'){touch();"

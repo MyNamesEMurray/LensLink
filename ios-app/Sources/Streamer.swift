@@ -802,11 +802,6 @@ final class Streamer: ObservableObject {
     /// What the phone draws over its own preview (docs/PROTOCOL.md
     /// `monitor`). Never part of the stream; remembered across launches.
     struct MonitorSettings: Codable, Equatable {
-        var zebra = false
-        /// Percent of full scale, 70 to 100.
-        var zebraLevel = 95
-        var peaking = false
-        var falseColor = false
         var guide = Guide.off
     }
 
@@ -845,18 +840,12 @@ final class Streamer: ObservableObject {
         }
     }
 
-    /// Histogram, zebra, peaking, false colour and the mic meter.
+    /// Histogram and the mic meter.
     let scope = MonitorScope()
 
     private func updateScopeTools() {
-        let settings = monitor
         let metering = proInterface
-        scope.updateTools {
-            $0.zebraLevel = settings.zebra ? Double(settings.zebraLevel) / 100 : nil
-            $0.peaking = settings.peaking
-            $0.falseColor = settings.falseColor
-            $0.metering = metering
-        }
+        scope.updateTools { $0.metering = metering }
     }
 
     /// Colour pipelines this phone can stream, for `set_format`'s `color`.
@@ -1255,10 +1244,6 @@ final class Streamer: ObservableObject {
         }
         state["thermal"] = Self.thermalName(ProcessInfo.processInfo.thermalState)
         state["monitor"] = [
-            "zebra": monitor.zebra,
-            "zebraLevel": monitor.zebraLevel,
-            "peaking": monitor.peaking,
-            "falseColor": monitor.falseColor,
             "guide": monitor.guide.rawValue,
         ] as [String: Any]
         if sendMicAudio, audioReference != nil {
@@ -2110,12 +2095,6 @@ final class Streamer: ObservableObject {
             applyRemoteFormat(command)
         case "monitor":
             var next = monitor
-            if let on = command["zebra"] as? Bool { next.zebra = on }
-            if let level = (command["zebraLevel"] as? NSNumber)?.intValue {
-                next.zebraLevel = min(max(level, 70), 100)
-            }
-            if let on = command["peaking"] as? Bool { next.peaking = on }
-            if let on = command["falseColor"] as? Bool { next.falseColor = on }
             if let raw = command["guide"] as? String,
                let guide = Guide(rawValue: raw) { next.guide = guide }
             if next != monitor { monitor = next }

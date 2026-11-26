@@ -631,8 +631,7 @@ pill's menu has Pro interface.
 
 - **Top bar** (black 60 % glass): status pill, timecode (time since the
   stream went live, `HH:MM:SS:FF` at the stream's fps), the format chip,
-  and a More menu (Pause/Resume, Zebra, Peaking, False color, a Zebra
-  level submenu while zebra is on, Standard interface).
+  and a More menu (Pause/Resume, Standard interface).
 - **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
   Each cell is a label over a monospaced value; auto values show what
   auto is doing with a yellow **A** badge. Shutter is always a fraction
@@ -647,17 +646,14 @@ pill's menu has Pro interface.
   Dropped, Battery, Heat, heat amber from serious up), Mic (peak dBFS bar: green,
   `#FFD60A` above −12, red above −3).
 - **Tool row**: Flip, Guides, Stop, Pause, Flashlight. On = tinted.
-  Zebra, peaking and false color live in the More menu.
 
-Monitoring overlays are drawn on the phone only, never into the stream,
-from a 360 px copy of the frame at most 10 times a second, skipping a
-frame rather than queueing (`MonitorScope.swift`). Zebra is black and
-white diagonal stripes above the zebra level (70–100 %, default 95);
-peaking tints edges `#63D1FF`; false color is grey except purple
-(crushed), blue (two stops under), green (middle grey), pink (skin),
-yellow (bright) and red (clipped). Guides are a thirds grid or 2.39,
-1.85 and 4:3 frame lines. The settings persist and ride STATE as
-`monitor`, so the web panel and source properties show the same state.
+The histogram reads a 360 px copy of the frame at most 10 times a
+second, skipping a frame rather than queueing (`MonitorScope.swift`).
+Guides (a thirds grid or 2.39, 1.85 and 4:3 frame lines) are drawn on
+the phone only, never into the stream. The choice persists and rides
+STATE as `monitor`, so the web panel and source properties show the
+same state. Zebra, peaking and false color were tried in the first
+beta and removed to keep the screen simple.
 
 ### 6.3 Web control panel
 Dark page (`pageBg`), single centered column (max ~440 px):
@@ -688,8 +684,8 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    remembered per browser): timecode, a link line (bitrate, latency,
    battery, heat), a histogram computed in the browser from `/api/still`
    every 2 s (skipped while the eyedropper or reframe pad uses it), the
-   phone mic meter (same colours as the app), toggles for Zebra, Peaking
-   and False color with a Guides select, and the focus pull (Set A, Set
+   phone mic meter (same colours as the app), a Guides select, and the
+   focus pull (Set A, Set
    B, Pull over a chosen number of seconds). The tray gains a Tint chip
    and the Format row a Color select. Keyboard shortcuts work whenever
    focus is not in a field, and the Pro section lists them.

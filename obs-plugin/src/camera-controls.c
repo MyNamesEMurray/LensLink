@@ -32,9 +32,6 @@
 #define CTL_FOCUS_AUTO "ctl_focus_auto"
 #define CTL_FOCUS "ctl_focus"
 #define CTL_COLOR "ctl_color"
-#define CTL_ZEBRA "ctl_zebra"
-#define CTL_PEAK "ctl_peaking"
-#define CTL_FALSE "ctl_false_color"
 #define CTL_GUIDE "ctl_guide"
 
 #define CTL_STATE_BUF (32 * 1024 + 1)
@@ -46,8 +43,8 @@ void lenslink_camera_controls_clear(obs_data_t *settings)
 		CTL_RF_X, CTL_RF_Y,  CTL_RF_HQ, CTL_GS,    CTL_RES,
 		CTL_FPS,  CTL_CODEC, CTL_EV,    CTL_ISO_AUTO, CTL_ISO,
 		CTL_SH_AUTO, CTL_SH, CTL_WB_AUTO, CTL_WB, CTL_TINT,
-		CTL_FOCUS_AUTO, CTL_FOCUS, CTL_COLOR, CTL_ZEBRA, CTL_PEAK,
-		CTL_FALSE, CTL_GUIDE,
+		CTL_FOCUS_AUTO, CTL_FOCUS, CTL_COLOR,
+		CTL_GUIDE,
 	};
 	for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
 		obs_data_erase(settings, keys[i]);
@@ -159,23 +156,6 @@ static void pro_modified(struct ios_camera_source *s, const char *name,
 		if (v[0] && strcmp(v, st->color))
 			snprintf(json, sizeof(json),
 				 "{\"cmd\":\"set_format\",\"color\":\"%s\"}", v);
-	} else if (!strcmp(name, CTL_ZEBRA)) {
-		bool on = obs_data_get_bool(settings, CTL_ZEBRA);
-		if (on != st->zebra)
-			snprintf(json, sizeof(json),
-				 "{\"cmd\":\"monitor\",\"zebra\":%s}", bool_str(on));
-	} else if (!strcmp(name, CTL_PEAK)) {
-		bool on = obs_data_get_bool(settings, CTL_PEAK);
-		if (on != st->peaking)
-			snprintf(json, sizeof(json),
-				 "{\"cmd\":\"monitor\",\"peaking\":%s}",
-				 bool_str(on));
-	} else if (!strcmp(name, CTL_FALSE)) {
-		bool on = obs_data_get_bool(settings, CTL_FALSE);
-		if (on != st->false_color)
-			snprintf(json, sizeof(json),
-				 "{\"cmd\":\"monitor\",\"falseColor\":%s}",
-				 bool_str(on));
 	} else if (!strcmp(name, CTL_GUIDE)) {
 		const char *v = obs_data_get_string(settings, CTL_GUIDE);
 		if (v[0] && strcmp(v, st->guide))
@@ -410,12 +390,6 @@ static void add_pro_controls(obs_properties_t *g, obs_data_t *settings,
 	}
 
 	if (st->has_monitor) {
-		toggle(g, CTL_ZEBRA, T_("Web.Zebra"));
-		obs_data_set_bool(settings, CTL_ZEBRA, st->zebra);
-		toggle(g, CTL_PEAK, T_("Web.Peaking"));
-		obs_data_set_bool(settings, CTL_PEAK, st->peaking);
-		toggle(g, CTL_FALSE, T_("Web.FalseColor"));
-		obs_data_set_bool(settings, CTL_FALSE, st->false_color);
 		obs_property_t *guide = choice(g, CTL_GUIDE, T_("Web.Guides"),
 					       OBS_COMBO_FORMAT_STRING);
 		obs_property_list_add_string(guide, T_("Web.Guides.Off"), "off");
@@ -436,16 +410,14 @@ enum hotkey_action {
 	HK_LOCK_ALL,
 	HK_NEXT_LENS,
 	HK_FLASHLIGHT,
-	HK_ZEBRA,
-	HK_PEAKING,
-	HK_FALSE_COLOR,
 	HK_COUNT,
 };
 
 static const char *const hotkey_names[HK_COUNT] = {
-	"lenslink.pause",     "lenslink.lock_all", "lenslink.next_lens",
-	"lenslink.flashlight", "lenslink.zebra",   "lenslink.peaking",
-	"lenslink.false_color",
+	"lenslink.pause",
+	"lenslink.lock_all",
+	"lenslink.next_lens",
+	"lenslink.flashlight",
 };
 
 struct hotkey_ctx {
@@ -502,19 +474,6 @@ static void hotkey_command(enum hotkey_action action,
 				 "{\"cmd\":\"flashlight\",\"on\":%s}",
 				 bool_str(!st->flashlight));
 		break;
-	case HK_ZEBRA:
-		snprintf(json, size, "{\"cmd\":\"monitor\",\"zebra\":%s}",
-			 bool_str(!st->zebra));
-		break;
-	case HK_PEAKING:
-		snprintf(json, size, "{\"cmd\":\"monitor\",\"peaking\":%s}",
-			 bool_str(!st->peaking));
-		break;
-	case HK_FALSE_COLOR:
-		snprintf(json, size,
-			 "{\"cmd\":\"monitor\",\"falseColor\":%s}",
-			 bool_str(!st->false_color));
-		break;
 	default:
 		break;
 	}
@@ -547,8 +506,6 @@ void *lenslink_camera_hotkeys_register(struct ios_camera_source *s,
 	const char *const texts[HK_COUNT] = {
 		T_("Hotkey.Pause"),	 T_("Hotkey.LockAll"),
 		T_("Hotkey.NextLens"),	 T_("Hotkey.Flashlight"),
-		T_("Hotkey.Zebra"),	 T_("Hotkey.Peaking"),
-		T_("Hotkey.FalseColor"),
 	};
 	struct hotkey_ctx *ctx = bzalloc(sizeof(*ctx) * HK_COUNT);
 	for (int i = 0; i < HK_COUNT; i++) {

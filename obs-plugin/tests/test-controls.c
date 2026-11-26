@@ -90,8 +90,7 @@ static void test_pro_fields(void)
 		"\"whiteBalanceTemperature\":5600,\"whiteBalanceTint\":999,"
 		"\"focusMode\":\"locked\",\"lensPosition\":0.42,"
 		"\"hdr\":true,\"colors\":[\"sdr\",\"hlg\",\"log\"],"
-		"\"monitor\":{\"zebra\":true,\"zebraLevel\":20,"
-		"\"peaking\":true,\"falseColor\":false,\"guide\":\"2.39\"}}";
+		"\"monitor\":{\"zebra\":true,\"guide\":\"2.39\"}}";
 	struct lenslink_ctl_state s;
 
 	CHECK(lenslink_ctl_parse(json, strlen(json), &s));
@@ -107,15 +106,14 @@ static void test_pro_fields(void)
 	CHECK_NEAR(s.lens_position, 0.42);
 	CHECK_STR(s.color, "hlg");
 	CHECK(s.color_count == 3);
-	CHECK(s.has_monitor && s.zebra && s.peaking && !s.false_color);
-	CHECK(s.zebra_level == 70);
+	CHECK(s.has_monitor);
 	CHECK_STR(s.guide, "2.39");
 
 	const char *old = "{\"exposureMode\":\"manual\",\"color\":\"log\"}";
 	CHECK(lenslink_ctl_parse(old, strlen(old), &s));
 	CHECK(s.iso_manual && s.shutter_manual);
 	CHECK_STR(s.color, "log");
-	CHECK(!s.has_monitor && s.zebra_level == 95);
+	CHECK(!s.has_monitor);
 	CHECK_STR(s.guide, "off");
 }
 

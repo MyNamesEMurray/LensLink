@@ -73,41 +73,17 @@ static void read_str(struct json_reader *r, char *out, size_t size);
 static void read_monitor(struct json_reader *r, struct lenslink_ctl_state *s)
 {
 	char key[24];
-	bool truncated, flag;
-	double num;
+	bool truncated;
 	if (!lenslink_json_object_begin(r)) {
 		lenslink_json_skip(r);
 		return;
 	}
 	s->has_monitor = true;
 	while (lenslink_json_object_next(r, key, sizeof(key), &truncated)) {
-		bool *target = NULL;
-		if (truncated) {
-			lenslink_json_skip(r);
-			continue;
-		}
-		if (!strcmp(key, "zebraLevel")) {
-			if (lenslink_json_read_number(r, &num) &&
-			    clamp_num(num, 70, 100, &num))
-				s->zebra_level = (int)num;
-			else
-				lenslink_json_skip(r);
-			continue;
-		}
-		if (!strcmp(key, "guide")) {
+		if (!truncated && !strcmp(key, "guide"))
 			read_str(r, s->guide, sizeof(s->guide));
-			continue;
-		}
-		if (!strcmp(key, "zebra"))
-			target = &s->zebra;
-		else if (!strcmp(key, "peaking"))
-			target = &s->peaking;
-		else if (!strcmp(key, "falseColor"))
-			target = &s->false_color;
-		if (!target || !lenslink_json_read_bool(r, &flag))
-			lenslink_json_skip(r);
 		else
-			*target = flag;
+			lenslink_json_skip(r);
 	}
 }
 
@@ -129,7 +105,6 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 	s->reframe_y = 0.5;
 	s->lens_position = 0.5;
 	s->wb_temperature = 5000;
-	s->zebra_level = 95;
 	snprintf(s->color, sizeof(s->color), "sdr");
 	snprintf(s->guide, sizeof(s->guide), "off");
 
