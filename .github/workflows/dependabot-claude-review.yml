@@ -77,7 +77,7 @@ jobs:
             echo "tools=$read_only,Bash(gh pr review:*),Bash(gh pr merge:*)" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: anthropics/claude-code-action@6070f08d2b4766348e0acded463606a7b176417b # v1.0.279
+      - uses: anthropics/claude-code-action@eb56b6666facdbd501035f4a0269d8caee2e7a8b # v1.0.289
         if: steps.guard.outputs.run == 'true'
         env:
           # The action wires GITHUB_TOKEN into its *own* API calls, but a
