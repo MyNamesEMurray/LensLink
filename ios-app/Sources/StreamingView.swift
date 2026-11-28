@@ -840,6 +840,10 @@ struct StreamingView: View {
                         greenScreenButton
                             .padding(.leading, rowDial == nil ? Theme.Space.s : 0)
                     }
+                    if rowDial == nil, !streamer.blurModes.isEmpty {
+                        BlurMenu(streamer: streamer, compact: true, onTouch: touched)
+                            .padding(.leading, streamer.greenScreenOffered ? 0 : Theme.Space.s)
+                    }
                 }
                 if let dial = rowDial {
                     DialRuler(ticks: dial == .zoom ? zoomTicks

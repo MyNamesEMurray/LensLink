@@ -161,6 +161,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "mic", "id": "builtin:2" }
 { "cmd": "tally", "program": true, "preview": false, "sync": "locked" }
 { "cmd": "green_screen", "on": true, "maxDistance": 2.5 }
+{ "cmd": "blur", "mode": "depth" }
 { "cmd": "identify", "host": "Studio-Mac", "obs": "32.0.1", "transport": "usb" }
 ```
 
@@ -351,6 +352,12 @@ is SDR-only: arming it forces the Standard colour pipeline, and the
 STATE fields below keep every surface honest about what's running.
 Camera connections only; screen mirror ignores it.
 
+`blur` picks the background blur test's mode: `"off"`, `"depth"` (the
+phone's own depth-weighted blur, composited before encoding like green
+screen) or `"cinematic"` (iOS 26 Cinematic video). TestFlight builds
+only, and only a mode listed in STATE's `blurModes`; anything else is
+ignored. Switching restarts capture, so the stream holds about a second.
+
 Unknown commands are ignored, so new ones can be added compatibly. The
 plugin's embedded web panel (http://localhost:9980) generates these.
 
@@ -445,6 +452,11 @@ app's Pause button, the web panel, or the source properties) or
 `"camera"` when iOS interrupted capture (another app opening the camera
 beside LensLink on an iPad, say). The reason is what lets a surface choose between offering a Resume button
 and explaining that the phone is waiting on iOS.
+
+The blur test (TestFlight builds only) adds `"blurModes"`, the modes
+the current lens and format can run (`"off"` first), and `"blur"`, the
+mode in force. Both are absent outside TestFlight, while not streaming
+and while green screen is on; remote UIs hide the control then.
 
 Green screen state rides the snapshot the same way:
 `"supportsGreenScreen": true` advertises the feature (remote UIs gate

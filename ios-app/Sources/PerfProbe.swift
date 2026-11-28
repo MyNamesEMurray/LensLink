@@ -171,7 +171,6 @@ final class PerfProbe: ObservableObject, @unchecked Sendable {
 
 struct PerfProbeView: View {
     @ObservedObject private var probe = PerfProbe.shared
-    @EnvironmentObject private var streamer: Streamer
     @State private var snapshot = ""
     @State private var copied = false
 
@@ -185,20 +184,6 @@ struct PerfProbeView: View {
                 Toggle(isOn: $probe.guides) { Text(verbatim: "Guides overlay") }
             } header: {
                 Text(verbatim: "Pro interface parts")
-            }
-            Section {
-                Picker(selection: $streamer.blurTest) {
-                    Text(verbatim: "Off").tag(Streamer.BlurTest.off)
-                    Text(verbatim: "Depth blur").tag(Streamer.BlurTest.depth)
-                    Text(verbatim: "Cinematic").tag(Streamer.BlurTest.cinematic)
-                } label: {
-                    Text(verbatim: "Background blur")
-                }
-                .pickerStyle(.segmented)
-                Text(verbatim: streamer.blurTestStatus)
-                    .font(.caption)
-            } header: {
-                Text(verbatim: "Background blur test")
             }
             Section {
                 Button {

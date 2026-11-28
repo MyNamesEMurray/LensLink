@@ -284,6 +284,10 @@ final class Streamer: ObservableObject {
             // availability re-read — Ultra Wide/Telephoto have no
             // depth sibling. Green screen OFF skips this entirely.
             wireCameraToEncoder(encoder, color: color)
+        } else {
+            // A lens switch with blur off still changes which blur
+            // modes can run.
+            updateBlurTestStatus(color: color)
         }
 
         // Re-dress the camera: this path runs for a lens switch (the
@@ -493,8 +497,8 @@ final class Streamer: ObservableObject {
             }
         }
     }
-    /// Background blur test (TestFlight only, Settings → Help →
-    /// Performance debug): our own depth blur on the compositor, or
+    /// Background blur test (TestFlight only; the Live screen and the
+    /// web panel switch it): our own depth blur on the compositor, or
     /// Apple's Cinematic video. Green screen wins when both are on.
     enum BlurTest: String, CaseIterable { case off, depth, cinematic }
     @Published var blurTest = BlurTest(
@@ -507,14 +511,31 @@ final class Streamer: ObservableObject {
             }
         }
     }
-    /// What the blur test actually armed on the running stream.
-    @Published private(set) var blurTestStatus = "Not streaming"
+    /// The blur modes the running stream's lens and format can run,
+    /// `.off` first; empty while not streaming, outside TestFlight, or
+    /// with green screen on (the control hides).
+    @Published private(set) var blurModes: [BlurTest] = []
+    /// The mode in force: the pick, or Off where the pick can't run.
+    var effectiveBlur: BlurTest { blurModes.contains(blurTest) ? blurTest : .off }
     private var activeBlurTest: BlurTest {
         PerfProbe.available && !greenScreenEnabled ? blurTest : .off
     }
 
     private func updateBlurTestStatus(color: StreamColor) {
         let format = "\(captureResolution.rawValue) \(fps) fps"
+        if PerfProbe.available && !greenScreenEnabled {
+            var modes: [BlurTest] = [.off]
+            if color == .sdr { modes.append(.depth) }
+            if CameraManager.supportsCinematic(resolution: captureResolution,
+                                               fps: Int32(fps), lens: selectedLens,
+                                               color: color) {
+                modes.append(.cinematic)
+            }
+            blurModes = modes
+        } else {
+            blurModes = []
+        }
+        let blurTestStatus: String
         switch activeBlurTest {
         case .off:
             blurTestStatus = greenScreenEnabled && blurTest != .off
@@ -1259,6 +1280,10 @@ final class Streamer: ObservableObject {
             }
         }
         state["supportsGreenScreen"] = greenScreenOffered
+        if !blurModes.isEmpty {
+            state["blur"] = effectiveBlur.rawValue
+            state["blurModes"] = blurModes.map(\.rawValue)
+        }
         if compositor?.mode == .greenScreen {
             state["greenScreen"] = true
             // Only when true: absent reads as false to every truthiness
@@ -2139,6 +2164,12 @@ final class Streamer: ObservableObject {
                                       fps: Int32(fps), lens: lens) {
                 selectedLens = lens
             }
+        case "blur":
+            if PerfProbe.available, let raw = command["mode"] as? String,
+               let mode = BlurTest(rawValue: raw), mode != blurTest,
+               blurModes.contains(mode) {
+                blurTest = mode
+            }
         case "green_screen":
             // Either field may arrive alone (docs/PROTOCOL.md §7). The
             // toggle goes through the didSet chain (SDR forcing + live
@@ -2593,7 +2624,7 @@ final class Streamer: ObservableObject {
         // stream-lifetime state, released with the stream.
         compositor = nil
         greenScreenDepthActive = false
-        blurTestStatus = "Not streaming"
+        blurModes = []
         encoder?.stop()
         encoder = nil
         audioReference?.stop()
