@@ -711,14 +711,20 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    (Shift-click: everything). Apps without `lensFactors` in STATE get a
    lens menu instead of the buttons.
 4. **Pro** (header pill, shown when STATE has `monitor`; the choice is
-   remembered per browser): timecode, a link line (bitrate, latency,
-   battery, heat), a histogram computed in the browser from `/api/still`
-   every 2 s (skipped while the eyedropper or reframe pad uses it), the
-   phone mic meter (same colours as the app), a Guides select, and the
-   focus pull (Set A, Set
-   B, Pull over a chosen number of seconds). The tray gains a Tint chip
-   and the Format row a Color select. Keyboard shortcuts work whenever
-   focus is not in a field, and the Pro section lists them.
+   remembered per browser) matches the phone's Pro interface: the page
+   and panel go black, the latest still (from `/api/still` every 2 s,
+   skipped while the eyedropper or reframe pad uses it) sits in a
+   rounded frame, and the phone's dark see-through boxes (black 50 %,
+   6 pt corners, monospaced values) float on it: status, bitrate,
+   fps over latency, format on top; the tray's chips at the bottom as
+   equal value boxes (accent corner dot = auto, black 75 % = selected).
+   Below the dial: battery and the phone mic meter (same colours as
+   the app). Tool buttons and action buttons become equal-width boxes;
+   Guides is a tool box that steps through the guides. Then the focus
+   pull (Set A, Set B, Pull over a chosen number of seconds). The tray
+   gains a Tint chip and the Format row a Color select. No timecode,
+   no histogram (the phone dropped both). Keyboard shortcuts work
+   whenever focus is not in a field; the header's ⓘ lists them.
 5. All controls send `CONTROL` packets; the panel polls `/api/state` and
    mirrors app-side changes (pausing while the operator is interacting), so
    the two stay in lock-step.
@@ -726,6 +732,10 @@ Dark page (`pageBg`), single centered column (max ~440 px):
 The page sets `color-scheme: dark`, so native browser chrome — most
 visibly the popup list of a `<select>` — renders dark instead of a light
 list with inherited white (invisible) text.
+
+Its neutrals have no blue tint, to match the app: page `#000`, panels
+and controls `#161616` (the page has no picture behind it for the
+app's black @ 55 % to sit on).
 
 The web panel deliberately shows the **plugin's** connection/latency status
 (the PC's vantage point), not the phone app's status — but styled with the

@@ -22,6 +22,12 @@ import Vision
 /// rule.
 final class FrameCompositor {
 
+    /// Green screen paints the background green; background blur (a
+    /// TestFlight test, Settings → Help → Performance debug) blurs it
+    /// by depth instead, with the same person matte keeping edges clean.
+    enum Mode { case greenScreen, backgroundBlur }
+    let mode: Mode
+
     /// Max subject distance in meters: anything farther is treated as
     /// background even where the person mask disagrees (iOS 15's
     /// segmentation is ONE mask covering all people, so this is the only
@@ -73,6 +79,12 @@ final class FrameCompositor {
     private var autoMeasuredDepth: CVPixelBuffer?
     private var reportedAutoCutoff: Float = 0
 
+    /// Background blur: the subject's eased distance (0 = not measured
+    /// yet), and the two GPU scratch textures at chroma resolution.
+    private var focusDepth: Float = 0
+    private var blurPremult: MTLTexture?
+    private var blurAmount: MTLTexture?
+
     private var loggedStages = Set<String>()
     private var loggedMaskDims = false
 
@@ -119,8 +131,35 @@ final class FrameCompositor {
                            pipeline: pipeline)
     }()
 
-    init?(targetFps: Int32) {
+    /// Compiled apart from the green screen kernel, so a fault in the
+    /// blur test can never take green screen down with it.
+    private struct BlurMetal {
+        let prepare: MTLComputePipelineState
+        let composite: MTLComputePipelineState
+    }
+
+    private static let sharedBlur: BlurMetal? = {
+        guard let device = sharedMetal?.device else { return nil }
+        do {
+            let library = try device.makeLibrary(source: blurShaderSource,
+                                                 options: nil)
+            guard let prepare = library.makeFunction(name: "blurPrepare"),
+                  let composite = library.makeFunction(name: "blurComposite") else {
+                print("FrameCompositor: blur functions missing — blur disabled")
+                return nil
+            }
+            return BlurMetal(
+                prepare: try device.makeComputePipelineState(function: prepare),
+                composite: try device.makeComputePipelineState(function: composite))
+        } catch {
+            print("FrameCompositor: blur shader compile failed (\(error)) — blur disabled")
+            return nil
+        }
+    }()
+
+    init?(targetFps: Int32, mode: Mode = .greenScreen) {
         guard let shared = Self.sharedMetal else { return nil }
+        if mode == .backgroundBlur, Self.sharedBlur == nil { return nil }
         let metalDevice = shared.device
         let queue = shared.queue
         let pipeline = shared.pipeline
@@ -148,6 +187,7 @@ final class FrameCompositor {
         // OneComponent8 maps straight onto an r8Unorm texture.
         request.outputPixelFormat = kCVPixelFormatType_OneComponent8
 
+        self.mode = mode
         self.device = metalDevice
         self.commandQueue = queue
         self.pipeline = pipeline
@@ -223,7 +263,15 @@ final class FrameCompositor {
                   + " for \(width)x\(height) input")
         }
 
-        if maxDistance < 0, let depth = latestDepthPixelBuffer,
+        if mode == .backgroundBlur {
+            if let depth = latestDepthPixelBuffer, depth !== autoMeasuredDepth {
+                autoMeasuredDepth = depth
+                if let median = subjectDepth(mask: maskBuffer, depth: depth) {
+                    focusDepth = focusDepth == 0
+                        ? median : focusDepth + (median - focusDepth) * 0.25
+                }
+            }
+        } else if maxDistance < 0, let depth = latestDepthPixelBuffer,
            depth !== autoMeasuredDepth {
             autoMeasuredDepth = depth
             measureAutoCutoff(mask: maskBuffer, depth: depth)
@@ -250,7 +298,10 @@ final class FrameCompositor {
         }
 
         // 3. GPU composite.
-        guard runKernel(source: source, mask: maskBuffer, output: output) else {
+        let ran = mode == .backgroundBlur
+            ? runBlur(source: source, mask: maskBuffer, output: output)
+            : runKernel(source: source, mask: maskBuffer, output: output)
+        guard ran else {
             logOnce("metal",
                     "FrameCompositor: Metal composite failed — passing frames through")
             return sampleBuffer
@@ -372,6 +423,103 @@ final class FrameCompositor {
         return commandBuffer.error == nil
     }
 
+    /// Background blur: pass 1 writes the background (premultiplied by
+    /// "not person") and a per-texel blur amount at chroma resolution,
+    /// the blit builds that background's mip chain, and pass 2 samples
+    /// the chain at a level set by the blur amount, keeping the person
+    /// sharp through the same edge-aware matte green screen uses.
+    /// Premultiplying keeps the person's colour out of the blurred
+    /// background, so no halo forms around them.
+    private func runBlur(source: CVPixelBuffer, mask: CVPixelBuffer,
+                         output: CVPixelBuffer) -> Bool {
+        guard let blur = Self.sharedBlur else { return false }
+        var retained: [CVMetalTexture] = []
+        guard let srcY = makeTexture(from: source, pixelFormat: .r8Unorm,
+                                     planeIndex: 0, retaining: &retained),
+              let srcCbCr = makeTexture(from: source, pixelFormat: .rg8Unorm,
+                                        planeIndex: 1, retaining: &retained),
+              let maskTexture = makeTexture(from: mask, pixelFormat: .r8Unorm,
+                                            planeIndex: 0, retaining: &retained),
+              let outY = makeTexture(from: output, pixelFormat: .r8Unorm,
+                                     planeIndex: 0, retaining: &retained),
+              let outCbCr = makeTexture(from: output, pixelFormat: .rg8Unorm,
+                                        planeIndex: 1, retaining: &retained)
+        else { return false }
+
+        let chromaWidth = CVPixelBufferGetWidthOfPlane(output, 1)
+        let chromaHeight = CVPixelBufferGetHeightOfPlane(output, 1)
+        if blurPremult?.width != chromaWidth || blurPremult?.height != chromaHeight {
+            let premult = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .rgba16Float, width: chromaWidth,
+                height: chromaHeight, mipmapped: true)
+            premult.usage = [.shaderRead, .shaderWrite]
+            premult.storageMode = .private
+            let amount = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .r16Float, width: chromaWidth,
+                height: chromaHeight, mipmapped: false)
+            amount.usage = [.shaderRead, .shaderWrite]
+            amount.storageMode = .private
+            blurPremult = device.makeTexture(descriptor: premult)
+            blurAmount = device.makeTexture(descriptor: amount)
+        }
+        guard let premult = blurPremult, let amount = blurAmount else {
+            return false
+        }
+
+        var depthTexture = dummyDepthTexture
+        var hasDepth: Float = 0
+        if focusDepth > 0, let depthBuffer = latestDepthPixelBuffer,
+           let wrapped = makeTexture(from: depthBuffer, pixelFormat: .r16Float,
+                                     planeIndex: 0, retaining: &retained) {
+            depthTexture = wrapped
+            hasDepth = 1
+        }
+        // Largest blur radius, in chroma texels: 1/36 of the height.
+        var params = SIMD4<Float>(focusDepth, hasDepth,
+                                  Float(chromaHeight) / 36, 0)
+
+        let threadsPerGroup = MTLSize(width: 16, height: 16, depth: 1)
+        let groups = MTLSize(width: (chromaWidth + 15) / 16,
+                             height: (chromaHeight + 15) / 16, depth: 1)
+        guard let commandBuffer = commandQueue.makeCommandBuffer(),
+              let prepare = commandBuffer.makeComputeCommandEncoder() else {
+            return false
+        }
+        prepare.setComputePipelineState(blur.prepare)
+        prepare.setTexture(srcY, index: 0)
+        prepare.setTexture(srcCbCr, index: 1)
+        prepare.setTexture(maskTexture, index: 2)
+        prepare.setTexture(depthTexture, index: 3)
+        prepare.setTexture(premult, index: 4)
+        prepare.setTexture(amount, index: 5)
+        prepare.setBytes(&params, length: MemoryLayout<SIMD4<Float>>.size, index: 0)
+        prepare.dispatchThreadgroups(groups, threadsPerThreadgroup: threadsPerGroup)
+        prepare.endEncoding()
+
+        guard let blit = commandBuffer.makeBlitCommandEncoder() else { return false }
+        blit.generateMipmaps(for: premult)
+        blit.endEncoding()
+
+        guard let composite = commandBuffer.makeComputeCommandEncoder() else {
+            return false
+        }
+        composite.setComputePipelineState(blur.composite)
+        composite.setTexture(srcY, index: 0)
+        composite.setTexture(srcCbCr, index: 1)
+        composite.setTexture(maskTexture, index: 2)
+        composite.setTexture(premult, index: 3)
+        composite.setTexture(amount, index: 4)
+        composite.setTexture(outY, index: 5)
+        composite.setTexture(outCbCr, index: 6)
+        composite.setBytes(&params, length: MemoryLayout<SIMD4<Float>>.size, index: 0)
+        composite.dispatchThreadgroups(groups, threadsPerThreadgroup: threadsPerGroup)
+        composite.endEncoding()
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        withExtendedLifetime(retained) {}
+        return commandBuffer.error == nil
+    }
+
     private func makeTexture(from buffer: CVPixelBuffer,
                              pixelFormat: MTLPixelFormat,
                              planeIndex: Int,
@@ -407,8 +555,21 @@ final class FrameCompositor {
     /// thrown forward or a missed frame doesn't jerk the matte. With no
     /// one in frame the last cutoff holds.
     private func measureAutoCutoff(mask: CVPixelBuffer, depth: CVPixelBuffer) {
+        guard let median = subjectDepth(mask: mask, depth: depth) else { return }
+        let target = min(median + Self.autoMargin, 5)
+        autoCutoff = autoCutoff == 0 ? target : autoCutoff + (target - autoCutoff) * 0.25
+        let rounded = (autoCutoff * 10).rounded() / 10
+        if rounded != reportedAutoCutoff {
+            reportedAutoCutoff = rounded
+            onAutoCutoff?(rounded)
+        }
+    }
+
+    /// Median distance of the person, in metres; nil with nobody in
+    /// frame or no usable depth readings.
+    private func subjectDepth(mask: CVPixelBuffer, depth: CVPixelBuffer) -> Float? {
         guard CVPixelBufferGetPixelFormatType(depth)
-                == kCVPixelFormatType_DepthFloat16 else { return }
+                == kCVPixelFormatType_DepthFloat16 else { return nil }
         CVPixelBufferLockBaseAddress(mask, .readOnly)
         CVPixelBufferLockBaseAddress(depth, .readOnly)
         defer {
@@ -416,7 +577,7 @@ final class FrameCompositor {
             CVPixelBufferUnlockBaseAddress(mask, .readOnly)
         }
         guard let maskBase = CVPixelBufferGetBaseAddress(mask),
-              let depthBase = CVPixelBufferGetBaseAddress(depth) else { return }
+              let depthBase = CVPixelBufferGetBaseAddress(depth) else { return nil }
         let maskW = CVPixelBufferGetWidth(mask)
         let maskH = CVPixelBufferGetHeight(mask)
         let maskRow = CVPixelBufferGetBytesPerRow(mask)
@@ -443,15 +604,9 @@ final class FrameCompositor {
                 if d.isFinite, d > 0.1 { samples.append(d) }
             }
         }
-        guard samples.count >= 8 else { return }
+        guard samples.count >= 8 else { return nil }
         samples.sort()
-        let target = min(samples[samples.count / 2] + Self.autoMargin, 5)
-        autoCutoff = autoCutoff == 0 ? target : autoCutoff + (target - autoCutoff) * 0.25
-        let rounded = (autoCutoff * 10).rounded() / 10
-        if rounded != reportedAutoCutoff {
-            reportedAutoCutoff = rounded
-            onAutoCutoff?(rounded)
-        }
+        return samples[samples.count / 2]
     }
 
     // MARK: - Pool
@@ -630,6 +785,164 @@ final class FrameCompositor {
         const float alphaMean = alphaSum * 0.25;
         const float2 outC = mix(float2(GREEN_CB, GREEN_CR), cbcr, alphaMean);
         outCbCr.write(float4(outC, 0.0, 0.0), gid);
+    }
+    """
+
+    private static let blurShaderSource = """
+    #include <metal_stdlib>
+    using namespace metal;
+
+    struct BlurParams {
+        float focus;     // subject distance, metres; 0 = not measured
+        float hasDepth;  // > 0.5 when the depth texture is real
+        float maxRadius; // chroma texels
+        float unused;
+    };
+
+    // Same edge-aware matte refinement as greenScreenComposite.
+    constant float SIGMA_SPACE = 0.9;
+    constant float SIGMA_RANGE = 0.08;
+    constant float3 RANGE_WEIGHT = float3(1.0, 2.0, 2.0);
+    constant float EDGE_LO = 0.15;
+    constant float EDGE_HI = 0.85;
+    // Circle of confusion gain: background at twice the subject's
+    // distance gets 80% of the largest blur, infinity all of it.
+    constant float COC_GAIN = 1.6;
+
+    // Pass 1, one thread per chroma texel (2x2 luma quad).
+    kernel void blurPrepare(
+        texture2d<float, access::sample> srcY    [[texture(0)]],
+        texture2d<float, access::read>   srcCbCr [[texture(1)]],
+        texture2d<float, access::sample> mask    [[texture(2)]],
+        texture2d<float, access::sample> depth   [[texture(3)]],
+        texture2d<float, access::write>  premult [[texture(4)]],
+        texture2d<float, access::write>  amount  [[texture(5)]],
+        constant BlurParams &params [[buffer(0)]],
+        uint2 gid [[thread_position_in_grid]])
+    {
+        const uint w = premult.get_width();
+        const uint h = premult.get_height();
+        if (gid.x >= w || gid.y >= h)
+            return;
+        constexpr sampler bilinear(coord::normalized,
+                                   address::clamp_to_edge,
+                                   filter::linear);
+        const float2 uv = (float2(gid) + 0.5) / float2(w, h);
+        // Bilinear at the quad centre is the mean of its four lumas.
+        const float y = srcY.sample(bilinear, uv).r;
+        const float2 c = srcCbCr.read(gid).rg;
+        const float person = smoothstep(0.3, 0.7, mask.sample(bilinear, uv).r);
+        float coc = 1.0;
+        if (params.hasDepth > 0.5 && params.focus > 0.0) {
+            const float d = depth.sample(bilinear, uv).r;
+            if (!isnan(d) && d > 0.0)
+                coc = saturate(abs(1.0 - params.focus / d) * COC_GAIN);
+        }
+        const float background = 1.0 - person;
+        premult.write(float4(y, c, 1.0) * background, gid);
+        amount.write(float4(background * coc), gid);
+    }
+
+    // Pass 2, one thread per 2x2 luma quad.
+    kernel void blurComposite(
+        texture2d<float, access::sample> srcY    [[texture(0)]],
+        texture2d<float, access::sample> srcCbCr [[texture(1)]],
+        texture2d<float, access::read>   mask    [[texture(2)]],
+        texture2d<float, access::sample> premult [[texture(3)]],
+        texture2d<float, access::sample> amount  [[texture(4)]],
+        texture2d<float, access::write>  outY    [[texture(5)]],
+        texture2d<float, access::write>  outCbCr [[texture(6)]],
+        constant BlurParams &params [[buffer(0)]],
+        uint2 gid [[thread_position_in_grid]])
+    {
+        const uint chromaW = outCbCr.get_width();
+        const uint chromaH = outCbCr.get_height();
+        if (gid.x >= chromaW || gid.y >= chromaH)
+            return;
+        constexpr sampler bilinear(coord::normalized,
+                                   address::clamp_to_edge,
+                                   filter::linear);
+        constexpr sampler trilinear(coord::normalized,
+                                    address::clamp_to_edge,
+                                    filter::linear,
+                                    mip_filter::linear);
+
+        const uint lumaW = outY.get_width();
+        const uint lumaH = outY.get_height();
+        const float2 lumaSize = float2(lumaW, lumaH);
+        const float2 chromaTexel = 1.0 / float2(chromaW, chromaH);
+        const int2 maskSize = int2(mask.get_width(), mask.get_height());
+        const float2 maskScale = float2(maskSize) / lumaSize;
+
+        const float2 quadCenter = (float2(gid * 2u) + 1.0) * maskScale - 0.5;
+        const int2 base = int2(floor(quadCenter + 0.5));
+        float lowA[9];
+        float2 lowP[9];
+        float3 lowG[9];
+        for (int k = 0; k < 9; ++k) {
+            const int2 t = clamp(base + int2(k % 3 - 1, k / 3 - 1),
+                                 int2(0), maskSize - 1);
+            const float2 tuv = (float2(t) + 0.5) / float2(maskSize);
+            lowA[k] = mask.read(uint2(t)).r;
+            lowP[k] = float2(t);
+            lowG[k] = float3(srcY.sample(bilinear, tuv).r,
+                             srcCbCr.sample(bilinear, tuv).rg);
+        }
+
+        const float2 cbcr = srcCbCr.read(gid).rg;
+        const float spaceK = 1.0 / (2.0 * SIGMA_SPACE * SIGMA_SPACE);
+        const float rangeK = 1.0 / (2.0 * SIGMA_RANGE * SIGMA_RANGE);
+
+        float2 blurCSum = float2(0.0);
+        float mixSum = 0.0;
+        for (uint i = 0; i < 4; ++i) {
+            const uint2 px = uint2(min(2 * gid.x + (i & 1u), lumaW - 1),
+                                   min(2 * gid.y + (i >> 1), lumaH - 1));
+            const float y = srcY.read(px).r;
+            const float3 g = float3(y, cbcr);
+            const float2 p = (float2(px) + 0.5) * maskScale - 0.5;
+
+            float wSum = 0.0, aSum = 0.0, sSum = 0.0, sASum = 0.0;
+            for (int k = 0; k < 9; ++k) {
+                const float2 ds = p - lowP[k];
+                const float3 dg = (g - lowG[k]) * RANGE_WEIGHT;
+                const float ws = exp(-dot(ds, ds) * spaceK);
+                const float wt = ws * exp(-dot(dg, dg) * rangeK);
+                wSum += wt;
+                aSum += wt * lowA[k];
+                sSum += ws;
+                sASum += ws * lowA[k];
+            }
+            float person = wSum > 1e-4 ? aSum / wSum : sASum / sSum;
+            person = smoothstep(EDGE_LO, EDGE_HI, person);
+
+            const float2 uv = (float2(px) + 0.5) / lumaSize;
+            const float r = amount.sample(bilinear, uv).r * params.maxRadius;
+            float blend = 0.0;
+            float3 blurred = g;
+            if (r > 0.5) {
+                // Four taps around the pixel at the mip level matching
+                // the radius round off the mip chain's box shape.
+                const float lod = log2(r);
+                const float2 o = 0.5 * r * chromaTexel;
+                const float4 acc =
+                    premult.sample(trilinear, uv + float2( o.x,  o.y), level(lod)) +
+                    premult.sample(trilinear, uv + float2(-o.x,  o.y), level(lod)) +
+                    premult.sample(trilinear, uv + float2( o.x, -o.y), level(lod)) +
+                    premult.sample(trilinear, uv + float2(-o.x, -o.y), level(lod));
+                if (acc.a > 1e-3) {
+                    blurred = acc.rgb / acc.a;
+                    blend = saturate(r - 0.5) * (1.0 - person);
+                }
+            }
+            outY.write(float4(mix(y, blurred.x, blend)), px);
+            blurCSum += blurred.yz * blend;
+            mixSum += blend;
+        }
+
+        const float meanBlend = mixSum * 0.25;
+        const float2 blurC = mixSum > 1e-4 ? blurCSum / mixSum : cbcr;
+        outCbCr.write(float4(mix(cbcr, blurC, meanBlend), 0.0, 0.0), gid);
     }
     """
 }

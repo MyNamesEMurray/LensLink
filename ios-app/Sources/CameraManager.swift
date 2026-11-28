@@ -116,6 +116,15 @@ final class CameraManager: NSObject {
     /// (graceful degrade). Valid once configure() has returned.
     private(set) var depthAssistActive = false
 
+    /// True when the last configure armed Apple's Cinematic video (the
+    /// background blur test, iOS 26+): Dual Wide or TrueDepth device, a
+    /// Cinematic-capable format at the exact resolution+fps, and the
+    /// input accepted it. The video output then carries the bokeh.
+    private(set) var cinematicActive = false
+    /// Dual Wide's zoom 1 is the Ultra Wide; Main framing sits at its
+    /// switch-over factor, so zoom writes are scaled by this. 1 otherwise.
+    private var zoomBase: CGFloat = 1
+
     override init() {
         super.init()
         // Without these observers a phone call or the Camera app grabbing
@@ -330,6 +339,22 @@ final class CameraManager: NSObject {
         return nil
     }
 
+    /// The device Cinematic video runs on for a user-facing lens: Dual
+    /// Wide for the rear Main lens, TrueDepth for the front. nil for
+    /// the other lenses.
+    private static func cinematicDevice(for lens: Lens) -> AVCaptureDevice? {
+        if lens.position == .front {
+            return AVCaptureDevice.default(.builtInTrueDepthCamera,
+                                           for: .video, position: .front)
+        }
+        if lens.position == .back,
+           lens.deviceType == .builtInWideAngleCamera {
+            return AVCaptureDevice.default(.builtInDualWideCamera,
+                                           for: .video, position: .back)
+        }
+        return nil
+    }
+
     /// Maximum quality without system video effects: take the full
     /// sensor readout over the binned sibling. Binning averages 2×2
     /// photosites — the effects-capable formats are usually the binned
@@ -344,7 +369,8 @@ final class CameraManager: NSObject {
                                resolution: Resolution,
                                fps: Int32,
                                color: StreamColor,
-                               requireDepth: Bool = false) -> AVCaptureDevice.Format? {
+                               requireDepth: Bool = false,
+                               requireCinematic: Bool = false) -> AVCaptureDevice.Format? {
         let target = resolution.size
         // Require exact dimensions and a frame-rate range covering the
         // requested rate (both ends: configure pins the frame duration to
@@ -364,6 +390,15 @@ final class CameraManager: NSObject {
             }
             if requireDepth, format.supportedDepthDataFormats.isEmpty {
                 return false
+            }
+            if requireCinematic {
+                // The iOS 26 SDK's API: the Xcode 16 CI job never builds it.
+#if compiler(>=6.2)
+                guard #available(iOS 26.0, *),
+                      format.isCinematicVideoCaptureSupported else { return false }
+#else
+                return false
+#endif
             }
             switch color {
             case .sdr:
@@ -662,6 +697,14 @@ final class CameraManager: NSObject {
     /// Whether green screen's depth assist can run at this combo: the
     /// lens has a depth sibling with a depth-capable format at exactly
     /// this resolution and frame rate, the same test configure applies.
+    /// Whether the blur test's Cinematic mode can run at this combo.
+    static func supportsCinematic(resolution: Resolution, fps: Int32,
+                                  lens: Lens, color: StreamColor) -> Bool {
+        guard let device = cinematicDevice(for: lens) else { return false }
+        return format(for: device, resolution: resolution, fps: fps,
+                      color: color, requireCinematic: true) != nil
+    }
+
     static func supportsDepth(resolution: Resolution, fps: Int32,
                               lens: Lens) -> Bool {
         guard let sibling = depthSiblingDevice(for: lens) else { return false }
@@ -756,11 +799,13 @@ final class CameraManager: NSObject {
                    fps: Int32,
                    lockFrameRate: Bool = true,
                    color: StreamColor = .sdr,
-                   wantsDepth: Bool = false) throws -> StreamColor {
+                   wantsDepth: Bool = false,
+                   cinematic: Bool = false) throws -> StreamColor {
         try sessionQueue.sync {
             try configureOnQueue(lens: lens, resolution: resolution,
                                  fps: fps, lockFrameRate: lockFrameRate,
-                                 color: color, wantsDepth: wantsDepth)
+                                 color: color, wantsDepth: wantsDepth,
+                                 cinematic: cinematic)
         }
     }
 
@@ -769,7 +814,8 @@ final class CameraManager: NSObject {
                                   fps: Int32,
                                   lockFrameRate: Bool,
                                   color: StreamColor,
-                                  wantsDepth: Bool) throws -> StreamColor {
+                                  wantsDepth: Bool,
+                                  cinematic: Bool) throws -> StreamColor {
         let position = lens.position
         session.beginConfiguration()
         defer { session.commitConfiguration() }
@@ -782,6 +828,8 @@ final class CameraManager: NSObject {
         depthOutput = nil
         outputSynchronizer = nil
         depthAssistActive = false
+        cinematicActive = false
+        zoomBase = 1
 
         // Format is chosen manually below; presets can't express 4K60.
         session.sessionPreset = .inputPriority
@@ -817,7 +865,19 @@ final class CameraManager: NSObject {
             device = sibling
             depthPinnedFormat = siblingFormat
         }
-        guard let format = depthPinnedFormat
+        // Cinematic (blur test): same rule, never change the format to
+        // get it — no Cinematic format at this combo means plain capture.
+        var cinematicFormat: AVCaptureDevice.Format?
+        if cinematic, depthPinnedFormat == nil,
+           let cinematicDevice = Self.cinematicDevice(for: lens),
+           let candidate = Self.format(for: cinematicDevice,
+                                       resolution: resolution,
+                                       fps: fps, color: color,
+                                       requireCinematic: true) {
+            device = cinematicDevice
+            cinematicFormat = candidate
+        }
+        guard let format = depthPinnedFormat ?? cinematicFormat
                 ?? Self.format(for: device, resolution: resolution,
                                fps: fps, color: color) else {
             throw NSError(domain: "CameraManager", code: 4,
@@ -860,6 +920,19 @@ final class CameraManager: NSObject {
         if lockFrameRate {
             device.activeVideoMaxFrameDuration = frameDuration
         }
+#if compiler(>=6.2)
+        if cinematicFormat != nil, #available(iOS 26.0, *),
+           input.isCinematicVideoCaptureSupported {
+            input.isCinematicVideoCaptureEnabled = true
+            input.simulatedAperture = format.defaultSimulatedAperture
+            cinematicActive = true
+            if device.deviceType == .builtInDualWideCamera,
+               let switchOver = device.virtualDeviceSwitchOverVideoZoomFactors.first {
+                zoomBase = CGFloat(truncating: switchOver)
+                device.videoZoomFactor = zoomBase
+            }
+        }
+#endif
         if depthPinnedFormat != nil {
             // Largest DepthFloat16 entry: meters directly, mapping to an
             // r16Float texture. Must come from the ACTIVE format's own
@@ -973,7 +1046,8 @@ final class CameraManager: NSObject {
                                         fps: fps,
                                         lockFrameRate: lockFrameRate,
                                         color: .sdr,
-                                        wantsDepth: wantsDepth)
+                                        wantsDepth: wantsDepth,
+                                        cinematic: cinematic)
         }
         output.videoSettings = [
             kCVPixelBufferPixelFormatTypeKey as String: outputPixelFormat
@@ -1164,7 +1238,8 @@ final class CameraManager: NSObject {
     private var pendingWrites: [(key: String, block: (AVCaptureDevice) -> Void)] = []
 
     var maxZoomFactor: CGFloat {
-        guard let device = activeDevice, !depthAssistActive else { return 1 }
+        guard let device = activeDevice, !depthAssistActive,
+              !cinematicActive else { return 1 }
         // Beyond ~10x the digital zoom is mush; keep the slider useful.
         return min(device.activeFormat.videoMaxZoomFactor, 10)
     }
@@ -1173,7 +1248,7 @@ final class CameraManager: NSObject {
         deviceWrite { device in
             let clamped = max(device.minAvailableVideoZoomFactor,
                               min(factor, self.maxZoomFactor))
-            device.videoZoomFactor = clamped
+            device.videoZoomFactor = clamped * self.zoomBase
         }
     }
 
