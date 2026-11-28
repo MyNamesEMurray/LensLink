@@ -392,8 +392,13 @@ final class CameraManager: NSObject {
                 return false
             }
             if requireCinematic {
+                // The iOS 26 SDK's API: the Xcode 16 CI job never builds it.
+#if compiler(>=6.2)
                 guard #available(iOS 26.0, *),
                       format.isCinematicVideoCaptureSupported else { return false }
+#else
+                return false
+#endif
             }
             switch color {
             case .sdr:
@@ -907,6 +912,7 @@ final class CameraManager: NSObject {
         if lockFrameRate {
             device.activeVideoMaxFrameDuration = frameDuration
         }
+#if compiler(>=6.2)
         if cinematicFormat != nil, #available(iOS 26.0, *),
            input.isCinematicVideoCaptureSupported {
             input.isCinematicVideoCaptureEnabled = true
@@ -918,6 +924,7 @@ final class CameraManager: NSObject {
                 device.videoZoomFactor = zoomBase
             }
         }
+#endif
         if depthPinnedFormat != nil {
             // Largest DepthFloat16 entry: meters directly, mapping to an
             // r16Float texture. Must come from the ACTIVE format's own
