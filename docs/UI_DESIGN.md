@@ -657,10 +657,17 @@ only where the value needs one.
   link (connection, `USB` or `Wi-Fi`, over the bitrate), frames (fps
   over dropped: numbers left, units in a fixed column beside them, the
   pair centred), the format
-  (`4K HEVC LOG`), and the More menu (Pause/Resume, Standard
+  (`4K · 30` over `HEVC LOG`; tapping it opens the **format editor**,
+  chip rows for resolution, FPS, codec, color and bitrate, shown between
+  the top bar and the strip; choices the phone can't do are left out),
+  and the More menu (Pause/Resume, Standard
   interface). Widths 1.3 : 1.5 : 1.1 : 1.3, More fixed. `–` until the
   first reading. No timecode.
-- **Value strip**: Lens · FPS · Shutter · ISO · WB · Tint · EV · Focus.
+- **Value strip**: Lens · Iris · Shutter · ISO · WB · Tint · EV · Focus.
+  Iris (f-number, `f1.48`) only on a lens with a variable iris (iOS 27);
+  its dial has the phone's recommended stops as chips, a third-stop
+  slider and an ⓘ. A held iris with ISO and shutter on auto is aperture
+  priority.
   Equal boxes, label over value, centred; auto values show what auto is
   doing with an accent dot in the box's corner. Shutter is always a
   fraction (`1/50`). Tapping a box selects it (accent underline) and

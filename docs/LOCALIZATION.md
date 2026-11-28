@@ -245,6 +245,7 @@ and everywhere at once rather than drifting.
 | Focus | Fokus | Enfoque | Mise au point | フォーカス | Foco | 对焦 |
 | White balance | Weißabgleich | Balance de blancos | Balance des blancs | ホワイトバランス | Equilíbrio de branco | 白平衡 |
 | Shutter | Verschluss | Obturador | Obturateur | シャッター | Obturador | 快门 |
+| Iris (lens aperture) | Blende | Diafragma | Iris | 絞り | Íris | 光圈 |
 | Tint | Tönung | Tinte | Teinte | 色かぶり | Matiz | 色调 |
 | Pro interface | Pro-Oberfläche | Interfaz Pro | Interface Pro | プロ用インターフェイス | Interface Pro | 专业界面 |
 | Guides | Hilfslinien | Guías | Repères | ガイド | Guias | 参考线 |

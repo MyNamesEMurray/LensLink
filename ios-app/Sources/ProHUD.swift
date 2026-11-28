@@ -21,7 +21,7 @@ struct ProHUD: View {
     var frame: EdgeInsets?
 
     enum Param: CaseIterable {
-        case lens, fps, shutter, iso, whiteBalance, tint, exposure, focus
+        case lens, iris, shutter, iso, whiteBalance, tint, exposure, focus, format
     }
 
     @State private var open: Param?
@@ -37,14 +37,9 @@ struct ProHUD: View {
         VStack(spacing: 0) {
             VStack(spacing: Theme.Space.s) {
                 topBar
+                if open == .format { panel(.format) }
                 strip
-                if let open = open {
-                    dial(open)
-                        .padding(Theme.Space.m)
-                        .background(Theme.glassPanel)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip,
-                                                    style: .continuous))
-                }
+                if let open = open, open != .format { panel(open) }
             }
             .padding(Theme.Space.s)
             .padding(.horizontal, frame?.leading ?? 0)
@@ -94,11 +89,7 @@ struct ProHUD: View {
                 statusBox.frame(width: unit * Self.topWeights[0])
                 linkBox.frame(width: unit * Self.topWeights[1])
                 framesBox.frame(width: unit * Self.topWeights[2])
-                Text(formatLabel)
-                    .font(Self.mono)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .proBox()
+                formatBox
                     .frame(width: unit * Self.topWeights[3])
                 moreMenu
             }
@@ -161,14 +152,35 @@ struct ProHUD: View {
         .frame(maxWidth: 64, alignment: .leading)
     }
 
-    private var formatLabel: String {
+    /// Resolution and frame rate over codec and colour; a tap opens the
+    /// format editor.
+    private var formatBox: some View {
+        let selected = open == .format
         let color: String
         switch streamer.activeColor {
         case .sdr: color = ""
         case .hlg: color = " HLG"
         case .log: color = " LOG"
         }
-        return "\(streamer.resolution.rawValue) \(streamer.codec == .hevc ? "HEVC" : "H.264")\(color)"
+        return Button {
+            touched()
+            open = selected ? nil : .format
+        } label: {
+            VStack(spacing: 1) {
+                Text(verbatim: "\(streamer.resolution.rawValue) · \(streamer.fps)")
+                    .font(Self.label)
+                    .foregroundColor(Theme.textSecondary)
+                    .lineLimit(1)
+                Text(verbatim: streamer.codec.label.uppercased() + color)
+                    .font(Self.mono)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+            }
+            .proBox(selected: selected)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L("Format"))
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private var moreMenu: some View {
@@ -205,6 +217,8 @@ struct ProHUD: View {
         Param.allCases.filter {
             switch $0 {
             case .iso, .shutter: return streamer.camera.supportsManualExposure
+            case .iris: return streamer.camera.apertureRange != nil
+            case .format: return false
             case .whiteBalance, .tint: return streamer.camera.supportsWhiteBalanceLock
             default: return true
             }
@@ -272,7 +286,8 @@ struct ProHUD: View {
     private func title(_ param: Param) -> String {
         switch param {
         case .lens: return L("Lens")
-        case .fps: return "FPS"
+        case .iris: return L("Iris")
+        case .format: return L("Format")
         case .shutter: return L("Shutter")
         case .iso: return "ISO"
         case .whiteBalance: return L("WB")
@@ -286,6 +301,7 @@ struct ProHUD: View {
         switch param {
         case .shutter: return .shutter
         case .iso: return .iso
+        case .iris: return .aperture
         case .whiteBalance, .tint: return .whiteBalance
         case .focus: return .focus
         default: return nil
@@ -302,6 +318,9 @@ struct ProHUD: View {
     private var shownShutter: Double {
         isAuto(.shutter) == true ? live?.shutterSeconds ?? streamer.shutterSeconds
                                  : streamer.shutterSeconds
+    }
+    private var shownAperture: Float {
+        isAuto(.iris) == true ? live?.aperture ?? streamer.aperture : streamer.aperture
     }
     private var shownISO: Float {
         isAuto(.iso) == true ? live?.iso ?? streamer.iso : streamer.iso
@@ -322,8 +341,10 @@ struct ProHUD: View {
         switch param {
         case .lens:
             return Self.factorLabel(lensFactor * Double(streamer.zoom)) + "×"
-        case .fps:
-            return "\(streamer.fps)"
+        case .iris:
+            return Self.apertureLabel(shownAperture)
+        case .format:
+            return "\(streamer.resolution.rawValue) \(streamer.fps)"
         case .shutter:
             return Self.shutterLabel(shownShutter)
         case .iso:
@@ -353,6 +374,18 @@ struct ProHUD: View {
         return String(format: whole ? "%.0f" : "%.1f", factor)
     }
 
+    /// "1.48", "1.8", "4": two decimals at most, no trailing zeros.
+    static func fNumberLabel(_ fNumber: Float) -> String {
+        var text = String(format: "%.2f", fNumber)
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return text
+    }
+
+    static func apertureLabel(_ fNumber: Float) -> String {
+        "f" + fNumberLabel(fNumber)
+    }
+
     static func shutterLabel(_ seconds: Double) -> String {
         guard seconds.isFinite, seconds > 0 else { return "–" }
         guard seconds < 1 else { return String(format: "%.0fs", seconds) }
@@ -361,7 +394,23 @@ struct ProHUD: View {
 
     // MARK: - Dials
 
+    private func panel(_ param: Param) -> some View {
+        dial(param)
+            .padding(Theme.Space.m)
+            .background(Theme.glassPanel)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip,
+                                        style: .continuous))
+    }
+
     @ViewBuilder private func dial(_ param: Param) -> some View {
+        if param == .format {
+            formatEditor
+        } else {
+            valueDial(param)
+        }
+    }
+
+    @ViewBuilder private func valueDial(_ param: Param) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.s) {
             HStack(spacing: Theme.Space.s) {
                 if let target = lockTarget(param) {
@@ -371,6 +420,9 @@ struct ProHUD: View {
                 }
                 extras(param)
                 Spacer(minLength: 0)
+                if param == .iris {
+                    InfoButton(title: L("Iris"), text: SettingInfo.irisTip)
+                }
             }
             control(param)
         }
@@ -386,10 +438,11 @@ struct ProHUD: View {
                 }
             }
             chip(L("Flip"), on: false) { streamer.flipCamera() }
-        case .fps:
-            ForEach(frameRates, id: \.self) { rate in
-                chip("\(rate)", on: rate == streamer.fps) {
-                    streamer.applyRemoteFormat(["fps": rate])
+        case .iris:
+            ForEach(streamer.camera.apertureStops, id: \.self) { stop in
+                chip(Self.fNumberLabel(stop),
+                     on: streamer.isLocked(.aperture) && abs(streamer.aperture - stop) < 0.01) {
+                    setAperture(stop)
                 }
             }
         case .whiteBalance:
@@ -411,7 +464,21 @@ struct ProHUD: View {
                 Slider(value: zoomBinding, in: 1...streamer.camera.maxZoomFactor)
                     .accessibilityLabel(L("Zoom"))
             }
-        case .fps:
+        case .iris:
+            if let range = streamer.camera.apertureRange {
+                // Third-stop steps: the f-number grows by √2 a stop.
+                Slider(value: Binding(
+                    get: { log2(Double(shownAperture)) * 2 },
+                    set: { position in
+                        let fNumber = Float(pow(2, (position * 3).rounded() / 6))
+                        guard abs(fNumber - streamer.aperture) > 0.005
+                                || !streamer.isLocked(.aperture) else { return }
+                        setAperture(min(max(fNumber, range.lowerBound), range.upperBound))
+                    }), in: log2(Double(range.lowerBound)) * 2...log2(Double(range.upperBound)) * 2)
+                    .accessibilityLabel(L("Iris"))
+                    .accessibilityValue(Text(verbatim: value(.iris)))
+            }
+        case .format:
             EmptyView()
         case .shutter:
             let stops = shutterStops
@@ -479,6 +546,93 @@ struct ProHUD: View {
                 .accessibilityLabel(L("Focus"))
                 .accessibilityValue(Text(verbatim: value(.focus)))
         }
+    }
+
+    private func setAperture(_ fNumber: Float) {
+        touched()
+        if !streamer.isLocked(.aperture) { streamer.setLocked(.aperture, true) }
+        streamer.aperture = fNumber
+    }
+
+    // MARK: - Format editor
+
+    private var formatEditor: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.s) {
+            formatRow(L("Resolution"), resolutions, on: { $0 == streamer.resolution },
+                      label: { $0.rawValue }) {
+                streamer.applyRemoteFormat(["resolution": $0.rawValue])
+            }
+            formatRow("FPS", frameRates, on: { $0 == streamer.fps },
+                      label: { "\($0)" }) {
+                streamer.applyRemoteFormat(["fps": $0])
+            }
+            formatRow(L("Codec"), codecs, on: { $0 == streamer.codec },
+                      label: { $0.label }) {
+                streamer.applyRemoteFormat(["codec": $0.rawValue])
+            }
+            if streamer.colorOptions.count > 1 {
+                formatRow(L("Color"), streamer.colorOptions,
+                          on: { $0 == streamer.colorSetting },
+                          label: Self.colorLabel) {
+                    streamer.applyRemoteFormat(["color": $0.rawValue])
+                }
+            }
+            formatRow(L("Bitrate"), Streamer.StreamQuality.allCases,
+                      on: { $0 == streamer.quality },
+                      label: { $0.displayName }) {
+                streamer.quality = $0
+            }
+        }
+        .font(.footnote)
+    }
+
+    private func formatRow<T: Hashable>(_ title: String, _ items: [T],
+                                        on: @escaping (T) -> Bool,
+                                        label: @escaping (T) -> String,
+                                        pick: @escaping (T) -> Void) -> some View {
+        HStack(spacing: Theme.Space.s) {
+            Text(verbatim: title)
+                .font(Self.label)
+                .foregroundColor(Theme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: 58, alignment: .leading)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.Space.xs) {
+                    ForEach(items, id: \.self) { item in
+                        chip(label(item), on: on(item)) {
+                            if !on(item) { pick(item) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static func colorLabel(_ color: StreamColor) -> String {
+        switch color {
+        case .sdr: return L("Standard")
+        case .hlg: return L("HDR (HLG)")
+        case .log: return L("Apple Log")
+        }
+    }
+
+    /// While HLG or Log is on, HEVC is the only codec.
+    private var codecs: [VideoCodec] {
+        streamer.colorSetting != .sdr ? [.hevc]
+            : VideoCodec.allCases.filter { VideoEncoder.isSupported($0) }
+    }
+
+    private static var resolutionCache: [String: [CameraManager.Resolution]] = [:]
+
+    private var resolutions: [CameraManager.Resolution] {
+        let key = streamer.selectedLens.id
+        if let cached = Self.resolutionCache[key] { return cached }
+        let found = CameraManager.Resolution.allCases.filter {
+            CameraManager.supports(resolution: $0, fps: 30, lens: streamer.selectedLens)
+        }
+        Self.resolutionCache[key] = found
+        return found
     }
 
     private func lockWhiteBalance(temperature: Float) {

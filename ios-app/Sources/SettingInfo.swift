@@ -34,6 +34,8 @@ enum SettingInfo {
         "Steadies moving shots but delays the stream. Standard adds a little delay. Cinematic adds often over half a second and crops more.")
     static let antiFlickerTip = LocalizedStringKey(
         "Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region.")
+    static let irisTip = LocalizedStringKey(
+        "Lens opening. A lower f-number lets in more light and blurs the background more. A higher one keeps more in focus.")
     static let reframeTip = LocalizedStringKey(
         "Captures one size up (4K for a 1080p stream) so Reframe zoom keeps real detail. Uses more power and heat and turns green screen off. Not available at 4K.")
     static let remoteStartTip = LocalizedStringKey(

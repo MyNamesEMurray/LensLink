@@ -796,3 +796,9 @@
 
 /* Documentation → Options, Camera behavior section: the Anti-flicker menu (Markdown: keep the ** markers) */
 "**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "“摄像头”面板中的**防频闪**会把自动快门取整为市电灯光闪烁脉冲（市电频率的两倍）的整数倍，使灯光不闪烁、不出现条纹。它把自动曝光可用的最慢快门（自然动态模糊的 180° 上限）移到最接近的值：60 Hz 下为 1/120、1/60、1/40、1/30，50 Hz 下为 1/100、1/50、1/33；120 fps、60 Hz 时为 1/120。帧率高于市电频率的两倍时（50 Hz 下 120 fps、240 fps）没有安全值，因此保持 180° 值。你手动设置的快门从不取整。**自动**根据你的“地区”设置选择 50 Hz 或 60 Hz；在日本东部请选择 50 Hz。";
+
+/* Pro interface: the lens aperture (iris) value box and dial */
+"Iris" = "光圈";
+
+/* Pro interface ⓘ: short description of the iris dial */
+"Lens opening. A lower f-number lets in more light and blurs the background more. A higher one keeps more in focus." = "镜头开口。f 值越小进光越多，背景越虚化。f 值越大，清晰范围越大。";

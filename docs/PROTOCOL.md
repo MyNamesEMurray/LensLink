@@ -151,6 +151,8 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "exposure", "mode": "auto" }
 { "cmd": "exposure", "shutterMode": "manual", "shutterSeconds": 0.01 }
 { "cmd": "exposure", "isoMode": "auto" }
+{ "cmd": "aperture", "mode": "manual", "fNumber": 2.8 }
+{ "cmd": "aperture", "mode": "auto" }
 { "cmd": "start_stream" }
 { "cmd": "stop_stream" }
 { "cmd": "pause_stream" }
@@ -297,6 +299,18 @@ meter (the EV bias still applies). Apps that predate `isoMode` /
 `isoMode`. The `lock` targets `"iso"` and `"shutter"` follow the same
 rule.
 
+`aperture` sets the iris on a lens with a variable one (iOS 27 and a
+camera that has it; STATE `supportsAperture`). `"manual"` holds the iris
+at `fNumber`, clamped to `minAperture`...`maxAperture`; `"auto"` hands it
+back to auto exposure. A `fNumber` without `mode` changes the held value
+only. With ISO and shutter both on auto, a held iris is aperture
+priority: the shutter holds natural motion blur's 180° cap (rounded by
+anti-flicker) and ISO follows the meter; only at the lowest ISO does the
+shutter get faster. With ISO or shutter by hand, the iris joins the
+fixed values. The `lock` target `"aperture"` holds the iris where auto
+has it. An app that predates it ignores the command and omits the STATE
+fields.
+
 `flashlight` takes `on`, `level` (brightness, 0.01 to 1), or both;
 an absent field is left as it is. The app remembers the level and lights
 at it; iOS may cap it lower while the phone is hot. An app that predates
@@ -426,7 +440,11 @@ tint being 0 unless set by a calibration, `exposureMode` (`"manual"`
 when either half is), `isoMode`/`shutterMode` (each half on its own),
 `iso`/`shutterSeconds` with their ranges `minISO`/`maxISO` and
 `minShutterSeconds`/`maxShutterSeconds` (the longest shutter is capped
-at one frame interval, so it follows `fps`), plus
+at one frame interval, so it follows `fps`), the iris when the lens has
+a variable one (`supportsAperture: true`, `apertureMode` `"auto"` or
+`"manual"`, `aperture` the f-number in effect, live while auto,
+`minAperture`/`maxAperture` and `apertureStops`, the f-numbers the phone
+recommends for chips; all absent on a fixed iris), plus
 `supportsWhiteBalanceLock` and `supportsManualExposure` so UIs hide what
 the camera lacks), the lens (`lens`, the current label, and `lenses`,
 every label the phone has, for `selectLens` pickers, with
