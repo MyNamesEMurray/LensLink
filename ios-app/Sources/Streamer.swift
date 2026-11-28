@@ -256,7 +256,9 @@ final class Streamer: ObservableObject {
                                      fps: Int32(fps),
                                      lockFrameRate: !allowVideoEffects,
                                      color: activeColor,
-                                     wantsDepth: greenScreenEnabled)
+                                     wantsDepth: greenScreenEnabled
+                                        || activeBlurTest == .depth,
+                                     cinematic: activeBlurTest == .cinematic)
             }
         } catch {
             // Never swallow this: a failed reconfigure leaves the session
@@ -275,7 +277,7 @@ final class Streamer: ObservableObject {
            formatChanged || oldEncoder.codec != activeCodec
                || oldEncoder.color != color {
             rebuildEncoder(codec: activeCodec, color: color)
-        } else if greenScreenEnabled, let encoder {
+        } else if greenScreenEnabled || activeBlurTest != .off, let encoder {
             // Lens-only reconfigure while green screen is on: the
             // encoder survives, but the compositor must be rebuilt
             // (fresh depth state for the new lens geometry) and depth
@@ -350,11 +352,16 @@ final class Streamer: ObservableObject {
             // depth map into the new geometry. nil = Metal/shader
             // unavailable — stream uncomposited (the compositor logs).
             compositor = FrameCompositor(targetFps: Int32(fps))
+        } else if activeBlurTest == .depth, color == .sdr {
+            compositor = FrameCompositor(targetFps: Int32(fps),
+                                         mode: .backgroundBlur)
         } else {
             compositor = nil
         }
+        updateBlurTestStatus(color: color)
         greenScreenDistance.value = Float(greenScreenMaxDistance)
-        greenScreenDepthActive = compositor != nil && camera.depthAssistActive
+        greenScreenDepthActive = compositor?.mode == .greenScreen
+            && camera.depthAssistActive
         if zoom > camera.maxZoomFactor { zoom = camera.maxZoomFactor }
         greenScreenAutoCutoff = 0
         compositor?.onAutoCutoff = { [weak self] metres in
@@ -486,6 +493,54 @@ final class Streamer: ObservableObject {
             }
         }
     }
+    /// Background blur test (TestFlight only, Settings → Help →
+    /// Performance debug): our own depth blur on the compositor, or
+    /// Apple's Cinematic video. Green screen wins when both are on.
+    enum BlurTest: String, CaseIterable { case off, depth, cinematic }
+    @Published var blurTest = BlurTest(
+        rawValue: UserDefaults.standard.string(forKey: "perf.blurTest") ?? "") ?? .off {
+        didSet {
+            UserDefaults.standard.set(blurTest.rawValue, forKey: "perf.blurTest")
+            PerfProbe.shared.log("blur test \(blurTest.rawValue)")
+            if isStreaming && blurTest != oldValue && !greenScreenEnabled {
+                reconfigureLiveCapture(formatChanged: true)
+            }
+        }
+    }
+    /// What the blur test actually armed on the running stream.
+    @Published private(set) var blurTestStatus = "Not streaming"
+    private var activeBlurTest: BlurTest {
+        PerfProbe.available && !greenScreenEnabled ? blurTest : .off
+    }
+
+    private func updateBlurTestStatus(color: StreamColor) {
+        let format = "\(captureResolution.rawValue) \(fps) fps"
+        switch activeBlurTest {
+        case .off:
+            blurTestStatus = greenScreenEnabled && blurTest != .off
+                ? "Off: green screen is on" : "Off"
+        case .depth:
+            if compositor == nil {
+                blurTestStatus = color == .sdr
+                    ? "Depth blur failed to start (Metal)"
+                    : "Depth blur needs Standard colour"
+            } else if camera.depthAssistActive {
+                blurTestStatus = "Depth blur on, with depth at \(format)"
+            } else {
+                blurTestStatus = "Depth blur on, person mask only: no depth at \(format) on this lens"
+            }
+        case .cinematic:
+            if camera.cinematicActive {
+                blurTestStatus = "Cinematic on at \(format)"
+            } else if #available(iOS 26.0, *) {
+                blurTestStatus = "Cinematic not available at \(format) on this lens: needs Main or front lens, 1080p or 4K at 30 fps"
+            } else {
+                blurTestStatus = "Cinematic needs iOS 26"
+            }
+        }
+        PerfProbe.shared.log("blur test: \(blurTestStatus)")
+    }
+
     /// Whether the live view and remote UIs offer the green screen
     /// toggle this stream: on at start, or turned on since. A hold that
     /// turns it off mid-stream keeps the toggle, so it can come back.
@@ -1204,7 +1259,7 @@ final class Streamer: ObservableObject {
             }
         }
         state["supportsGreenScreen"] = greenScreenOffered
-        if compositor != nil {
+        if compositor?.mode == .greenScreen {
             state["greenScreen"] = true
             // Only when true: absent reads as false to every truthiness
             // consumer, and each byte matters — an OLD plugin's STATE
@@ -2217,14 +2272,17 @@ final class Streamer: ObservableObject {
             // takes long enough to freeze the Live screen as it opens.
             let camera = camera, lens = selectedLens, capture = captureResolution
             let rate = Int32(fps), lock = !allowVideoEffects
-            let ask = activeColor, depth = greenScreenEnabled
+            let ask = activeColor
+            let depth = greenScreenEnabled || activeBlurTest == .depth
+            let cinematic = activeBlurTest == .cinematic
             let begun = CACurrentMediaTime()
             let color = try await withCheckedThrowingContinuation { done in
                 DispatchQueue.global(qos: .userInitiated).async {
                     done.resume(with: Result {
                         try camera.configure(lens: lens, resolution: capture, fps: rate,
                                              lockFrameRate: lock, color: ask,
-                                             wantsDepth: depth)
+                                             wantsDepth: depth,
+                                             cinematic: cinematic)
                     })
                 }
             }
@@ -2535,6 +2593,7 @@ final class Streamer: ObservableObject {
         // stream-lifetime state, released with the stream.
         compositor = nil
         greenScreenDepthActive = false
+        blurTestStatus = "Not streaming"
         encoder?.stop()
         encoder = nil
         audioReference?.stop()
