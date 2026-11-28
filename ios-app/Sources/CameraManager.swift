@@ -1635,11 +1635,35 @@ final class CameraManager: NSObject {
                 return
             }
             let format = device.activeFormat
+            let longest = min(format.maxExposureDuration.seconds,
+                              1.0 / Double(configuredFps))
+            let cap = Self.flickerSafe(1.0 / Double(configuredFps * 2),
+                                       mainsHz: mainsHz, longest: longest)
             device.activeMaxExposureDuration = CMTimeClampToRange(
-                CMTime(value: 1, timescale: configuredFps * 2),
+                CMTime(seconds: cap, preferredTimescale: 1_000_000),
                 range: CMTimeRange(start: format.minExposureDuration,
                                    end: format.maxExposureDuration))
         }
+    }
+
+    /// Anti-flicker: the mains frequency (50 or 60 Hz). Mains lights pulse
+    /// at twice that, so an exposure of whole pulses doesn't flicker.
+    private(set) var mainsHz = 60
+
+    func setMainsHz(_ hz: Int) {
+        mainsHz = hz
+        applyNaturalBlur()
+    }
+
+    /// The flicker-safe exposure n / (2 × mains) nearest `seconds`, no
+    /// longer than `longest`; `seconds` itself when no whole pulse fits
+    /// (frame rate above twice the mains). Auto shutter only: a shutter
+    /// set by hand is never rounded.
+    static func flickerSafe(_ seconds: Double, mainsHz: Int, longest: Double) -> Double {
+        let pulses = Double(2 * mainsHz)
+        let n = min((seconds * pulses).rounded(),
+                    (longest * pulses * (1 + 1e-6)).rounded(.down))
+        return n >= 1 ? n / pulses : seconds
     }
 
     /// ISO or shutter by hand, the other one automatic. iOS's auto
@@ -1697,7 +1721,8 @@ final class CameraManager: NSObject {
         var longest = min(format.maxExposureDuration.seconds,
                           1.0 / Double(configuredFps))
         if naturalBlur, prioritySeconds == nil {
-            longest = min(longest, 1.0 / Double(configuredFps * 2))
+            longest = min(longest, Self.flickerSafe(1.0 / Double(configuredFps * 2),
+                                                    mainsHz: mainsHz, longest: longest))
         }
         let seconds = prioritySeconds ?? device.exposureDuration.seconds * step
         let clampedISO = max(format.minISO, min(iso, format.maxISO))
