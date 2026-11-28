@@ -910,7 +910,7 @@ final class CameraManager: NSObject {
         }
         // Min duration always caps the rate at the user's choice. The max
         // (the cadence lock, see PERFORMANCE.md) is normally pinned too —
-        // but the "Allow system video effects" experiment leaves it at the
+        // but system video effects (always allowed) leave it at the
         // format default, giving iOS the downward flexibility the Control
         // Center effects appear to demand: the reproducing iPhone 15 Pro
         // shows effect-capable formats chosen and active, yet a blank

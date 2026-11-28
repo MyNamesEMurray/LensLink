@@ -313,11 +313,10 @@ Deliberate divergences (don't "fix" these without reading this):
   app's Auto FPS. A sagging cadence hurts the encoder's rate control,
   OBS timing, and the lip-sync/latency math; we hold cadence and let the
   image get noisier instead. Two sanctioned exceptions: the thermal
-  throttle above, and the opt-in **Allow system video effects** toggle
-  (Camera sheet), which leaves the max duration at the format default —
-  the Control Center effects appear to require that downward
-  flexibility, and the toggle exists to prove or disprove exactly that.
-  The thermal path keeps max unlocked too while the toggle is on.
+  throttle above, and system video effects, now always allowed (the
+  toggle was removed), which leave the max duration at the format
+  default — the Control Center effects appear to require that downward
+  flexibility. The thermal path keeps max unlocked too.
 - **Video stabilization is off by default** (the AVCaptureVideoDataOutput
   default). Every stabilization mode adds frames of latency; this is a
   latency-first product, so it exists only as the opt-in Camera →

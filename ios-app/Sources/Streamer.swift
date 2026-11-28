@@ -658,16 +658,10 @@ final class Streamer: ObservableObject {
                                       forKey: "idleAppearance")
         }
     }
-    /// Experiment: leave the max frame duration unlocked so iOS may lower
-    /// the rate on its own — which the Control Center video effects appear
-    /// to require (see CameraManager.configure). Applies when the camera
-    /// next starts.
-    @Published var allowVideoEffects: Bool {
-        didSet {
-            UserDefaults.standard.set(allowVideoEffects, forKey: "allowVideoEffects")
-            updateSensorReadoutPreference()
-        }
-    }
+    /// Always on (no setting): the max frame duration stays unlocked so
+    /// iOS may lower the rate on its own, which the Control Center video
+    /// effects appear to require (see CameraManager.configure).
+    private let allowVideoEffects = true
     /// Send phone-mic audio as a lip-sync calibration reference (never
     /// played out — the plugin correlates it against your real mic).
     /// Mutually exclusive with `sendMicAudio` — one mic, one role.
@@ -1027,8 +1021,7 @@ final class Streamer: ObservableObject {
     /// focus — kept per lens across streams and lens switches, so a shot
     /// dialled in once stays dialled in. No names, no screen: the Camera
     /// app doesn't ask you to save looks either, it just remembers.
-    /// Options → Remember camera settings (default on) is the escape
-    /// hatch; turning it off forgets everything stored.
+    /// Always on; there is no setting.
     struct RememberedSettings: Codable {
         var exposureManual: Bool
         var isoManual: Bool?
@@ -1046,17 +1039,8 @@ final class Streamer: ObservableObject {
 
     private static let rememberedSettingsKey = "rememberedCameraSettings"
 
-    @Published var rememberCameraSettings: Bool =
-        UserDefaults.standard.object(forKey: "rememberCameraSettings") as? Bool ?? true {
-        didSet {
-            UserDefaults.standard.set(rememberCameraSettings,
-                                      forKey: "rememberCameraSettings")
-            if !rememberCameraSettings {
-                UserDefaults.standard.removeObject(
-                    forKey: Self.rememberedSettingsKey)
-            }
-        }
-    }
+    /// Always on (no setting).
+    private let rememberCameraSettings = true
 
     private func rememberedSettings() -> [String: RememberedSettings] {
         guard let data = UserDefaults.standard.data(
@@ -1827,7 +1811,6 @@ final class Streamer: ObservableObject {
                 || storedDistance == Streamer.autoSubjectDistance
                 ? storedDistance : 0
         idleAppearance = Streamer.storedIdleAppearance(defaults)
-        allowVideoEffects = defaults.bool(forKey: "allowVideoEffects")
         sendAudioReference = defaults.bool(forKey: "sendAudioReference")
         // didSet doesn't run during init; enforce the exclusivity here.
         sendMicAudio = defaults.bool(forKey: "sendMicAudio")

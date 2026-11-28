@@ -241,7 +241,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**Format** tient en une ligne – résolution, fréquence d’images, codec et couleur – avec les choix derrière. La résolution et la fréquence d’images ne proposent que ce que la caméra choisie prend en charge. Codec et Couleur dépendent l’un de l’autre : HDR et Apple Log sont réservés au HEVC, donc choisir H.264 ramène Couleur sur Standard, et choisir HDR ou Log passe le codec en HEVC.";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**Débit**, dans le panneau Caméra. **Stable** diffuse à un débit sans risque sur un Wi-Fi ordinaire et ne fait que le réduire si besoin. **Maximale** part plus haut et continue de monter tant que la connexion reste propre – jusqu’à environ six fois le débit équilibré en USB, quatre fois en Wi-Fi – puis recule dès que des images s’accumulent ou sont perdues, et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité et, sauf si les effets vidéo du système sont autorisés, diffuse à partir de la lecture complète du capteur plutôt que du format binné. Plus de données et plus de chaleur : surveillez la ligne Statistiques la première fois.";
+"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings. More data and more heat; watch the Stats line the first time." = "**Débit**, dans le panneau Caméra. **Stable** diffuse à un débit sans risque sur un Wi-Fi ordinaire et ne fait que le réduire si besoin. **Maximale** part plus haut et continue de monter tant que la connexion reste propre – jusqu’à environ six fois le débit équilibré en USB, quatre fois en Wi-Fi – puis recule dès que des images s’accumulent ou sont perdues, et se stabilise juste sous ce que la liaison peut transporter. Elle passe aussi l’encodeur en réglages axés sur la qualité. Plus de données et plus de chaleur : surveillez la ligne Statistiques la première fois.";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR (HLG)** diffuse une couleur 10 bits. OBS applique un mappage tonal pour les scènes SDR, et les canevas HDR en profitent pleinement.";
@@ -346,17 +346,8 @@
 /* Documentation → Options, Streaming section (Markdown: keep the ** markers) */
 "**Pause** holds a stream without ending it — the phone stays connected, the camera stays on, and OBS shows a dimmed, blurred still with a pause symbol instead of a frozen picture. The pause button sits on the Live screen next to Stop, and the same control is in OBS (source properties) and the web panel. Audio keeps going, so the phone can still be your microphone while the picture is held." = "**Mettre en pause** suspend un flux sans y mettre fin – le téléphone reste connecté, la caméra reste allumée, et OBS affiche une image fixe assombrie et floutée avec un symbole de pause au lieu d’une image figée. Le bouton Pause se trouve sur l’écran de direct à côté d’Arrêt, et la même commande existe dans OBS (propriétés de la source) et dans le panneau web. L’audio continue, donc le téléphone peut rester votre micro pendant que l’image est suspendue.";
 
-/* Documentation → Options, Remembered settings section (Markdown: keep the ** markers) */
-"**Remember camera settings** keeps each camera's exposure, white balance, zoom and focus from one stream to the next — a shot dialled in once stays dialled in, per lens. Turn it off and every camera starts on auto, and what was stored is forgotten." = "**Mémoriser les réglages de la caméra** conserve l’exposition, la balance des blancs, le zoom et la mise au point de chaque caméra d’une diffusion à l’autre – un plan réglé une fois le reste, objectif par objectif. Désactivez l’option et chaque caméra démarre en automatique ; ce qui était enregistré est oublié.";
-
-/* Documentation section header on the Options page */
-"Remembered settings" = "Réglages mémorisés";
-
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
 "**120 and 240 fps** are experimental and appear in the frame rate list where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with them, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB." = "**120 et 240 fps** sont expérimentaux et figurent dans la liste des fréquences d’images quand cette caméra les propose (1080p et 720p sur les iPhone récents ; 240 utilise un format à binning du capteur). Le débit du flux augmente avec, le téléphone chauffe davantage et se décharge plus vite, et une scène OBS réglée à 60 n’affiche au mieux qu’une image sur deux – réglez la scène en conséquence et préférez l’USB.";
-
-/* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
-"**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**Autoriser les effets vidéo du système** (expérimental) permet à iOS de baisser lui-même la fréquence d’images, ce que les effets vidéo du Centre de contrôle (Portrait, Éclairage de studio) peuvent exiger. S’applique au prochain démarrage de la caméra.";
 
 /* Documentation section header on the Options page */
 "Experimental" = "Expérimental";
@@ -395,12 +386,6 @@
 
 /* Options picker: what the Live screen becomes after 10 seconds untouched [also used in Documentation/OptionsDocumentationView.swift] */
 "Idle view" = "Vue au repos";
-
-/* Options toggle */
-"Remember camera settings" = "Mémoriser les réglages de la caméra";
-
-/* Options toggle (experimental) */
-"Allow system video effects" = "Autoriser les effets vidéo du système";
 
 /* Options row and screen title: the camera format table [also used in Documentation/AccessibilityDocumentationView.swift] */
 "Camera diagnostics" = "Diagnostic de la caméra";
@@ -777,12 +762,6 @@
 "What the Live screen shows 10 seconds after your last touch. **Standard**: controls stay. **Clean feed**: the picture only. **Dim screen**: the screen goes dark to save battery. Tap to bring the controls back." = "Ce qu’affiche l’écran de direct 10 secondes après votre dernier contact. **Standard** : les commandes restent. **Image seule** : l’image uniquement. **Assombrir l’écran** : l’écran s’éteint pour économiser la batterie. Touchez pour faire revenir les commandes.";
 
 /* Settings ⓘ: short description of a setting */
-"Keeps each lens's exposure, white balance, zoom and focus from one stream to the next. Off: every camera starts on auto." = "Conserve l’exposition, la balance des blancs, le zoom et la mise au point de chaque objectif d’une diffusion à l’autre. Désactivé : chaque caméra démarre en automatique.";
-
-/* Settings ⓘ: short description of a setting */
-"Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "Permet à iOS de baisser la fréquence d’images, ce que les effets vidéo du Centre de contrôle (Portrait, Éclairage de studio) peuvent exiger. S’applique au prochain démarrage de la caméra.";
-
-/* Settings ⓘ: short description of a setting */
 "Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "Remplace l’écran de direct par toutes les valeurs de la caméra sur une bande, le débit et la fréquence d’images de la liaison, le niveau du micro et des repères de cadrage.";
 
 /* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
@@ -795,7 +774,7 @@
 "Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region." = "Arrondit la vitesse d'obturation automatique pour que les lampes sur secteur ne scintillent pas. Auto choisit 50 ou 60 Hz selon ta région.";
 
 /* Documentation → Options, Camera behavior section: the Anti-flicker menu (Markdown: keep the ** markers) */
-"**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "**Anti-scintillement**, dans le panneau Caméra, arrondit la vitesse d'obturation automatique à un nombre entier des impulsions qu'émettent les lampes sur secteur (deux fois la fréquence du secteur), pour qu'elles ne scintillent pas et ne forment pas de bandes. La vitesse la plus lente que l'exposition automatique peut utiliser (la limite de 180° du flou de mouvement naturel) passe à la valeur la plus proche parmi 1/120, 1/60, 1/40, 1/30 à 60 Hz, ou 1/100, 1/50, 1/33 à 50 Hz : 1/120 à 120 i/s et 60 Hz. Une cadence au-delà de deux fois le secteur (120 i/s à 50 Hz, 240 i/s) ne laisse aucune valeur sûre : la valeur de 180° reste. Une vitesse réglée à la main n'est jamais arrondie. **Auto** prend 50 ou 60 Hz dans ton réglage de région ; dans l'est du Japon, choisis 50 Hz.";
+"**Anti-flicker**, in Settings, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "**Anti-scintillement**, dans Réglages, arrondit la vitesse d'obturation automatique à un nombre entier des impulsions qu'émettent les lampes sur secteur (deux fois la fréquence du secteur), pour qu'elles ne scintillent pas et ne forment pas de bandes. La vitesse la plus lente que l'exposition automatique peut utiliser (la limite de 180° du flou de mouvement naturel) passe à la valeur la plus proche parmi 1/120, 1/60, 1/40, 1/30 à 60 Hz, ou 1/100, 1/50, 1/33 à 50 Hz : 1/120 à 120 i/s et 60 Hz. Une cadence au-delà de deux fois le secteur (120 i/s à 50 Hz, 240 i/s) ne laisse aucune valeur sûre : la valeur de 180° reste. Une vitesse réglée à la main n'est jamais arrondie. **Auto** prend 50 ou 60 Hz dans ton réglage de région ; dans l'est du Japon, choisis 50 Hz.";
 
 /* Pro interface: the lens aperture (iris) value box and dial */
 "Iris" = "Iris";
