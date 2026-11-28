@@ -656,18 +656,14 @@ only where the value needs one.
   over dropped: numbers left, units in a fixed column beside them, the
   pair centred), the format
   (`4K · 30` over `HEVC LOG`; tapping it opens the **format editor**,
-  chip rows for resolution, FPS, codec, color and bitrate, shown between
+  rows of equal-width chips (no scrolling) for resolution, FPS, codec, color and bitrate, shown between
   the top bar and the strip; choices the phone can't do are left out, and
   the lit color and codec are what is actually running, so a Log choice
   that falls back to Standard at 240 fps lights Standard),
   and the More menu (Pause/Resume, Standard
   interface). Widths 1.3 : 1.5 : 1.1 : 1.3, More fixed. `–` until the
   first reading. No timecode.
-- **Value strip**: Lens · Iris · Shutter · ISO · WB · Tint · EV · Focus.
-  Iris (f-number, `f1.48`) only on a lens with a variable iris (iOS 27);
-  its dial has the phone's recommended stops as chips, a third-stop
-  slider and an ⓘ. A held iris with ISO and shutter on auto is aperture
-  priority.
+- **Value strip**: Lens · Shutter · ISO · WB · Tint · EV · Focus.
   Equal boxes, label over value, centred; auto values show what auto is
   doing with an accent dot in the box's corner. Shutter is always a
   fraction (`1/50`). Tapping a box selects it (accent underline) and
@@ -711,9 +707,7 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    **A** badge, one dial with a `cameraYellow` readout (WB adds the
    light-source icons), and the bottom row of the chip's own button
    (Calibrate on WB, Natural motion blur on Shutter), Lock, Flashlight,
-   Flip. A phone with a variable iris (`supportsAperture`) adds an
-   **Iris** chip: the dial walks the phone's `apertureStops`, clicking
-   the selected chip hands it back to auto. Below: the Mic picker while
+   Flip. Below: the Mic picker while
    the phone mic streams, the Format row (resolution, fps, codec, color,
    Bitrate Stable/Maximum), Stabilization, Anti-flicker (Auto, 50 Hz,
    60 Hz), and Pause · Stop. Same stops and semantics as the

@@ -26,8 +26,6 @@
 #define CTL_ISO "ctl_iso"
 #define CTL_SH_AUTO "ctl_shutter_auto"
 #define CTL_SH "ctl_shutter"
-#define CTL_IRIS_AUTO "ctl_iris_auto"
-#define CTL_IRIS "ctl_iris"
 #define CTL_WB_AUTO "ctl_wb_auto"
 #define CTL_WB "ctl_wb"
 #define CTL_TINT "ctl_tint"
@@ -44,8 +42,7 @@ void lenslink_camera_controls_clear(obs_data_t *settings)
 		CTL_ZOOM, CTL_LENS,  CTL_FLASH, CTL_STAB,  CTL_RF_ZOOM,
 		CTL_RF_X, CTL_RF_Y,  CTL_RF_HQ, CTL_GS,    CTL_RES,
 		CTL_FPS,  CTL_CODEC, CTL_EV,    CTL_ISO_AUTO, CTL_ISO,
-		CTL_SH_AUTO, CTL_SH, CTL_IRIS_AUTO, CTL_IRIS,
-		CTL_WB_AUTO, CTL_WB, CTL_TINT,
+		CTL_SH_AUTO, CTL_SH, CTL_WB_AUTO, CTL_WB, CTL_TINT,
 		CTL_FOCUS_AUTO, CTL_FOCUS, CTL_COLOR,
 		CTL_GUIDE,
 	};
@@ -127,19 +124,6 @@ static void pro_modified(struct ios_camera_source *s, const char *name,
 				 "{\"cmd\":\"exposure\",\"shutterMode\":\"manual\","
 				 "\"shutterSeconds\":%.6f}",
 				 1.0 / (double)d);
-	} else if (!strcmp(name, CTL_IRIS_AUTO)) {
-		bool manual = !obs_data_get_bool(settings, CTL_IRIS_AUTO);
-		if (manual != st->aperture_manual)
-			snprintf(json, sizeof(json),
-				 "{\"cmd\":\"lock\",\"target\":\"aperture\",\"on\":%s}",
-				 bool_str(manual));
-	} else if (!strcmp(name, CTL_IRIS)) {
-		double v = obs_data_get_double(settings, CTL_IRIS);
-		if (v > 0 && fabs(v - st->aperture) >= 0.01)
-			snprintf(json, sizeof(json),
-				 "{\"cmd\":\"aperture\",\"mode\":\"manual\","
-				 "\"fNumber\":%.2f}",
-				 v);
 	} else if (!strcmp(name, CTL_WB_AUTO)) {
 		bool locked = !obs_data_get_bool(settings, CTL_WB_AUTO);
 		if (locked != st->wb_locked)
@@ -373,30 +357,6 @@ static void add_pro_controls(obs_properties_t *g, obs_data_t *settings,
 		if (st->shutter > 0)
 			obs_data_set_int(settings, CTL_SH,
 					 llround(1.0 / st->shutter));
-	}
-
-	if (st->supports_aperture && st->aperture_stop_count > 0) {
-		toggle(g, CTL_IRIS_AUTO, T_("Controls.IrisAuto"));
-		obs_data_set_bool(settings, CTL_IRIS_AUTO, !st->aperture_manual);
-		obs_property_t *iris = choice(g, CTL_IRIS, T_("Controls.Iris"),
-					      OBS_COMBO_FORMAT_FLOAT);
-		int nearest = 0;
-		for (int i = 0; i < st->aperture_stop_count; i++) {
-			char label[16];
-			int len = snprintf(label, sizeof(label), "f/%.2f",
-					   st->aperture_stops[i]);
-			while (len > 3 && label[len - 1] == '0')
-				label[--len] = 0;
-			if (label[len - 1] == '.')
-				label[--len] = 0;
-			obs_property_list_add_float(iris, label,
-						    st->aperture_stops[i]);
-			if (fabs(st->aperture_stops[i] - st->aperture) <
-			    fabs(st->aperture_stops[nearest] - st->aperture))
-				nearest = i;
-		}
-		obs_data_set_double(settings, CTL_IRIS,
-				    st->aperture_stops[nearest]);
 	}
 
 	if (st->supports_wb_lock) {
