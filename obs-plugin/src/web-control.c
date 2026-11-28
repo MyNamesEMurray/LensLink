@@ -258,6 +258,7 @@ static const char control_page[] =
 	"body.pro .tools .gap{display:none}"
 	"body.pro .tools .hint:empty{display:none}"
 	"body.pro .primary,body.pro select{border-radius:6px}"
+	"body.pro .seg{border-radius:6px;background:var(--glass)}body.pro .seg button{border-radius:5px}"
 	"body.pro .primary.toggle{background:var(--glass)}"
 	"body.pro .primary.toggle.on{background:var(--accent)}"
 	".sr{position:absolute;width:1px;height:1px;overflow:hidden;"
