@@ -579,9 +579,9 @@ struct ProHUD: View {
                       label: { $0.label }) {
                 streamer.applyRemoteFormat(["codec": $0.rawValue])
             }
-            if streamer.colorOptions.count > 1 {
-                formatRow(L("Color"), streamer.colorOptions,
-                          on: { $0 == streamer.colorSetting },
+            if colors.count > 1 {
+                formatRow(L("Color"), colors,
+                          on: { $0 == streamer.activeColor },
                           label: Self.colorLabel) {
                     streamer.applyRemoteFormat(["color": $0.rawValue])
                 }
@@ -604,7 +604,7 @@ struct ProHUD: View {
                 .font(Self.label)
                 .foregroundColor(Theme.textSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .fixedSize()
                 .frame(width: 58, alignment: .leading)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Theme.Space.xs) {
@@ -626,10 +626,26 @@ struct ProHUD: View {
         }
     }
 
-    /// While HLG or Log is on, HEVC is the only codec.
+    /// While HLG or Log is running, HEVC is the only codec.
     private var codecs: [VideoCodec] {
-        streamer.colorSetting != .sdr ? [.hevc]
+        streamer.activeColor != .sdr ? [.hevc]
             : VideoCodec.allCases.filter { VideoEncoder.isSupported($0) }
+    }
+
+    private static var colorCache: [String: [StreamColor]] = [:]
+
+    /// Only the colours this resolution and frame rate can capture, so
+    /// the row never offers (or lights) one that would fall back to SDR.
+    private var colors: [StreamColor] {
+        let key = "\(streamer.resolution.rawValue)-\(streamer.fps)-\(streamer.selectedLens.id)"
+        if let cached = Self.colorCache[key] { return cached }
+        let found = streamer.colorOptions.filter {
+            $0 == .sdr || CameraManager.supports(resolution: streamer.resolution,
+                                                 fps: Int32(streamer.fps),
+                                                 lens: streamer.selectedLens, color: $0)
+        }
+        Self.colorCache[key] = found
+        return found
     }
 
     private static var resolutionCache: [String: [CameraManager.Resolution]] = [:]
@@ -851,6 +867,7 @@ extension ProHUD {
     /// Dark see-through boxes: they float on the picture with no panel.
     static let boxFill = Color.black.opacity(0.5)
     static let boxSelected = Color.black.opacity(0.75)
+    static let boxEdge = Color.white.opacity(0.12)
     static let boxRadius: CGFloat = 6
     /// The picture frame's margin from the screen edges, in portrait.
     static let frameInset: CGFloat = 12
@@ -881,6 +898,10 @@ private extension View {
             .background(selected ? ProHUD.boxSelected : ProHUD.boxFill)
             .clipShape(RoundedRectangle(cornerRadius: ProHUD.boxRadius,
                                         style: .continuous))
+            // The edge keeps a box visible over a black picture.
+            .overlay(RoundedRectangle(cornerRadius: ProHUD.boxRadius,
+                                      style: .continuous)
+                        .strokeBorder(ProHUD.boxEdge, lineWidth: 1))
     }
 }
 

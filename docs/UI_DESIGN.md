@@ -645,6 +645,7 @@ screens). The guides, focus marks and taps follow the frame. Landscape
 keeps the full-screen picture.
 
 Both bars are rows of **boxes** (black 50 % fill, 75 % when selected,
+a 1 pt white 12 % edge so they stay visible over a black picture,
 6 pt corners, 3 pt gaps). They float on the picture with no panel
 behind them, so there is no seam where a panel would cross the
 letterbox. A box's width is a fixed share of the row, never sized by what
@@ -658,7 +659,9 @@ only where the value needs one.
   pair centred), the format
   (`4K · 30` over `HEVC LOG`; tapping it opens the **format editor**,
   chip rows for resolution, FPS, codec, color and bitrate, shown between
-  the top bar and the strip; choices the phone can't do are left out),
+  the top bar and the strip; choices the phone can't do are left out, and
+  the lit color and codec are what is actually running, so a Log choice
+  that falls back to Standard at 240 fps lights Standard),
   and the More menu (Pause/Resume, Standard
   interface). Widths 1.3 : 1.5 : 1.1 : 1.3, More fixed. `–` until the
   first reading. No timecode.
