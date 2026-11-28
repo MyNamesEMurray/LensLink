@@ -9,6 +9,8 @@ enum SettingInfo {
         "**Green screen** keeps you in the picture and paints everything else solid green before the video leaves the phone — turning it on sets Color to Standard. The **LensLink Camera** source in OBS adds a ready-tuned filter that keys the green out; it's added once, so deleting or re-tuning it in OBS sticks.")
     static let stabilization = LocalizedStringKey(
         "**Stabilization** steadies a handheld or moving shot. It's off by default because the phone holds frames back to smooth them, which delays the stream. Standard adds a little. Cinematic adds a lot, often more than half a second, and crops the picture a little more, so save it for shots that don't need to line up with a game or other sources. It stays off in formats that don't offer the mode you pick, and while depth assist runs.")
+    static let antiFlicker = LocalizedStringKey(
+        "**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz.")
     static let reframe = LocalizedStringKey(
         "**High-quality reframe** captures at the next size up (1080p for a 720p stream, 4K for 1080p) and takes the web panel's Reframe window from that, so zoom keeps real detail instead of stretching pixels. It uses more power and heat, turns green screen off, and does nothing at 4K.")
     static let remoteStart = LocalizedStringKey(
@@ -30,6 +32,10 @@ enum SettingInfo {
         "Paints everything except you solid green on the phone. Sets Color to Standard. The LensLink Camera source in OBS adds a filter that keys the green out.")
     static let stabilizationTip = LocalizedStringKey(
         "Steadies moving shots but delays the stream. Standard adds a little delay. Cinematic adds often over half a second and crops more.")
+    static let antiFlickerTip = LocalizedStringKey(
+        "Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region.")
+    static let irisTip = LocalizedStringKey(
+        "Lens opening. A lower f-number lets in more light and blurs the background more. A higher one keeps more in focus.")
     static let reframeTip = LocalizedStringKey(
         "Captures one size up (4K for a 1080p stream) so Reframe zoom keeps real detail. Uses more power and heat and turns green screen off. Not available at 4K.")
     static let remoteStartTip = LocalizedStringKey(

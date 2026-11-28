@@ -117,6 +117,44 @@ final class Streamer: ObservableObject {
         }
     }
 
+    /// Anti-flicker: the mains frequency the auto shutter rounds to. Auto
+    /// takes it from the phone's Region; iOS has no flicker API.
+    enum AntiFlicker: String, CaseIterable, Identifiable {
+        case auto
+        case hz50 = "50"
+        case hz60 = "60"
+
+        var id: String { rawValue }
+
+        var mainsHz: Int {
+            switch self {
+            case .auto: return Self.regionMainsHz
+            case .hz50: return 50
+            case .hz60: return 60
+            }
+        }
+
+        var displayName: String {
+            switch self {
+            case .auto: return "\(L("Auto")) (\(Self.regionMainsHz) Hz)"
+            case .hz50: return "50 Hz"
+            case .hz60: return "60 Hz"
+            }
+        }
+
+        /// Japan is split (west 60 Hz, east 50 Hz); it counts as 60 here.
+        private static let sixtyHzRegions: Set<String> = [
+            "AG", "AS", "AW", "BM", "BR", "BS", "BZ", "CA", "CO", "CR", "CU",
+            "DO", "EC", "FM", "GT", "GU", "GY", "HN", "HT", "JP", "KN", "KR",
+            "KY", "LR", "MH", "MP", "MS", "MX", "NI", "PA", "PE", "PH", "PR",
+            "PW", "SA", "SR", "SV", "TC", "TT", "TW", "UM", "US", "VE", "VG",
+            "VI",
+        ]
+
+        static let regionMainsHz: Int =
+            sixtyHzRegions.contains(Locale.current.regionCode ?? "US") ? 60 : 50
+    }
+
     /// Shared instance: the SwiftUI scene, the Siri App Intents, and the
     /// lenslink:// URL handler must all drive the same streamer.
     static let shared = Streamer()
@@ -664,10 +702,20 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
-    /// Selectable mics right now. Live list — recomputed per access so a
-    /// headset connecting mid-stream shows up on the next UI refresh.
-    var micOptions: [AudioReference.MicOption] {
-        AudioReference.availableMics()
+    /// Selectable mics. Cached: reading the list is a blocking call to
+    /// the audio server, too slow for a view body or every STATE send.
+    /// Refreshed off main on route changes and when mic capture starts.
+    @Published private(set) var micOptions = [AudioReference.MicOption(id: "auto", name: "Auto (iOS default)")]
+
+    private func refreshMicOptions() {
+        DispatchQueue.global(qos: .utility).async {
+            let mics = AudioReference.availableMics()
+            Task { @MainActor [weak self] in
+                guard let self, self.micOptions != mics else { return }
+                self.micOptions = mics
+                self.scheduleStateSend()
+            }
+        }
     }
     @Published var armOnOpen: Bool {
         didSet {
@@ -734,6 +782,14 @@ final class Streamer: ObservableObject {
     @Published var naturalBlur: Bool = true {
         didSet {
             camera.setNaturalBlur(naturalBlur)
+            scheduleStateSend()
+        }
+    }
+    @Published var antiFlicker: AntiFlicker =
+        AntiFlicker(rawValue: UserDefaults.standard.string(forKey: "antiFlicker") ?? "") ?? .auto {
+        didSet {
+            UserDefaults.standard.set(antiFlicker.rawValue, forKey: "antiFlicker")
+            camera.setMainsHz(antiFlicker.mainsHz)
             scheduleStateSend()
         }
     }
@@ -844,6 +900,20 @@ final class Streamer: ObservableObject {
     @Published var shutterSeconds: Double = 1.0 / 60 {
         didSet {
             if exposureSetting.shutterManual { applyExposure() }
+            scheduleStateSend()
+        }
+    }
+    /// The iris, on lenses with a variable one (iOS 27). Set by hand with
+    /// ISO and shutter on auto, it is aperture priority.
+    @Published var apertureManual = false {
+        didSet {
+            applyExposure()
+            scheduleStateSend()
+        }
+    }
+    @Published var aperture: Float = 1.8 {
+        didSet {
+            if apertureManual { applyExposure() }
             scheduleStateSend()
         }
     }
@@ -1063,15 +1133,18 @@ final class Streamer: ObservableObject {
     }
 
     private func applyExposure() {
+        let iris = apertureManual && camera.apertureRange != nil ? aperture : nil
         switch exposureSetting {
-        case .auto:
+        case .auto where iris == nil:
             camera.setAutoExposure()
         case .manual:
-            camera.setManualExposure(iso: iso, shutterSeconds: shutterSeconds)
+            camera.setManualExposure(iso: iso, shutterSeconds: shutterSeconds,
+                                     aperture: iris)
         default:
             camera.setPriorityExposure(
                 iso: exposureSetting.isoManual ? iso : nil,
-                shutterSeconds: exposureSetting.shutterManual ? shutterSeconds : nil)
+                shutterSeconds: exposureSetting.shutterManual ? shutterSeconds : nil,
+                aperture: iris)
         }
     }
 
@@ -1097,14 +1170,15 @@ final class Streamer: ObservableObject {
     /// a time from their own chips; `exposure` is the pair, for the EV
     /// chip and Lock all.
     enum LockTarget {
-        case exposure, iso, shutter, whiteBalance, focus
+        case exposure, iso, shutter, aperture, whiteBalance, focus
     }
 
     var lockTargets: [LockTarget] {
-        [LockTarget.exposure, .whiteBalance, .focus].filter {
+        [LockTarget.exposure, .aperture, .whiteBalance, .focus].filter {
             switch $0 {
             case .whiteBalance: return camera.supportsWhiteBalanceLock
             case .focus: return true
+            case .aperture: return camera.apertureRange != nil
             default: return camera.supportsManualExposure
             }
         }
@@ -1115,6 +1189,7 @@ final class Streamer: ObservableObject {
         case .exposure: return exposureSetting == .manual
         case .iso: return exposureSetting.isoManual
         case .shutter: return exposureSetting.shutterManual
+        case .aperture: return apertureManual
         case .whiteBalance: return whiteBalanceSetting == .locked
         case .focus: return focusSetting == .locked
         }
@@ -1132,6 +1207,7 @@ final class Streamer: ObservableObject {
             case .exposure: exposureSetting = .auto
             case .iso: exposureSetting.isoManual = false
             case .shutter: exposureSetting.shutterManual = false
+            case .aperture: apertureManual = false
             case .whiteBalance: whiteBalanceSetting = .auto
             case .focus: focusSetting = .auto
             }
@@ -1151,6 +1227,9 @@ final class Streamer: ObservableObject {
         case .shutter:
             if let live { shutterSeconds = live.shutterSeconds }
             exposureSetting.shutterManual = true
+        case .aperture:
+            if let live { aperture = live.aperture }
+            apertureManual = true
         case .whiteBalance:
             if let live {
                 whiteBalanceTemperature = live.temperature
@@ -1211,6 +1290,7 @@ final class Streamer: ObservableObject {
             "lensPosition": Double(lensPosition),
             "faceFocus": faceFocus,
             "naturalBlur": naturalBlur,
+            "antiFlicker": antiFlicker.rawValue,
             "supportsFaceFocus": camera.supportsFaceDrivenFocus,
             "flashlight": flashlightOn,
             "flashlightLevel": Double(flashlightLevel),
@@ -1246,6 +1326,15 @@ final class Streamer: ObservableObject {
             "stabilization": stabilization.rawValue,
             "lensFactors": lensFactors,
         ]
+        if let range = camera.apertureRange {
+            state["supportsAperture"] = true
+            state["apertureMode"] = apertureManual ? "manual" : "auto"
+            state["aperture"] = Double(apertureManual
+                ? aperture : camera.activeDevice?.lensAperture ?? aperture)
+            state["minAperture"] = Double(range.lowerBound)
+            state["maxAperture"] = Double(range.upperBound)
+            state["apertureStops"] = camera.apertureStops.map(Double.init)
+        }
         if camera.maxZoomFactor > 1,
            let crop = CameraManager.nativeCropZoomFactor(
                resolution: captureResolution, fps: Int32(fps), color: activeColor) {
@@ -1361,6 +1450,7 @@ final class Streamer: ObservableObject {
         focusSetting = .auto
         flashlightOn = false
         whiteBalanceSetting = .auto
+        apertureManual = false
         exposureSetting = .auto
         // Manual values reset to mid-range defaults for the new device
         // (the sliders clamp to the active format's real limits).
@@ -1746,6 +1836,7 @@ final class Streamer: ObservableObject {
         armOnOpen = defaults.bool(forKey: "armOnOpen")
 
         camera.setFaceDrivenFocus(faceFocus)
+        camera.setMainsHz(antiFlicker.mainsHz)
         camera.setNaturalBlur(naturalBlur)
         camera.setStabilization(stabilization.mode)
         updateSensorReadoutPreference()
@@ -1759,6 +1850,12 @@ final class Streamer: ObservableObject {
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in self?.scheduleStateSend() }
             }
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil, queue: nil) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.refreshMicOptions() }
+        }
+        refreshMicOptions()
         thermalObserver = NotificationCenter.default.addObserver(
             forName: ProcessInfo.thermalStateDidChangeNotification,
             object: nil, queue: .main) { [weak self] _ in
@@ -2086,6 +2183,10 @@ final class Streamer: ObservableObject {
             if let on = command["on"] as? Bool {
                 naturalBlur = on
             }
+        case "anti_flicker":
+            if let mode = (command["mode"] as? String).flatMap(AntiFlicker.init(rawValue:)) {
+                antiFlicker = mode
+            }
         case "flip":
             flipCamera()
         case "white_balance" where command["mode"] as? String == "calibrate":
@@ -2103,6 +2204,7 @@ final class Streamer: ObservableObject {
             case "exposure": setLocked(.exposure, on)
             case "iso": setLocked(.iso, on)
             case "shutter": setLocked(.shutter, on)
+            case "aperture": setLocked(.aperture, on)
             case "whiteBalance": setLocked(.whiteBalance, on)
             case "focus": setLocked(.focus, on)
             default: break
@@ -2138,6 +2240,14 @@ final class Streamer: ObservableObject {
                     ?? mode ?? exposureSetting.isoManual,
                 shutterManual: (command["shutterMode"] as? String).map { $0 == "manual" }
                     ?? mode ?? exposureSetting.shutterManual)
+        case "aperture":
+            if let range = camera.apertureRange,
+               let value = (command["fNumber"] as? NSNumber)?.floatValue {
+                aperture = min(max(value, range.lowerBound), range.upperBound)
+            }
+            if let mode = command["mode"] as? String {
+                apertureManual = mode == "manual" && camera.apertureRange != nil
+            }
         case "set_quality":
             if let raw = command["quality"] as? String,
                let parsed = StreamQuality(rawValue: raw) {
@@ -2405,6 +2515,7 @@ final class Streamer: ObservableObject {
             try capture.start()
             audioReference = capture
             micCapturePurpose = purpose
+            refreshMicOptions()
             // The STATE snapshot gates its mic fields on capture being
             // up; resend now that it is.
             scheduleStateSend()

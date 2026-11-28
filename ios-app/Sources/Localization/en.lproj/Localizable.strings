@@ -795,3 +795,18 @@
 
 /* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
 "drop" = "drop";
+
+/* Camera sheet, Picture section: picks the mains frequency the automatic shutter rounds to (50 or 60 Hz) so lights don't flicker */
+"Anti-flicker" = "Anti-flicker";
+
+/* Settings ⓘ: short description of a setting */
+"Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region." = "Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region.";
+
+/* Documentation → Options, Camera behavior section: the Anti-flicker menu (Markdown: keep the ** markers) */
+"**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz.";
+
+/* Pro interface: the lens aperture (iris) value box and dial */
+"Iris" = "Iris";
+
+/* Pro interface ⓘ: short description of the iris dial */
+"Lens opening. A lower f-number lets in more light and blurs the background more. A higher one keeps more in focus." = "Lens opening. A lower f-number lets in more light and blurs the background more. A higher one keeps more in focus.";

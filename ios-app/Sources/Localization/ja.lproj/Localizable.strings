@@ -787,3 +787,18 @@
 
 /* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
 "drop" = "ドロップ";
+
+/* Camera sheet, Picture section: picks the mains frequency the automatic shutter rounds to (50 or 60 Hz) so lights don't flicker */
+"Anti-flicker" = "フリッカー低減";
+
+/* Settings ⓘ: short description of a setting */
+"Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region." = "商用電源の照明がちらつかないよう、自動のシャッタースピードを丸めます。自動では地域設定から50 Hzか60 Hzを選びます。";
+
+/* Documentation → Options, Camera behavior section: the Anti-flicker menu (Markdown: keep the ** markers) */
+"**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "「カメラ」シートの**フリッカー低減**は、自動のシャッタースピードを商用電源の照明が発する明滅（電源周波数の2倍）の整数倍に丸め、ちらつきや縞を防ぎます。自動露出が使える最も遅いシャッター（自然なモーションブラーの180°の上限）を、60 Hzでは1/120、1/60、1/40、1/30、50 Hzでは1/100、1/50、1/33のうち最も近い値にします（120 fps・60 Hzなら1/120）。フレームレートが電源周波数の2倍を超える場合（50 Hzで120 fps、240 fps）は安全な値がないため、180°の値のままです。手動で設定したシャッターは丸めません。**自動**は地域設定から50 Hzか60 Hzを選びます。東日本では50 Hzを選んでください。";
+
+/* Pro interface: the lens aperture (iris) value box and dial */
+"Iris" = "絞り";
+
+/* Pro interface ⓘ: short description of the iris dial */
+"Lens opening. A lower f-number lets in more light and blurs the background more. A higher one keeps more in focus." = "レンズの開口。F値が小さいほど光を多く取り込み、背景が大きくぼけます。F値が大きいほど広い範囲にピントが合います。";

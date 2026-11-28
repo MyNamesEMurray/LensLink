@@ -710,6 +710,16 @@ private struct FormatSheet: View {
                                          color: Theme.cameraYellow,
                                          info: SettingInfo.stabilizationTip)
                     }
+                    Picker(selection: $streamer.antiFlicker) {
+                        ForEach(Streamer.AntiFlicker.allCases) { mode in
+                            Text(verbatim: mode.displayName).tag(mode)
+                        }
+                    } label: {
+                        SettingsRowLabel(L("Anti-flicker"),
+                                         systemImage: "lightbulb",
+                                         color: Theme.cameraYellow,
+                                         info: SettingInfo.antiFlickerTip)
+                    }
                     if Streamer.reframeAvailable {
                         // Only the switch is disabled at 4K: a disabled
                         // row would take its ⓘ with it, and the ⓘ is
