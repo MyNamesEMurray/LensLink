@@ -117,6 +117,44 @@ final class Streamer: ObservableObject {
         }
     }
 
+    /// Anti-flicker: the mains frequency the auto shutter rounds to. Auto
+    /// takes it from the phone's Region; iOS has no flicker API.
+    enum AntiFlicker: String, CaseIterable, Identifiable {
+        case auto
+        case hz50 = "50"
+        case hz60 = "60"
+
+        var id: String { rawValue }
+
+        var mainsHz: Int {
+            switch self {
+            case .auto: return Self.regionMainsHz
+            case .hz50: return 50
+            case .hz60: return 60
+            }
+        }
+
+        var displayName: String {
+            switch self {
+            case .auto: return "\(L("Auto")) (\(Self.regionMainsHz) Hz)"
+            case .hz50: return "50 Hz"
+            case .hz60: return "60 Hz"
+            }
+        }
+
+        /// Japan is split (west 60 Hz, east 50 Hz); it counts as 60 here.
+        private static let sixtyHzRegions: Set<String> = [
+            "AG", "AS", "AW", "BM", "BR", "BS", "BZ", "CA", "CO", "CR", "CU",
+            "DO", "EC", "FM", "GT", "GU", "GY", "HN", "HT", "JP", "KN", "KR",
+            "KY", "LR", "MH", "MP", "MS", "MX", "NI", "PA", "PE", "PH", "PR",
+            "PW", "SA", "SR", "SV", "TC", "TT", "TW", "UM", "US", "VE", "VG",
+            "VI",
+        ]
+
+        static let regionMainsHz: Int =
+            sixtyHzRegions.contains(Locale.current.regionCode ?? "US") ? 60 : 50
+    }
+
     /// Shared instance: the SwiftUI scene, the Siri App Intents, and the
     /// lenslink:// URL handler must all drive the same streamer.
     static let shared = Streamer()
@@ -735,6 +773,13 @@ final class Streamer: ObservableObject {
         didSet {
             camera.setNaturalBlur(naturalBlur)
             scheduleStateSend()
+        }
+    }
+    @Published var antiFlicker: AntiFlicker =
+        AntiFlicker(rawValue: UserDefaults.standard.string(forKey: "antiFlicker") ?? "") ?? .auto {
+        didSet {
+            UserDefaults.standard.set(antiFlicker.rawValue, forKey: "antiFlicker")
+            camera.setMainsHz(antiFlicker.mainsHz)
         }
     }
     @Published var stabilization: Stabilization =
@@ -1746,6 +1791,7 @@ final class Streamer: ObservableObject {
         armOnOpen = defaults.bool(forKey: "armOnOpen")
 
         camera.setFaceDrivenFocus(faceFocus)
+        camera.setMainsHz(antiFlicker.mainsHz)
         camera.setNaturalBlur(naturalBlur)
         camera.setStabilization(stabilization.mode)
         updateSensorReadoutPreference()

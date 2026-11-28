@@ -787,3 +787,12 @@
 
 /* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
 "drop" = "perd.";
+
+/* Camera sheet, Picture section: picks the mains frequency the automatic shutter rounds to (50 or 60 Hz) so lights don't flicker */
+"Anti-flicker" = "Antiparpadeo";
+
+/* Settings ⓘ: short description of a setting */
+"Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region." = "Redondea la obturación automática para que las luces de la red eléctrica no parpadeen. Auto elige 50 o 60 Hz según tu región.";
+
+/* Documentation → Options, Camera behavior section: the Anti-flicker menu (Markdown: keep the ** markers) */
+"**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "**Antiparpadeo**, en la hoja Cámara, redondea la obturación automática a un número entero de los pulsos que emiten las luces conectadas a la red eléctrica (el doble de la frecuencia de la red), para que no parpadeen ni formen bandas. Lleva la obturación más lenta que puede usar la exposición automática (el límite de 180° del desenfoque de movimiento natural) al valor más cercano entre 1/120, 1/60, 1/40, 1/30 a 60 Hz, o 1/100, 1/50, 1/33 a 50 Hz: 1/120 a 120 fps y 60 Hz. Una frecuencia de cuadro mayor que el doble de la red (120 fps a 50 Hz, 240 fps) no deja ningún valor seguro, así que se mantiene el valor de 180°. Una obturación que ajustas a mano nunca se redondea. **Auto** toma 50 o 60 Hz de tu ajuste de región; en el este de Japón elige 50 Hz.";
