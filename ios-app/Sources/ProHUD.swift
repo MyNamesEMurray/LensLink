@@ -604,7 +604,7 @@ struct ProHUD: View {
                 .font(Self.label)
                 .foregroundColor(Theme.textSecondary)
                 .lineLimit(1)
-                .fixedSize()
+                .minimumScaleFactor(0.6)
                 .frame(width: 58, alignment: .leading)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Theme.Space.xs) {
@@ -867,7 +867,6 @@ extension ProHUD {
     /// Dark see-through boxes: they float on the picture with no panel.
     static let boxFill = Color.black.opacity(0.5)
     static let boxSelected = Color.black.opacity(0.75)
-    static let boxEdge = Color.white.opacity(0.12)
     static let boxRadius: CGFloat = 6
     /// The picture frame's margin from the screen edges, in portrait.
     static let frameInset: CGFloat = 12
@@ -898,10 +897,7 @@ private extension View {
             .background(selected ? ProHUD.boxSelected : ProHUD.boxFill)
             .clipShape(RoundedRectangle(cornerRadius: ProHUD.boxRadius,
                                         style: .continuous))
-            // The edge keeps a box visible over a black picture.
-            .overlay(RoundedRectangle(cornerRadius: ProHUD.boxRadius,
-                                      style: .continuous)
-                        .strokeBorder(ProHUD.boxEdge, lineWidth: 1))
+
     }
 }
 

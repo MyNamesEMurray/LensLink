@@ -23,7 +23,6 @@ final class PerfProbe: ObservableObject, @unchecked Sendable {
     }
     @Published var liveValues = PerfProbe.flag("liveValues") { didSet { save("liveValues", liveValues) } }
     @Published var linkStats = PerfProbe.flag("linkStats") { didSet { save("linkStats", linkStats) } }
-    @Published var pictureFrame = PerfProbe.flag("pictureFrame") { didSet { save("pictureFrame", pictureFrame) } }
     @Published var guides = PerfProbe.flag("guides") { didSet { save("guides", guides) } }
     /// The mic switch for the audio thread.
     let micMeterOn = Locked(PerfProbe.flag("micMeter"))
@@ -180,7 +179,6 @@ struct PerfProbeView: View {
                 Toggle(isOn: $probe.micMeter) { Text(verbatim: "Mic meter") }
                 Toggle(isOn: $probe.liveValues) { Text(verbatim: "Live auto values (4×/s)") }
                 Toggle(isOn: $probe.linkStats) { Text(verbatim: "Link stats in top bar") }
-                Toggle(isOn: $probe.pictureFrame) { Text(verbatim: "Inset picture frame") }
                 Toggle(isOn: $probe.guides) { Text(verbatim: "Guides overlay") }
             } header: {
                 Text(verbatim: "Pro interface parts")

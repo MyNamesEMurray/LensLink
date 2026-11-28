@@ -645,7 +645,6 @@ screens). The guides, focus marks and taps follow the frame. Landscape
 keeps the full-screen picture.
 
 Both bars are rows of **boxes** (black 50 % fill, 75 % when selected,
-a 1 pt white 12 % edge so they stay visible over a black picture,
 6 pt corners, 3 pt gaps). They float on the picture with no panel
 behind them, so there is no seam where a panel would cross the
 letterbox. A box's width is a fixed share of the row, never sized by what

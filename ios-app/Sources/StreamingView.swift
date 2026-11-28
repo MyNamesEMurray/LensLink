@@ -319,7 +319,7 @@ struct StreamingView: View {
 
     /// The Pro interface's picture frame in portrait; nil otherwise.
     private var proFrame: EdgeInsets? {
-        streamer.proInterface && probe.pictureFrame
+        streamer.proInterface
             ? ProHUD.frameInsets(screen: screen, safe: safe) : nil
     }
 
