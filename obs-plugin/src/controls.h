@@ -52,13 +52,6 @@ struct lenslink_ctl_state {
 	bool focus_locked;
 	double lens_position;
 
-	/* Variable iris (iOS 27 lenses that have one). */
-	bool supports_aperture;
-	bool aperture_manual;
-	double aperture; /* f-number */
-	double aperture_stops[LL_CTL_LIST];
-	int aperture_stop_count;
-
 	/* Colour pipeline: "sdr", "hlg" or "log", and what the phone offers. */
 	char color[8];
 	char colors[LL_CTL_LIST][LL_CTL_STR];

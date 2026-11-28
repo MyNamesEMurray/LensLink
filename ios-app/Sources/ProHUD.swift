@@ -21,7 +21,7 @@ struct ProHUD: View {
     var frame: EdgeInsets?
 
     enum Param: CaseIterable {
-        case lens, iris, shutter, iso, whiteBalance, tint, exposure, focus, format
+        case lens, shutter, iso, whiteBalance, tint, exposure, focus, format
     }
 
     @State private var open: Param?
@@ -217,7 +217,6 @@ struct ProHUD: View {
         Param.allCases.filter {
             switch $0 {
             case .iso, .shutter: return streamer.camera.supportsManualExposure
-            case .iris: return streamer.camera.apertureRange != nil
             case .format: return false
             case .whiteBalance, .tint: return streamer.camera.supportsWhiteBalanceLock
             default: return true
@@ -286,7 +285,6 @@ struct ProHUD: View {
     private func title(_ param: Param) -> String {
         switch param {
         case .lens: return L("Lens")
-        case .iris: return L("Iris")
         case .format: return L("Format")
         case .shutter: return L("Shutter")
         case .iso: return "ISO"
@@ -301,7 +299,6 @@ struct ProHUD: View {
         switch param {
         case .shutter: return .shutter
         case .iso: return .iso
-        case .iris: return .aperture
         case .whiteBalance, .tint: return .whiteBalance
         case .focus: return .focus
         default: return nil
@@ -318,9 +315,6 @@ struct ProHUD: View {
     private var shownShutter: Double {
         isAuto(.shutter) == true ? live?.shutterSeconds ?? streamer.shutterSeconds
                                  : streamer.shutterSeconds
-    }
-    private var shownAperture: Float {
-        isAuto(.iris) == true ? live?.aperture ?? streamer.aperture : streamer.aperture
     }
     private var shownISO: Float {
         isAuto(.iso) == true ? live?.iso ?? streamer.iso : streamer.iso
@@ -346,8 +340,6 @@ struct ProHUD: View {
         switch param {
         case .lens:
             return Self.factorLabel(lensFactor * Double(streamer.zoom)) + "×"
-        case .iris:
-            return unknownAuto(.iris) ? L("Auto") : Self.apertureLabel(shownAperture)
         case .format:
             return "\(streamer.resolution.rawValue) \(streamer.fps)"
         case .shutter:
@@ -380,17 +372,6 @@ struct ProHUD: View {
     }
 
     /// "1.48", "1.8", "4": two decimals at most, no trailing zeros.
-    static func fNumberLabel(_ fNumber: Float) -> String {
-        var text = String(format: "%.2f", fNumber)
-        while text.hasSuffix("0") { text.removeLast() }
-        if text.hasSuffix(".") { text.removeLast() }
-        return text
-    }
-
-    static func apertureLabel(_ fNumber: Float) -> String {
-        "f" + fNumberLabel(fNumber)
-    }
-
     /// Clean fractions: within 3% of a usual stop reads as that stop
     /// (the camera runs 1/120 at 120 fps as 8.2 ms, "1/122").
     static func shutterLabel(_ seconds: Double) -> String {
@@ -429,9 +410,6 @@ struct ProHUD: View {
                 }
                 extras(param)
                 Spacer(minLength: 0)
-                if param == .iris {
-                    InfoButton(title: L("Iris"), text: SettingInfo.irisTip)
-                }
             }
             control(param)
         }
@@ -447,13 +425,6 @@ struct ProHUD: View {
                 }
             }
             chip(L("Flip"), on: false) { streamer.flipCamera() }
-        case .iris:
-            ForEach(streamer.camera.apertureStops, id: \.self) { stop in
-                chip(Self.fNumberLabel(stop),
-                     on: streamer.isLocked(.aperture) && abs(streamer.aperture - stop) < 0.01) {
-                    setAperture(stop)
-                }
-            }
         case .whiteBalance:
             ForEach([3200, 4300, 5600], id: \.self) { kelvin in
                 chip("\(kelvin)K", on: false) { lockWhiteBalance(temperature: Float(kelvin)) }
@@ -472,20 +443,6 @@ struct ProHUD: View {
             if streamer.camera.maxZoomFactor > 1 {
                 Slider(value: zoomBinding, in: 1...streamer.camera.maxZoomFactor)
                     .accessibilityLabel(L("Zoom"))
-            }
-        case .iris:
-            if let range = streamer.camera.apertureRange {
-                // Third-stop steps: the f-number grows by √2 a stop.
-                Slider(value: Binding(
-                    get: { log2(Double(shownAperture)) * 2 },
-                    set: { position in
-                        let fNumber = Float(pow(2, (position * 3).rounded() / 6))
-                        guard abs(fNumber - streamer.aperture) > 0.005
-                                || !streamer.isLocked(.aperture) else { return }
-                        setAperture(min(max(fNumber, range.lowerBound), range.upperBound))
-                    }), in: log2(Double(range.lowerBound)) * 2...log2(Double(range.upperBound)) * 2)
-                    .accessibilityLabel(L("Iris"))
-                    .accessibilityValue(Text(verbatim: value(.iris)))
             }
         case .format:
             EmptyView()
@@ -557,12 +514,6 @@ struct ProHUD: View {
         }
     }
 
-    private func setAperture(_ fNumber: Float) {
-        touched()
-        if !streamer.isLocked(.aperture) { streamer.setLocked(.aperture, true) }
-        streamer.aperture = fNumber
-    }
-
     // MARK: - Format editor
 
     private var formatEditor: some View {
@@ -604,14 +555,14 @@ struct ProHUD: View {
                 .font(Self.label)
                 .foregroundColor(Theme.textSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .fixedSize()
                 .frame(width: 58, alignment: .leading)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.Space.xs) {
-                    ForEach(items, id: \.self) { item in
-                        chip(label(item), on: on(item)) {
-                            if !on(item) { pick(item) }
-                        }
+            // Equal chips sharing the row, so seven frame rates fit
+            // without scrolling.
+            HStack(spacing: Theme.Space.xs) {
+                ForEach(items, id: \.self) { item in
+                    chip(label(item), on: on(item), fill: true) {
+                        if !on(item) { pick(item) }
                     }
                 }
             }
@@ -724,7 +675,7 @@ struct ProHUD: View {
         values.indices.min { abs(log(values[$0] / value)) < abs(log(values[$1] / value)) } ?? 0
     }
 
-    private func chip(_ title: String, on: Bool,
+    private func chip(_ title: String, on: Bool, fill: Bool = false,
                       action: @escaping () -> Void) -> some View {
         Button {
             touched()
@@ -733,8 +684,9 @@ struct ProHUD: View {
             Text(title)
                 .font(.footnote.weight(.semibold))
                 .lineLimit(1)
-                .padding(.horizontal, Theme.Space.m)
-                .frame(minHeight: 32)
+                .minimumScaleFactor(fill ? 0.7 : 1)
+                .padding(.horizontal, fill ? Theme.Space.xs : Theme.Space.m)
+                .frame(maxWidth: fill ? .infinity : nil, minHeight: 32)
                 .background(on ? Theme.accent : Theme.glassChip)
                 .clipShape(Capsule())
         }

@@ -892,20 +892,6 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
-    /// The iris, on lenses with a variable one (iOS 27). Set by hand with
-    /// ISO and shutter on auto, it is aperture priority.
-    @Published var apertureManual = false {
-        didSet {
-            applyExposure()
-            scheduleStateSend()
-        }
-    }
-    @Published var aperture: Float = 1.8 {
-        didSet {
-            if apertureManual { applyExposure() }
-            scheduleStateSend()
-        }
-    }
 
     // MARK: - Pro interface
 
@@ -1112,18 +1098,15 @@ final class Streamer: ObservableObject {
     }
 
     private func applyExposure() {
-        let iris = apertureManual && camera.apertureRange != nil ? aperture : nil
         switch exposureSetting {
-        case .auto where iris == nil:
+        case .auto:
             camera.setAutoExposure()
         case .manual:
-            camera.setManualExposure(iso: iso, shutterSeconds: shutterSeconds,
-                                     aperture: iris)
+            camera.setManualExposure(iso: iso, shutterSeconds: shutterSeconds)
         default:
             camera.setPriorityExposure(
                 iso: exposureSetting.isoManual ? iso : nil,
-                shutterSeconds: exposureSetting.shutterManual ? shutterSeconds : nil,
-                aperture: iris)
+                shutterSeconds: exposureSetting.shutterManual ? shutterSeconds : nil)
         }
     }
 
@@ -1149,15 +1132,14 @@ final class Streamer: ObservableObject {
     /// a time from their own chips; `exposure` is the pair, for the EV
     /// chip and Lock all.
     enum LockTarget {
-        case exposure, iso, shutter, aperture, whiteBalance, focus
+        case exposure, iso, shutter, whiteBalance, focus
     }
 
     var lockTargets: [LockTarget] {
-        [LockTarget.exposure, .aperture, .whiteBalance, .focus].filter {
+        [LockTarget.exposure, .whiteBalance, .focus].filter {
             switch $0 {
             case .whiteBalance: return camera.supportsWhiteBalanceLock
             case .focus: return true
-            case .aperture: return camera.apertureRange != nil
             default: return camera.supportsManualExposure
             }
         }
@@ -1168,7 +1150,6 @@ final class Streamer: ObservableObject {
         case .exposure: return exposureSetting == .manual
         case .iso: return exposureSetting.isoManual
         case .shutter: return exposureSetting.shutterManual
-        case .aperture: return apertureManual
         case .whiteBalance: return whiteBalanceSetting == .locked
         case .focus: return focusSetting == .locked
         }
@@ -1186,7 +1167,6 @@ final class Streamer: ObservableObject {
             case .exposure: exposureSetting = .auto
             case .iso: exposureSetting.isoManual = false
             case .shutter: exposureSetting.shutterManual = false
-            case .aperture: apertureManual = false
             case .whiteBalance: whiteBalanceSetting = .auto
             case .focus: focusSetting = .auto
             }
@@ -1206,9 +1186,6 @@ final class Streamer: ObservableObject {
         case .shutter:
             if let live { shutterSeconds = live.shutterSeconds }
             exposureSetting.shutterManual = true
-        case .aperture:
-            if let live { aperture = live.aperture }
-            apertureManual = true
         case .whiteBalance:
             if let live {
                 whiteBalanceTemperature = live.temperature
@@ -1305,15 +1282,6 @@ final class Streamer: ObservableObject {
             "stabilization": stabilization.rawValue,
             "lensFactors": lensFactors,
         ]
-        if let range = camera.apertureRange {
-            state["supportsAperture"] = true
-            state["apertureMode"] = apertureManual ? "manual" : "auto"
-            state["aperture"] = Double(apertureManual
-                ? aperture : camera.activeDevice?.lensAperture ?? aperture)
-            state["minAperture"] = Double(range.lowerBound)
-            state["maxAperture"] = Double(range.upperBound)
-            state["apertureStops"] = camera.apertureStops.map(Double.init)
-        }
         if camera.maxZoomFactor > 1,
            let crop = CameraManager.nativeCropZoomFactor(
                resolution: captureResolution, fps: Int32(fps), color: activeColor) {
@@ -1369,7 +1337,7 @@ final class Streamer: ObservableObject {
         // live as the source's audio — remote UIs key their row off
         // micEnabled, and the list is only meaningful with capture up.
         if VideoEncoder.hdrSupported {
-            state["colors"] = colorOptions.map { $0.rawValue }
+            state["colors"] = runnableColors().map { $0.rawValue }
         }
         if let percent = BatteryMonitor.shared.percent {
             state["battery"] = percent
@@ -1391,6 +1359,20 @@ final class Streamer: ObservableObject {
     /// snapshot is resent on every (debounced) control change — e.g. for
     /// the whole length of a zoom drag.
     private var capabilityCache: (key: String, resolutions: [String], frameRates: [Int])?
+    private var colorCache: (key: String, colors: [StreamColor])?
+
+    /// The colours the current resolution and frame rate can capture, so
+    /// remote UIs never offer one that would fall back to SDR.
+    private func runnableColors() -> [StreamColor] {
+        let key = "\(selectedLens.id)|\(resolution.rawValue)|\(fps)"
+        if let cached = colorCache, cached.key == key { return cached.colors }
+        let colors = colorOptions.filter {
+            $0 == .sdr || CameraManager.supports(resolution: resolution, fps: Int32(fps),
+                                                 lens: selectedLens, color: $0)
+        }
+        colorCache = (key, colors)
+        return colors
+    }
 
     private func formatCapabilities() -> ([String], [Int]) {
         // The colour is part of the key: changing the colour choice
@@ -1429,7 +1411,6 @@ final class Streamer: ObservableObject {
         focusSetting = .auto
         flashlightOn = false
         whiteBalanceSetting = .auto
-        apertureManual = false
         exposureSetting = .auto
         // Manual values reset to mid-range defaults for the new device
         // (the sliders clamp to the active format's real limits).
@@ -2182,7 +2163,6 @@ final class Streamer: ObservableObject {
             case "exposure": setLocked(.exposure, on)
             case "iso": setLocked(.iso, on)
             case "shutter": setLocked(.shutter, on)
-            case "aperture": setLocked(.aperture, on)
             case "whiteBalance": setLocked(.whiteBalance, on)
             case "focus": setLocked(.focus, on)
             default: break
@@ -2218,14 +2198,6 @@ final class Streamer: ObservableObject {
                     ?? mode ?? exposureSetting.isoManual,
                 shutterManual: (command["shutterMode"] as? String).map { $0 == "manual" }
                     ?? mode ?? exposureSetting.shutterManual)
-        case "aperture":
-            if let range = camera.apertureRange,
-               let value = (command["fNumber"] as? NSNumber)?.floatValue {
-                aperture = min(max(value, range.lowerBound), range.upperBound)
-            }
-            if let mode = command["mode"] as? String {
-                apertureManual = mode == "manual" && camera.apertureRange != nil
-            }
         case "set_quality":
             if let raw = command["quality"] as? String,
                let parsed = StreamQuality(rawValue: raw) {

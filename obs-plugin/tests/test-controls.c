@@ -117,30 +117,11 @@ static void test_pro_fields(void)
 	CHECK_STR(s.guide, "off");
 }
 
-static void test_aperture(void)
-{
-	const char *json =
-		"{\"supportsAperture\":true,\"apertureMode\":\"manual\","
-		"\"aperture\":2.8,\"apertureStops\":[1.48,1.8,2.8,4,\"x\"]}";
-	struct lenslink_ctl_state s;
-
-	CHECK(lenslink_ctl_parse(json, strlen(json), &s));
-	CHECK(s.supports_aperture && s.aperture_manual);
-	CHECK_NEAR(s.aperture, 2.8);
-	CHECK(s.aperture_stop_count == 4);
-	CHECK_NEAR(s.aperture_stops[0], 1.48);
-
-	const char *fixed = "{\"zoom\":1}";
-	CHECK(lenslink_ctl_parse(fixed, strlen(fixed), &s));
-	CHECK(!s.supports_aperture && s.aperture_stop_count == 0);
-}
-
 int main(void)
 {
 	test_full_state();
 	test_defaults_and_bad_input();
 	test_clamps();
 	test_pro_fields();
-	test_aperture();
 	TEST_MAIN_END();
 }

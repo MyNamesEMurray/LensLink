@@ -1346,7 +1346,6 @@ final class CameraManager: NSObject {
         var lensPosition: Float?
         var temperature: Float
         var tint: Float
-        var aperture: Float
     }
 
     /// nil until the running device reports sane values: while the
@@ -1366,8 +1365,7 @@ final class CameraManager: NSObject {
             lensPosition: device.isLockingFocusWithCustomLensPositionSupported
                 ? device.lensPosition : nil,
             temperature: wb.temperature,
-            tint: wb.tint,
-            aperture: device.lensAperture)
+            tint: wb.tint)
     }
 
     func setAutoWhiteBalance() {
@@ -1595,72 +1593,11 @@ final class CameraManager: NSObject {
                    1.0 / Double(fps))
     }
 
-    /// The active format's iris range, nil when the lens has a fixed
-    /// aperture (everything before iOS 27, and every lens but a variable
-    /// one).
-    var apertureRange: ClosedRange<Float>? {
-#if DEBUG
-        if ScreenshotStage.isActive { return 1.48...4 }
-#endif
-        guard let format = activeDevice?.activeFormat else { return nil }
-        return Self.apertureRange(of: format)
-    }
-
-    /// The stops the phone recommends for the active format, in range.
-    var apertureStops: [Float] {
-#if DEBUG
-        if ScreenshotStage.isActive { return [1.48, 1.8, 2.8, 4] }
-#endif
-        guard let format = activeDevice?.activeFormat,
-              let range = Self.apertureRange(of: format) else { return [] }
-        // The iOS 27 SDK's API: the Xcode 16 CI job never builds it.
-#if compiler(>=6.2)
-        if #available(iOS 27.0, *) {
-            return format.recommendedLensApertureStops
-                .filter { range.contains($0) }.sorted()
-        }
-#endif
-        return [range.lowerBound, range.upperBound]
-    }
-
-    private static func apertureRange(of format: AVCaptureDevice.Format)
-        -> ClosedRange<Float>? {
-#if compiler(>=6.2)
-        if #available(iOS 27.0, *),
-           format.minLensAperture < format.maxLensAperture {
-            return format.minLensAperture...format.maxLensAperture
-        }
-#endif
-        return nil
-    }
-
-    /// Custom exposure, with the iris too when one is given and the lens
-    /// has a variable one. Device locked by the caller.
-    private static func setCustomExposure(
-        _ device: AVCaptureDevice, aperture: Float?, seconds: Double, iso: Float,
-        completion: ((CMTime) -> Void)? = nil) {
-        let duration = CMTime(seconds: seconds, preferredTimescale: 1_000_000)
-#if compiler(>=6.2)
-        if #available(iOS 27.0, *), let aperture,
-           let range = apertureRange(of: device.activeFormat) {
-            let fNumber = min(max(aperture, range.lowerBound), range.upperBound)
-            if device.activeFormat.supportsExposureModeCustom(
-                lensAperture: fNumber, duration: duration, iso: iso) {
-                device.setExposureModeCustom(lensAperture: fNumber, duration: duration,
-                                             iso: iso, completionHandler: completion)
-                return
-            }
-        }
-#endif
-        device.setExposureModeCustom(duration: duration, iso: iso,
-                                     completionHandler: completion)
-    }
-
-    /// Manual exposure: fixed ISO and shutter, and the iris when
-    /// `aperture` is set. Values are clamped to the active format's limits.
+    /// Manual exposure: fixed ISO and shutter. Values are clamped to the
+    /// active format's limits.
     /// On the session queue, so it lands after any change the priority
     /// loop already has queued.
-    func setManualExposure(iso: Float, shutterSeconds: Double, aperture: Float? = nil) {
+    func setManualExposure(iso: Float, shutterSeconds: Double) {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             self.stopPriorityExposure()
@@ -1671,8 +1608,10 @@ final class CameraManager: NSObject {
                 let seconds = max(format.minExposureDuration.seconds,
                                   min(shutterSeconds,
                                       format.maxExposureDuration.seconds))
-                Self.setCustomExposure(device, aperture: aperture,
-                                       seconds: seconds, iso: clampedISO)
+                device.setExposureModeCustom(
+                    duration: CMTime(seconds: seconds,
+                                     preferredTimescale: 1_000_000),
+                    iso: clampedISO)
             }
         }
     }
@@ -1738,20 +1677,13 @@ final class CameraManager: NSObject {
     /// shutter here too.
     private var priorityObservation: NSKeyValueObservation?
     private var priorityISO: Float?
-    private var priorityAperture: Float?
-    /// The f-number last written, so a lens that settles a hair off the
-    /// target isn't asked again (and its exposure isn't rescaled again).
-    private var appliedAperture: Float?
     private var prioritySeconds: Double?
     /// One custom-exposure change in flight at a time; the meter is read
     /// again once it lands.
     private var priorityPending = false
     private weak var observedDevice: AVCaptureDevice?
 
-    /// `aperture` fixes the iris too. With ISO and shutter both free
-    /// (aperture priority) the shutter holds the 180° cap and ISO follows
-    /// the meter; only at the lowest ISO does the shutter get faster.
-    func setPriorityExposure(iso: Float?, shutterSeconds: Double?, aperture: Float? = nil) {
+    func setPriorityExposure(iso: Float?, shutterSeconds: Double?) {
         sessionQueue.async { [weak self] in
             guard let self, let device = self.activeDevice,
                   device.isExposureModeSupported(.custom) else { return }
@@ -1761,7 +1693,6 @@ final class CameraManager: NSObject {
             self.observedDevice = device
             self.priorityISO = iso
             self.prioritySeconds = shutterSeconds
-            self.priorityAperture = aperture
             self.priorityPending = false
             if self.priorityObservation == nil {
                 self.priorityObservation = device.observe(
@@ -1777,52 +1708,36 @@ final class CameraManager: NSObject {
     private func stopPriorityExposure() {
         priorityObservation?.invalidate()
         priorityObservation = nil
-        appliedAperture = nil
     }
 
     /// sessionQueue only.
     private func steerPriorityExposure(_ device: AVCaptureDevice) {
         guard priorityObservation != nil, !priorityPending,
               device === activeDevice,
-              priorityISO != nil || prioritySeconds != nil
-                || priorityAperture != nil else { return }
+              priorityISO != nil || prioritySeconds != nil else { return }
         let format = device.activeFormat
         let offset = device.exposureMode == .custom
             ? Double(device.exposureTargetOffset) : 0
-        // A new f-number changes the light by its square: the free value
-        // moves with it in the same write, so the picture doesn't step.
-        let apertureMoved = priorityAperture != nil && priorityAperture != appliedAperture
-        let irisGain = apertureMoved
-            ? pow(Double(priorityAperture! / max(device.lensAperture, 0.5)), 2) : 1
-        let step = (abs(offset) < 0.1 ? 1 : pow(2, -offset / 2)) * irisGain
+        let step = abs(offset) < 0.1 ? 1 : pow(2, -offset / 2)
+        let iso = priorityISO ?? Float(Double(device.iso) * step)
         var longest = min(format.maxExposureDuration.seconds,
                           1.0 / Double(configuredFps))
         if naturalBlur, prioritySeconds == nil {
             longest = min(longest, Self.flickerSafe(1.0 / Double(configuredFps * 2),
                                                     mainsHz: mainsHz, longest: longest))
         }
-        var iso = priorityISO ?? Float(Double(device.iso) * step)
-        var seconds = prioritySeconds ?? device.exposureDuration.seconds * step
-        if priorityISO == nil, prioritySeconds == nil {
-            let light = Double(device.iso) * device.exposureDuration.seconds * step
-            seconds = longest
-            iso = Float(light / seconds)
-            if iso < format.minISO {
-                iso = format.minISO
-                seconds = light / Double(iso)
-            }
-        }
+        let seconds = prioritySeconds ?? device.exposureDuration.seconds * step
         let clampedISO = max(format.minISO, min(iso, format.maxISO))
         let clampedSeconds = max(format.minExposureDuration.seconds,
                                  min(seconds, longest))
-        guard device.exposureMode != .custom || apertureMoved
+        guard device.exposureMode != .custom
                 || abs(clampedISO - device.iso) > 0.5
                 || abs(clampedSeconds - device.exposureDuration.seconds) > 1e-6,
               (try? device.lockForConfiguration()) != nil else { return }
         priorityPending = true
-        appliedAperture = priorityAperture
-        Self.setCustomExposure(device, aperture: priorityAperture,
-                               seconds: clampedSeconds, iso: clampedISO) { [weak self] _ in
+        device.setExposureModeCustom(
+            duration: CMTime(seconds: clampedSeconds, preferredTimescale: 1_000_000),
+            iso: clampedISO) { [weak self] _ in
             self?.sessionQueue.async { self?.priorityPending = false }
         }
         device.unlockForConfiguration()

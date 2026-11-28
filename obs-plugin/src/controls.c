@@ -167,21 +167,6 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 			} else {
 				lenslink_json_skip(&r);
 			}
-		} else if (!strcmp(key, "apertureStops")) {
-			if (lenslink_json_array_begin(&r)) {
-				while (lenslink_json_array_next(&r)) {
-					if (s->aperture_stop_count < LL_CTL_LIST &&
-					    lenslink_json_read_number(&r, &num) &&
-					    clamp_num(num, 0.5, 64,
-						      &s->aperture_stops
-							       [s->aperture_stop_count]))
-						s->aperture_stop_count++;
-					else
-						lenslink_json_skip(&r);
-				}
-			} else {
-				lenslink_json_skip(&r);
-			}
 		} else if (!strcmp(key, "reframe")) {
 			read_reframe(&r, s);
 		} else if (!strcmp(key, "monitor")) {
@@ -199,7 +184,6 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 			   !strcmp(key, "isoMode") ||
 			   !strcmp(key, "shutterMode") ||
 			   !strcmp(key, "whiteBalanceMode") ||
-			   !strcmp(key, "apertureMode") ||
 			   !strcmp(key, "focusMode")) {
 			read_str(&r, mode, sizeof(mode));
 			bool manual = !strcmp(mode, "manual") ||
@@ -214,8 +198,6 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 				split_modes = true;
 			} else if (!strcmp(key, "whiteBalanceMode")) {
 				s->wb_locked = manual;
-			} else if (!strcmp(key, "apertureMode")) {
-				s->aperture_manual = manual;
 			} else {
 				s->focus_locked = manual;
 			}
@@ -226,8 +208,7 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 			   !strcmp(key, "maxShutterSeconds") ||
 			   !strcmp(key, "whiteBalanceTemperature") ||
 			   !strcmp(key, "whiteBalanceTint") ||
-			   !strcmp(key, "lensPosition") ||
-			   !strcmp(key, "aperture")) {
+			   !strcmp(key, "lensPosition")) {
 			static const struct {
 				const char *key;
 				size_t offset;
@@ -264,9 +245,6 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 				 offsetof(struct lenslink_ctl_state,
 					  lens_position),
 				 0, 1},
-				{"aperture",
-				 offsetof(struct lenslink_ctl_state, aperture),
-				 0.5, 64},
 			};
 			size_t i = 0;
 			while (strcmp(nums[i].key, key))
@@ -299,8 +277,6 @@ bool lenslink_ctl_parse(const char *json, size_t len,
 				target = &s->supports_manual_exposure;
 			else if (!strcmp(key, "supportsWhiteBalanceLock"))
 				target = &s->supports_wb_lock;
-			else if (!strcmp(key, "supportsAperture"))
-				target = &s->supports_aperture;
 			if (!target || !lenslink_json_read_bool(&r, &flag))
 				lenslink_json_skip(&r);
 			else
