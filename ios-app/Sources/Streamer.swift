@@ -234,7 +234,7 @@ final class Streamer: ObservableObject {
 
     private func updateSensorReadoutPreference() {
         CameraManager.preferFullSensorReadout =
-            quality == .maximum && !allowVideoEffects
+            quality == .maximum
     }
 
     /// The adaptive loop's watchdog tripped: in Maximum, with the encoder
@@ -292,7 +292,6 @@ final class Streamer: ObservableObject {
                 try camera.configure(lens: selectedLens,
                                      resolution: captureResolution,
                                      fps: Int32(fps),
-                                     lockFrameRate: !allowVideoEffects,
                                      color: activeColor,
                                      wantsDepth: greenScreenEnabled
                                         || activeBlurTest == .depth,
@@ -658,10 +657,6 @@ final class Streamer: ObservableObject {
                                       forKey: "idleAppearance")
         }
     }
-    /// Always on (no setting): the max frame duration stays unlocked so
-    /// iOS may lower the rate on its own, which the Control Center video
-    /// effects appear to require (see CameraManager.configure).
-    private let allowVideoEffects = true
     /// Send phone-mic audio as a lip-sync calibration reference (never
     /// played out — the plugin correlates it against your real mic).
     /// Mutually exclusive with `sendMicAudio` — one mic, one role.
@@ -2395,7 +2390,7 @@ final class Streamer: ObservableObject {
             // Off the main thread: configuring a 4K or 120 fps format
             // takes long enough to freeze the Live screen as it opens.
             let camera = camera, lens = selectedLens, capture = captureResolution
-            let rate = Int32(fps), lock = !allowVideoEffects
+            let rate = Int32(fps)
             let ask = activeColor
             let depth = greenScreenEnabled || activeBlurTest == .depth
             let cinematic = activeBlurTest == .cinematic
@@ -2404,7 +2399,7 @@ final class Streamer: ObservableObject {
                 DispatchQueue.global(qos: .userInitiated).async {
                     done.resume(with: Result {
                         try camera.configure(lens: lens, resolution: capture, fps: rate,
-                                             lockFrameRate: lock, color: ask,
+                                             color: ask,
                                              wantsDepth: depth,
                                              cinematic: cinematic)
                     })

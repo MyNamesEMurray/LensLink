@@ -412,8 +412,7 @@ Symbol) and a title — top to bottom:
    Then the **Green screen** toggle, whose title gains a gray `Depth`
    subtitle when the chosen lens and format run depth assist.
    **Picture**: **Stabilization**, **High-quality reframe** (greyed at
-   4K). Remembering camera settings and allowing system video effects
-   are always on, with no row. No footers: where a row needs explaining, an `info.circle` button
+   4K). Remembering camera settings is always on, with no row. No footers: where a row needs explaining, an `info.circle` button
    beside its title (`InfoButton`, borderless, secondary) opens an alert
    with the same paragraph its Documentation page shows (`SettingInfo`).
    Focus on faces and Natural
