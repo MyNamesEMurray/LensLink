@@ -620,6 +620,9 @@ struct ProHUD: View {
             tool(L("Flashlight"), "flashlight.on.fill", on: streamer.flashlightOn,
                  tint: Theme.cameraYellow) { streamer.flashlightOn.toggle() }
                 .disabled(!streamer.camera.hasFlashlight)
+            if !streamer.blurModes.isEmpty {
+                BlurMenu(streamer: streamer, onTouch: touched)
+            }
         }
     }
 
@@ -713,6 +716,59 @@ private extension View {
             .background(selected ? ProHUD.boxSelected : ProHUD.boxFill)
             .clipShape(RoundedRectangle(cornerRadius: ProHUD.boxRadius,
                                         style: .continuous))
+    }
+}
+
+/// The background blur test's mode menu (TestFlight only, so English
+/// only, like the Performance debug screen). Lists only the modes the
+/// current lens and format can run.
+struct BlurMenu: View {
+    @ObservedObject var streamer: Streamer
+    var compact = false
+    var onTouch: () -> Void = {}
+
+    static func name(_ mode: Streamer.BlurTest) -> String {
+        switch mode {
+        case .off: return "Off"
+        case .depth: return "Depth blur"
+        case .cinematic: return "Cinematic"
+        }
+    }
+
+    var body: some View {
+        let current = streamer.effectiveBlur
+        SteadyMenu(key: [current, streamer.blurModes]) {
+            Picker(selection: Binding(get: { streamer.effectiveBlur },
+                                      set: { onTouch(); streamer.blurTest = $0 })) {
+                ForEach(streamer.blurModes, id: \.self) { mode in
+                    Text(verbatim: Self.name(mode)).tag(mode)
+                }
+            } label: {
+                Text(verbatim: "Blur")
+            }
+        } label: {
+            if compact {
+                Image(systemName: "camera.aperture")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(current == .off ? Theme.textPrimary : .black)
+                    .frame(width: 32, height: 32)
+                    .background(Circle().fill(current == .off
+                        ? Color.black.opacity(0.45) : Theme.cameraYellow))
+            } else {
+                VStack(spacing: 2) {
+                    Image(systemName: "camera.aperture").font(.system(size: 20))
+                    Text(verbatim: "Blur").font(.system(size: 9, weight: .semibold))
+                        .lineLimit(1)
+                }
+                .foregroundColor(current == .off ? Theme.textSecondary : Theme.accent)
+                .frame(maxWidth: .infinity, minHeight: Theme.controlButton)
+                .contentShape(Rectangle())
+            }
+        }
+        .equatable()
+        .frame(maxWidth: compact ? nil : .infinity)
+        .accessibilityLabel(Text(verbatim: "Background blur"))
+        .accessibilityValue(Text(verbatim: Self.name(current)))
     }
 }
 

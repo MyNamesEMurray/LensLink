@@ -57,6 +57,10 @@ static const char *const web_text_keys[] = {
 	"Web.Calibrate.Pick",
 	"Web.Calibrate.NoPicture",
 	"Web.GreenScreen",
+	"Web.Blur",
+	"Web.Blur.Off",
+	"Web.Blur.Depth",
+	"Web.Blur.Cinematic",
 	"Web.All",
 	"Web.Mic",
 	"Web.PhoneMic",
@@ -360,6 +364,11 @@ static const char control_page[] =
 	"<select id='fmtcodec' data-t-title='Codec'></select>"
 	"<select id='fmtcolor' data-t-title='Color' style='display:none'></select>"
 	"</div>"
+	/* Background blur test (TestFlight builds only): the modes the
+	 * phone's lens and format can run (blurModes); hidden otherwise. */
+	"<div class='row' id='blrow' style='display:none'>"
+	"<span class='lbl' id='bll' data-t='Blur'></span>"
+	"<div class='seg' id='blseg' role='group' aria-labelledby='bll'></div></div>"
 	"<div class='row' id='stabrow' style='display:none'>"
 	"<span class='lbl' id='stabl' data-t='Stabilization'></span>"
 	"<select id='stab' aria-labelledby='stabl'></select></div>"
@@ -429,6 +438,7 @@ static const char control_page[] =
 	"gsEl=$('gs'),gsdrowEl=$('gsdrow'),gsdEl=$('gsd'),gsdvEl=$('gsdv'),"
 	"flEl=$('fl'),flrowEl=$('flrow'),fldEl=$('fld'),flvEl=$('flv'),"
 	"stabrowEl=$('stabrow'),stabEl=$('stab'),"
+	"blrowEl=$('blrow'),blsegEl=$('blseg'),"
 	"microwEl=$('microw'),micselEl=$('micsel'),srctabsEl=$('srctabs');"
 	"const COL={live:'#30D158',amber:'#FF9F0A',red:'#FF453A',grey:'#8E8E93',"
 	"accent:'#3D7BFF'};"
@@ -744,6 +754,15 @@ static const char control_page[] =
 	 * (0.5-5.0 m, All past 5); Auto (-1) is the readout's click, like
 	 * tapping the app's Subject button while its dial is open. */
 	"let gson=false;"
+	"let blKey='';"
+	"function blUI(){const m=Array.isArray(S.blurModes)?S.blurModes:[];"
+	"show(blrowEl,m.length>1);const k=m.join()+'|'+S.blur;if(k===blKey)return;"
+	"blKey=k;blsegEl.textContent='';"
+	"const N={off:t('Blur.Off'),depth:t('Blur.Depth'),cinematic:t('Blur.Cinematic')};"
+	"for(const x of m){const b=document.createElement('button');"
+	"b.textContent=N[x]||x;b.className=x===S.blur?'on':'';pressed(b,x===S.blur);"
+	"b.onclick=()=>{touch();S.blur=x;blUI();send({cmd:'blur',mode:x})};"
+	"blsegEl.appendChild(b)}}"
 	"function gsUI(on){gson=on;gsEl.className=on?'chip on':'chip';pressed(gsEl,on)}"
 	"gsEl.onclick=()=>{touch();gsUI(!gson);send({cmd:'green_screen',on:gson})};"
 	"const gsLabel=v=>v<0?t('Auto'):v?v.toFixed(1)+' m':t('All');"
@@ -935,6 +954,7 @@ static const char control_page[] =
 	"RF=r?{zoom:+r.zoom||1,x:+r.x||.5,y:+r.y||.5}:{zoom:1,x:.5,y:.5};rfUI();"
 	"show(rfhqrowEl,!!(S.supportsReframeHQ||S.reframeHQ));hqUI(!!S.reframeHQ);"
 	"if(!rfBg&&!rfZoomed&&Date.now()-rfTry>5000)rfStill()}"
+	"blUI();"
 	"show(stabrowEl,typeof S.stabilization==='string');"
 	"if(typeof S.stabilization==='string'){"
 	"fillSel(stabEl,Object.keys(STAB),S.stabilization,m=>STAB[m]);"

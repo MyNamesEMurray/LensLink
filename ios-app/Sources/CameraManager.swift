@@ -697,6 +697,14 @@ final class CameraManager: NSObject {
     /// Whether green screen's depth assist can run at this combo: the
     /// lens has a depth sibling with a depth-capable format at exactly
     /// this resolution and frame rate, the same test configure applies.
+    /// Whether the blur test's Cinematic mode can run at this combo.
+    static func supportsCinematic(resolution: Resolution, fps: Int32,
+                                  lens: Lens, color: StreamColor) -> Bool {
+        guard let device = cinematicDevice(for: lens) else { return false }
+        return format(for: device, resolution: resolution, fps: fps,
+                      color: color, requireCinematic: true) != nil
+    }
+
     static func supportsDepth(resolution: Resolution, fps: Int32,
                               lens: Lens) -> Bool {
         guard let sibling = depthSiblingDevice(for: lens) else { return false }
