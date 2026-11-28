@@ -664,10 +664,20 @@ final class Streamer: ObservableObject {
             scheduleStateSend()
         }
     }
-    /// Selectable mics right now. Live list — recomputed per access so a
-    /// headset connecting mid-stream shows up on the next UI refresh.
-    var micOptions: [AudioReference.MicOption] {
-        AudioReference.availableMics()
+    /// Selectable mics. Cached: reading the list is a blocking call to
+    /// the audio server, too slow for a view body or every STATE send.
+    /// Refreshed off main on route changes and when mic capture starts.
+    @Published private(set) var micOptions = [AudioReference.MicOption(id: "auto", name: "Auto (iOS default)")]
+
+    private func refreshMicOptions() {
+        DispatchQueue.global(qos: .utility).async {
+            let mics = AudioReference.availableMics()
+            Task { @MainActor [weak self] in
+                guard let self, self.micOptions != mics else { return }
+                self.micOptions = mics
+                self.scheduleStateSend()
+            }
+        }
     }
     @Published var armOnOpen: Bool {
         didSet {
@@ -1759,6 +1769,12 @@ final class Streamer: ObservableObject {
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in self?.scheduleStateSend() }
             }
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil, queue: nil) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.refreshMicOptions() }
+        }
+        refreshMicOptions()
         thermalObserver = NotificationCenter.default.addObserver(
             forName: ProcessInfo.thermalStateDidChangeNotification,
             object: nil, queue: .main) { [weak self] _ in
@@ -2405,6 +2421,7 @@ final class Streamer: ObservableObject {
             try capture.start()
             audioReference = capture
             micCapturePurpose = purpose
+            refreshMicOptions()
             // The STATE snapshot gates its mic fields on capture being
             // up; resend now that it is.
             scheduleStateSend()

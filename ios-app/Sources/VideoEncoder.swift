@@ -45,9 +45,9 @@ final class VideoEncoder {
     let codec: VideoCodec
     let color: StreamColor
 
-    /// Guards `session` and `forceNextKeyframe`: `encode()` runs on the
-    /// capture queue while `stop()`/`setBitrate()`/`requestKeyframe()`
-    /// arrive from the main thread. Holding it across the encode call
+    /// Guards `session`: `encode()` runs on the
+    /// capture queue while `stop()` arrives from the main thread and
+    /// `setBitrate()` from its own queue. Holding it across the encode call
     /// means `stop()` can never invalidate a session mid-frame.
     private let lock = NSLock()
     private var session: VTCompressionSession?
@@ -239,13 +239,33 @@ final class VideoEncoder {
         lock.unlock()
     }
 
-    /// Adjusts the target bitrate mid-stream (adaptive bitrate).
+    /// Adjusts the target bitrate mid-stream (adaptive bitrate). Applied
+    /// on a private queue, latest value wins: with the hardware encoder
+    /// saturated (4K 120 fps Log) the property call blocked the main
+    /// thread for ~10 s.
     func setBitrate(_ bitsPerSecond: Int) {
-        lock.lock()
-        defer { lock.unlock() }
-        guard let session else { return }
-        Self.applyBitrate(bitsPerSecond, to: session, peakFactor: peakFactor)
+        pendingLock.lock()
+        let idle = pendingBitrate == nil
+        pendingBitrate = bitsPerSecond
+        pendingLock.unlock()
+        guard idle else { return }
+        controlQueue.async { [self] in
+            pendingLock.lock()
+            let rate = pendingBitrate
+            pendingBitrate = nil
+            pendingLock.unlock()
+            guard let rate else { return }
+            lock.lock()
+            defer { lock.unlock() }
+            guard let session else { return }
+            Self.applyBitrate(rate, to: session, peakFactor: peakFactor)
+        }
     }
+    /// Separate from `lock`, which `encode()` can hold for a long time
+    /// when the encoder is saturated.
+    private let pendingLock = NSLock()
+    private var pendingBitrate: Int?
+    private let controlQueue = DispatchQueue(label: "lenslink.encoder.control", qos: .userInitiated)
 
     /// How far a one-second window may run above the average.
     private var peakFactor: Double { maximumQuality ? 2.0 : 1.5 }
@@ -280,9 +300,9 @@ final class VideoEncoder {
     /// connection is established mid-stream).
     private var forceNextKeyframe = false
     func requestKeyframe() {
-        lock.lock()
+        pendingLock.lock()
         forceNextKeyframe = true
-        lock.unlock()
+        pendingLock.unlock()
     }
 
     func encode(_ sampleBuffer: CMSampleBuffer) {
@@ -302,8 +322,11 @@ final class VideoEncoder {
         guard let session else { return }
 
         var frameProperties: CFDictionary?
-        if forceNextKeyframe {
-            forceNextKeyframe = false
+        pendingLock.lock()
+        let forceKeyframe = forceNextKeyframe
+        forceNextKeyframe = false
+        pendingLock.unlock()
+        if forceKeyframe {
             frameProperties = [kVTEncodeFrameOptionKey_ForceKeyFrame: kCFBooleanTrue!] as CFDictionary
         }
 
