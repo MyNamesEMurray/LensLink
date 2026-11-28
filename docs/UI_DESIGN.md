@@ -412,8 +412,7 @@ Symbol) and a title — top to bottom:
    Then the **Green screen** toggle, whose title gains a gray `Depth`
    subtitle when the chosen lens and format run depth assist.
    **Picture**: **Stabilization**, **High-quality reframe** (greyed at
-   4K), **Allow system video effects**, **Remember camera settings**
-   (default on; see §6.2.1). No footers: where a row needs explaining, an `info.circle` button
+   4K). Remembering camera settings is always on, with no row. No footers: where a row needs explaining, an `info.circle` button
    beside its title (`InfoButton`, borderless, secondary) opens an alert
    with the same paragraph its Documentation page shows (`SettingInfo`).
    Focus on faces and Natural
@@ -625,8 +624,7 @@ usual reset. The Camera app remembers the same way. Rules:
 - A live lens switch brings back everything but zoom: picking a lens
   means its own 1×, as in the Camera app. Zoom comes back at stream
   start only.
-- **Camera → Remember camera settings** (default on) is the whole UI.
-  Off forgets what is stored and every camera starts on auto.
+- Always on; there is no setting.
 - Phone-local; the same properties the Live screen and `CONTROL` move,
   so the `STATE` snapshot follows for free — no protocol change.
 
@@ -659,7 +657,9 @@ only where the value needs one.
   pair centred), the format
   (`4K · 30` over `HEVC LOG`; tapping it opens the **format editor**,
   chip rows for resolution, FPS, codec, color and bitrate, shown between
-  the top bar and the strip; choices the phone can't do are left out),
+  the top bar and the strip; choices the phone can't do are left out, and
+  the lit color and codec are what is actually running, so a Log choice
+  that falls back to Standard at 240 fps lights Standard),
   and the More menu (Pause/Resume, Standard
   interface). Widths 1.3 : 1.5 : 1.1 : 1.3, More fixed. `–` until the
   first reading. No timecode.

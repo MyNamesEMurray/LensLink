@@ -2,7 +2,8 @@ import SwiftUI
 
 /// The Settings sheet: how the app behaves (Live screen, remote start)
 /// and Help. Everything that shapes the picture is in the Camera sheet
-/// instead, so a setting sits beside the choices that limit it. No
+/// instead, so a setting sits beside the choices that limit it; only
+/// Anti-flicker, which depends on where you are, lives here. No
 /// footer text anywhere — every explanation lives in DocumentationView,
 /// so both surfaces stay pure controls.
 struct OptionsView: View {
@@ -47,6 +48,21 @@ struct OptionsView: View {
                     }
                 } header: {
                     Text("Live screen")
+                }
+
+                Section {
+                    Picker(selection: $streamer.antiFlicker) {
+                        ForEach(Streamer.AntiFlicker.allCases) { mode in
+                            Text(verbatim: mode.displayName).tag(mode)
+                        }
+                    } label: {
+                        SettingsRowLabel(L("Anti-flicker"),
+                                         systemImage: "lightbulb",
+                                         color: Theme.cameraYellow,
+                                         info: SettingInfo.antiFlickerTip)
+                    }
+                } header: {
+                    Text("Camera")
                 }
 
                 Section {

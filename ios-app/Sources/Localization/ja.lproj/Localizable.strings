@@ -241,7 +241,7 @@
 "**Format** is one row — resolution, frame rate, codec and color — with the choices behind it. Resolution and frame rate offer only what the chosen camera supports. Codec and Color constrain each other: HDR and Apple Log are HEVC only, so picking H.264 returns Color to Standard and picking HDR or Log switches the codec to HEVC." = "**フォーマット**は、解像度、フレームレート、コーデック、カラーをまとめた1つの行で、タップすると選択肢が表示されます。解像度とフレームレートには、選択中のカメラが対応しているものだけが表示されます。コーデックとカラーは互いに制約し合います。HDRとApple LogはHEVCのみなので、H.264を選ぶとカラーは標準に戻り、HDRまたはLogを選ぶとコーデックはHEVCに切り替わります。";
 
 /* Documentation → Getting connected, Quality section (Markdown: keep the ** markers) */
-"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings and, unless system video effects are allowed, streams from the full sensor readout rather than the binned format. More data and more heat; watch the Stats line the first time." = "**ビットレート**は「カメラ」シートにあります。**安定**は一般的なWi-Fiでも安全なビットレートで配信し、そこから下げることはあっても上げることはありません。**最高**はより高いビットレートで始まり、接続が安定している間は上限を探り続けます（USBではバランスの約6倍、Wi-Fiでは約4倍まで）。フレームが滞留したりドロップしたりした瞬間に下げ、回線が運べる上限のすぐ下で落ち着きます。さらに、エンコーダを画質優先の設定に切り替え、システムのビデオエフェクトを許可していなければ、ビニングされたフォーマットではなくセンサーの全画素読み出しで配信します。データ量も発熱も増えるので、初回は統計の行を確認してください。";
+"**Bitrate**, in the Camera sheet. **Stable** streams at a bitrate that is safe on ordinary Wi-Fi and only backs off from it. **Maximum** starts higher and keeps probing upward while the connection stays clean — up to about six times the Stable rate over USB, four over Wi-Fi — backing off the moment frames queue or drop and settling just under whatever the link carries. It also switches the encoder to quality-first settings. More data and more heat; watch the Stats line the first time." = "**ビットレート**は「カメラ」シートにあります。**安定**は一般的なWi-Fiでも安全なビットレートで配信し、そこから下げることはあっても上げることはありません。**最高**はより高いビットレートで始まり、接続が安定している間は上限を探り続けます（USBではバランスの約6倍、Wi-Fiでは約4倍まで）。フレームが滞留したりドロップしたりした瞬間に下げ、回線が運べる上限のすぐ下で落ち着きます。さらに、エンコーダを画質優先の設定に切り替えます。データ量も発熱も増えるので、初回は統計の行を確認してください。";
 
 /* Documentation → Camera & picture, Color section (Markdown: keep the ** markers) */
 "**HDR (HLG)** streams 10-bit color. OBS tone-maps it for SDR scenes, and HDR canvases get the real thing." = "**HDR（HLG）**は10ビットカラーで配信します。SDRのシーンではOBSがトーンマッピングし、HDRキャンバスでは本来のHDRのまま扱われます。";
@@ -346,17 +346,8 @@
 /* Documentation → Options, Streaming section (Markdown: keep the ** markers) */
 "**Pause** holds a stream without ending it — the phone stays connected, the camera stays on, and OBS shows a dimmed, blurred still with a pause symbol instead of a frozen picture. The pause button sits on the Live screen next to Stop, and the same control is in OBS (source properties) and the web panel. Audio keeps going, so the phone can still be your microphone while the picture is held." = "**一時停止**は、ストリームを終了せずに止めます。スマートフォンは接続されたままでカメラも動き続け、OBSには固まった映像ではなく、一時停止マークの付いた暗くぼかした静止画が表示されます。一時停止ボタンはライブ画面の停止ボタンの隣にあり、同じ操作はOBS（ソースのプロパティ）とWebパネルにもあります。音声は流れ続けるので、映像を止めている間もスマートフォンをマイクとして使えます。";
 
-/* Documentation → Options, Remembered settings section (Markdown: keep the ** markers) */
-"**Remember camera settings** keeps each camera's exposure, white balance, zoom and focus from one stream to the next — a shot dialled in once stays dialled in, per lens. Turn it off and every camera starts on auto, and what was stored is forgotten." = "**カメラ設定を記憶**は、各カメラの露出、ホワイトバランス、ズーム、フォーカスを次の配信へ引き継ぎます。一度合わせた設定は、レンズごとにそのまま残ります。オフにするとすべてのカメラが自動で始まり、保存済みの内容は消去されます。";
-
-/* Documentation section header on the Options page */
-"Remembered settings" = "記憶される設定";
-
 /* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
 "**120 and 240 fps** are experimental and appear in the frame rate list where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with them, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB." = "**120 fpsと240 fps**は試験的な機能で、このカメラが対応している場合にフレームレートの一覧に表示されます（最近のiPhoneでは1080pと720p。240はセンサーのビニングを使うフォーマットです）。ストリームのビットレートが上がり、スマートフォンの発熱と電池の消耗も増えます。60に設定したOBSのキャンバスでは良くても1フレームおきにしか表示されないため、キャンバスを合わせ、できればUSBを使ってください。";
-
-/* Documentation → Options, Experimental section (Markdown: keep the ** markers) */
-"**Allow system video effects** is experimental: it lets iOS lower the frame rate on its own, which the Control Center video effects (Portrait, Studio Light) may require. Takes effect when the camera next starts." = "**システムのビデオエフェクトを許可**は試験的機能です。iOSが自らフレームレートを下げられるようにします。コントロールセンターのビデオエフェクト（ポートレート、スタジオ照明）ではこれが必要になることがあります。次にカメラが起動したときに反映されます。";
 
 /* Documentation section header on the Options page */
 "Experimental" = "実験的";
@@ -395,12 +386,6 @@
 
 /* Options picker: what the Live screen becomes after 10 seconds untouched [also used in Documentation/OptionsDocumentationView.swift] */
 "Idle view" = "アイドル表示";
-
-/* Options toggle */
-"Remember camera settings" = "カメラ設定を記憶";
-
-/* Options toggle (experimental) */
-"Allow system video effects" = "システムのビデオエフェクトを許可";
 
 /* Options row and screen title: the camera format table [also used in Documentation/AccessibilityDocumentationView.swift] */
 "Camera diagnostics" = "カメラ診断";
@@ -777,12 +762,6 @@
 "What the Live screen shows 10 seconds after your last touch. **Standard**: controls stay. **Clean feed**: the picture only. **Dim screen**: the screen goes dark to save battery. Tap to bring the controls back." = "最後に触れてから10秒後のライブ画面の表示です。**標準**：操作項目を表示したまま。**クリーン表示**：映像のみ。**画面を暗くする**：バッテリー節約のため画面を暗くします。タップすると操作項目が戻ります。";
 
 /* Settings ⓘ: short description of a setting */
-"Keeps each lens's exposure, white balance, zoom and focus from one stream to the next. Off: every camera starts on auto." = "レンズごとの露出、ホワイトバランス、ズーム、フォーカスを次の配信へ引き継ぎます。オフ：すべてのカメラが自動で始まります。";
-
-/* Settings ⓘ: short description of a setting */
-"Lets iOS lower the frame rate, which Control Center video effects (Portrait, Studio Light) may need. Applies the next time the camera starts." = "iOSがフレームレートを下げられるようにします。コントロールセンターのビデオエフェクト（ポートレート、スタジオ照明）で必要になることがあります。次にカメラが起動したときに反映されます。";
-
-/* Settings ⓘ: short description of a setting */
 "Replaces the Live screen with every camera value in one strip, the link's bitrate and frame rate, the mic level and framing guides." = "ライブ画面を、すべてのカメラ値を1列に並べた表示、接続のビットレートとフレームレート、マイクレベル、構図ガイドに切り替えます。";
 
 /* Pro interface top bar: unit beside the count of frames dropped this stream; keep it very short */
@@ -795,7 +774,7 @@
 "Rounds the automatic shutter so lights on mains power don't flicker. Auto picks 50 or 60 Hz from your Region." = "商用電源の照明がちらつかないよう、自動のシャッタースピードを丸めます。自動では地域設定から50 Hzか60 Hzを選びます。";
 
 /* Documentation → Options, Camera behavior section: the Anti-flicker menu (Markdown: keep the ** markers) */
-"**Anti-flicker**, in the Camera sheet, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "「カメラ」シートの**フリッカー低減**は、自動のシャッタースピードを商用電源の照明が発する明滅（電源周波数の2倍）の整数倍に丸め、ちらつきや縞を防ぎます。自動露出が使える最も遅いシャッター（自然なモーションブラーの180°の上限）を、60 Hzでは1/120、1/60、1/40、1/30、50 Hzでは1/100、1/50、1/33のうち最も近い値にします（120 fps・60 Hzなら1/120）。フレームレートが電源周波数の2倍を超える場合（50 Hzで120 fps、240 fps）は安全な値がないため、180°の値のままです。手動で設定したシャッターは丸めません。**自動**は地域設定から50 Hzか60 Hzを選びます。東日本では50 Hzを選んでください。";
+"**Anti-flicker**, in Settings, rounds the automatic shutter to a whole number of the pulses that mains-powered lights give off (twice the mains frequency), so they don't flicker or band. It moves the slowest shutter auto exposure may use (natural motion blur's 180° limit) to the nearest of 1/120, 1/60, 1/40, 1/30 at 60 Hz, or 1/100, 1/50, 1/33 at 50 Hz: 1/120 at 120 fps and 60 Hz. A frame rate above twice the mains (120 fps at 50 Hz, 240 fps) leaves no safe value, so the 180° value stays. A shutter you set by hand is never rounded. **Auto** takes 50 or 60 Hz from your Region setting; in east Japan pick 50 Hz." = "「設定」の**フリッカー低減**は、自動のシャッタースピードを商用電源の照明が発する明滅（電源周波数の2倍）の整数倍に丸め、ちらつきや縞を防ぎます。自動露出が使える最も遅いシャッター（自然なモーションブラーの180°の上限）を、60 Hzでは1/120、1/60、1/40、1/30、50 Hzでは1/100、1/50、1/33のうち最も近い値にします（120 fps・60 Hzなら1/120）。フレームレートが電源周波数の2倍を超える場合（50 Hzで120 fps、240 fps）は安全な値がないため、180°の値のままです。手動で設定したシャッターは丸めません。**自動**は地域設定から50 Hzか60 Hzを選びます。東日本では50 Hzを選んでください。";
 
 /* Pro interface: the lens aperture (iris) value box and dial */
 "Iris" = "絞り";

@@ -910,7 +910,7 @@ final class CameraManager: NSObject {
         }
         // Min duration always caps the rate at the user's choice. The max
         // (the cadence lock, see PERFORMANCE.md) is normally pinned too —
-        // but the "Allow system video effects" experiment leaves it at the
+        // the removed "Allow system video effects" experiment left it at the
         // format default, giving iOS the downward flexibility the Control
         // Center effects appear to demand: the reproducing iPhone 15 Pro
         // shows effect-capable formats chosen and active, yet a blank
@@ -1722,9 +1722,11 @@ final class CameraManager: NSObject {
     /// set by hand is never rounded.
     static func flickerSafe(_ seconds: Double, mainsHz: Int, longest: Double) -> Double {
         let pulses = Double(2 * mainsHz)
+        // A format's longest exposure sits a hair under the frame (8.2 ms
+        // at 120 fps), so a pulse up to 3% over it still counts, clamped.
         let n = min((seconds * pulses).rounded(),
-                    (longest * pulses * (1 + 1e-6)).rounded(.down))
-        return n >= 1 ? n / pulses : seconds
+                    (longest * pulses * 1.03).rounded(.down))
+        return n >= 1 ? min(n / pulses, longest) : seconds
     }
 
     /// ISO or shutter by hand, the other one automatic. iOS's auto

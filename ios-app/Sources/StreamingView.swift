@@ -319,7 +319,7 @@ struct StreamingView: View {
 
     /// The Pro interface's picture frame in portrait; nil otherwise.
     private var proFrame: EdgeInsets? {
-        streamer.proInterface && probe.pictureFrame
+        streamer.proInterface
             ? ProHUD.frameInsets(screen: screen, safe: safe) : nil
     }
 
@@ -1697,7 +1697,7 @@ struct StreamingView: View {
                                       1250, 1600, 2000, 2500, 3200, 4000, 5000,
                                       6400, 8000]
         let low = minSeconds * 0.999, high = maxSeconds * 1.001
-        let stops = denominators.map { 1 / $0 }.filter { $0 >= low && $0 <= high }
+        let stops = denominators.map { 1 / $0 }.filter { $0 >= low && $0 <= high * 1.03 }
         return stops.count > 1 ? stops : [maxSeconds, minSeconds]
     }
 
@@ -1720,9 +1720,7 @@ struct StreamingView: View {
     }
 
     private var shutterReadout: String {
-        let seconds = streamer.shutterSeconds
-        guard seconds < 1 else { return String(format: "%.0fs", seconds) }
-        return "1/\(Int((1 / seconds).rounded()))"
+        ProHUD.shutterLabel(streamer.shutterSeconds)
     }
 
     private func doubleBinding(_ source: Binding<Float>) -> Binding<Double> {

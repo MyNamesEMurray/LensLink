@@ -36,14 +36,7 @@ struct OptionsDocumentationView: View {
             }
 
             Section {
-                Text(SettingInfo.remember)
-            } header: {
-                Text("Remembered settings")
-            }
-
-            Section {
                 Text("**120 and 240 fps** are experimental and appear in the frame rate list where this camera has them (1080p and 720p on recent iPhones; 240 uses a sensor-binned format). The stream's bitrate grows with them, the phone runs hotter and drains faster, and an OBS canvas set to 60 shows every other frame at best — set the canvas to match, and prefer USB.")
-                Text(SettingInfo.videoEffects)
             } header: {
                 Text("Experimental")
             }

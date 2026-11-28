@@ -710,16 +710,6 @@ private struct FormatSheet: View {
                                          color: Theme.cameraYellow,
                                          info: SettingInfo.stabilizationTip)
                     }
-                    Picker(selection: $streamer.antiFlicker) {
-                        ForEach(Streamer.AntiFlicker.allCases) { mode in
-                            Text(verbatim: mode.displayName).tag(mode)
-                        }
-                    } label: {
-                        SettingsRowLabel(L("Anti-flicker"),
-                                         systemImage: "lightbulb",
-                                         color: Theme.cameraYellow,
-                                         info: SettingInfo.antiFlickerTip)
-                    }
                     if Streamer.reframeAvailable {
                         // Only the switch is disabled at 4K: a disabled
                         // row would take its ⓘ with it, and the ⓘ is
@@ -734,18 +724,6 @@ private struct FormatSheet: View {
                                 .labelsHidden()
                                 .disabled(streamer.resolution == .uhd4k)
                         }
-                    }
-                    Toggle(isOn: $streamer.allowVideoEffects) {
-                        SettingsRowLabel(L("Allow system video effects"),
-                                         systemImage: "wand.and.stars",
-                                         color: Theme.idleGrey,
-                                         info: SettingInfo.videoEffectsTip)
-                    }
-                    Toggle(isOn: $streamer.rememberCameraSettings) {
-                        SettingsRowLabel(L("Remember camera settings"),
-                                         systemImage: "clock.arrow.circlepath",
-                                         color: Theme.connectAmber,
-                                         info: SettingInfo.rememberTip)
                     }
                 } header: {
                     Text("Picture")
