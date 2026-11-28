@@ -1337,7 +1337,7 @@ final class Streamer: ObservableObject {
         // live as the source's audio — remote UIs key their row off
         // micEnabled, and the list is only meaningful with capture up.
         if VideoEncoder.hdrSupported {
-            state["colors"] = colorOptions.map { $0.rawValue }
+            state["colors"] = runnableColors().map { $0.rawValue }
         }
         if let percent = BatteryMonitor.shared.percent {
             state["battery"] = percent
@@ -1359,6 +1359,20 @@ final class Streamer: ObservableObject {
     /// snapshot is resent on every (debounced) control change — e.g. for
     /// the whole length of a zoom drag.
     private var capabilityCache: (key: String, resolutions: [String], frameRates: [Int])?
+    private var colorCache: (key: String, colors: [StreamColor])?
+
+    /// The colours the current resolution and frame rate can capture, so
+    /// remote UIs never offer one that would fall back to SDR.
+    private func runnableColors() -> [StreamColor] {
+        let key = "\(selectedLens.id)|\(resolution.rawValue)|\(fps)"
+        if let cached = colorCache, cached.key == key { return cached.colors }
+        let colors = colorOptions.filter {
+            $0 == .sdr || CameraManager.supports(resolution: resolution, fps: Int32(fps),
+                                                 lens: selectedLens, color: $0)
+        }
+        colorCache = (key, colors)
+        return colors
+    }
 
     private func formatCapabilities() -> ([String], [Int]) {
         // The colour is part of the key: changing the colour choice

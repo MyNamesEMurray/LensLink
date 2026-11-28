@@ -445,8 +445,9 @@ absent on SDR streams, whose snapshots are unchanged from before
 colour modes existed.
 
 Phones with a 10-bit pipeline list the colour modes they offer in
-`colors` (`["sdr","hlg","log"]`, `log` only where Apple Log exists), for
-`set_format`'s `color`. Every snapshot carries `thermal` (iOS's thermal
+`colors` (`["sdr","hlg","log"]`, `log` only where Apple Log exists; only
+the modes the current resolution and frame rate can capture, so
+`["sdr"]` at 240 fps), for `set_format`'s `color`. Every snapshot carries `thermal` (iOS's thermal
 state: `"nominal"`, `"fair"`, `"serious"` or `"critical"`), `battery`
 (percent, absent when iOS doesn't report it) and the frame guide:
 `"monitor": { "guide" }`, as set by the `monitor` command or on the
