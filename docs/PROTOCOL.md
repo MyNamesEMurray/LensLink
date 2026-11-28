@@ -136,6 +136,7 @@ Camera remote control. Payload: UTF-8 JSON, one command per packet:
 { "cmd": "flashlight", "on": true }
 { "cmd": "flashlight", "on": true, "level": 0.6 }
 { "cmd": "natural_blur", "on": true }
+{ "cmd": "anti_flicker", "mode": "50" }
 { "cmd": "flip" }
 { "cmd": "selectLens", "label": "Ultra Wide (0.5×)" }
 { "cmd": "white_balance", "mode": "locked", "temperature": 5600 }
@@ -307,6 +308,12 @@ interval (1/60 at 30 fps) and raises ISO instead. It has nothing to cap
 while the shutter is manual. The STATE snapshot
 reports it as `naturalBlur`; an app that predates it ignores the command
 and omits the field.
+
+`anti_flicker` sets the mains frequency an automatic shutter rounds to:
+`"auto"` (from the phone's region), `"50"` or `"60"` (Hz). Only the auto
+shutter snaps to whole light pulses; a manual shutter is never rounded.
+The app remembers the choice. STATE reports it as `antiFlicker`; an app
+that predates it ignores the command and omits the field.
 
 `focus` takes any subset of its fields: `mode` (`"auto"` / `"locked"`)
 with an optional `lensPosition`, and `faces` — whether the camera should

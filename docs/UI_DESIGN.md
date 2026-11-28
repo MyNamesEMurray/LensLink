@@ -704,8 +704,12 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    **A** badge, one dial with a `cameraYellow` readout (WB adds the
    light-source icons), and the bottom row of the chip's own button
    (Calibrate on WB, Natural motion blur on Shutter), Lock, Flashlight,
-   Flip. Below: the Mic picker while the phone mic streams, the Format
-   row, Stabilization, and Pause · Stop. Same stops and semantics as the
+   Flip. A phone with a variable iris (`supportsAperture`) adds an
+   **Iris** chip: the dial walks the phone's `apertureStops`, clicking
+   the selected chip hands it back to auto. Below: the Mic picker while
+   the phone mic streams, the Format row (resolution, fps, codec, color,
+   Bitrate Stable/Maximum), Stabilization, Anti-flicker (Auto, 50 Hz,
+   60 Hz), and Pause · Stop. Same stops and semantics as the
    phone: moving the dial takes that setting manual, clicking the
    selected chip hands it back to auto, Lock freezes what auto is doing
    (Shift-click: everything). Apps without `lensFactors` in STATE get a
@@ -716,7 +720,8 @@ Dark page (`pageBg`), single centered column (max ~440 px):
    skipped while the eyedropper or reframe pad uses it) sits in a
    rounded frame, and the phone's dark see-through boxes (black 50 %,
    6 pt corners, monospaced values) float on it: status, bitrate,
-   fps over latency, format on top; the tray's chips at the bottom as
+   latency, and format (`4K · 60` over `HEVC LOG`; a click takes you to
+   the Format row) on top; the tray's chips at the bottom as
    equal value boxes (accent corner dot = auto, black 75 % = selected).
    Below the dial: battery and the phone mic meter (same colours as
    the app). Tool buttons and action buttons become equal-width boxes;

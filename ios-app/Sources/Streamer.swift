@@ -790,6 +790,7 @@ final class Streamer: ObservableObject {
         didSet {
             UserDefaults.standard.set(antiFlicker.rawValue, forKey: "antiFlicker")
             camera.setMainsHz(antiFlicker.mainsHz)
+            scheduleStateSend()
         }
     }
     @Published var stabilization: Stabilization =
@@ -1266,6 +1267,7 @@ final class Streamer: ObservableObject {
             "lensPosition": Double(lensPosition),
             "faceFocus": faceFocus,
             "naturalBlur": naturalBlur,
+            "antiFlicker": antiFlicker.rawValue,
             "supportsFaceFocus": camera.supportsFaceDrivenFocus,
             "flashlight": flashlightOn,
             "flashlightLevel": Double(flashlightLevel),
@@ -2147,6 +2149,10 @@ final class Streamer: ObservableObject {
         case "natural_blur":
             if let on = command["on"] as? Bool {
                 naturalBlur = on
+            }
+        case "anti_flicker":
+            if let mode = (command["mode"] as? String).flatMap(AntiFlicker.init(rawValue:)) {
+                antiFlicker = mode
             }
         case "flip":
             flipCamera()
