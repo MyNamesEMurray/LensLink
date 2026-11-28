@@ -1722,9 +1722,11 @@ final class CameraManager: NSObject {
     /// set by hand is never rounded.
     static func flickerSafe(_ seconds: Double, mainsHz: Int, longest: Double) -> Double {
         let pulses = Double(2 * mainsHz)
+        // A format's longest exposure sits a hair under the frame (8.2 ms
+        // at 120 fps), so a pulse up to 3% over it still counts, clamped.
         let n = min((seconds * pulses).rounded(),
-                    (longest * pulses * (1 + 1e-6)).rounded(.down))
-        return n >= 1 ? n / pulses : seconds
+                    (longest * pulses * 1.03).rounded(.down))
+        return n >= 1 ? min(n / pulses, longest) : seconds
     }
 
     /// ISO or shutter by hand, the other one automatic. iOS's auto

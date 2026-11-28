@@ -574,7 +574,8 @@ static const char control_page[] =
 	"const hi=(S.maxShutterSeconds||1/30)*1.001;"
 	"const s=SHD.map(d=>1/d).filter(v=>v>=lo&&v<=hi);return s.length>1?s:[hi,lo]}"
 	"const nearest=(a,v)=>a.reduce((b,x,i)=>Math.abs(x-v)<Math.abs(a[b]-v)?i:b,0);"
-	"const shLabel=s=>s>=1?Math.round(s)+'s':'1/'+Math.round(1/s);"
+	"const SHD=[2,3,4,5,6,8,10,13,15,20,24,25,30,40,48,50,60,80,96,100,120,125,160,200,250,320,400,500,640,800,1000,1250,1600,2000,2500,3200,4000,5000,6400,8000];"
+	"const shLabel=s=>{if(s>=1)return Math.round(s)+'s';const x=1/s,u=SHD.reduce((a,b)=>Math.abs(b-x)<Math.abs(a-x)?b:a);return '1/'+Math.round(Math.abs(u-x)<=u*0.03?u:x);};"
 	"const NAME={focus:()=>t('Focus'),wb:()=>t('WB'),ev:()=>'EV',iso:()=>'ISO',"
 	"sh:()=>t('Shutter'),tint:()=>t('Tint'),iris:()=>t('Iris')};"
 	/* ISO and shutter lock one at a time on an app that reports

@@ -337,16 +337,21 @@ struct ProHUD: View {
                                : streamer.lensPosition
     }
 
+    /// On auto with no live reading yet: the set value would be stale.
+    private func unknownAuto(_ param: Param) -> Bool {
+        isAuto(param) == true && live == nil
+    }
+
     private func value(_ param: Param) -> String {
         switch param {
         case .lens:
             return Self.factorLabel(lensFactor * Double(streamer.zoom)) + "×"
         case .iris:
-            return Self.apertureLabel(shownAperture)
+            return unknownAuto(.iris) ? L("Auto") : Self.apertureLabel(shownAperture)
         case .format:
             return "\(streamer.resolution.rawValue) \(streamer.fps)"
         case .shutter:
-            return Self.shutterLabel(shownShutter)
+            return unknownAuto(.shutter) ? L("Auto") : Self.shutterLabel(shownShutter)
         case .iso:
             return "\(Int(shownISO.rounded()))"
         case .whiteBalance:
@@ -386,10 +391,14 @@ struct ProHUD: View {
         "f" + fNumberLabel(fNumber)
     }
 
+    /// Clean fractions: within 3% of a usual stop reads as that stop
+    /// (the camera runs 1/120 at 120 fps as 8.2 ms, "1/122").
     static func shutterLabel(_ seconds: Double) -> String {
         guard seconds.isFinite, seconds > 0 else { return "–" }
         guard seconds < 1 else { return String(format: "%.0fs", seconds) }
-        return "1/\(Int((1 / seconds).rounded()))"
+        let exact = 1 / seconds
+        let usual = shutterDenominators.min { abs($0 - exact) < abs($1 - exact) } ?? exact
+        return "1/\(Int((abs(usual - exact) <= usual * 0.03 ? usual : exact).rounded()))"
     }
 
     // MARK: - Dials
@@ -689,7 +698,9 @@ struct ProHUD: View {
     private var shutterStops: [Double] {
         let lo = streamer.camera.minShutterSeconds * 0.999
         let hi = streamer.camera.maxShutterSeconds(fps: Int32(streamer.fps)) * 1.001
-        let stops = Self.shutterDenominators.map { 1 / $0 }.filter { $0 >= lo && $0 <= hi }
+        // A format's longest exposure sits a hair under the frame (8.2 ms
+        // at 120 fps): keep the 1/fps stop, the camera clamps it.
+        let stops = Self.shutterDenominators.map { 1 / $0 }.filter { $0 >= lo && $0 <= hi * 1.03 }
         return stops.count > 1 ? stops : [hi, lo]
     }
 
